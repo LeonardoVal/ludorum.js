@@ -1,0 +1,41 @@
+﻿/** tester.css:
+	Stylesheet for tester.html, a test case runner in HTML.
+
+	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
+	@licence MIT Licence
+*/
+a {
+	text-decoration: none;
+}
+a:hover {
+	text-decoration: underline;
+}
+
+#log {
+	font-family: monospace;
+	width: 100%;
+}
+#log p {
+	margin: 0px;
+	padding: 0px 0px 1px 0px;
+}
+
+.log_OK {
+	background-color: rgb(200,255,200);
+	color: rgb(0,55,0);
+}
+.log_FAIL {
+	background-color: rgb(255,200,200);
+	color: rgb(100,0,0);
+}
+.log_WARN, .log_TODO, .log_FIXME {
+	background-color: rgb(255,255,200);
+	color: black;
+}
+.log_ERROR {
+	background-color: rgb(200,0,0);
+	color: rgb(255,240,240);
+}
+.log_level {
+	font-weight: bold;
+} 

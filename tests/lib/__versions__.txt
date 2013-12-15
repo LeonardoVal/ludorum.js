@@ -1,0 +1,5 @@
+﻿require.js	2.1.9 min <http://requirejs.org/>
+dygraph.js	1.0.1 combined <http://dygraphs.com/>
+basis.js	0.1.0 <https://github.com/LeonardoVal/basis/>
+jquery.js	2.0.3 min <http://jquery.com/>
+jsconsole/	1.1.1 <http://jsconsole.com>

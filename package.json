@@ -1,0 +1,26 @@
+﻿{
+	"name": "ludorum",
+	"description": "A board game implementation library, focusing on artificial intelligence.",
+	"keywords": [
+		"board game", "game", "minimax", "artificial intelligence", "game ai"
+	],
+	"version": "0.1.0",
+	"author": "Leonardo Val <leonardo.val@creatartis.com>",
+	"homepage": "http://creatartis.com",
+	"contributors": [],
+	"licence": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "http://github.com/LeonardoVal/ludorum"
+	},
+	"dependencies": { },
+	"devDependencies": {
+		"requirejs": "~2.1.9",
+		"grunt": "~0.4.2",
+		"grunt-contrib-concat": "~0.3.0",
+		"grunt-contrib-uglify": "~0.2.7"
+	},
+	"bin": {},
+	"scripts": {},
+	"engines": {}
+}

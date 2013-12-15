@@ -1,0 +1,29 @@
+﻿<!DOCTYPE html>
+<html><head>
+	<title>Ludorum console.</title>
+	<meta charset="UTF-8"/>
+	<script src="lib/require.js"></script>
+</head><body onload="main();">
+	<h3>Ludorum console.</h3>
+	<script src="lib/jash.js"></script>
+	<script type="text/javascript"> "use strict";
+function main() {
+	require.config({ 
+		paths: {
+			"basis": "lib/basis",
+			"ludorum": "../ludorum"
+		},
+	});
+	require(['basis', 'ludorum'], function (basis, ludorum) {
+		window.basis = basis;
+		window.ludorum = ludorum;
+		(function (s){ // See: <http://jsconsole.com>.
+			s.src = 'lib/jsconsole/inject.js';
+			document.body.appendChild(s);
+		})(document.createElement('script'));
+	}, function (error) {
+		throw error;
+	});
+}
+	</script>
+</body></html>
