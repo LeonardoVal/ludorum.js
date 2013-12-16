@@ -4,7 +4,7 @@ Ludorum is a board game framework. It is not focused on graphics or user interfa
 * Players based on [MiniMax](http://en.wikipedia.org/wiki/Minimax#Minimax_algorithm_with_alternate_moves) with [alfa-beta pruning](http://en.wikipedia.org/wiki/Alpha-beta_pruning).
 * Implementations for some simple reference games, including: [TicTacToe](http://en.wikipedia.org/wiki/Tic-tac-toe), [ToadsAndFrogs](http://en.wikipedia.org/wiki/Toads_and_Frogs_%28game%29) and [Mancala](http://en.wikipedia.org/wiki/Kalah).
 
-It supports loading with AMD (with [RequireJS](http://requirejs.org/)) or a script tag (sets 'ludorum' in the global namespace). In order to work requires another library of mine called [basis](https://github.com/LeonardoVal/basis). 
+It supports loading with AMD (with [RequireJS](http://requirejs.org/)) or a script tag (sets 'ludorum' in the global namespace). In order to work requires another library of mine called [basis](https://github.com/LeonardoVal/basis.js). 
 
 ## License
 
