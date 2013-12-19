@@ -27,8 +27,7 @@ module.exports = function(grunt) {
 			build: {
 				src: [
 					'src/Game.js', 'src/Player.js', 'src/Match.js', 
-						'src/Tournament.js',
-					'src/randoms.js',
+						'src/Tournament.js', 'src/Aleatory.js',
 					'src/players/RandomPlayer.js', 'src/players/TracePlayer.js',
 						'src/players/HeuristicPlayer.js', 'src/players/MiniMaxPlayer.js',
 						'src/players/MonteCarloPlayer.js',
@@ -36,7 +35,9 @@ module.exports = function(grunt) {
 					'src/games/__Predefined__.js',  'src/games/Choose2Win.js',
 						'src/games/OddsAndEvens.js', 'src/games/TicTacToe.js',
 						'src/games/ToadsAndFrogs.js', 'src/games/Mancala.js',
-					'src/tournaments/MeasurementTournament.js'
+						'src/games/Pig.js',
+					'src/tournaments/MeasurementTournament.js',
+					'src/aleatories/Dice.js'
 				],
 				dest: './<%= pkg.name %>.js',
 			},

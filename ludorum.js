@@ -345,8 +345,6 @@ Game.cached = function cached() {
 */
 // Players /////////////////////////////////////////////////////////////////////
 	
-var __PlayerCount__ = 0; // Used by the Player's default naming.
-
 var Player = exports.Player = basis.declare({
 	/** new Player(name):
 		A player is an agent that plays a game. This means deciding which 
@@ -354,9 +352,12 @@ var Player = exports.Player = basis.declare({
 		time the game enables the player to do so.
 		This is an abstract class that is meant to be extended.
 	*/
-	constructor: function Player(name) {
-		this.name = ''+ (name || 'Player' + (__PlayerCount__++));
-	},
+	constructor: (function () {
+		var __PlayerCount__ = 0; // Used by the Player's default naming.
+		return function Player(name) {
+			this.name = ''+ (name || 'Player' + (__PlayerCount__++));
+		};
+	})(),
 
 	/** Player.__moves__(game, player):
 		Get the moves in the game for the player, checks if there are any, 
@@ -430,16 +431,13 @@ var Match = exports.Match = basis.declare({
 		/** Match.history:
 			Game state array, from the initial game state to the last.
 		*/
-		this.history = [game];
-		/** Match.moves:
-			Moves array, running parallel to the history.
-		*/
-		this.moves = [null];
+		this.history = [[game]];
 		/** Match.events:
-			Event handler for this match. Emitted events are: begin, move & end.
+			Event handler for this match. Emitted events are: begin, move, next 
+			& end.
 		*/
 		this.events = new basis.Events({ 
-			events: "begin move end".split(' ')
+			events: ['begin', 'move', 'next', 'end']
 		});
 		// Participate the players.
 		for (var p in this.players) {
@@ -464,7 +462,7 @@ var Match = exports.Match = basis.declare({
 	*/
 	state: function state(ply) {
 		ply = isNaN(ply) ? this.ply() : +ply < 0 ? this.ply() + (+ply) : +ply;
-		return this.history[ply | 0];
+		return this.history[ply | 0][0];
 	},
 
 	/** Match.result():
@@ -482,24 +480,20 @@ var Match = exports.Match = basis.declare({
 		game = game || this.state();
 		var players = this.players;
 		return basis.Future.all(game.activePlayers.map(function (p) {
-			return basis.when(players[p].decision(game, p));
+			return basis.when(players[p].decision(game, p));//FIXME when?
 		}));
 	},
 
-	/** Match.__next__(moves):
-		Advances this match's history to the next game state. Returns the 
-		next game state.
+	/** Match.__advance__(...):
+		Pushes the given entry into this match's history. Returns the game state
+		in entry[0].
 	*/
-	__next__: function __next__(moves) {
-		var game = this.state();
-		if (Array.isArray(moves)) { // If moves is an array, build a moves object from it.
-			moves = basis.iterable(game.activePlayers).zip(moves).toObject();
-		} 
-		var next = game.next(moves);
-		this.history.push(next);
-		this.moves.push(moves);
-		this.events.emit('begin', moves, game, next, this);
-		this.logger && this.logger.info('Match advances: moves= ', JSON.stringify(moves), ' game= ', next);
+	__advance__: function __advance__() {
+		var game = this.state(),
+			entry = Array.prototype.slice.call(arguments),
+			next = entry[0];
+		this.history.push(entry);
+		this.onNext(game, next);
 		return next;
 	},
 
@@ -508,29 +502,56 @@ var Match = exports.Match = basis.declare({
 		The result is a future that gets resolved when running ends.
 	*/
 	run: function run(plys) {
+		var ply, game, results;
 		plys = isNaN(plys) ? Infinity : +plys;
-		var game = this.history[this.ply()],
-			results = game.result();
-		if (this.ply() === 0) {
-			this.events.emit('begin', this.players, game, this);
-			this.logger && this.logger.info('Match begins with ', 
-				basis.iterable(this.players).map(function (attr) {
-					return attr[1] +' as '+ attr[0];
-				}).join(', '), '; for ', game, '.');
-		}
-		if (results) { // If the match has finished ...
-			this.events.emit('end', game, results, this);
-			this.logger && this.logger.info('Match ends: results= ', JSON.stringify(results), ' game= ', game);
+		if (plys < 1) { // If the run must stop...
 			return basis.when(this);
-		} else if (plys < 1) { // If the run must stop...
+		}
+		ply = this.ply();
+		game = this.state();
+		(ply === 0) && this.onBegin(game);
+		while (game instanceof Aleatory) {
+			this.__advance__(game.instantiate());
+			game = this.state();
+		}
+		results = game.result();
+		if (results) { // If the match has finished ...
+			this.onEnd(game, results);
 			return basis.when(this);
 		} else { // Else the run must continue ...
 			var match = this;
 			return this.decisions(game).then(function (moves) {
-				match.__next__(Array.isArray(moves) ? moves : [moves]);
+				moves = basis.iterable(game.activePlayers).zip(moves).toObject();
+				match.onMove(game, moves);
+				match.__advance__(game.next(moves), moves);
 				return match.run(plys - 1);
 			});
 		}
+	},
+	
+	// Events //////////////////////////////////////////////////////////////////
+	
+	onBegin: function onBegin(game) {
+		this.events.emit('begin', this.players, game, this);
+		this.logger && this.logger.info('Match begins with ', 
+			basis.iterable(this.players).map(function (attr) {
+				return attr[1] +' as '+ attr[0];
+			}).join(', '), '; for ', game, '.');
+	},
+	
+	onMove: function onMove(game, moves) {
+		this.events.emit('move', moves, game, this);
+		this.logger && this.logger.info('Players move: ', JSON.stringify(moves), ' in ', game);
+	},
+	
+	onNext: function onNext(game, next) {
+		this.events.emit('next', game, next, this);
+		this.logger && this.logger.info('Match advances from ', game, ' to ', next);
+	},
+	
+	onEnd: function onEnd(game, results) {
+		this.events.emit('end', game, results, this);
+		this.logger && this.logger.info('Match for ', game, 'ends with ', JSON.stringify(results));
 	}
 }); // declare Match.
 
@@ -633,77 +654,62 @@ var Tournament = exports.Tournament = basis.declare({
 var tournaments = exports.tournaments = {};
 
 
-/** ludorum/src/randoms.js:
-	Representation of many sorts of random variables in games: dice, card decks,
-	roulette, etc.
+/** ludorum/src/Aleatory.js:
+	Representation of intermediate game states that depend on some form of 
+	randomness, like: dice, card decks, roulettes, etc.
 	
 	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
 	@licence MIT Licence
 */
-// Abstract base class for random variables ////////////////////////////////////
-
-var RandomVariable = exports.RandomVariable = basis.declare({
-	/** new RandomVariable(random=randomness.DEFAULT):
-		Base constructor for a random variable.
+var Aleatory = exports.Aleatory = basis.declare({
+	/** new Aleatory(next, random=basis.Randomness.DEFAULT):
+		Base constructor for a aleatory game state.
 	*/
-	constructor: function RandomVariable(random) {
-		this.random = random || randomness.DEFAULT;
+	constructor: function Aleatory(next, random) {
+		this.next = next;
+		this.random = random || basis.Randomness.DEFAULT;
 	},
 	
-	/** RandomVariable.value():
-		Return a value for this random variable. Not implemented by default.
+	/** Aleatory.instantiate():
+		Calls this.next() callback with a random value and returns its result.
+	*/
+	instantiate: function instantiate() {
+		return this.next(this.value());
+	},
+	
+	/** Aleatory.value():
+		Calculates a random value for this aleatory.
 	*/
 	value: function value() {
-		throw new Error((this.constructor.name || 'RandomVariable') +".value() is not implemented! Please override.");
-	},
-	
-	/** RandomVariable.instantiate(game, name):
-		Assigns a random value of this random variable to the property name
-		of the given game. Raises an error if the game already has such a
-		property.
-	*/
-	instantiate: function instantiate(game, name) {
-		if (game.hasOwnProperty(name)) {
-			throw new Error("Random variable '"+ name +"' has already been instantiated (with "+ game[name] +").");
-		}
-		game[name] = this.value();
-	},
-	
-	/** RandomVariable.distribution():
-		Computes the histogram for this random variable, as an iterable of 
-		pairs [value, probability]. Not implemented by default.
-	*/
-	distribution: function distribution() {
-		throw new Error((this.constructor.name || 'RandomVariable') +".distribution() is not implemented! Please override.");
-	}
-}); // declare RandomVariable.
-
-/** randoms:
-	Bundle of RandomVariable subclasses and related definitions.
-*/
-var randoms = exports.randoms = {};
-
-// Dice ////////////////////////////////////////////////////////////////////////
-	
-randoms.Dice = basis.declare(RandomVariable, {
-	/** new Dice(base=6, random=randomness.DEFAULT):
-		Simple uniform random variable with values in [1, base]. 
-	*/
-	constructor: function Dice(base, random) {
-		RandomVariable.call(this, random);
-		this.base = isNaN(base) ? 6 : Math.min(2, +base >> 0);
-	},
-	
-	value: function value() {
-		return random.nextInt(1, this.base + 1);
-	},
-	
-	distribution: function distribution() {
-		return basis.iterables.range(1, this.base + 1).map(function (n, i) {
-			return [n, 1 / this.base];
+		var n = random.random(), value;
+		basis.iterable(this.distribution()).forEach(function (pair) {
+			n -= pair[1];
+			if (n <= 0) {
+				value = pair[0];
+				throw basis.Iterable.STOP_ITERATION;
+			}
 		});
-	}		
-}); // declare Dice.
+		if (typeof value === 'undefined') {
+			throw new Error("Random value could not be obtained.");
+		}
+		return value;
+	},
+	
+	/** Aleatory.distribution():
+		Computes the histogram for the random variables on which this aleatory
+		depends, as an iterable of pairs [value, probability]. Not implemented 
+		by default.
+	*/
+	distribution: function distribution() {
+		throw new Error((this.constructor.name || 'Aleatory') +".distribution() is not implemented! Please override.");
+	}
+}); // declare Aleatory.
+
+/** aleatories:
+	Bundle of random game states (i.e. Aleatory subclasses) and related 
+	definitions.
+*/
+var aleatories = exports.aleatories = {};
 
 
 /** ludorum/src/players/RandomPlayer.js:
@@ -1777,6 +1783,85 @@ games.Mancala.heuristics.defaultHeuristic = games.Mancala.heuristics.heuristicFr
 );
 
 
+/** ludorum/src/games/Pig.js:
+	Simple dice game, an example of a game with random variables. See
+	<http://en.wikipedia.org/wiki/Pig_%28dice_game%29>.
+ 
+	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
+	@licence MIT Licence
+*/
+games.Pig = basis.declare(Game, {
+	/** new games.Pig(activePlayer='One', scores, rolls):
+		Pig is a dice betting game, where the active player rolls dice until it
+		rolls one or passes its turn scoring the sum of previous rolls.
+	*/
+	constructor: function Pig(activePlayer, scores, rolls) {
+		Game.call(this, activePlayer);
+		this.__scores__ = scores || basis.iterable(this.players).zip([0, 0]).toObject();
+		this.rolls = rolls || [];
+	},
+
+	/** games.Pig.goal=100:
+		Amount of points a player has to reach to win the game.
+	*/
+	goal: 100,
+	
+	/** games.Pig.players=['One', 'Two']:
+		Players for Pig.
+	*/
+	players: ['One', 'Two'],
+
+	/** games.Pig.moves():
+		The active player can either hold and pass the turn, or roll.
+	*/
+	moves: function moves() {
+		if (!this.result()) {
+			return basis.obj(this.activePlayer(), ['roll', 'hold']);
+		}
+	},
+
+	/** games.Pig.result():
+		Game finishes when one player reaches or passes the goal score. The 
+		result for each player is the difference between its score and its
+		opponent's score.
+	*/
+	result: function result() {
+		if (this.__scores__[this.players[0]] >= this.goal || this.__scores__[this.players[1]] >= this.goal) {
+			var r = {};
+			r[this.players[0]] = this.__scores__[this.players[0]] - this.__scores__[this.players[1]];
+			r[this.players[1]] = -r[this.players[0]];
+			return r;
+		}
+	},
+
+	/** games.Pig.next(moves):
+		The player matching the parity of the moves sum earns a point.
+	*/
+	next: function next(moves) {
+		var activePlayer = this.activePlayer(),
+			move = moves[activePlayer];
+		if (move === 'hold') {
+			var scores = basis.copy(this.__scores__);
+			scores[activePlayer] += basis.iterable(this.rolls).sum();
+			return new this.constructor(this.opponent(), scores, []);
+		} else if (move === 'roll') {
+			var game = this;
+			return new aleatories.Dice(6, function (value) {
+				return (value > 1) 
+					? new game.constructor(activePlayer, game.__scores__, game.rolls.concat(value))
+					: new game.constructor(game.opponent(), game.__scores__, []);
+			});
+		} else {
+			throw new Error("Invalid moves: "+ JSON.stringify(moves));
+		}
+	},
+	
+	args: function args() {
+		return ['Pig', this.activePlayer(), this.__scores__, this.rolls];
+	}
+}); // declare Pig.
+
+
 /** ludorum/src/tournaments/MeasurementTournament.js:
 	Measurement tournament pit the player being measured against others in order
 	to assess that player's performance at a game.
@@ -1818,6 +1903,34 @@ tournaments.MeasurementTournament = basis.declare(Tournament, {
 			});
 	}
 }); // declare MeasurementTournament.
+
+
+/** ludorum/src/aleatories/Dice.js:
+	Dice random variables.
+	
+	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
+	@licence MIT Licence
+*/
+aleatories.Dice = basis.declare(Aleatory, {
+	/** new Dice(name, base=6, random=basis.Randomness.DEFAULT):
+		Simple uniform random variable with values in [1, base]. 
+	*/
+	constructor: function Dice(base, next, random) {
+		Aleatory.call(this, next, random);
+		this.base = isNaN(base) ? 6 : Math.max(2, +base);
+	},
+	
+	value: function value() {
+		return this.random.randomInt(1, this.base + 1);
+	},
+	
+	distribution: function distribution() {
+		var prob = 1 / this.base;
+		return basis.Iterable.range(1, this.base + 1).map(function (n, i) {
+			return [n, prob];
+		});
+	}		
+}); // declare Dice.
 
 return exports;
 });

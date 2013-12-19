@@ -148,21 +148,37 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 		});
 	}); // games.Choose2Win() with autonomousPlayers
 	
-	verifier.test("games.OddsAndEvens()", function () { //////////////////////////
-		checkGame(new games.OddsAndEvens(), { zeroSum: true });
-	}); // games.OddsAndEvens()
-	
-	verifier.test("games.TicTacToe()", function () { //////////////////////////
+	verifier.test("games.TicTacToe()", function () { ///////////////////////////
 		checkGame(new games.TicTacToe(), { zeroSum: true, oneActivePlayerPerTurn: true });
 	}); // games.TicTacToe()
 	
-	verifier.test("games.ToadsAndFrogs()", function () { //////////////////////////
+	verifier.test("games.ToadsAndFrogs()", function () { ///////////////////////
 		checkGame(new games.ToadsAndFrogs(), { zeroSum: true, oneActivePlayerPerTurn: true });
 	}); // games.ToadsAndFrogs()
 	
-	verifier.test("games.Mancala()", function () { //////////////////////////
+	verifier.test("games.Mancala()", function () { /////////////////////////////
 		checkGame(new games.Mancala(), { zeroSum: true, oneActivePlayerPerTurn: true });
 	}); // games.Mancala()
+	
+	verifier.test("games.OddsAndEvens()", function () { ////////////////////////
+		checkGame(new games.OddsAndEvens(), { zeroSum: true });
+	}); // games.OddsAndEvens()
+	
+	[players.RandomPlayer].forEach(function (player) {
+		var game = new games.Pig();
+		verifier.test("games.Pig() with players."+ player.name +"()", function () {
+			return basis.Future.all(basis.Iterable.range(30).map(function (i) {
+				var match = new ludorum.Match(game, [new player(), new player()]);
+				return match.run().then(function (match) {
+					var results = match.result();
+					verifier.assert(results, "Finished match has no results.");
+					verifier.assertEqual(0, results[game.players[0]] + results[game.players[1]]);
+				});
+			})).then(function () {
+				return "Ran 30 matches.";
+			});
+		});
+	}); // games.Pig() with RandomPlayer.
 	
 /////////////////////////////////////////////////////////////////////////// Fin.
 	return verifier;

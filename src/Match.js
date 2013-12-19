@@ -21,16 +21,13 @@ var Match = exports.Match = basis.declare({
 		/** Match.history:
 			Game state array, from the initial game state to the last.
 		*/
-		this.history = [game];
-		/** Match.moves:
-			Moves array, running parallel to the history.
-		*/
-		this.moves = [null];
+		this.history = [[game]];
 		/** Match.events:
-			Event handler for this match. Emitted events are: begin, move & end.
+			Event handler for this match. Emitted events are: begin, move, next 
+			& end.
 		*/
 		this.events = new basis.Events({ 
-			events: "begin move end".split(' ')
+			events: ['begin', 'move', 'next', 'end']
 		});
 		// Participate the players.
 		for (var p in this.players) {
@@ -55,7 +52,7 @@ var Match = exports.Match = basis.declare({
 	*/
 	state: function state(ply) {
 		ply = isNaN(ply) ? this.ply() : +ply < 0 ? this.ply() + (+ply) : +ply;
-		return this.history[ply | 0];
+		return this.history[ply | 0][0];
 	},
 
 	/** Match.result():
@@ -73,24 +70,20 @@ var Match = exports.Match = basis.declare({
 		game = game || this.state();
 		var players = this.players;
 		return basis.Future.all(game.activePlayers.map(function (p) {
-			return basis.when(players[p].decision(game, p));
+			return basis.when(players[p].decision(game, p));//FIXME when?
 		}));
 	},
 
-	/** Match.__next__(moves):
-		Advances this match's history to the next game state. Returns the 
-		next game state.
+	/** Match.__advance__(...):
+		Pushes the given entry into this match's history. Returns the game state
+		in entry[0].
 	*/
-	__next__: function __next__(moves) {
-		var game = this.state();
-		if (Array.isArray(moves)) { // If moves is an array, build a moves object from it.
-			moves = basis.iterable(game.activePlayers).zip(moves).toObject();
-		} 
-		var next = game.next(moves);
-		this.history.push(next);
-		this.moves.push(moves);
-		this.events.emit('begin', moves, game, next, this);
-		this.logger && this.logger.info('Match advances: moves= ', JSON.stringify(moves), ' game= ', next);
+	__advance__: function __advance__() {
+		var game = this.state(),
+			entry = Array.prototype.slice.call(arguments),
+			next = entry[0];
+		this.history.push(entry);
+		this.onNext(game, next);
 		return next;
 	},
 
@@ -99,28 +92,55 @@ var Match = exports.Match = basis.declare({
 		The result is a future that gets resolved when running ends.
 	*/
 	run: function run(plys) {
+		var ply, game, results;
 		plys = isNaN(plys) ? Infinity : +plys;
-		var game = this.history[this.ply()],
-			results = game.result();
-		if (this.ply() === 0) {
-			this.events.emit('begin', this.players, game, this);
-			this.logger && this.logger.info('Match begins with ', 
-				basis.iterable(this.players).map(function (attr) {
-					return attr[1] +' as '+ attr[0];
-				}).join(', '), '; for ', game, '.');
-		}
-		if (results) { // If the match has finished ...
-			this.events.emit('end', game, results, this);
-			this.logger && this.logger.info('Match ends: results= ', JSON.stringify(results), ' game= ', game);
+		if (plys < 1) { // If the run must stop...
 			return basis.when(this);
-		} else if (plys < 1) { // If the run must stop...
+		}
+		ply = this.ply();
+		game = this.state();
+		(ply === 0) && this.onBegin(game);
+		while (game instanceof Aleatory) {
+			this.__advance__(game.instantiate());
+			game = this.state();
+		}
+		results = game.result();
+		if (results) { // If the match has finished ...
+			this.onEnd(game, results);
 			return basis.when(this);
 		} else { // Else the run must continue ...
 			var match = this;
 			return this.decisions(game).then(function (moves) {
-				match.__next__(Array.isArray(moves) ? moves : [moves]);
+				moves = basis.iterable(game.activePlayers).zip(moves).toObject();
+				match.onMove(game, moves);
+				match.__advance__(game.next(moves), moves);
 				return match.run(plys - 1);
 			});
 		}
+	},
+	
+	// Events //////////////////////////////////////////////////////////////////
+	
+	onBegin: function onBegin(game) {
+		this.events.emit('begin', this.players, game, this);
+		this.logger && this.logger.info('Match begins with ', 
+			basis.iterable(this.players).map(function (attr) {
+				return attr[1] +' as '+ attr[0];
+			}).join(', '), '; for ', game, '.');
+	},
+	
+	onMove: function onMove(game, moves) {
+		this.events.emit('move', moves, game, this);
+		this.logger && this.logger.info('Players move: ', JSON.stringify(moves), ' in ', game);
+	},
+	
+	onNext: function onNext(game, next) {
+		this.events.emit('next', game, next, this);
+		this.logger && this.logger.info('Match advances from ', game, ' to ', next);
+	},
+	
+	onEnd: function onEnd(game, results) {
+		this.events.emit('end', game, results, this);
+		this.logger && this.logger.info('Match for ', game, 'ends with ', JSON.stringify(results));
 	}
 }); // declare Match.

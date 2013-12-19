@@ -7,8 +7,6 @@
 */
 // Players /////////////////////////////////////////////////////////////////////
 	
-var __PlayerCount__ = 0; // Used by the Player's default naming.
-
 var Player = exports.Player = basis.declare({
 	/** new Player(name):
 		A player is an agent that plays a game. This means deciding which 
@@ -16,9 +14,12 @@ var Player = exports.Player = basis.declare({
 		time the game enables the player to do so.
 		This is an abstract class that is meant to be extended.
 	*/
-	constructor: function Player(name) {
-		this.name = ''+ (name || 'Player' + (__PlayerCount__++));
-	},
+	constructor: (function () {
+		var __PlayerCount__ = 0; // Used by the Player's default naming.
+		return function Player(name) {
+			this.name = ''+ (name || 'Player' + (__PlayerCount__++));
+		};
+	})(),
 
 	/** Player.__moves__(game, player):
 		Get the moves in the game for the player, checks if there are any, 
