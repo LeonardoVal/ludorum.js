@@ -29,6 +29,11 @@ var Game = exports.Game = basis.declare({
 			(!Array.isArray(activePlayers) ? [activePlayers] : activePlayers);
 	},
 
+	/** Game.name:
+		The game's name as a string, for displaying purposes.
+	*/
+	name: 'Game.name?',
+	
 	/** Game.players:
 		An array of role names (strings), that the players can assume in a 
 		match of this game. For example: "Xs" and "Os" in TicTacToe, or 
@@ -204,7 +209,7 @@ var Game = exports.Game = basis.declare({
 		to rebuild this game's state. Not implemented, so please override.
 	*/
 	args: function args() {
-		throw new Error((this.constructor.name || 'Game') +".args() not implemented! Please override.");
+		throw new Error("Game.args() not implemented! Please override.");
 	},
 	
 	/** Game.clone():
@@ -431,10 +436,10 @@ var Match = exports.Match = basis.declare({
 		/** Match.history:
 			Game state array, from the initial game state to the last.
 		*/
-		this.history = [[game]];
+		this.history = [game];
 		/** Match.events:
-			Event handler for this match. Emitted events are: begin, move, next 
-			& end.
+			Event handler for this match. Emitted events are: begin, end, move
+			& next.
 		*/
 		this.events = new basis.Events({ 
 			events: ['begin', 'move', 'next', 'end']
@@ -445,15 +450,15 @@ var Match = exports.Match = basis.declare({
 		}
 	},
 
-	toString: function toString() {
-		return 'Match('+ this.game +', '+ JSON.stringify(this.players) +')';
-	},
-
 	/** Match.ply():
 		Returns the current ply number.
 	*/
 	ply: function ply() {
 		return this.history.length - 1;
+	},
+	
+	toString: function toString() {
+		return 'Match('+ this.game +', '+ JSON.stringify(this.players) +')';
 	},
 
 	/** Match.state(ply=current):
@@ -462,7 +467,7 @@ var Match = exports.Match = basis.declare({
 	*/
 	state: function state(ply) {
 		ply = isNaN(ply) ? this.ply() : +ply < 0 ? this.ply() + (+ply) : +ply;
-		return this.history[ply | 0][0];
+		return this.history[ply | 0];
 	},
 
 	/** Match.result():
@@ -484,35 +489,25 @@ var Match = exports.Match = basis.declare({
 		}));
 	},
 
-	/** Match.__advance__(...):
-		Pushes the given entry into this match's history. Returns the game state
-		in entry[0].
-	*/
-	__advance__: function __advance__() {
-		var game = this.state(),
-			entry = Array.prototype.slice.call(arguments),
-			next = entry[0];
-		this.history.push(entry);
+	__advance__: function __advance__(game, next) {
+		this.history.push(next);
 		this.onNext(game, next);
 		return next;
 	},
-
+	
 	/** Match.run(plys=Infinity):
 		Runs the match the given number of plys or until the game finishes.
 		The result is a future that gets resolved when running ends.
 	*/
 	run: function run(plys) {
-		var ply, game, results;
 		plys = isNaN(plys) ? Infinity : +plys;
 		if (plys < 1) { // If the run must stop...
 			return basis.when(this);
 		}
-		ply = this.ply();
-		game = this.state();
-		(ply === 0) && this.onBegin(game);
-		while (game instanceof Aleatory) {
-			this.__advance__(game.instantiate());
-			game = this.state();
+		var ply = this.ply(), game = this.state(), results, next;
+		(ply < 0) && this.onBegin(game);
+		while (game instanceof Aleatory) { // Instantiate all random variables.
+			game = this.__advance__(game, game.instantiate());
 		}
 		results = game.result();
 		if (results) { // If the match has finished ...
@@ -523,7 +518,7 @@ var Match = exports.Match = basis.declare({
 			return this.decisions(game).then(function (moves) {
 				moves = basis.iterable(game.activePlayers).zip(moves).toObject();
 				match.onMove(game, moves);
-				match.__advance__(game.next(moves), moves);
+				match.__advance__(game, game.next(moves));
 				return match.run(plys - 1);
 			});
 		}
@@ -582,45 +577,35 @@ var Tournament = exports.Tournament = basis.declare({
 			Tournament statistics. These include the accumulated score for 
 			each player, indexed by name.
 		*/
-		this.statistics = new racconto.Statistics();
+		this.statistics = new basis.Statistics();
 	},
 
 	/** Tournament.account(match):
 		Accounts the results of a finished match for the players' score.
 	*/
 	account: function account(match) {
-		var results = match.result(), isDraw = false,
+		var game = this.game,
+			results = match.result(), 
+			isDraw = false,
 			stats = this.statistics;
 		basis.raiseIf(!results, "Match doesn't have results. Has it finished?");
 		// Player statistics.
-		iterables.iterable(match.players).forEach(function (p) {
-			var playerResult = results[p[0]];
-			stats.add(p[0], playerResult);
-			stats.add(p[1].name, playerResult);
-			stats.add('.results', playerResult);
-			if (playerResult > 0) {
-				stats.add(p[0] +'.victories', playerResult);
-			} else if (playerResult < 0) {
-				stats.add(p[0] +'.defeats', playerResult);
-			} else {
-				isDraw = true;
-			}
-		});
-		// Match statistics.
-		if (isDraw) {
-			stats.add('.matchDrawn', match.history.length - 1);
-		}
-		stats.add('.matchLength', match.history.length - 1); // Skip initial state.
-		iterables.iterable(match.history).forEach(function (gameState) {
-			var moves = gameState.moves(), 
-				count = 0;
-			for (var player in moves) {
-				stats.add('.matchWidth.'+ player, moves[player].length);
-				count += moves[player].length;
-			}
-			if (count > 0) { // (count == 0) happens at the final state.
-				stats.add('.matchWidth', count);
-			}
+		basis.iterable(match.players).forEach(function (p) {
+			var role = p[0],
+				player = p[1],
+				playerResult = results[p[0]],
+				keys = ['game:'+ game.name, 'role:'+ role, 'player:'+ player.name];
+			stats.add(keys.concat('results'), playerResult);
+			stats.add(keys.concat(playerResult > 0 ? 'victories' : playerResult < 0 ? 'defeats' : 'draws'), playerResult);
+			stats.add(keys.concat('length'), match.ply()); //FIXME This may not be accurate if the game has random variables.
+			match.history.forEach(function (entry) {
+				if (typeof entry.moves === 'function') {
+					var moves = entry.moves();	
+					if (moves && moves.hasOwnProperty(role) && moves[role].length > 0) {
+						stats.add(keys.concat('width'), moves[role].length);
+					}
+				}
+			})
 		});
 	},
 
@@ -631,7 +616,7 @@ var Tournament = exports.Tournament = basis.declare({
 	run: function run(matches) {
 		var tournament = this;
 		matches = matches || this.matches();
-		return basis.async.sequence(matches, function (match) {
+		return basis.Future.sequence(matches, function (match) {
 			return match.run().then(function (match) {
 				tournament.account(match);
 				return tournament;
@@ -644,7 +629,7 @@ var Tournament = exports.Tournament = basis.declare({
 		implementation this method raises an exception. It must be overriden.
 	*/
 	matches: function matches() {
-		basis.raise("Tournament.matches is not implemented. Please override.");
+		throw new Error("Tournament.matches is not implemented. Please override.");
 	}
 }); // declare Tournament
 
@@ -1159,6 +1144,8 @@ games.__Predefined__ = basis.declare(Game, {
 		this.width = isNaN(width) ? 5 : +width;
 	},
 
+	name: '__Predefined__',
+	
 	/** games.__Predefined__.players:
 		Default players for __Predefined__: A and B.
 	*/
@@ -1195,7 +1182,7 @@ games.__Predefined__ = basis.declare(Game, {
 	},
 	
 	args: function args() {
-		return ['__Predefined__', this.activePlayer(), this.results, this.height, this.width];
+		return [this.name, this.activePlayer(), this.results, this.height, this.width];
 	},
 	
 	toString: function toString() {
@@ -1225,6 +1212,8 @@ games.Choose2Win = basis.declare(Game, {
 		this.__winner__ = winner;		
 	},
 
+	name: 'Choose2Win',
+	
 	/** games.Choose2Win.players=['This', 'That']:
 		Players of the dummy game.
 	*/
@@ -1264,7 +1253,7 @@ games.Choose2Win = basis.declare(Game, {
 	},
 	
 	args: function args() {
-		return ['Choose2Win', this.__turns__, this.activePlayer(), this.__winner__];
+		return [this.name, this.__turns__, this.activePlayer(), this.__winner__];
 	},
 	
 	toString: function toString() {
@@ -1291,6 +1280,8 @@ games.OddsAndEvens = basis.declare(Game, {
 		this.points = points || { Evens: 0, Odds: 0 };
 	},
 
+	name: 'OddsAndEvens',
+	
 	/** games.OddsAndEvens.players=['Evens', 'Odds']:
 		Players for odds and evens.
 	*/
@@ -1326,7 +1317,7 @@ games.OddsAndEvens = basis.declare(Game, {
 	},
 	
 	args: function args() {
-		return ['OddsAndEvens', this.turns, this.points];
+		return [this.name, this.turns, this.points];
 	},
 	
 	toString: function toString() {
@@ -1349,7 +1340,9 @@ games.TicTacToe = basis.declare(Game, {
 		Game.call(this, activePlayer);
 		this.board = board || '_________';
 	},
-		
+	
+	name: 'TicTacToe',
+	
 	/** games.TicTacToe.players:
 		There are two roles in this game: "Xs" and "Os".
 	*/
@@ -1405,7 +1398,7 @@ games.TicTacToe = basis.declare(Game, {
 	},
 
 	args: function args() {
-		return ['TicTacToe', this.activePlayer(), this.board];
+		return [this.name, this.activePlayer(), this.board];
 	},
 	
 	/** games.TicTacToe.toString():
@@ -1465,6 +1458,8 @@ games.ToadsAndFrogs = basis.declare(Game, {
 		this.board = board || ToadsAndFrogs.board();
 	},
 	
+	name: 'ToadsAndFrogs',
+	
 	/** games.ToadsAndFrogs.players:
 		There are two roles in this game: "Toads" and "Frogs".
 	*/
@@ -1512,7 +1507,7 @@ games.ToadsAndFrogs = basis.declare(Game, {
 	},
 
 	args: function args() {
-		 return ['ToadsAndFrogs', this.activePlayer, this.board];
+		 return [this.name, this.activePlayer, this.board];
 	},
 	
 	/** games.ToadsAndFrogs.toString():
@@ -1566,6 +1561,8 @@ games.Mancala = basis.declare(Game, {
 		}
 		return result;
 	},
+	
+	name: 'Mancala',
 	
 	/** Mancala.players:
 		Players of Mancala are North and South.
@@ -1716,7 +1713,7 @@ games.Mancala = basis.declare(Game, {
 	// Utility methods. ////////////////////////////////////////////////////
 	
 	args: function args() {
-		return ['Mancala', this.activePlayer(), this.board.slice()];
+		return [this.name, this.activePlayer(), this.board.slice()];
 	},
 
 	identifier: function identifier() {
@@ -1806,6 +1803,8 @@ games.Pig = basis.declare(Game, {
 	*/
 	goal: 100,
 	
+	name: 'Pig',
+	
 	/** games.Pig.players=['One', 'Two']:
 		Players for Pig.
 	*/
@@ -1857,12 +1856,56 @@ games.Pig = basis.declare(Game, {
 	},
 	
 	args: function args() {
-		return ['Pig', this.activePlayer(), this.__scores__, this.rolls];
+		return [this.name, this.activePlayer(), this.__scores__, this.rolls];
 	}
 }); // declare Pig.
 
 
-/** ludorum/src/tournaments/MeasurementTournament.js:
+/** ludorum/src/tournaments/AllAgainstAll.js:
+	Tournament where all players play against each other a certain number of
+	times.
+ 
+	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
+	@licence MIT Licence
+*/
+// Measurement tournament. /////////////////////////////////////////////////////
+
+tournaments.AllAgainstAll = basis.declare(Tournament, {
+	/** new tournaments.AllAgainstAll(game, players, matchCount=game.players.length):
+		A tournament that confronts all players against each other rotating 
+		their roles in the matches.
+	*/
+	constructor: function AllAgainstAll(game, players, matchCount) {
+		Tournament.call(this, game, players);
+		this.matchCount = isNaN(matchCount) ? game.players.length : +matchCount;
+	},
+
+	/** tournaments.AllAgainstAll.matches():
+		Every player plays matchCount matches for each role in the game against
+		all the other opponents.
+	*/
+	matches: function matches() {
+		var tournament = this,
+			game = this.game,
+			ms = basis.iterable(this.players);
+		ms = ms.product.apply(ms, basis.Iterable.repeat(this.players, game.players.length - 1).toArray());
+		return ms.filter(function (tuple) { // Check for repeated.
+			for (var i = 1; i < tuple.length; i++) {
+				for (var j = 0; j < i; j++) {
+					if (tuple[i] === tuple[j]) {
+						return false;
+					}
+				}
+			}
+			return true;
+		}).product(basis.Iterable.range(this.matchCount)).map(function (tuple) {
+			return new Match(game, tuple[0]);
+		});
+	}
+}); // declare AllAgainstAll.
+
+
+/** ludorum/src/tournaments/Measurement.js:
 	Measurement tournament pit the player being measured against others in order
 	to assess that player's performance at a game.
  
@@ -1871,7 +1914,7 @@ games.Pig = basis.declare(Game, {
 */
 // Measurement tournament. /////////////////////////////////////////////////////
 
-tournaments.MeasurementTournament = basis.declare(Tournament, {
+tournaments.Measurement = basis.declare(Tournament, {
 	/** new tournaments.Measurement(game, players, opponents, matchCount=game.players.length):
 		A tournament used to evaluate how well the players play by confronting
 		them with the opponents, rotating their roles in the matches.
@@ -1890,19 +1933,25 @@ tournaments.MeasurementTournament = basis.declare(Tournament, {
 	matches: function matches() {
 		var game = this.game,
 			playerCount = game.players.length,
-			opponentCombinations = iterables.product.apply(this,
-				iterables.repeat(this.opponents, playerCount - 1).toArray()
-			);
-		return iterables.product(this.players, 
-			iterables.range(playerCount),
+			opponentCombinations = basis.iterable(this.opponents);
+		if (playerCount > 2) {
+			opponentCombinations = opponentCombinations.product.apply(opponentCombinations, 
+				basis.Iterable.repeat(this.opponents, playerCount - 2).toArray());
+		} else {
+			opponentCombinations = opponentCombinations.map(function (p) {
+				return [p];
+			});
+		}
+		return basis.iterable(this.players).product( 
+			basis.Iterable.range(playerCount),
 			opponentCombinations,
-			iterables.range(this.matchCount)).map(function (tuple){
+			basis.Iterable.range(this.matchCount)).map(function (tuple){
 				var players = tuple[2].slice(0);
 				players.splice(tuple[1], 0, tuple[0]);
-				return new ludorum.Match(game, players);
+				return new Match(game, players);
 			});
 	}
-}); // declare MeasurementTournament.
+}); // declare Measurement.
 
 
 /** ludorum/src/aleatories/Dice.js:
