@@ -21,10 +21,10 @@ var Match = exports.Match = basis.declare({
 		/** Match.history:
 			Game state array, from the initial game state to the last.
 		*/
-		this.history = [[game]];
+		this.history = [game];
 		/** Match.events:
-			Event handler for this match. Emitted events are: begin, move, next 
-			& end.
+			Event handler for this match. Emitted events are: begin, end, move
+			& next.
 		*/
 		this.events = new basis.Events({ 
 			events: ['begin', 'move', 'next', 'end']
@@ -35,15 +35,15 @@ var Match = exports.Match = basis.declare({
 		}
 	},
 
-	toString: function toString() {
-		return 'Match('+ this.game +', '+ JSON.stringify(this.players) +')';
-	},
-
 	/** Match.ply():
 		Returns the current ply number.
 	*/
 	ply: function ply() {
 		return this.history.length - 1;
+	},
+	
+	toString: function toString() {
+		return 'Match('+ this.game +', '+ JSON.stringify(this.players) +')';
 	},
 
 	/** Match.state(ply=current):
@@ -52,7 +52,7 @@ var Match = exports.Match = basis.declare({
 	*/
 	state: function state(ply) {
 		ply = isNaN(ply) ? this.ply() : +ply < 0 ? this.ply() + (+ply) : +ply;
-		return this.history[ply | 0][0];
+		return this.history[ply | 0];
 	},
 
 	/** Match.result():
@@ -74,35 +74,25 @@ var Match = exports.Match = basis.declare({
 		}));
 	},
 
-	/** Match.__advance__(...):
-		Pushes the given entry into this match's history. Returns the game state
-		in entry[0].
-	*/
-	__advance__: function __advance__() {
-		var game = this.state(),
-			entry = Array.prototype.slice.call(arguments),
-			next = entry[0];
-		this.history.push(entry);
+	__advance__: function __advance__(game, next) {
+		this.history.push(next);
 		this.onNext(game, next);
 		return next;
 	},
-
+	
 	/** Match.run(plys=Infinity):
 		Runs the match the given number of plys or until the game finishes.
 		The result is a future that gets resolved when running ends.
 	*/
 	run: function run(plys) {
-		var ply, game, results;
 		plys = isNaN(plys) ? Infinity : +plys;
 		if (plys < 1) { // If the run must stop...
 			return basis.when(this);
 		}
-		ply = this.ply();
-		game = this.state();
-		(ply === 0) && this.onBegin(game);
-		while (game instanceof Aleatory) {
-			this.__advance__(game.instantiate());
-			game = this.state();
+		var ply = this.ply(), game = this.state(), results, next;
+		(ply < 0) && this.onBegin(game);
+		while (game instanceof Aleatory) { // Instantiate all random variables.
+			game = this.__advance__(game, game.instantiate());
 		}
 		results = game.result();
 		if (results) { // If the match has finished ...
@@ -113,7 +103,7 @@ var Match = exports.Match = basis.declare({
 			return this.decisions(game).then(function (moves) {
 				moves = basis.iterable(game.activePlayers).zip(moves).toObject();
 				match.onMove(game, moves);
-				match.__advance__(game.next(moves), moves);
+				match.__advance__(game, game.next(moves));
 				return match.run(plys - 1);
 			});
 		}
