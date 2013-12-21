@@ -18,6 +18,8 @@ games.Choose2Win = basis.declare(Game, {
 		this.__winner__ = winner;		
 	},
 
+	name: 'Choose2Win',
+	
 	/** games.Choose2Win.players=['This', 'That']:
 		Players of the dummy game.
 	*/
@@ -57,7 +59,7 @@ games.Choose2Win = basis.declare(Game, {
 	},
 	
 	args: function args() {
-		return ['Choose2Win', this.__turns__, this.activePlayer(), this.__winner__];
+		return [this.name, this.__turns__, this.activePlayer(), this.__winner__];
 	},
 	
 	toString: function toString() {

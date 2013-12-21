@@ -15,6 +15,8 @@ games.OddsAndEvens = basis.declare(Game, {
 		this.points = points || { Evens: 0, Odds: 0 };
 	},
 
+	name: 'OddsAndEvens',
+	
 	/** games.OddsAndEvens.players=['Evens', 'Odds']:
 		Players for odds and evens.
 	*/
@@ -50,7 +52,7 @@ games.OddsAndEvens = basis.declare(Game, {
 	},
 	
 	args: function args() {
-		return ['OddsAndEvens', this.turns, this.points];
+		return [this.name, this.turns, this.points];
 	},
 	
 	toString: function toString() {

@@ -21,6 +21,8 @@ games.Pig = basis.declare(Game, {
 	*/
 	goal: 100,
 	
+	name: 'Pig',
+	
 	/** games.Pig.players=['One', 'Two']:
 		Players for Pig.
 	*/
@@ -72,6 +74,6 @@ games.Pig = basis.declare(Game, {
 	},
 	
 	args: function args() {
-		return ['Pig', this.activePlayer(), this.__scores__, this.rolls];
+		return [this.name, this.activePlayer(), this.__scores__, this.rolls];
 	}
 }); // declare Pig.

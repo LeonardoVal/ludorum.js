@@ -30,6 +30,8 @@ games.Mancala = basis.declare(Game, {
 		return result;
 	},
 	
+	name: 'Mancala',
+	
 	/** Mancala.players:
 		Players of Mancala are North and South.
 	*/
@@ -179,7 +181,7 @@ games.Mancala = basis.declare(Game, {
 	// Utility methods. ////////////////////////////////////////////////////
 	
 	args: function args() {
-		return ['Mancala', this.activePlayer(), this.board.slice()];
+		return [this.name, this.activePlayer(), this.board.slice()];
 	},
 
 	identifier: function identifier() {

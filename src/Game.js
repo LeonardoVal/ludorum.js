@@ -19,6 +19,11 @@ var Game = exports.Game = basis.declare({
 			(!Array.isArray(activePlayers) ? [activePlayers] : activePlayers);
 	},
 
+	/** Game.name:
+		The game's name as a string, for displaying purposes.
+	*/
+	name: 'Game.name?',
+	
 	/** Game.players:
 		An array of role names (strings), that the players can assume in a 
 		match of this game. For example: "Xs" and "Os" in TicTacToe, or 
@@ -194,7 +199,7 @@ var Game = exports.Game = basis.declare({
 		to rebuild this game's state. Not implemented, so please override.
 	*/
 	args: function args() {
-		throw new Error((this.constructor.name || 'Game') +".args() not implemented! Please override.");
+		throw new Error("Game.args() not implemented! Please override.");
 	},
 	
 	/** Game.clone():

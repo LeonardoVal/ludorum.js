@@ -14,6 +14,8 @@ games.ToadsAndFrogs = basis.declare(Game, {
 		this.board = board || ToadsAndFrogs.board();
 	},
 	
+	name: 'ToadsAndFrogs',
+	
 	/** games.ToadsAndFrogs.players:
 		There are two roles in this game: "Toads" and "Frogs".
 	*/
@@ -61,7 +63,7 @@ games.ToadsAndFrogs = basis.declare(Game, {
 	},
 
 	args: function args() {
-		 return ['ToadsAndFrogs', this.activePlayer, this.board];
+		 return [this.name, this.activePlayer, this.board];
 	},
 	
 	/** games.ToadsAndFrogs.toString():

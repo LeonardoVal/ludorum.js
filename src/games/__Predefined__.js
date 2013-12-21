@@ -21,6 +21,8 @@ games.__Predefined__ = basis.declare(Game, {
 		this.width = isNaN(width) ? 5 : +width;
 	},
 
+	name: '__Predefined__',
+	
 	/** games.__Predefined__.players:
 		Default players for __Predefined__: A and B.
 	*/
@@ -57,7 +59,7 @@ games.__Predefined__ = basis.declare(Game, {
 	},
 	
 	args: function args() {
-		return ['__Predefined__', this.activePlayer(), this.results, this.height, this.width];
+		return [this.name, this.activePlayer(), this.results, this.height, this.width];
 	},
 	
 	toString: function toString() {

@@ -12,7 +12,9 @@ games.TicTacToe = basis.declare(Game, {
 		Game.call(this, activePlayer);
 		this.board = board || '_________';
 	},
-		
+	
+	name: 'TicTacToe',
+	
 	/** games.TicTacToe.players:
 		There are two roles in this game: "Xs" and "Os".
 	*/
@@ -68,7 +70,7 @@ games.TicTacToe = basis.declare(Game, {
 	},
 
 	args: function args() {
-		return ['TicTacToe', this.activePlayer(), this.board];
+		return [this.name, this.activePlayer(), this.board];
 	},
 	
 	/** games.TicTacToe.toString():
