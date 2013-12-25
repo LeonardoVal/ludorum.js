@@ -1,23 +1,22 @@
-/** ludorum/src/tournaments/AllAgainstAll.js:
+/** ludorum/src/tournaments/RoundRobin.js:
 	Tournament where all players play against each other a certain number of
 	times.
+	See <http://en.wikipedia.org/wiki/Round-robin_tournament>.
  
 	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
 	@licence MIT Licence
 */
-// Measurement tournament. /////////////////////////////////////////////////////
-
-tournaments.AllAgainstAll = basis.declare(Tournament, {
-	/** new tournaments.AllAgainstAll(game, players, matchCount=game.players.length):
+tournaments.RoundRobin = basis.declare(Tournament, {
+	/** new tournaments.RoundRobin(game, players, matchCount=game.players.length):
 		A tournament that confronts all players against each other rotating 
 		their roles in the matches.
 	*/
-	constructor: function AllAgainstAll(game, players, matchCount) {
+	constructor: function RoundRobin(game, players, matchCount) {
 		Tournament.call(this, game, players);
 		this.matchCount = isNaN(matchCount) ? game.players.length : +matchCount;
 	},
 
-	/** tournaments.AllAgainstAll.matches():
+	/** tournaments.RoundRobin.matches():
 		Every player plays matchCount matches for each role in the game against
 		all the other opponents.
 	*/
@@ -39,4 +38,4 @@ tournaments.AllAgainstAll = basis.declare(Tournament, {
 			return new Match(game, tuple[0]);
 		});
 	}
-}); // declare AllAgainstAll.
+}); // declare RoundRobin.
