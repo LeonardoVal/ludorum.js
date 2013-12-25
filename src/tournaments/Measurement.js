@@ -5,8 +5,6 @@
 	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
 	@licence MIT Licence
 */
-// Measurement tournament. /////////////////////////////////////////////////////
-
 tournaments.Measurement = basis.declare(Tournament, {
 	/** new tournaments.Measurement(game, players, opponents, matchCount=game.players.length):
 		A tournament used to evaluate how well the players play by confronting
