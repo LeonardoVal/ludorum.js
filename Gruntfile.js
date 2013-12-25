@@ -36,7 +36,7 @@ module.exports = function(grunt) {
 						'src/games/OddsAndEvens.js', 'src/games/TicTacToe.js',
 						'src/games/ToadsAndFrogs.js', 'src/games/Mancala.js',
 						'src/games/Pig.js',
-					'src/tournaments/AllAgainstAll.js', 'src/tournaments/Measurement.js',
+					'src/tournaments/RoundRobin.js', 'src/tournaments/Measurement.js',
 					'src/aleatories/Dice.js'
 				],
 				dest: './<%= pkg.name %>.js',

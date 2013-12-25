@@ -578,6 +578,13 @@ var Tournament = exports.Tournament = basis.declare({
 			each player, indexed by name.
 		*/
 		this.statistics = new basis.Statistics();
+		/** Tournament.events:
+			Event handler for this match. Emitted events are: begin, 
+			beforeMatch, afterMatch & end.
+		*/
+		this.events = new basis.Events({ 
+			events: ['begin', 'beforeMatch', 'afterMatch', 'end']
+		});
 	},
 
 	/** Tournament.account(match):
@@ -614,14 +621,17 @@ var Tournament = exports.Tournament = basis.declare({
 		ludorum.Match objects.
 	*/
 	run: function run(matches) {
+		this.onBegin();
 		var tournament = this;
 		matches = matches || this.matches();
 		return basis.Future.sequence(matches, function (match) {
+			tournament.beforeMatch(match);
 			return match.run().then(function (match) {
 				tournament.account(match);
+				tournament.afterMatch(match);
 				return tournament;
 			});
-		});
+		}).then(this.onEnd.bind(this));
 	},
 
 	/** Tournament.matches():
@@ -630,6 +640,28 @@ var Tournament = exports.Tournament = basis.declare({
 	*/
 	matches: function matches() {
 		throw new Error("Tournament.matches is not implemented. Please override.");
+	},
+	
+	// Events //////////////////////////////////////////////////////////////////
+	
+	onBegin: function onBegin() {
+		this.events.emit('begin', this);
+		this.logger && this.logger.info('Tournament begins for game ', game.name, '.');
+	},
+	
+	beforeMatch: function beforeMatch(match) {
+		this.events.emit('beforeMatch', match, this);
+		this.logger && this.logger.debug('Beginning match with ', JSON.stringify(match.players), '.');
+	},
+	
+	afterMatch: function afterMatch(match) {
+		this.events.emit('afterMatch', match, this);
+		this.logger && this.logger.debug('Finishing match with ', JSON.stringify(match.players), '.');
+	},
+	
+	onEnd: function onEnd() {
+		this.events.emit('end', this.statistics, this);
+		this.logger && this.logger.info('Tournament ends for game ', game.name, ':\n', this.statistics, '\n');
 	}
 }); // declare Tournament
 
@@ -1861,26 +1893,25 @@ games.Pig = basis.declare(Game, {
 }); // declare Pig.
 
 
-/** ludorum/src/tournaments/AllAgainstAll.js:
+/** ludorum/src/tournaments/RoundRobin.js:
 	Tournament where all players play against each other a certain number of
 	times.
+	See <http://en.wikipedia.org/wiki/Round-robin_tournament>.
  
 	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
 	@licence MIT Licence
 */
-// Measurement tournament. /////////////////////////////////////////////////////
-
-tournaments.AllAgainstAll = basis.declare(Tournament, {
-	/** new tournaments.AllAgainstAll(game, players, matchCount=game.players.length):
+tournaments.RoundRobin = basis.declare(Tournament, {
+	/** new tournaments.RoundRobin(game, players, matchCount=game.players.length):
 		A tournament that confronts all players against each other rotating 
 		their roles in the matches.
 	*/
-	constructor: function AllAgainstAll(game, players, matchCount) {
+	constructor: function RoundRobin(game, players, matchCount) {
 		Tournament.call(this, game, players);
 		this.matchCount = isNaN(matchCount) ? game.players.length : +matchCount;
 	},
 
-	/** tournaments.AllAgainstAll.matches():
+	/** tournaments.RoundRobin.matches():
 		Every player plays matchCount matches for each role in the game against
 		all the other opponents.
 	*/
@@ -1902,7 +1933,7 @@ tournaments.AllAgainstAll = basis.declare(Tournament, {
 			return new Match(game, tuple[0]);
 		});
 	}
-}); // declare AllAgainstAll.
+}); // declare RoundRobin.
 
 
 /** ludorum/src/tournaments/Measurement.js:
@@ -1912,8 +1943,6 @@ tournaments.AllAgainstAll = basis.declare(Tournament, {
 	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
 	@licence MIT Licence
 */
-// Measurement tournament. /////////////////////////////////////////////////////
-
 tournaments.Measurement = basis.declare(Tournament, {
 	/** new tournaments.Measurement(game, players, opponents, matchCount=game.players.length):
 		A tournament used to evaluate how well the players play by confronting
