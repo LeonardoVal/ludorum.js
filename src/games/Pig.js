@@ -1,9 +1,5 @@
-﻿/** ludorum/src/games/Pig.js:
-	Simple dice game, an example of a game with random variables. See
+﻿/** Simple dice game, an example of a game with random variables. See
 	<http://en.wikipedia.org/wiki/Pig_%28dice_game%29>.
- 
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
 */
 games.Pig = basis.declare(Game, {
 	/** new games.Pig(activePlayer='One', scores, rolls):

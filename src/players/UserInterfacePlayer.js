@@ -1,21 +1,15 @@
-﻿/** ludorum/src/players/UserInterfacePlayer.js:
-	Implementation of player user interfaces and proxies in the Ludorum 
+﻿/** Implementation of player user interfaces and proxies in the Ludorum 
 	library.
-
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
 */
-// User interfaces proxies for Player. /////////////////////////////////////////
-	
 var UserInterfacePlayer = players.UserInterfacePlayer = basis.declare(Player, {
-	/** new UserInterfacePlayer(name):
+	/** new players.UserInterfacePlayer(name):
 		Base class of all players that are proxies of user interfaces.
 	*/
 	constructor: function UserInterfacePlayer(name) {
 		Player.call(this, name);
 	},
 
-	/** UserInterfacePlayer.decision(game, player):
+	/** players.UserInterfacePlayer.decision(game, player):
 		Returns a future that will be resolved when the perform() method is 
 		called.
 	*/
@@ -27,7 +21,7 @@ var UserInterfacePlayer = players.UserInterfacePlayer = basis.declare(Player, {
 		return this.__future__ = new basis.Future();
 	},
 	
-	/** UserInterfacePlayer.perform(action):
+	/** players.UserInterfacePlayer.perform(action):
 		Resolves the decision future. This method is meant to be called by 
 		the user interface.
 	*/
@@ -40,10 +34,8 @@ var UserInterfacePlayer = players.UserInterfacePlayer = basis.declare(Player, {
 		return !!future;
 	}
 }); // declare UserInterfacePlayer.
-	
-// User interfaces base constructor. ///////////////////////////////////////////
 
-var UserInterface = players.UserInterface = basis.declare({
+var UserInterface = players.UserInterface = basis.declare({ ////////////////////
 	/** new players.UserInterface(match, config):
 		Base class for user interfaces that display a game and allow one
 		or more players to play.
@@ -105,10 +97,8 @@ var UserInterface = players.UserInterface = basis.declare({
 	}
 }); // declare UserInterface.
 	
-// Basic HTML user interface support. //////////////////////////////////////////
-	
-UserInterface.BasicHTMLInterface = basis.declare(UserInterface, {
-	/** new BasicHTMLInterface(match, players, domElement):
+UserInterface.BasicHTMLInterface = basis.declare(UserInterface, { //////////////
+	/** new players.UserInterface.BasicHTMLInterface(match, players, domElement):
 		Simple HTML based UI, that renders the game to the given domElement
 		using its toHTML method.
 	*/
@@ -120,7 +110,7 @@ UserInterface.BasicHTMLInterface = basis.declare(UserInterface, {
 		}
 	},
 
-	/** BasicHTMLInterface.display(game):
+	/** players.UserInterface.BasicHTMLInterface.display(game):
 		When the player is participated of a match, a callback is registered
 		to the match's events. This method renders the game to HTML at each 
 		step in the match.
@@ -130,10 +120,8 @@ UserInterface.BasicHTMLInterface = basis.declare(UserInterface, {
 	}
 }); // declare HTMLInterface.
 	
-// KineticJS graphical user interface. //////////////////////////////////////////
-
-UserInterface.KineticJSInterface = basis.declare(UserInterface, {
-	/** new KineticJSInterface(match, config):
+UserInterface.KineticJSInterface = basis.declare(UserInterface, { //////////////
+	/** new players.UserInterface.KineticJSInterface(match, config):
 		TODO.
 	*/
 	constructor: function KineticJSInterface(match, config) {

@@ -1,12 +1,5 @@
-﻿/** ludorum/src/Match.js:
-	Match is the controller for a game, managing player decisions.
- 
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@contributors Gonzalo de Oliveira Madeira
-	@licence MIT Licence
+﻿/** Match is the controller for a game, managing player decisions.
 */
-// Match controller ////////////////////////////////////////////////////////////
-
 var Match = exports.Match = basis.declare({
 	/** new Match(game, players):
 		Match objects are game controllers, handling the flow of the turns 

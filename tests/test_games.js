@@ -12,7 +12,11 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 
 	function checkGame(game, options) {
 		options = options || {};
-		verifier.assert(Array.isArray(game.players), "Invalid or missing property <players> in ", game, ".");
+		verifier.assertInstanceOf(ludorum.Game, game, "Game is not an instance of ludorum.Game()!");
+		verifier.assert(game.name, "Game has no name!");
+		verifier.assert(Array.isArray(game.players) && game.players.length > 0, "Game has no players!");
+		verifier.assert(Array.isArray(game.args()), "Invalid args for game!");
+		
 		for (var i = 0; i < 1000; i++) {
 			verifier.assertInstanceOf(ludorum.Game, game);
 			var result = game.result(),

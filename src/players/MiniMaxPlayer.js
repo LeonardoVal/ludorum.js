@@ -1,13 +1,7 @@
-﻿/** ludorum/src/players/MiniMaxPlayer.js:
-	Automatic players based on MiniMax with alfa-beta pruning.
-
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+﻿/** Automatic players based on MiniMax with alfa-beta pruning.
 */
-// MiniMax players /////////////////////////////////////////////////////////////
-	
 players.MiniMaxPlayer = basis.declare(HeuristicPlayer, {
-	/** new MiniMaxPlayer(name='MiniMax', heuristic, horizon=3, random=randomness.DEFAULT):
+	/** new players.MiniMaxPlayer(name='MiniMax', heuristic, horizon=3, random=randomness.DEFAULT):
 		Builds a player that chooses its moves using the MiniMax algorithm with
 		alfa-beta pruning.
 	*/
@@ -23,7 +17,7 @@ players.MiniMaxPlayer = basis.declare(HeuristicPlayer, {
 		return 'MiniMaxPlayer('+ JSON.stringify(this.name) +', '+ this.horizon +')';
 	},
 
-	/** MiniMaxPlayer.stateEvaluation(game, player):
+	/** players.MiniMaxPlayer.stateEvaluation(game, player):
 		Returns the minimax value for the given game and player.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
@@ -31,7 +25,7 @@ players.MiniMaxPlayer = basis.declare(HeuristicPlayer, {
 		return result;
 	},
 
-	/** MiniMaxPlayer.heuristic(game, player):
+	/** players.MiniMaxPlayer.heuristic(game, player):
 		Game state evaluation used at the leaves of the game search tree that
 		are not finished games.
 	*/
@@ -39,7 +33,7 @@ players.MiniMaxPlayer = basis.declare(HeuristicPlayer, {
 		return this.random.random(-0.5, 0.5);
 	},
 
-	/** MiniMaxPlayer.minimax(game, player, depth, alfa, beta):
+	/** players.MiniMaxPlayer.minimax(game, player, depth, alfa, beta):
 		Minimax evaluation of the given game for the given player. If the game
 		is not finished and the depth is greater than the horizon, the heuristic
 		is used.

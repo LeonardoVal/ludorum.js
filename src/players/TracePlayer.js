@@ -1,13 +1,7 @@
-﻿/** ludorum/src/players/TracePlayer.js:
-	Automatic player that is scripted previously.
-
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+﻿/** Automatic player that is scripted previously.
 */
-// Trace players ///////////////////////////////////////////////////////////////
-
 players.TracePlayer = basis.declare(Player, {
-	/** new TracePlayer(name, trace):
+	/** new players.TracePlayer(name, trace):
 		Builds a player that makes his decisions based on a trace, a list of 
 		moves to follow.
 	*/
@@ -22,7 +16,7 @@ players.TracePlayer = basis.declare(Player, {
 		return 'TracePlayer('+ JSON.stringify(this.name) +', ['+ this.trace.join(', ') +'])';
 	},
 
-	/** TracePlayer.decision(game, player):
+	/** players.TracePlayer.decision(game, player):
 		Returns the next move in the trace, or the last one if the trace has
 		ended.
 	*/

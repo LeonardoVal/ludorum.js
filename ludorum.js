@@ -8,15 +8,8 @@
 		global.inveniemus = init(global.basis); // Global namespace.
 	}
 })(function (basis){ var exports = {};
-/** ludorum/src/Game.js:
-	Game is the base type for all games.
- 
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@contributors Gonzalo de Oliveira Madeira
-	@licence MIT Licence
+/** Game is the base type for all games.
 */
-// Game ////////////////////////////////////////////////////////////////////////
-
 var Game = exports.Game = basis.declare({
 	/** new Game(activePlayers=first player):
 		Base abstract class of games.
@@ -32,7 +25,7 @@ var Game = exports.Game = basis.declare({
 	/** Game.name:
 		The game's name as a string, for displaying purposes.
 	*/
-	name: 'Game.name?',
+	name: '',
 	
 	/** Game.players:
 		An array of role names (strings), that the players can assume in a 
@@ -256,7 +249,7 @@ Game.serialized = function serialized() {
 	var super_moves = this.prototype.moves,
 		super_next = this.prototype.next;
 	return basis.declare(this, {
-		/** Game.serialized().moves():
+		/** Game.serialized.moves():
 			Returns the moves of the player deemed as the active player, if 
 			there are any moves.
 		*/
@@ -279,7 +272,7 @@ Game.serialized = function serialized() {
 			}
 		},
 	
-		/** Game.serialized().next(moves):
+		/** Game.serialized.next(moves):
 			If with the given move all active players in the real game state
 			have moves, then the actual game advances. Else the next player 
 			that has to move becomes active.
@@ -314,7 +307,7 @@ Game.cached = function cached() {
 		super_result = this.prototype.result,
 		super_next = this.prototype.next;
 	return basis.declare(this, {
-		/** Game.cached().moves():
+		/** Game.cached.moves():
 			The first time it is called, delegates to game.moves(), and 
 			keeps the result for future calls.
 		*/
@@ -326,7 +319,7 @@ Game.cached = function cached() {
 			return result;
 		},
 		
-		/** Game.cached().result():
+		/** Game.cached.result():
 			The first time it is called, delegates to game.result(), and 
 			keeps the result for future calls.
 		*/
@@ -341,15 +334,8 @@ Game.cached = function cached() {
 }; // Game.cached
 
 
-/** ludorum/src/Player.js:
-	Player is the base type for all playing agents.
- 
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@contributors Gonzalo de Oliveira Madeira
-	@licence MIT Licence
+/** Player is the base type for all playing agents.
 */
-// Players /////////////////////////////////////////////////////////////////////
-	
 var Player = exports.Player = basis.declare({
 	/** new Player(name):
 		A player is an agent that plays a game. This means deciding which 
@@ -413,15 +399,8 @@ var Player = exports.Player = basis.declare({
 var players = exports.players = {};
 
 
-/** ludorum/src/Match.js:
-	Match is the controller for a game, managing player decisions.
- 
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@contributors Gonzalo de Oliveira Madeira
-	@licence MIT Licence
+/** Match is the controller for a game, managing player decisions.
 */
-// Match controller ////////////////////////////////////////////////////////////
-
 var Match = exports.Match = basis.declare({
 	/** new Match(game, players):
 		Match objects are game controllers, handling the flow of the turns 
@@ -551,15 +530,9 @@ var Match = exports.Match = basis.declare({
 }); // declare Match.
 
 
-/** ludorum/src/Tournament.js:
-	A tournament is a set of matches played between many players. The whole 
+/** A tournament is a set of matches played between many players. The whole 
 	contest ranks the participants according to the result of the matches.
- 
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
 */
-// Base contest controller //////////////////////////////////////////////////////////
-
 var Tournament = exports.Tournament = basis.declare({
 	/** new Tournament(game, players):
 		Base class of all tournament controllers.
@@ -671,12 +644,8 @@ var Tournament = exports.Tournament = basis.declare({
 var tournaments = exports.tournaments = {};
 
 
-/** ludorum/src/Aleatory.js:
-	Representation of intermediate game states that depend on some form of 
+/** Representation of intermediate game states that depend on some form of 
 	randomness, like: dice, card decks, roulettes, etc.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
 */
 var Aleatory = exports.Aleatory = basis.declare({
 	/** new Aleatory(next, random=basis.Randomness.DEFAULT):
@@ -729,16 +698,10 @@ var Aleatory = exports.Aleatory = basis.declare({
 var aleatories = exports.aleatories = {};
 
 
-/** ludorum/src/players/RandomPlayer.js:
-	Automatic players that moves fully randomly.
-
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
-*/
-// Random players //////////////////////////////////////////////////////////////
-	
+/** Automatic players that moves fully randomly.
+*/	
 players.RandomPlayer = basis.declare(Player, {
-	/** new RandomPlayer(name, random=basis.Randomness.DEFAULT):
+	/** new players.RandomPlayer(name, random=basis.Randomness.DEFAULT):
 		Builds a player that chooses its moves randomly.
 	*/
 	constructor: function RandomPlayer(name, random) {
@@ -750,7 +713,7 @@ players.RandomPlayer = basis.declare(Player, {
 		return 'RandomPlayer('+ JSON.stringify(this.name) +')';
 	},
 
-	/** RandomPlayer.decision(game, player):
+	/** players.RandomPlayer.decision(game, player):
 		Makes the decision completely at random.
 	*/
 	decision: function(game, player) {
@@ -759,16 +722,10 @@ players.RandomPlayer = basis.declare(Player, {
 }); // declare RandomPlayer.
 
 
-/** ludorum/src/players/TracePlayer.js:
-	Automatic player that is scripted previously.
-
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+/** Automatic player that is scripted previously.
 */
-// Trace players ///////////////////////////////////////////////////////////////
-
 players.TracePlayer = basis.declare(Player, {
-	/** new TracePlayer(name, trace):
+	/** new players.TracePlayer(name, trace):
 		Builds a player that makes his decisions based on a trace, a list of 
 		moves to follow.
 	*/
@@ -783,7 +740,7 @@ players.TracePlayer = basis.declare(Player, {
 		return 'TracePlayer('+ JSON.stringify(this.name) +', ['+ this.trace.join(', ') +'])';
 	},
 
-	/** TracePlayer.decision(game, player):
+	/** players.TracePlayer.decision(game, player):
 		Returns the next move in the trace, or the last one if the trace has
 		ended.
 	*/
@@ -798,17 +755,11 @@ players.TracePlayer = basis.declare(Player, {
 }); // declare TracePlayer.
 
 
-/** ludorum/src/players/HeuristicPlayer.js:
-	Base type for automatic players based on heuristic evaluations of game
+/** Base type for automatic players based on heuristic evaluations of game
 	states or moves.
-
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
 */
-// Heuristic players ///////////////////////////////////////////////////////////
-	
 var HeuristicPlayer = players.HeuristicPlayer = basis.declare(Player, {
-	/** new HeuristicPlayer(name, random, heuristic):
+	/** new players.HeuristicPlayer(name, random, heuristic):
 		Builds a player that evaluates its moves and chooses one of the best
 		evaluated.
 	*/
@@ -827,7 +778,7 @@ var HeuristicPlayer = players.HeuristicPlayer = basis.declare(Player, {
 		return 'HeuristicPlayer('+ JSON.stringify(this.name) +')';
 	},
 
-	/** HeuristicPlayer.moveEvaluation(move, game, player):
+	/** players.HeuristicPlayer.moveEvaluation(move, game, player):
 		Calculates a number as the assessment of the given move. The base
 		implementation calculates the resulting game state and returns the 
 		stateEvaluation of it.
@@ -836,7 +787,7 @@ var HeuristicPlayer = players.HeuristicPlayer = basis.declare(Player, {
 		return this.stateEvaluation(game.next(basis.obj(player, move)), player);
 	},
 
-	/** HeuristicPlayer.stateEvaluation(game, player):
+	/** players.HeuristicPlayer.stateEvaluation(game, player):
 		Calculates a number as the assessment of the given game state. The 
 		base implementation returns the result for the player is the game 
 		has results. 
@@ -848,7 +799,7 @@ var HeuristicPlayer = players.HeuristicPlayer = basis.declare(Player, {
 		return gameResult ? gameResult[player] : this.random.random(-0.5, 0.5);
 	},
 
-	/** HeuristicPlayer.decision(game, player):
+	/** players.HeuristicPlayer.decision(game, player):
 		Selects randomly from the best evaluated moves.
 	*/
 	decision: function decision(game, player) {
@@ -878,16 +829,10 @@ var HeuristicPlayer = players.HeuristicPlayer = basis.declare(Player, {
 }); // declare HeuristicPlayer.
 
 
-/** ludorum/src/players/MiniMaxPlayer.js:
-	Automatic players based on MiniMax with alfa-beta pruning.
-
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+/** Automatic players based on MiniMax with alfa-beta pruning.
 */
-// MiniMax players /////////////////////////////////////////////////////////////
-	
 players.MiniMaxPlayer = basis.declare(HeuristicPlayer, {
-	/** new MiniMaxPlayer(name='MiniMax', heuristic, horizon=3, random=randomness.DEFAULT):
+	/** new players.MiniMaxPlayer(name='MiniMax', heuristic, horizon=3, random=randomness.DEFAULT):
 		Builds a player that chooses its moves using the MiniMax algorithm with
 		alfa-beta pruning.
 	*/
@@ -903,7 +848,7 @@ players.MiniMaxPlayer = basis.declare(HeuristicPlayer, {
 		return 'MiniMaxPlayer('+ JSON.stringify(this.name) +', '+ this.horizon +')';
 	},
 
-	/** MiniMaxPlayer.stateEvaluation(game, player):
+	/** players.MiniMaxPlayer.stateEvaluation(game, player):
 		Returns the minimax value for the given game and player.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
@@ -911,7 +856,7 @@ players.MiniMaxPlayer = basis.declare(HeuristicPlayer, {
 		return result;
 	},
 
-	/** MiniMaxPlayer.heuristic(game, player):
+	/** players.MiniMaxPlayer.heuristic(game, player):
 		Game state evaluation used at the leaves of the game search tree that
 		are not finished games.
 	*/
@@ -919,7 +864,7 @@ players.MiniMaxPlayer = basis.declare(HeuristicPlayer, {
 		return this.random.random(-0.5, 0.5);
 	},
 
-	/** MiniMaxPlayer.minimax(game, player, depth, alfa, beta):
+	/** players.MiniMaxPlayer.minimax(game, player, depth, alfa, beta):
 		Minimax evaluation of the given game for the given player. If the game
 		is not finished and the depth is greater than the horizon, the heuristic
 		is used.
@@ -958,16 +903,10 @@ players.MiniMaxPlayer = basis.declare(HeuristicPlayer, {
 }); // declare MiniMaxPlayer.
 
 
-/** ludorum/src/players/MonteCarloPlayer.js:
-	Automatic players based on Monte Carlo tree search.
-
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+/** Automatic players based on Monte Carlo tree search.
 */
-// MonteCarlo players //////////////////////////////////////////////////////////
-
 players.MonteCarloPlayer = basis.declare(HeuristicPlayer, {
-	/** new MonteCarloPlayer(name, random, simulationCount=30):
+	/** new players.MonteCarloPlayer(name, random, simulationCount=30):
 		Builds a player that evaluates its moves using Monte-Carlo 
 		simulations (random games).
 	*/
@@ -976,7 +915,7 @@ players.MonteCarloPlayer = basis.declare(HeuristicPlayer, {
 		this.simulationCount = isNaN(simulationCount) ? 30 : +simulationCount >> 0;
 	},
 	
-	/** MonteCarloPlayer.stateEvaluation(game, player):
+	/** players.MonteCarloPlayer.stateEvaluation(game, player):
 		Returns the minimax value for the given game and player.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
@@ -987,7 +926,7 @@ players.MonteCarloPlayer = basis.declare(HeuristicPlayer, {
 		return resultSum / this.simulationCount;
 	},
 	
-	/** MonteCarloPlayer.simulation(game, player):
+	/** players.MonteCarloPlayer.simulation(game, player):
 		Simulates a random match from the given game and returns the result
 		for the given player.
 	*/
@@ -1005,24 +944,18 @@ players.MonteCarloPlayer = basis.declare(HeuristicPlayer, {
 }); // declare MonteCarloPlayer
 
 
-/** ludorum/src/players/UserInterfacePlayer.js:
-	Implementation of player user interfaces and proxies in the Ludorum 
+/** Implementation of player user interfaces and proxies in the Ludorum 
 	library.
-
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
 */
-// User interfaces proxies for Player. /////////////////////////////////////////
-	
 var UserInterfacePlayer = players.UserInterfacePlayer = basis.declare(Player, {
-	/** new UserInterfacePlayer(name):
+	/** new players.UserInterfacePlayer(name):
 		Base class of all players that are proxies of user interfaces.
 	*/
 	constructor: function UserInterfacePlayer(name) {
 		Player.call(this, name);
 	},
 
-	/** UserInterfacePlayer.decision(game, player):
+	/** players.UserInterfacePlayer.decision(game, player):
 		Returns a future that will be resolved when the perform() method is 
 		called.
 	*/
@@ -1034,7 +967,7 @@ var UserInterfacePlayer = players.UserInterfacePlayer = basis.declare(Player, {
 		return this.__future__ = new basis.Future();
 	},
 	
-	/** UserInterfacePlayer.perform(action):
+	/** players.UserInterfacePlayer.perform(action):
 		Resolves the decision future. This method is meant to be called by 
 		the user interface.
 	*/
@@ -1047,10 +980,8 @@ var UserInterfacePlayer = players.UserInterfacePlayer = basis.declare(Player, {
 		return !!future;
 	}
 }); // declare UserInterfacePlayer.
-	
-// User interfaces base constructor. ///////////////////////////////////////////
 
-var UserInterface = players.UserInterface = basis.declare({
+var UserInterface = players.UserInterface = basis.declare({ ////////////////////
 	/** new players.UserInterface(match, config):
 		Base class for user interfaces that display a game and allow one
 		or more players to play.
@@ -1112,10 +1043,8 @@ var UserInterface = players.UserInterface = basis.declare({
 	}
 }); // declare UserInterface.
 	
-// Basic HTML user interface support. //////////////////////////////////////////
-	
-UserInterface.BasicHTMLInterface = basis.declare(UserInterface, {
-	/** new BasicHTMLInterface(match, players, domElement):
+UserInterface.BasicHTMLInterface = basis.declare(UserInterface, { //////////////
+	/** new players.UserInterface.BasicHTMLInterface(match, players, domElement):
 		Simple HTML based UI, that renders the game to the given domElement
 		using its toHTML method.
 	*/
@@ -1127,7 +1056,7 @@ UserInterface.BasicHTMLInterface = basis.declare(UserInterface, {
 		}
 	},
 
-	/** BasicHTMLInterface.display(game):
+	/** players.UserInterface.BasicHTMLInterface.display(game):
 		When the player is participated of a match, a callback is registered
 		to the match's events. This method renders the game to HTML at each 
 		step in the match.
@@ -1137,10 +1066,8 @@ UserInterface.BasicHTMLInterface = basis.declare(UserInterface, {
 	}
 }); // declare HTMLInterface.
 	
-// KineticJS graphical user interface. //////////////////////////////////////////
-
-UserInterface.KineticJSInterface = basis.declare(UserInterface, {
-	/** new KineticJSInterface(match, config):
+UserInterface.KineticJSInterface = basis.declare(UserInterface, { //////////////
+	/** new players.UserInterface.KineticJSInterface(match, config):
 		TODO.
 	*/
 	constructor: function KineticJSInterface(match, config) {
@@ -1153,12 +1080,8 @@ UserInterface.KineticJSInterface = basis.declare(UserInterface, {
 }); // declare KineticJSInterface.
 
 
-/** ludorum/src/games/__Predefined__.js:
-	Simple reference games with a predefined outcome, mostly for testing 
+/** Simple reference games with a predefined outcome, mostly for testing 
 	purposes.
- 
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
 */
 games.__Predefined__ = basis.declare(Game, {
 	/** new games.__Predefined__(activePlayer, results, height=5, width=5):
@@ -1224,12 +1147,8 @@ games.__Predefined__ = basis.declare(Game, {
 }); // declare __Predefined__.
 
 
-/** ludorum/src/games/Choose2Win.js:
-	Simple silly game where players can instantly choose to win, loose, draw or
+/** Simple silly game where players can instantly choose to win, loose, draw or
 	just continue. Mostly for testing purposes.
- 
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
 */
 games.Choose2Win = basis.declare(Game, {
 	/** new games.Choose2Win(turns=Infinity, activePlayer=players[0], winner=none):
@@ -1295,11 +1214,7 @@ games.Choose2Win = basis.declare(Game, {
 }); // declare Choose2Win.
 
 
-/** ludorum/src/games/OddsAndEvens.js:
-	Classic child game, implemented as a simple example of a simultaneous game.
- 
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+/** Classic child game, implemented as a simple example of a simultaneous game.
 */
 games.OddsAndEvens = basis.declare(Game, {
 	/** new games.OddsAndEvens(turns=1, points=<cero for both players>):
@@ -1358,11 +1273,7 @@ games.OddsAndEvens = basis.declare(Game, {
 }); // declare OddsAndEvens.
 
 
-/** ludorum/src/games/TicTacToe.js
-	Implementation of the traditional Tic-Tac-Toe game.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+/** Implementation of the traditional Tic-Tac-Toe game.
 */
 games.TicTacToe = basis.declare(Game, {
 	/** new games.TicTacToe(activePlayer="Xs", board='_________'):
@@ -1474,12 +1385,8 @@ games.TicTacToe.heuristics.heuristicFromWeights = function heuristicFromWeights(
 games.TicTacToe.heuristics.defaultHeuristic = games.TicTacToe.heuristics.heuristicFromWeights([2,1,2,1,5,1,2,1,2]);
 
 
-/** ludorum/src/games/ToadsAndFrogs.js
-	Implementation of the Toads & Frogs game. 
+/** Implementation of the Toads & Frogs game. 
 	See <http://en.wikipedia.org/wiki/Toads_and_Frogs_%28game%29>.
-
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
 */
 games.ToadsAndFrogs = basis.declare(Game, {
 	/** new games.ToadsAndFrogs(activePlayer="Toads", board='TTT__FFF'):
@@ -1562,15 +1469,10 @@ games.ToadsAndFrogs.board = function board(chips, separation) {
 };
 
 
-/** ludorum/src/games/Mancala.js
-	Implementation of the Kalah member of the Mancala family of games.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@author <a href="mailto:">Maximiliano Martins</a>
-	@licence MIT Licence
+/** Implementation of the Kalah member of the Mancala family of games.
 */
 games.Mancala = basis.declare(Game, {
-	/** new Mancala(activePlayer="North", board=makeBoard()):
+	/** new games.Mancala(activePlayer="North", board=makeBoard()):
 		TODO.
 	*/
 	constructor: function Mancala(activePlayer, board){
@@ -1578,7 +1480,7 @@ games.Mancala = basis.declare(Game, {
 		this.board = board || this.makeBoard();
 	},
 	
-	/** Mancala.makeBoard(seeds=3, houses=6):
+	/** games.Mancala.makeBoard(seeds=3, houses=6):
 		Builds a board array to use as the game state.
 	*/
 	makeBoard: function makeBoard(seeds, houses){
@@ -1596,24 +1498,24 @@ games.Mancala = basis.declare(Game, {
 	
 	name: 'Mancala',
 	
-	/** Mancala.players:
+	/** games.Mancala.players:
 		Players of Mancala are North and South.
 	*/
 	players: ["North", "South"],
 	
-	/** Mancala.emptyCapture=false:
+	/** games.Mancala.emptyCapture=false:
 		If true, making a capture only moves the active player's seed to his
 		store. The opponents seeds are not captured.
 	*/
 	emptyCapture: false,
 	
-	/** Mancala.countRemainingSeeds=true:
+	/** games.Mancala.countRemainingSeeds=true:
 		If true, at the end of the game if a player has seeds on his houses,
 		those seeds are included in his score.
 	*/
 	countRemainingSeeds: true,
 	
-	/** Mancala.store(player):
+	/** games.Mancala.store(player):
 		Returns the index in this game's board of the player's store.
 	*/
 	store: function store(player){
@@ -1624,7 +1526,7 @@ games.Mancala = basis.declare(Game, {
 		}
 	},
 
-	/** Mancala.houses(player):
+	/** games.Mancala.houses(player):
 		Returns an array with the indexes of the player's houses in this
 		game's board.
 	*/
@@ -1636,7 +1538,7 @@ games.Mancala = basis.declare(Game, {
 		}
 	},
 	
-	/** Mancala.oppositeHouse(player, i):
+	/** games.Mancala.oppositeHouse(player, i):
 		Returns the index of the opposite house of i for the given player,
 		or a negative if i is not a house of the given player.
 	*/
@@ -1647,7 +1549,7 @@ games.Mancala = basis.declare(Game, {
 		return index < 0 ? index : opponentHouses.reverse()[index];
 	},
 	
-	/** Mancala.nextSquare(player, i):
+	/** games.Mancala.nextSquare(player, i):
 		Returns the index of the square following i for the given player.
 	*/
 	nextSquare: function nextSquare(player, i){
@@ -1657,7 +1559,7 @@ games.Mancala = basis.declare(Game, {
 		return i;
 	},
 	
-	/** Mancala.moves():
+	/** games.Mancala.moves():
 		A move for this game is an index of the square in the board.
 	*/
 	moves: function moves(){
@@ -1670,7 +1572,7 @@ games.Mancala = basis.declare(Game, {
 		return result[activePlayer].length > 0 ? result : null;
 	},
 	
-	/** Mancala.result():
+	/** games.Mancala.result():
 		The game ends when the active player cannot move. The result for
 		each player is the difference between the seed count of the stores.
 		If a player has seeds in his side, those are added to his count.
@@ -1698,7 +1600,7 @@ games.Mancala = basis.declare(Game, {
 		}
 	},
 	
-	/** Mancala.next(moves):
+	/** games.Mancala.next(moves):
 		TODO.
 	*/
 	next: function next(moves) {
@@ -1733,7 +1635,7 @@ games.Mancala = basis.declare(Game, {
 		return new this.constructor(freeTurn ? activePlayer : this.opponent(), newBoard);
 	},
 	
-	/** Mancala.resultBounds():
+	/** games.Mancala.resultBounds():
 		Result bounds are estimated with the total number of stones in the
 		board. It is very unlikely to get these result though.
 	*/
@@ -1812,12 +1714,8 @@ games.Mancala.heuristics.defaultHeuristic = games.Mancala.heuristics.heuristicFr
 );
 
 
-/** ludorum/src/games/Pig.js:
-	Simple dice game, an example of a game with random variables. See
+/** Simple dice game, an example of a game with random variables. See
 	<http://en.wikipedia.org/wiki/Pig_%28dice_game%29>.
- 
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
 */
 games.Pig = basis.declare(Game, {
 	/** new games.Pig(activePlayer='One', scores, rolls):
@@ -1893,13 +1791,9 @@ games.Pig = basis.declare(Game, {
 }); // declare Pig.
 
 
-/** ludorum/src/tournaments/RoundRobin.js:
-	Tournament where all players play against each other a certain number of
+/** Tournament where all players play against each other a certain number of
 	times.
 	See <http://en.wikipedia.org/wiki/Round-robin_tournament>.
- 
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
 */
 tournaments.RoundRobin = basis.declare(Tournament, {
 	/** new tournaments.RoundRobin(game, players, matchCount=game.players.length):
@@ -1936,12 +1830,8 @@ tournaments.RoundRobin = basis.declare(Tournament, {
 }); // declare RoundRobin.
 
 
-/** ludorum/src/tournaments/Measurement.js:
-	Measurement tournament pit the player being measured against others in order
+/** Measurement tournament pit the player being measured against others in order
 	to assess that player's performance at a game.
- 
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
 */
 tournaments.Measurement = basis.declare(Tournament, {
 	/** new tournaments.Measurement(game, players, opponents, matchCount=game.players.length):
@@ -1983,18 +1873,17 @@ tournaments.Measurement = basis.declare(Tournament, {
 }); // declare Measurement.
 
 
-/** ludorum/src/aleatories/Dice.js:
-	Dice random variables.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+/** Dice random variables.
 */
 aleatories.Dice = basis.declare(Aleatory, {
-	/** new Dice(name, base=6, random=basis.Randomness.DEFAULT):
+	/** new aleatories.Dice(name, base=6, random=basis.Randomness.DEFAULT):
 		Simple uniform random variable with values in [1, base]. 
 	*/
 	constructor: function Dice(base, next, random) {
 		Aleatory.call(this, next, random);
+		/** aleatories.Dice.base=6:
+			Amount of different values this dice can take.
+		*/
 		this.base = isNaN(base) ? 6 : Math.max(2, +base);
 	},
 	
@@ -2002,6 +1891,9 @@ aleatories.Dice = basis.declare(Aleatory, {
 		return this.random.randomInt(1, this.base + 1);
 	},
 	
+	/** aleatories.Dice.distribution():
+		Values from 1 to this.base, with uniform probabilities.
+	*/
 	distribution: function distribution() {
 		var prob = 1 / this.base;
 		return basis.Iterable.range(1, this.base + 1).map(function (n, i) {

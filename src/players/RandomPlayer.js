@@ -1,13 +1,7 @@
-﻿/** ludorum/src/players/RandomPlayer.js:
-	Automatic players that moves fully randomly.
-
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
-*/
-// Random players //////////////////////////////////////////////////////////////
-	
+﻿/** Automatic players that moves fully randomly.
+*/	
 players.RandomPlayer = basis.declare(Player, {
-	/** new RandomPlayer(name, random=basis.Randomness.DEFAULT):
+	/** new players.RandomPlayer(name, random=basis.Randomness.DEFAULT):
 		Builds a player that chooses its moves randomly.
 	*/
 	constructor: function RandomPlayer(name, random) {
@@ -19,7 +13,7 @@ players.RandomPlayer = basis.declare(Player, {
 		return 'RandomPlayer('+ JSON.stringify(this.name) +')';
 	},
 
-	/** RandomPlayer.decision(game, player):
+	/** players.RandomPlayer.decision(game, player):
 		Makes the decision completely at random.
 	*/
 	decision: function(game, player) {

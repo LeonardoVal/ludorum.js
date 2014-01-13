@@ -1,9 +1,5 @@
-﻿/** ludorum/src/Aleatory.js:
-	Representation of intermediate game states that depend on some form of 
+﻿/** Representation of intermediate game states that depend on some form of 
 	randomness, like: dice, card decks, roulettes, etc.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
 */
 var Aleatory = exports.Aleatory = basis.declare({
 	/** new Aleatory(next, random=basis.Randomness.DEFAULT):

@@ -1,8 +1,4 @@
-﻿/** ludorum/src/games/OddsAndEvens.js:
-	Classic child game, implemented as a simple example of a simultaneous game.
- 
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+﻿/** Classic child game, implemented as a simple example of a simultaneous game.
 */
 games.OddsAndEvens = basis.declare(Game, {
 	/** new games.OddsAndEvens(turns=1, points=<cero for both players>):

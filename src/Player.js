@@ -1,12 +1,5 @@
-﻿/** ludorum/src/Player.js:
-	Player is the base type for all playing agents.
- 
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@contributors Gonzalo de Oliveira Madeira
-	@licence MIT Licence
+﻿/** Player is the base type for all playing agents.
 */
-// Players /////////////////////////////////////////////////////////////////////
-	
 var Player = exports.Player = basis.declare({
 	/** new Player(name):
 		A player is an agent that plays a game. This means deciding which 

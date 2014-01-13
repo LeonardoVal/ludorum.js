@@ -1,13 +1,7 @@
-﻿/** ludorum/src/players/MonteCarloPlayer.js:
-	Automatic players based on Monte Carlo tree search.
-
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+﻿/** Automatic players based on Monte Carlo tree search.
 */
-// MonteCarlo players //////////////////////////////////////////////////////////
-
 players.MonteCarloPlayer = basis.declare(HeuristicPlayer, {
-	/** new MonteCarloPlayer(name, random, simulationCount=30):
+	/** new players.MonteCarloPlayer(name, random, simulationCount=30):
 		Builds a player that evaluates its moves using Monte-Carlo 
 		simulations (random games).
 	*/
@@ -16,7 +10,7 @@ players.MonteCarloPlayer = basis.declare(HeuristicPlayer, {
 		this.simulationCount = isNaN(simulationCount) ? 30 : +simulationCount >> 0;
 	},
 	
-	/** MonteCarloPlayer.stateEvaluation(game, player):
+	/** players.MonteCarloPlayer.stateEvaluation(game, player):
 		Returns the minimax value for the given game and player.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
@@ -27,7 +21,7 @@ players.MonteCarloPlayer = basis.declare(HeuristicPlayer, {
 		return resultSum / this.simulationCount;
 	},
 	
-	/** MonteCarloPlayer.simulation(game, player):
+	/** players.MonteCarloPlayer.simulation(game, player):
 		Simulates a random match from the given game and returns the result
 		for the given player.
 	*/

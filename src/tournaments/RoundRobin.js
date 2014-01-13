@@ -1,10 +1,6 @@
-/** ludorum/src/tournaments/RoundRobin.js:
-	Tournament where all players play against each other a certain number of
+/** Tournament where all players play against each other a certain number of
 	times.
 	See <http://en.wikipedia.org/wiki/Round-robin_tournament>.
- 
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
 */
 tournaments.RoundRobin = basis.declare(Tournament, {
 	/** new tournaments.RoundRobin(game, players, matchCount=game.players.length):

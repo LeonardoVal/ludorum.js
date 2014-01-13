@@ -1,9 +1,5 @@
-﻿/** ludorum/src/games/Choose2Win.js:
-	Simple silly game where players can instantly choose to win, loose, draw or
+﻿/** Simple silly game where players can instantly choose to win, loose, draw or
 	just continue. Mostly for testing purposes.
- 
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
 */
 games.Choose2Win = basis.declare(Game, {
 	/** new games.Choose2Win(turns=Infinity, activePlayer=players[0], winner=none):

@@ -1,9 +1,5 @@
-﻿/** ludorum/src/tournaments/Measurement.js:
-	Measurement tournament pit the player being measured against others in order
+﻿/** Measurement tournament pit the player being measured against others in order
 	to assess that player's performance at a game.
- 
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
 */
 tournaments.Measurement = basis.declare(Tournament, {
 	/** new tournaments.Measurement(game, players, opponents, matchCount=game.players.length):

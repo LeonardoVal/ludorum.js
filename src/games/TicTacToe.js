@@ -1,8 +1,4 @@
-/** ludorum/src/games/TicTacToe.js
-	Implementation of the traditional Tic-Tac-Toe game.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+/** Implementation of the traditional Tic-Tac-Toe game.
 */
 games.TicTacToe = basis.declare(Game, {
 	/** new games.TicTacToe(activePlayer="Xs", board='_________'):

@@ -1,9 +1,5 @@
-﻿/** ludorum/src/games/__Predefined__.js:
-	Simple reference games with a predefined outcome, mostly for testing 
+﻿/** Simple reference games with a predefined outcome, mostly for testing 
 	purposes.
- 
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
 */
 games.__Predefined__ = basis.declare(Game, {
 	/** new games.__Predefined__(activePlayer, results, height=5, width=5):

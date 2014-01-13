@@ -1,9 +1,5 @@
-/** ludorum/src/games/ToadsAndFrogs.js
-	Implementation of the Toads & Frogs game. 
+/** Implementation of the Toads & Frogs game. 
 	See <http://en.wikipedia.org/wiki/Toads_and_Frogs_%28game%29>.
-
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
 */
 games.ToadsAndFrogs = basis.declare(Game, {
 	/** new games.ToadsAndFrogs(activePlayer="Toads", board='TTT__FFF'):

@@ -1,14 +1,8 @@
-﻿/** ludorum/src/players/HeuristicPlayer.js:
-	Base type for automatic players based on heuristic evaluations of game
+﻿/** Base type for automatic players based on heuristic evaluations of game
 	states or moves.
-
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
 */
-// Heuristic players ///////////////////////////////////////////////////////////
-	
 var HeuristicPlayer = players.HeuristicPlayer = basis.declare(Player, {
-	/** new HeuristicPlayer(name, random, heuristic):
+	/** new players.HeuristicPlayer(name, random, heuristic):
 		Builds a player that evaluates its moves and chooses one of the best
 		evaluated.
 	*/
@@ -27,7 +21,7 @@ var HeuristicPlayer = players.HeuristicPlayer = basis.declare(Player, {
 		return 'HeuristicPlayer('+ JSON.stringify(this.name) +')';
 	},
 
-	/** HeuristicPlayer.moveEvaluation(move, game, player):
+	/** players.HeuristicPlayer.moveEvaluation(move, game, player):
 		Calculates a number as the assessment of the given move. The base
 		implementation calculates the resulting game state and returns the 
 		stateEvaluation of it.
@@ -36,7 +30,7 @@ var HeuristicPlayer = players.HeuristicPlayer = basis.declare(Player, {
 		return this.stateEvaluation(game.next(basis.obj(player, move)), player);
 	},
 
-	/** HeuristicPlayer.stateEvaluation(game, player):
+	/** players.HeuristicPlayer.stateEvaluation(game, player):
 		Calculates a number as the assessment of the given game state. The 
 		base implementation returns the result for the player is the game 
 		has results. 
@@ -48,7 +42,7 @@ var HeuristicPlayer = players.HeuristicPlayer = basis.declare(Player, {
 		return gameResult ? gameResult[player] : this.random.random(-0.5, 0.5);
 	},
 
-	/** HeuristicPlayer.decision(game, player):
+	/** players.HeuristicPlayer.decision(game, player):
 		Selects randomly from the best evaluated moves.
 	*/
 	decision: function decision(game, player) {

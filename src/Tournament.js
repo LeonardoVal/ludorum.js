@@ -1,12 +1,6 @@
-﻿/** ludorum/src/Tournament.js:
-	A tournament is a set of matches played between many players. The whole 
+﻿/** A tournament is a set of matches played between many players. The whole 
 	contest ranks the participants according to the result of the matches.
- 
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
 */
-// Base contest controller //////////////////////////////////////////////////////////
-
 var Tournament = exports.Tournament = basis.declare({
 	/** new Tournament(game, players):
 		Base class of all tournament controllers.

@@ -1,12 +1,7 @@
-/** ludorum/src/games/Mancala.js
-	Implementation of the Kalah member of the Mancala family of games.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@author <a href="mailto:">Maximiliano Martins</a>
-	@licence MIT Licence
+/** Implementation of the Kalah member of the Mancala family of games.
 */
 games.Mancala = basis.declare(Game, {
-	/** new Mancala(activePlayer="North", board=makeBoard()):
+	/** new games.Mancala(activePlayer="North", board=makeBoard()):
 		TODO.
 	*/
 	constructor: function Mancala(activePlayer, board){
@@ -14,7 +9,7 @@ games.Mancala = basis.declare(Game, {
 		this.board = board || this.makeBoard();
 	},
 	
-	/** Mancala.makeBoard(seeds=3, houses=6):
+	/** games.Mancala.makeBoard(seeds=3, houses=6):
 		Builds a board array to use as the game state.
 	*/
 	makeBoard: function makeBoard(seeds, houses){
@@ -32,24 +27,24 @@ games.Mancala = basis.declare(Game, {
 	
 	name: 'Mancala',
 	
-	/** Mancala.players:
+	/** games.Mancala.players:
 		Players of Mancala are North and South.
 	*/
 	players: ["North", "South"],
 	
-	/** Mancala.emptyCapture=false:
+	/** games.Mancala.emptyCapture=false:
 		If true, making a capture only moves the active player's seed to his
 		store. The opponents seeds are not captured.
 	*/
 	emptyCapture: false,
 	
-	/** Mancala.countRemainingSeeds=true:
+	/** games.Mancala.countRemainingSeeds=true:
 		If true, at the end of the game if a player has seeds on his houses,
 		those seeds are included in his score.
 	*/
 	countRemainingSeeds: true,
 	
-	/** Mancala.store(player):
+	/** games.Mancala.store(player):
 		Returns the index in this game's board of the player's store.
 	*/
 	store: function store(player){
@@ -60,7 +55,7 @@ games.Mancala = basis.declare(Game, {
 		}
 	},
 
-	/** Mancala.houses(player):
+	/** games.Mancala.houses(player):
 		Returns an array with the indexes of the player's houses in this
 		game's board.
 	*/
@@ -72,7 +67,7 @@ games.Mancala = basis.declare(Game, {
 		}
 	},
 	
-	/** Mancala.oppositeHouse(player, i):
+	/** games.Mancala.oppositeHouse(player, i):
 		Returns the index of the opposite house of i for the given player,
 		or a negative if i is not a house of the given player.
 	*/
@@ -83,7 +78,7 @@ games.Mancala = basis.declare(Game, {
 		return index < 0 ? index : opponentHouses.reverse()[index];
 	},
 	
-	/** Mancala.nextSquare(player, i):
+	/** games.Mancala.nextSquare(player, i):
 		Returns the index of the square following i for the given player.
 	*/
 	nextSquare: function nextSquare(player, i){
@@ -93,7 +88,7 @@ games.Mancala = basis.declare(Game, {
 		return i;
 	},
 	
-	/** Mancala.moves():
+	/** games.Mancala.moves():
 		A move for this game is an index of the square in the board.
 	*/
 	moves: function moves(){
@@ -106,7 +101,7 @@ games.Mancala = basis.declare(Game, {
 		return result[activePlayer].length > 0 ? result : null;
 	},
 	
-	/** Mancala.result():
+	/** games.Mancala.result():
 		The game ends when the active player cannot move. The result for
 		each player is the difference between the seed count of the stores.
 		If a player has seeds in his side, those are added to his count.
@@ -134,7 +129,7 @@ games.Mancala = basis.declare(Game, {
 		}
 	},
 	
-	/** Mancala.next(moves):
+	/** games.Mancala.next(moves):
 		TODO.
 	*/
 	next: function next(moves) {
@@ -169,7 +164,7 @@ games.Mancala = basis.declare(Game, {
 		return new this.constructor(freeTurn ? activePlayer : this.opponent(), newBoard);
 	},
 	
-	/** Mancala.resultBounds():
+	/** games.Mancala.resultBounds():
 		Result bounds are estimated with the total number of stones in the
 		board. It is very unlikely to get these result though.
 	*/

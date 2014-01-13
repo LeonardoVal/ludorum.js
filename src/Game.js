@@ -1,12 +1,5 @@
-﻿/** ludorum/src/Game.js:
-	Game is the base type for all games.
- 
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@contributors Gonzalo de Oliveira Madeira
-	@licence MIT Licence
+﻿/** Game is the base type for all games.
 */
-// Game ////////////////////////////////////////////////////////////////////////
-
 var Game = exports.Game = basis.declare({
 	/** new Game(activePlayers=first player):
 		Base abstract class of games.
@@ -22,7 +15,7 @@ var Game = exports.Game = basis.declare({
 	/** Game.name:
 		The game's name as a string, for displaying purposes.
 	*/
-	name: 'Game.name?',
+	name: '',
 	
 	/** Game.players:
 		An array of role names (strings), that the players can assume in a 
@@ -246,7 +239,7 @@ Game.serialized = function serialized() {
 	var super_moves = this.prototype.moves,
 		super_next = this.prototype.next;
 	return basis.declare(this, {
-		/** Game.serialized().moves():
+		/** Game.serialized.moves():
 			Returns the moves of the player deemed as the active player, if 
 			there are any moves.
 		*/
@@ -269,7 +262,7 @@ Game.serialized = function serialized() {
 			}
 		},
 	
-		/** Game.serialized().next(moves):
+		/** Game.serialized.next(moves):
 			If with the given move all active players in the real game state
 			have moves, then the actual game advances. Else the next player 
 			that has to move becomes active.
@@ -304,7 +297,7 @@ Game.cached = function cached() {
 		super_result = this.prototype.result,
 		super_next = this.prototype.next;
 	return basis.declare(this, {
-		/** Game.cached().moves():
+		/** Game.cached.moves():
 			The first time it is called, delegates to game.moves(), and 
 			keeps the result for future calls.
 		*/
@@ -316,7 +309,7 @@ Game.cached = function cached() {
 			return result;
 		},
 		
-		/** Game.cached().result():
+		/** Game.cached.result():
 			The first time it is called, delegates to game.result(), and 
 			keeps the result for future calls.
 		*/
