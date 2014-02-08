@@ -1,14 +1,20 @@
-﻿/** ludorum/tests/tester.css:
-	Stylesheet for tester.html, a test case runner in HTML.
-
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+﻿/** Stylesheet for tester.html, a test case runner in HTML.
 */
-a {
-	text-decoration: none;
+h3 {
+	margin: 3px;
+	text-align: center;
 }
-a:hover {
-	text-decoration: underline;
+
+#menu button {
+	background-color: white;
+	margin: 2px;
+	padding: 2px;
+	border-radius: 2px;
+	border: 1px solid black;
+}
+#menu button:nth-of-type(1) {
+	background-color: black;
+	color: white;
 }
 
 #log {

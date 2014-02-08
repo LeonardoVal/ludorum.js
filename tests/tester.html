@@ -1,9 +1,6 @@
-﻿<!-- ludorum/tests/tester.html:
-	Test case runner in HTML so the Javascript can be tested in browser engines.
-
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+﻿<!-- Test case runner in HTML so the Javascript can be tested in browser engines.
 -->
+<!DOCTYPE html>
 <html><head>
 	<title>Ludorum tester.</title>
 	<meta charset="UTF-8"/>
@@ -11,32 +8,7 @@
 	<script src="lib/require.js"></script>
 </head><body onload="main();">
 	<h3>Ludorum tester.</h3>
+	<div id="menu"></div>
 	<div id="log" class="log"></div>
-</td></tr></table>
-<script type="text/javascript">
-	function main() { "use strict";
-		var TESTS = ['test_games', 'test_players', 'test_tournaments'];
-		require.config({
-			paths: {
-				"basis": "lib/basis",
-				"ludorum": "../ludorum"
-			},
-		});
-		require(['basis'], function (basis) {
-			basis.Logger.ROOT
-				.appendToHtml("log")
-				.format = basis.Logger.ROOT.htmlFormat();
-			basis.Future.sequence(TESTS, function (path) {
-				basis.Logger.ROOT.info("Running test at <", path, ">.");
-				return basis.Future.imports(path).then(function (imports) {
-					var verifier = imports[0];
-					verifier.logger = basis.Logger.ROOT;	
-					return verifier.run();
-				});
-			}).then(function () {
-				basis.Logger.ROOT.info("Fin.");
-			});
-		});
-	}	
-</script>
+	<script src="tester.js"></script>
 </body></html>

@@ -1,8 +1,4 @@
-/** ludorum/tests/test_games.js:
-	Test cases for the game implementations in the Ludorum framework.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+/** Test cases for the game implementations in the Ludorum framework.
 */
 define(['basis', 'ludorum'], function (basis, ludorum) {
 	var verifier = new basis.Verifier(),

@@ -1,8 +1,4 @@
-/** ludorum/tests/test_players.js:
-	Test cases for the player implementations in the Ludorum framework.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+/** Test cases for the player implementations in the Ludorum framework.
 */
 define(['basis', 'ludorum'], function (basis, ludorum) {
 	var verifier = new basis.Verifier(),
@@ -14,8 +10,9 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 		players.MiniMaxPlayer, players.MonteCarloPlayer];
 	
 	autonomousPlayers.forEach(function (player) { //////////////////////////////
+		var matchCount = 10;
 		verifier.test("games.__Predefined__() with players."+ player.name +"()", function () { 
-			return basis.Future.all(basis.Iterable.range(30).map(function (i) {
+			return basis.Future.all(basis.Iterable.range(matchCount).map(function (i) {
 				var resultA = (i % 3) - 1,
 					resultB = -resultA,
 					game = new games.__Predefined__(i % 2 ? 'A' : 'B', {
@@ -27,19 +24,20 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 					verifier.assert(results, "Finished match has no results.");
 					verifier.assertEqual(resultA, results.A);
 					verifier.assertEqual(resultB, results.B);
-					verifier.assertEqual(10, match.ply());
+					verifier.assertEqual(matchCount, match.ply());
 				});
 			})).then(function () {
-				return 'Ran 30 matches.'; // For the log.
+				return 'Ran '+ matchCount +' matches.'; // For the log.
 			});
 		}); 
 	}); // games.__Predefined__() with autonomousPlayers
 	
 	autonomousPlayers.forEach(function (player) { //////////////////////////////
-		var game = new games.Choose2Win(),
+		var matchCount = 10,
+			game = new games.Choose2Win(),
 			passer = new players.TracePlayer('', ['pass']);
 		verifier.test("games.Choose2Win() with players."+ player.name +"()", function () {
-			return basis.Future.all(basis.Iterable.range(30).map(function (i) {
+			return basis.Future.all(basis.Iterable.range(matchCount).map(function (i) {
 				var match = new ludorum.Match(game, [new player(), new player()]);
 				return match.run().then(function (match) {
 					var results = match.result();
@@ -47,7 +45,7 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 					verifier.assertEqual(0, results[game.players[0]] + results[game.players[1]]);
 				});
 			})).then(function () {
-				return basis.Future.all(basis.Iterable.range(30).map(function (i) {
+				return basis.Future.all(basis.Iterable.range(matchCount).map(function (i) {
 					var match = new ludorum.Match(game, i % 2 ? [passer, new player()] : [new player(), passer]),
 						role = game.players[i % 2];
 					return match.run().then(function (match) {
@@ -61,15 +59,16 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 					});
 				}));
 			}).then(function () {
-				return "Ran 60 matches.";
+				return "Ran "+ (matchCount * 2) +" matches.";
 			});
 		});
 	}); // games.Choose2Win() with autonomousPlayers
 	
-	[players.RandomPlayer].forEach(function (player) {
-		var game = new games.Pig();
-		verifier.test("games.Pig() with players."+ player.name +"()", function () {
-			return basis.Future.all(basis.Iterable.range(30).map(function (i) {
+	[players.RandomPlayer, players.MonteCarloPlayer].forEach(function (player) {
+		var matchCount = 10,
+			game = new games.Pig('One', 20);
+		verifier.test("Indeterministic game (games.Pig) with player "+ player.name +".", function () {
+			return basis.Future.all(basis.Iterable.range(matchCount).map(function (i) {
 				var match = new ludorum.Match(game, [new player(), new player()]);
 				return match.run().then(function (match) {
 					var results = match.result();
@@ -77,10 +76,27 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 					verifier.assertEqual(0, results[game.players[0]] + results[game.players[1]]);
 				});
 			})).then(function () {
-				return "Ran 30 matches.";
+				return "Ran "+ matchCount +" matches.";
 			});
 		});
-	}); // games.Pig() with RandomPlayer.
+	}); // Indeterministic game (games.Pig).
+	
+	[players.RandomPlayer, players.MonteCarloPlayer].forEach(function (player) {
+		var matchCount = 10,
+			game = new games.OddsAndEvens();
+		verifier.test("Simultaneous game (games.OddsAndEvens) with player "+ player.name +".", function () {
+			return basis.Future.all(basis.Iterable.range(matchCount).map(function (i) {
+				var match = new ludorum.Match(game, [new player(), new player()]);
+				return match.run().then(function (match) {
+					var results = match.result();
+					verifier.assert(results, "Finished match has no results.");
+					verifier.assertEqual(0, results[game.players[0]] + results[game.players[1]]);
+				});
+			})).then(function () {
+				return "Ran "+ matchCount +" matches.";
+			});
+		});
+	}); // Simultaneous game (games.OddsAndEvens).
 	
 /////////////////////////////////////////////////////////////////////////// Fin.
 	return verifier;

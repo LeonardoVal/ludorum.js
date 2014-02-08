@@ -1,8 +1,4 @@
-/** ludorum/tests/test_tournaments.js:
-	Test cases for the tournament implementations in the Ludorum framework.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+/** Test cases for the tournament implementations in the Ludorum framework.
 */
 define(['basis', 'ludorum'], function (basis, ludorum) {
 	var verifier = new basis.Verifier(),
@@ -10,7 +6,7 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 		players = ludorum.players,
 		tournaments = ludorum.tournaments;
 
-	verifier.test("tournaments.RoundRobin() with games.Choose2Win() & players.RandomPlayer()", function () { /////////////////
+	verifier.test("tournaments.RoundRobin() with games.Choose2Win() & players.RandomPlayer()", function () {
 		var game = new games.Choose2Win(),
 			participants = [new players.RandomPlayer('RandomPlayer#1'), new players.RandomPlayer('RandomPlayer#2')],
 			contest = new tournaments.RoundRobin(game, participants, 2),
@@ -33,7 +29,7 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 		});
 	}); // tournaments.RoundRobin()
 	
-	verifier.test("tournaments.Measurement() with games.Choose2Win() & players.RandomPlayer()", function () { /////////////////
+	verifier.test("tournaments.Measurement() with games.Choose2Win() & players.RandomPlayer()", function () {
 		var game = new games.Choose2Win(),
 			participants = [new players.RandomPlayer('RandomPlayer#1'), new players.RandomPlayer('RandomPlayer#2')],
 			contest = new tournaments.Measurement(game, 
