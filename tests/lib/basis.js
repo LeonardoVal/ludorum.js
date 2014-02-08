@@ -7,11 +7,7 @@
 		(0, eval)('this').basis = init(); // Global namespace.
 	}
 })(function (){ var exports = {};
-/** basis/src/basis.js:
-	Core generic algorithms and utility definitions.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+/* Core generic algorithms and utility definitions.
 */
 // Objects and object orientation. /////////////////////////////////////////////
 
@@ -20,7 +16,7 @@
 	is considered the parent. The following supers add to the returned 
 	constructor's prototype, but do not override. The given members always
 	override.
-	See <http://dojotoolkit.org/reference-guide/1.9/dojo/_base/declare.html>.
+	See [Dojo's declare](http://dojotoolkit.org/reference-guide/1.9/dojo/_base/declare.html).
 */
 var declare = exports.declare = function declare() {
 	var args = Array.prototype.slice.call(arguments),
@@ -113,7 +109,7 @@ var raise = exports.raise = function raise() {
 */
 var raiseIf = exports.raiseIf = function raiseIf(condition) {
 	if (condition) {
-		basis.raise(Array.prototype.slice.call(arguments, 1).join(''));
+		raise(Array.prototype.slice.call(arguments, 1).join(''));
 	}
 };
 
@@ -132,11 +128,7 @@ var callStack = exports.callStack = function callStack(exception) {
 	return (exception.stack || exception.stacktrace || '').split('\n').slice(1);
 };
 
-/** basis/src/text.js:
-	Text manipulation definitions.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+/* Text manipulation definitions.
 */
 // String prototype leveling. //////////////////////////////////////////////////
 
@@ -289,12 +281,8 @@ Text.rpad = function rpad(str, len, pad) {
 	}
 };
 
-/** basis/typed.js:
-	Functions and definitions regarding type checking, constraints,	validation 
+/* Functions and definitions regarding type checking, constraints,	validation 
 	and coercion.
-
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
 */
 // Type representations. ///////////////////////////////////////////////////////
 var types = exports.types = {};
@@ -780,12 +768,8 @@ var initialize = exports.initialize = function initialize(subject, args) {
 }
 
 
-/** basis/iterables.js:
-	Standard implementation of iterables and iterators (a.k.a. enumerations), 
+/* Standard implementation of iterables and iterators (a.k.a. enumerations), 
 	and many functions that can be built with it.
-
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
 */
 // Iterable constructor. ///////////////////////////////////////////////////////
 	
@@ -833,7 +817,7 @@ Iterable.prototype.stop = function stop() {
 	throw STOP_ITERATION;
 };
 
-/** Iterables.catchStop(exception):
+/** Iterable.catchStop(exception):
 	If the exception is STOP_ITERATION it does nothing. If it is not, the
 	exception is thrown.
 */
@@ -859,7 +843,7 @@ Iterable.EMPTY = new Iterable(function () {
 
 // Iterables from common datatypes. ////////////////////////////////////////////
 
-/** Iterables.__iteratorFromString__(str):
+/** Iterable.__iteratorFromString__(str):
 	Returns a constructor of iterators of the str string.
 */
 Iterable.__iteratorFromString__ = function __iteratorFromString__(str) {
@@ -1440,7 +1424,7 @@ Iterable.prototype.sample = function sample(n, random) {
 	random = random || Randomness.DEFAULT;
 	var buffer = [];
 	this.forEach(function (x, i) {
-		var r = random.random() * (1 << 31);
+		var r = random.random();
 		if (buffer.length < n) {
 			buffer.push([r, x, i]);
 		} else if (r < buffer[buffer.length - 1][0]) {
@@ -1535,248 +1519,264 @@ Iterable.product = function product(it) {
 	}
 };
 
-/** basis/async.js:
-	Functions and definitions that deal with asynchronism and parallelism.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
-*/	
-// Future (aka Promise, Deferred, Eventual, etc). //////////////////////////////
-
-/** new Future():
-	An implementation of futures (aka deferreds or promises), a construction 
-	oriented to simplify the interaction between parallel threads. A future 
-	represents a value that is being calculated asynchronously. Callbacks 
-	are registered for when the value becomes available or an error raised.
-	See <http://en.wikipedia.org/wiki/Future_(programming)>.
+/* Future (aka Promise, Deferred, Eventual, etc) implementation to deal with 
+	asynchronism and parallelism.
 */
-var Future = exports.Future = function Future(value) {
-	/** Future.state=0:
-		Current state of the Future. Pending is 0, resolved is 1, rejected
-		is 2, cancelled is 3.
+var Future = exports.Future = declare({
+	/** new Future():
+		An implementation of [futures](http://docs.oracle.com/javase/7/docs/api/java/util/concurrent/Future.html)
+		(aka [deferreds](http://api.jquery.com/category/deferred-object/) or
+		[promises](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)), 
+		a construction oriented to simplify the interaction between parallel 
+		threads. A [future](http://en.wikipedia.org/wiki/Futures_and_promises) 
+		represents a value that is being calculated asynchronously. Callbacks 
+		are registered for when the value becomes available or an error raised.
 	*/
-	this.state = 0;
-	this.callbacks = [[],[],[]];
-	if (arguments.length > 0) {
-		this.resolve(value);
-	}
-};
-
-var FUTURE_STATES = ['pending', 'resolved', 'rejected', 'cancelled'];
-
-Future.prototype.toString = function toString() {
-	return 'Future:'+ FUTURE_STATES[this.state];
-};
-
-/** Future.__complete__(context, value, state):
-	Internal use method that changes this future's state from pending to 
-	state, calling all the corresponding callbacks with the given context 
-	and value.
-*/
-Future.prototype.__complete__ = function __complete__(context, value, state) {
-	var future = this;
-	if (this.state === 0) {
-		this.state = state;
-		this.__completion__ = [context, value];
-		this.callbacks[state - 1].forEach(function (callback) {
-			if (typeof callback === 'function') {
-				setTimeout(callback.bind(context, value), 1);
-			}
-		});
-	}
-	return this; // for chaining.
-};
-
-/** Future.resolve(value, context=this):
-	Marks the future as resolved. This method should be	called by the 
-	producer thread when its process is finished successfully.
-*/
-Future.prototype.resolve = function resolve(value, context) {
-	return this.state === 0 ? this.__complete__(context || this, value, 1) : this;
-};
-
-/** Future.reject(reason, context=this):
-	Marks the future as 'rejected' and calls onRejected callbacks. This 
-	method should be called by the producer thread when its process is 
-	aborted with an error.
-	If there aren't any onRejected callbacks registered, an Error is raised.
-	This can be reason (if it is already an Error) or a new Error with
-	reason as message.
-*/
-Future.prototype.reject = function reject(reason, context) {
-	if (this.state === 0) {
-		this.__complete__(context || this, reason, 2);
-		if (this.callbacks[1].length < 1) {
-			if (reason instanceof Error) {
-				throw reason;
-			} else {
-				throw new Error(reason);
-			}
+	constructor: function Future(value) {
+		/** Future.state=0:
+			Current state of the Future. Pending is 0, resolved is 1, rejected
+			is 2, cancelled is 3.
+		*/
+		this.state = 0;
+		this.callbacks = [[],[],[]];
+		if (arguments.length > 0) {
+			this.resolve(value);
 		}
-	}
-	return this;
-};
+	},
 
-/** Future.cancel(reason):
-	Marks the future as 'cancelled' and disregards all callbacks. This 
-	method may be called by either the producer or the consumer threads.
-*/	
-Future.prototype.cancel = function cancel(reason) {
-	return this.state === 0 ? this.__complete__(this, reason, 3) : this;
-};
+	/** Future.STATES=['pending', 'resolved', 'rejected', 'cancelled']:
+		An array with labels for the Future's possible states.
+	*/
+	STATES: ['pending', 'resolved', 'rejected', 'cancelled'],
+	
+	/** Future.__complete__(context, value, state):
+		Internal use method that changes this future's state from pending to 
+		state, calling all the corresponding callbacks with the given context 
+		and value.
+	*/
+	__complete__: function __complete__(context, value, state) {
+		var future = this;
+		if (this.state === 0) {
+			this.state = state;
+			this.__completion__ = [context, value];
+			this.callbacks[state - 1].forEach(function (callback) {
+				if (typeof callback === 'function') {
+					setTimeout(callback.bind(context, value), 1);
+				}
+			});
+		}
+		return this; // for chaining.
+	},
 
-/** Future.bind(future):
-	Binds this future resolution, rejection and cancellation to the given 
-	future's corresponding resolution, rejection and cancellation. 
-*/
-Future.prototype.bind = function bind(future) {
-	future.done(this.resolve.bind(this));
-	future.fail(this.reject.bind(this));
-	future.__onCancel__(this.cancel.bind(this));
-	return this;
-};
+	/** Future.resolve(value, context=this):
+		Marks the future as resolved. This method should be	called by the 
+		producer thread when its process is finished successfully.
+	*/
+	resolve: function resolve(value, context) {
+		return this.state === 0 ? this.__complete__(context || this, value, 1) : this;
+	},
 
-/** Future.__register__(callback, state):
-	Registers a callbacks to be called when this Future is in the given 
-	state. If this Future is already in that state the callback is called 
-	right away. If this Future is neither pending nor in that state, the
-	callback is ignored.
-*/
-Future.prototype.__register__ = function __register__(callback, state) {
-	if (typeof callback === 'function') {
-		if (this.state === 0) { // If future is pending...
-			this.callbacks[state - 1].push(callback);
-		} else if (this.state === state) {
-			setTimeout(callback.bind(this.__completion__[0], this.__completion__[1]), 1);
+	/** Future.reject(reason, context=this):
+		Marks the future as 'rejected' and calls onRejected callbacks. This 
+		method should be called by the producer thread when its process is 
+		aborted with an error.
+		If there aren't any onRejected callbacks registered, an Error is raised.
+		This can be reason (if it is already an Error) or a new Error with
+		reason as message.
+	*/
+	reject: function reject(reason, context) {
+		if (this.state === 0) {
+			this.__complete__(context || this, reason, 2);
+			if (this.callbacks[1].length < 1) {
+				if (reason instanceof Error) {
+					throw reason;
+				} else {
+					throw new Error(reason);
+				}
+			}
 		}
 		return this;
-	} else {
-		throw new Error("Callback must be a function, and not "+ callback);
-	}		
-};
+	},
 
-/** Future.done(callback...):
-	Registers one or more callbacks to be called when this Future is 
-	resolved. If this Future is already resolved the callbacks are called
-	right away. If this Future is neither pending nor resolved, callbacks
-	are ignored.
-*/
-Future.prototype.done = function done() {
-	for (var i = 0; i < arguments.length; i++) {
-		this.__register__(arguments[i], 1);
-	}
-	return this;
-};
+	/** Future.cancel(reason):
+		Marks the future as 'cancelled' and disregards all callbacks. This 
+		method may be called by either the producer or the consumer threads.
+	*/	
+	cancel: function cancel(reason) {
+		return this.state === 0 ? this.__complete__(this, reason, 3) : this;
+	},
 
-/** Future.fail(callback...):
-	Registers one or more callbacks to be called when this Future is 
-	rejected. If this Future is already rejected the callbacks are called
-	right away. If this Future is neither pending nor rejected, callbacks
-	are ignored.
-*/
-Future.prototype.fail = function fail() {
-	for (var i = 0; i < arguments.length; i++) {
-		this.__register__(arguments[i], 2);
-	}
-	return this;
-};
+	/** Future.bind(future):
+		Binds this future resolution, rejection and cancellation to the given 
+		future's corresponding resolution, rejection and cancellation. 
+	*/
+	bind: function bind(future) {
+		future.done(this.resolve.bind(this));
+		future.fail(this.reject.bind(this));
+		future.__onCancel__(this.cancel.bind(this));
+		return this;
+	},
 
-/** Future.__onCancel__(callback...):
-	Registers one or more callbacks to be called when this Future is 
-	cancelled.
-*/
-Future.prototype.__onCancel__ = function __onCancel__() {
-	for (var i = 0; i < arguments.length; i++) {
-		this.__register__(arguments[i], 3);
-	}
-	return this;
-};
-
-/** Future.always(callback...):
-	Registers one or more callbacks to be called when this Future is either
-	resolved or rejected. It is the same as using done() and fail() 
-	functions.
-*/
-Future.prototype.always = function always() {
-	return this.done.apply(this, arguments).fail.apply(this, arguments);
-};
-
-/** Future.isPending():
-	Checks if this future's state is 'pending'.
-*/
-Future.prototype.isPending = function isPending() {
-	return this.state === 0;
-};
-
-/** Future.isResolved:
-	Checks if this future's state is 'resolved'.
-*/
-Future.prototype.isResolved = function isResolved() {
-	return this.state === 1;
-};
-
-/** Future.isRejected:
-	Checks if this future's state is 'rejected'.
-*/
-Future.prototype.isRejected = function isRejected() {
-	return this.state === 2;
-};
-
-/** Future.isCancelled:
-	Checks if this future's state is 'cancelled'.
-*/
-Future.prototype.isCancelled = function isCancelled() {
-	return this.state === 3;
-};
-
-/** Future.then(onResolved, onRejected):
-	Returns a new Future which is resolved when this future is resolved, and
-	rejected in the same way. The given callbacks are used to calculate a
-	new value to either resolution or rejection of the new Future object.
-*/
-Future.prototype.then = function then(onResolved, onRejected) {
-	var result = new Future();
-	this.done(function (value) {
-		try {
-			value = onResolved ? onResolved(value) : value;
-			if (value instanceof Future) {
-				result.bind(value);
-			} else {
-				result.resolve(value);
+	/** Future.__register__(callback, state):
+		Registers a callbacks to be called when this Future is in the given 
+		state. If this Future is already in that state the callback is called 
+		right away. If this Future is neither pending nor in that state, the
+		callback is ignored.
+	*/
+	__register__: function __register__(callback, state) {
+		if (typeof callback === 'function') {
+			if (this.state === 0) { // If future is pending...
+				this.callbacks[state - 1].push(callback);
+			} else if (this.state === state) {
+				setTimeout(callback.bind(this.__completion__[0], this.__completion__[1]), 1);
 			}
-		} catch (err) {
-			result.reject(err);
-		}			
-	});
-	this.fail(function (reason) {
-		if (!onRejected) {
-			result.reject(reason);
+			return this;
 		} else {
+			throw new Error("Callback must be a function, and not "+ callback);
+		}
+	},
+
+	/** Future.done(callback...):
+		Registers one or more callbacks to be called when this Future is 
+		resolved. If this Future is already resolved the callbacks are called
+		right away. If this Future is neither pending nor resolved, callbacks
+		are ignored.
+	*/
+	done: function done() {
+		for (var i = 0; i < arguments.length; i++) {
+			this.__register__(arguments[i], 1);
+		}
+		return this;
+	},
+
+	/** Future.fail(callback...):
+		Registers one or more callbacks to be called when this Future is 
+		rejected. If this Future is already rejected the callbacks are called
+		right away. If this Future is neither pending nor rejected, callbacks
+		are ignored.
+	*/
+	fail: function fail() {
+		for (var i = 0; i < arguments.length; i++) {
+			this.__register__(arguments[i], 2);
+		}
+		return this;
+	},
+
+	/** Future.__onCancel__(callback...):
+		Registers one or more callbacks to be called when this Future is 
+		cancelled.
+	*/
+	__onCancel__: function __onCancel__() {
+		for (var i = 0; i < arguments.length; i++) {
+			this.__register__(arguments[i], 3);
+		}
+		return this;
+	},
+
+	/** Future.always(callback...):
+		Registers one or more callbacks to be called when this Future is either
+		resolved or rejected. It is the same as using done() and fail() 
+		functions.
+	*/
+	always: function always() {
+		return this.done.apply(this, arguments).fail.apply(this, arguments);
+	},
+
+	/** Future.isPending():
+		Checks if this future's state is 'pending'.
+	*/
+	isPending: function isPending() {
+		return this.state === 0;
+	},
+
+	/** Future.isResolved:
+		Checks if this future's state is 'resolved'.
+	*/
+	isResolved: function isResolved() {
+		return this.state === 1;
+	},
+
+	/** Future.isRejected:
+		Checks if this future's state is 'rejected'.
+	*/
+	isRejected: function isRejected() {
+		return this.state === 2;
+	},
+
+	/** Future.isCancelled:
+		Checks if this future's state is 'cancelled'.
+	*/
+	isCancelled: function isCancelled() {
+		return this.state === 3;
+	},
+
+	/** Future.then(onResolved, onRejected):
+		Returns a new Future which is resolved when this future is resolved, and
+		rejected in the same way. The given callbacks are used to calculate a
+		new value to either resolution or rejection of the new Future object.
+	*/
+	then: function then(onResolved, onRejected) {
+		var result = new Future();
+		this.done(function (value) {
 			try {
-				reason = onRejected(reason);
-				if (reason instanceof Future) {
-					result.bind(reason);
+				value = onResolved ? onResolved(value) : value;
+				if (value instanceof Future) {
+					result.bind(value);
 				} else {
-					result.resolve(reason);
+					result.resolve(value);
 				}
 			} catch (err) {
 				result.reject(err);
+			}			
+		});
+		this.fail(function (reason) {
+			if (!onRejected) {
+				result.reject(reason);
+			} else {
+				try {
+					reason = onRejected(reason);
+					if (reason instanceof Future) {
+						result.bind(reason);
+					} else {
+						result.resolve(reason);
+					}
+				} catch (err) {
+					result.reject(err);
+				}
 			}
-		}
-	});
-	this.__onCancel__(result.cancel.bind(result));
-	return result;
-};
+		});
+		this.__onCancel__(result.cancel.bind(result));
+		return result;
+	},
+	
+	toString: function toString() {
+		return 'Future:'+ this.STATES[this.state];
+	}
+}); // declare Future.
 
 // Functions dealing with Futures. /////////////////////////////////////////////
 
-/** when(value):
+/** static Future.when(value):
 	Unifies asynchronous and synchronous behaviours. If value is a Future
 	it is returned as it is. Else a resolved Future is returned with the 
 	given value.
 */
-var when = exports.when = function when(value) {
+var when = Future.when = function when(value) {
 	return value instanceof Future ? value : new Future(value);
+};
+
+/** static Future.invoke(fn, _this, args...):
+	Calls the function synchronously, returning a future resolved with the 
+	call's result. If an exceptions is raised, the future is rejected with it.
+*/
+Future.invoke = function invoke(fn, _this) {
+	try {
+		return when(fn.apply(_this, Array.prototype.slice.call(arguments, 2)));
+	} catch (error) {
+		var result = new Future();
+		result.reject(error);
+		return result;
+	}
 };
 
 /** static Future.all(futures):
@@ -1799,7 +1799,7 @@ Future.all = function all(futures) {
 	if (count < 1) {
 		result.resolve([]);
 	} else for (var i = 0; i < futures.length; i++) {
-		future = futures[i];
+		future = when(futures[i]);
 		future.done(doneCallback.bind(this, i));
 		future.fail(result.reject.bind(result));
 		future.__onCancel__(result.cancel.bind(result));
@@ -1820,7 +1820,7 @@ Future.any = function any(futures) {
 	if (count < 1) {
 		result.reject();
 	} else for (var i = 0; i < futures.length; i++) {
-		future = futures[i];
+		future = when(futures[i]);
 		future.fail((function (index) {
 			return function (value) {
 				values[index] = value;
@@ -1834,20 +1834,6 @@ Future.any = function any(futures) {
 		future.__onCancel__(result.cancel.bind(result));
 	}
 	return result;
-};
-
-/** static Future.invoke(fn, _this, args...):
-	Calls the function synchronously, returning a future resolved with the 
-	call's result. If an exceptions is raised, the future is rejected with it.
-*/
-Future.invoke = function invoke(fn, _this) {
-	try {
-		return when(fn.apply(_this, Array.prototype.slice.call(arguments, 2)));
-	} catch (error) {
-		var result = new Future();
-		result.reject(error);
-		return result;
-	}
 };
 
 /** static Future.sequence(xs, f=None):
@@ -1957,9 +1943,10 @@ Future.imports = function imports() {
 	return result;
 };
 
-// HttpRequest /////////////////////////////////////////////////////////////////
-
-var HttpRequest = exports.HttpRequest = declare({
+/* A wrapper of XMLHttpRequest, adding some functionality and dealing with
+	asynchronism with Futures.
+*/
+var HttpRequest = exports.HttpRequest = declare({ 
 	/** new HttpRequest():
 		A wrapper for XMLHttpRequest.
 	*/
@@ -1981,8 +1968,8 @@ var HttpRequest = exports.HttpRequest = declare({
 				xhr.setRequestHeader(id, headers[id]);
 			});
 		}
-		xhr.onreadystatechange = function onreadystatechange() { 
-			// See <http://www.w3schools.com/ajax/ajax_xmlhttprequest_onreadystatechange.asp>.
+		// See <http://www.w3schools.com/ajax/ajax_xmlhttprequest_onreadystatechange.asp>.
+		xhr.onreadystatechange = function () { 
 			if (xhr.readyState == 4) {
 				if (xhr.status == 200) {
 					future.resolve(xhr);
@@ -2038,23 +2025,15 @@ var HttpRequest = exports.HttpRequest = declare({
 }); // declare HttpRequest.
 
 // Generate static versions of HttpRequest methods.
-['request', 
-	'get', 'getJSON', 'getText',
-	'post', 'postJSON'
+['request', 'get', 'getJSON', 'getText', 'post', 'postJSON'
 ].forEach(function (id) {
 	HttpRequest[id] = function () {
 		return HttpRequest.prototype[id].apply(new HttpRequest(), arguments);
 	};
 });
 
-/** basis/src/functional.js:
-	Generic and utility definitions to handle functions and related features.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+/* Simple event manager.
 */
-// Events //////////////////////////////////////////////////////////////////////
-
 var Events = exports.Events = declare({
 /** new Events(config):
 	Event handler that manages callbacks registered as listeners.
@@ -2171,16 +2150,8 @@ var Events = exports.Events = declare({
 }); // declare Events.
 
 
-
-
-/** basis/randomness.js:
-	Pseudorandom number generation algorithms and related functions.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+/* Pseudorandom number generation algorithms and related functions.
 */
-// Randomness //////////////////////////////////////////////////////////////////
-
 var Randomness = exports.Randomness = declare({
 	/** new Randomness(generator):
 		Pseudorandom number generator constructor, based on a generator 
@@ -2393,14 +2364,8 @@ Randomness.linearCongruential.glibc =
 	Randomness.linearCongruential(0xFFFFFFFF, 1103515245, 12345);
 
 
-/** basis/stats.js:
-	Statistical accounting, measurements and related functions.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+/* Component to measure time and related functionality.
 */
-// Chronometer. ////////////////////////////////////////////////////////////////
-
 var Chronometer = exports.Chronometer = declare({
 	/** new Chronometer(time):
 		Utility object for measuring time lapses.
@@ -2448,7 +2413,10 @@ var Chronometer = exports.Chronometer = declare({
 		return total / times;
 	}
 }); // declare Chronometer.
-	
+
+
+/* Statistical accounting, measurements and related functions.
+*/
 // Statistic. //////////////////////////////////////////////////////////////////
 
 function __getKeySet__(keys) {
@@ -2917,11 +2885,7 @@ var Statistics = exports.Statistics = declare({
 }); // declare Statistics.
 
 
-/** basis/log.js:
-	Simple logging.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+/* Simple logging.
 */
 // Logger //////////////////////////////////////////////////////////////////////
 
@@ -3131,14 +3095,8 @@ var Logger = exports.Logger	= declare({
 Logger.ROOT = new Logger("");
 
 
-/** basis/unittest.js:
-	Simple unit testing.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+/* Simple unit testing.
 */	
-// Verifier ////////////////////////////////////////////////////////////////////
-
 var Verifier = exports.Verifier = declare({
 	/** new Verifier(logger=Logger.ROOT):
 		Unit testing helper constructor.
