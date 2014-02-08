@@ -1,20 +1,20 @@
 ﻿/** Base type for automatic players based on heuristic evaluations of game
 	states or moves.
 */
-var HeuristicPlayer = players.HeuristicPlayer = basis.declare(Player, {
-	/** new players.HeuristicPlayer(name, random, heuristic):
+var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
+	/** new players.HeuristicPlayer(name, params):
 		Builds a player that evaluates its moves and chooses one of the best
 		evaluated.
 	*/
-	constructor: function HeuristicPlayer(name, random, moveEvaluation, stateEvaluation) {
+	constructor: function HeuristicPlayer(name, params) {
 		Player.call(this, name);
-		this.random = random || basis.Randomness.DEFAULT;
-		if (moveEvaluation) {
-			this.moveEvaluation = moveEvaluation;
-		}
-		if (stateEvaluation) {
-			this.stateEvaluation = stateEvaluation;
-		}
+		initialize(this, params)
+		/** players.HeuristicPlayer.random=basis.Randomness.DEFAULT:
+			Pseudorandom number generator used for random decisions.
+		*/
+			.object('random', { defaultValue: Randomness.DEFAULT })
+			.func('moveEvaluation', { ignore: true })
+			.func('stateEvaluation', { ignore: true });
 	},
 
 	toString: function toString() {
@@ -27,7 +27,7 @@ var HeuristicPlayer = players.HeuristicPlayer = basis.declare(Player, {
 		stateEvaluation of it.
 	*/
 	moveEvaluation: function moveEvaluation(move, game, player) {
-		return this.stateEvaluation(game.next(basis.obj(player, move)), player);
+		return this.stateEvaluation(game.next(obj(player, move)), player);
 	},
 
 	/** players.HeuristicPlayer.stateEvaluation(game, player):
@@ -42,31 +42,33 @@ var HeuristicPlayer = players.HeuristicPlayer = basis.declare(Player, {
 		return gameResult ? gameResult[player] : this.random.random(-0.5, 0.5);
 	},
 
+	/** players.HeuristicPlayer.selectMoves(moves, game, player):
+		Return an array with the best evaluated moves. The evaluation is done by
+		the moveEvaluation method. The default implementation always returns a
+		Future.
+	*/
+	selectMoves: function selectMoves(moves, game, player) {
+		var heuristicPlayer = this;
+		return Future.all(moves.map(function (move) {
+			return heuristicPlayer.moveEvaluation(move, game, player);
+		})).then(function (evals) {
+			return iterable(moves).zip(evals).greater(function (pair) {
+				return pair[1];
+			}).map(function (pair) {
+				return pair[0];
+			});
+		});
+	},
+	
 	/** players.HeuristicPlayer.decision(game, player):
 		Selects randomly from the best evaluated moves.
 	*/
 	decision: function decision(game, player) {
-		var heuristicPlayer = this,
-			future = new basis.Future();
-		setTimeout(function () {
-			try {
-				var max = -Infinity, best = [], 
-					moves = heuristicPlayer.__moves__(game, player), move, e;
-				for (var i = 0; i < moves.length; i++) {
-					move = moves[i];
-					e = heuristicPlayer.moveEvaluation(move, game, player);
-					if (e > max) {
-						best = [move];
-						max = e;
-					} else if (e == max) {
-						best.push(move);
-					}
-				}
-				future.resolve(heuristicPlayer.random.choice(best));
-			} catch (err) {
-				future.reject(err);
-			}
-		}, 1);
-		return future;
+		var heuristicPlayer = this;
+		return Future.when(
+			heuristicPlayer.selectMoves(heuristicPlayer.__moves__(game, player), game, player)
+		).then(function (bestMoves) {
+			return heuristicPlayer.random.choice(bestMoves);
+		});
 	}
 }); // declare HeuristicPlayer.
