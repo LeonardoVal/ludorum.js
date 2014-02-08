@@ -1,21 +1,27 @@
-﻿/** Simple dice game, an example of a game with random variables. See
-	<http://en.wikipedia.org/wiki/Pig_%28dice_game%29>.
+﻿/* Pig is a simple dice game, used here as an example of a game with random 
+	variables.
 */
-games.Pig = basis.declare(Game, {
-	/** new games.Pig(activePlayer='One', scores, rolls):
-		Pig is a dice betting game, where the active player rolls dice until it
-		rolls one or passes its turn scoring the sum of previous rolls.
+games.Pig = declare(Game, {
+	/** new games.Pig(activePlayer='One', goal=100, scores, rolls):
+		[Pig](http://en.wikipedia.org/wiki/Pig_%28dice_game%29) is a dice 
+		betting game, where the active player rolls dice until it rolls one or 
+		passes its turn scoring the sum of previous rolls.
 	*/
-	constructor: function Pig(activePlayer, scores, rolls) {
+	constructor: function Pig(activePlayer, goal, scores, rolls) {
 		Game.call(this, activePlayer);
-		this.__scores__ = scores || basis.iterable(this.players).zip([0, 0]).toObject();
-		this.rolls = rolls || [];
+		/** games.Pig.goal=100:
+			Amount of points a player has to reach to win the game.
+		*/
+		this.goal = isNaN(goal) ? 100 : +goal;
+		/** games.Pig.__scores__:
+			Current players' scores.
+		*/
+		this.__scores__ = scores || iterable(this.players).zip([0, 0]).toObject();
+		/** games.Pig.__rolls__:
+			Active player's rolls.
+		*/
+		this.__rolls__ = rolls || [];
 	},
-
-	/** games.Pig.goal=100:
-		Amount of points a player has to reach to win the game.
-	*/
-	goal: 100,
 	
 	name: 'Pig',
 	
@@ -29,7 +35,9 @@ games.Pig = basis.declare(Game, {
 	*/
 	moves: function moves() {
 		if (!this.result()) {
-			return basis.obj(this.activePlayer(), ['roll', 'hold']);
+			var activePlayer = this.activePlayer(),
+				currentScore = this.__scores__[activePlayer] + iterable(this.__rolls__).sum();
+			return obj(activePlayer, currentScore < this.goal ? ['roll', 'hold'] : ['hold']);
 		}
 	},
 
@@ -39,9 +47,11 @@ games.Pig = basis.declare(Game, {
 		opponent's score.
 	*/
 	result: function result() {
-		if (this.__scores__[this.players[0]] >= this.goal || this.__scores__[this.players[1]] >= this.goal) {
+		var score0 = this.__scores__[this.players[0]],
+			score1 = this.__scores__[this.players[1]];
+		if (score0 >= this.goal || score1 >= this.goal) {
 			var r = {};
-			r[this.players[0]] = this.__scores__[this.players[0]] - this.__scores__[this.players[1]];
+			r[this.players[0]] = score0 - score1;
 			r[this.players[1]] = -r[this.players[0]];
 			return r;
 		}
@@ -54,15 +64,15 @@ games.Pig = basis.declare(Game, {
 		var activePlayer = this.activePlayer(),
 			move = moves[activePlayer];
 		if (move === 'hold') {
-			var scores = basis.copy(this.__scores__);
-			scores[activePlayer] += basis.iterable(this.rolls).sum();
-			return new this.constructor(this.opponent(), scores, []);
+			var scores = copy(this.__scores__);
+			scores[activePlayer] += iterable(this.__rolls__).sum();
+			return new this.constructor(this.opponent(), this.goal, scores, []);
 		} else if (move === 'roll') {
 			var game = this;
-			return new aleatories.Dice(6, function (value) {
+			return new aleatories.Dice(function (value) {
 				return (value > 1) 
-					? new game.constructor(activePlayer, game.__scores__, game.rolls.concat(value))
-					: new game.constructor(game.opponent(), game.__scores__, []);
+					? new game.constructor(activePlayer,  game.goal, game.__scores__, game.__rolls__.concat(value))
+					: new game.constructor(game.opponent(), game.goal, game.__scores__, []);
 			});
 		} else {
 			throw new Error("Invalid moves: "+ JSON.stringify(moves));
@@ -70,6 +80,6 @@ games.Pig = basis.declare(Game, {
 	},
 	
 	args: function args() {
-		return [this.name, this.activePlayer(), this.__scores__, this.rolls];
+		return [this.name, this.activePlayer(), this.goal, this.__scores__, this.__rolls__];
 	}
 }); // declare Pig.
