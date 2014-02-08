@@ -1,6 +1,6 @@
 ﻿/** Classic child game, implemented as a simple example of a simultaneous game.
 */
-games.OddsAndEvens = basis.declare(Game, {
+games.OddsAndEvens = declare(Game, {
 	/** new games.OddsAndEvens(turns=1, points=<cero for both players>):
 		Odds and evens is a very simple simultaneous game. Each turn both 
 		players draw either a one or a two.

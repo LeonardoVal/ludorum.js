@@ -1,16 +1,67 @@
-"use strict"; (function (init) {
+/** Package wrapper and layout.
+*/
+(function (init) { // Universal Module Definition.
 	if (typeof define === 'function' && define.amd) {
 		define(['basis'], init); // AMD module.
 	} else if (typeof module === 'object' && module.exports) {
 		module.exports = init(require('basis')); // CommonJS module.
 	} else {
 		var global = (0, eval)('this');
-		global.inveniemus = init(global.basis); // Global namespace.
+		global.ludorum = init(global.basis); // Global namespace.
 	}
-})(function (basis){ var exports = {};
+})(function (basis){ "use strict";
+// Import synonyms. ////////////////////////////////////////////////////////////
+	var declare = basis.declare,
+		obj = basis.obj,
+		copy = basis.copy,
+		raiseIf = basis.raiseIf,
+		Iterable = basis.Iterable,
+		iterable = basis.iterable,
+		Future = basis.Future,
+		Randomness = basis.Randomness,
+		initialize = basis.initialize,
+		Statistics = basis.Statistics,
+		Events = basis.Events;
+
+// Library layout. /////////////////////////////////////////////////////////////
+	var exports = {};
+
+	/** games:
+		Bundle of game implementations (as Game subclasses) and utility definitions.
+	*/
+	var games = exports.games = {};
+
+	/** players:
+		Bundle of different kinds of players: artificial intelligences, user 
+		interface proxies and others.
+	*/
+	var players = exports.players = {};
+
+	/** tournaments:
+		Several contest types implementated as Tournament subtypes.
+	*/
+	var tournaments = exports.tournaments = {};
+
+	/** aleatories:
+		Bundle of random game states (i.e. Aleatory subclasses) and related 
+		definitions.
+	*/
+	var aleatories = exports.aleatories = {};
+
+	/** boards:
+		Helpers for handling game boards.
+	*/
+	var boards = exports.boards = {};
+
+	/** utils:
+		Miscellaneous classes, functions and definitions. 
+	*/
+	var utils = exports.utils = {};
+
+
 /** Game is the base type for all games.
 */
-var Game = exports.Game = basis.declare({
+var Game = exports.Game = declare({
 	/** new Game(activePlayers=first player):
 		Base abstract class of games.
 	*/
@@ -51,7 +102,7 @@ var Game = exports.Game = basis.declare({
 		return result;
 	},
 
-	/** Game.next(moves):
+	/** abstract Game.next(moves):
 		Performs the given moves and returns a new game instance with the 
 		resulting state. The moves object should have a move for each active
 		player.
@@ -98,8 +149,8 @@ var Game = exports.Game = basis.declare({
 	*/
 	activePlayer: function activePlayer() {
 		var len = this.activePlayers.length;
-		basis.raiseIf(len < 1, 'There is no active player.');
-		basis.raiseIf(len > 1, 'More than one player is active.');
+		raiseIf(len < 1, 'There is no active player.');
+		raiseIf(len > 1, 'More than one player is active.');
 		return this.activePlayers[0];
 	},
 
@@ -196,7 +247,7 @@ var Game = exports.Game = basis.declare({
 
 	// Game state //////////////////////////////////////////////////////////////
 
-	/** Game.args():
+	/** abstract Game.args():
 		Returns an array, where the first element should be the name of the 
 		game, and the rest the arguments to call the game's constructor in order
 		to rebuild this game's state. Not implemented, so please override.
@@ -234,11 +285,6 @@ var Game = exports.Game = basis.declare({
 	}
 }); // declare Game.
 	
-/** games:
-	Bundle of Game subclasses and related definitions.
-*/
-var games = exports.games = {};
-
 // Serialized simultaneous games. //////////////////////////////////////////////
 	
 /** static Game.serialized():
@@ -248,7 +294,7 @@ var games = exports.games = {};
 Game.serialized = function serialized() {
 	var super_moves = this.prototype.moves,
 		super_next = this.prototype.next;
-	return basis.declare(this, {
+	return declare(this, {
 		/** Game.serialized.moves():
 			Returns the moves of the player deemed as the active player, if 
 			there are any moves.
@@ -278,7 +324,7 @@ Game.serialized = function serialized() {
 			that has to move becomes active.
 		*/
 		next: function next(moves) {
-			var nextFixedMoves = basis.copy({}, this.fixedMoves || {}, moves),
+			var nextFixedMoves = copy({}, this.fixedMoves || {}, moves),
 				allMoved = iterable(this.players).all(function (p) {
 						return nextFixedMoves.hasOwnProperty(p);
 					}),
@@ -306,7 +352,7 @@ Game.cached = function cached() {
 	var super_moves = this.prototype.moves,
 		super_result = this.prototype.result,
 		super_next = this.prototype.next;
-	return basis.declare(this, {
+	return declare(this, {
 		/** Game.cached.moves():
 			The first time it is called, delegates to game.moves(), and 
 			keeps the result for future calls.
@@ -336,7 +382,7 @@ Game.cached = function cached() {
 
 /** Player is the base type for all playing agents.
 */
-var Player = exports.Player = basis.declare({
+var Player = exports.Player = declare({
 	/** new Player(name):
 		A player is an agent that plays a game. This means deciding which 
 		move to make from the set of moves available to the player, each 
@@ -356,7 +402,7 @@ var Player = exports.Player = basis.declare({
 	*/
 	__moves__: function __moves__(game, role) {
 		var moves = game.moves();
-		basis.raiseIf(!moves || !moves[role] || moves[role].length < 1, 
+		raiseIf(!moves || !moves[role] || moves[role].length < 1, 
 			"Player ", role, " has no moves for game ", game, ".");
 		return moves[role];
 	},
@@ -393,15 +439,10 @@ var Player = exports.Player = basis.declare({
 	},
 }); // declare Player.
 
-/** players:
-	Bundle of Player subclasses and related definitions.
-*/
-var players = exports.players = {};
-
 
 /** Match is the controller for a game, managing player decisions.
 */
-var Match = exports.Match = basis.declare({
+var Match = exports.Match = declare({
 	/** new Match(game, players):
 		Match objects are game controllers, handling the flow of the turns 
 		between the players. They also provide game events that players and 
@@ -411,7 +452,7 @@ var Match = exports.Match = basis.declare({
 	*/
 	constructor: function Match(game, players) {
 		this.game = game;
-		this.players = Array.isArray(players) ? basis.iterable(game.players).zip(players).toObject() : players;
+		this.players = Array.isArray(players) ? iterable(game.players).zip(players).toObject() : players;
 		/** Match.history:
 			Game state array, from the initial game state to the last.
 		*/
@@ -420,7 +461,7 @@ var Match = exports.Match = basis.declare({
 			Event handler for this match. Emitted events are: begin, end, move
 			& next.
 		*/
-		this.events = new basis.Events({ 
+		this.events = new Events({ 
 			events: ['begin', 'move', 'next', 'end']
 		});
 		// Participate the players.
@@ -463,8 +504,8 @@ var Match = exports.Match = basis.declare({
 	decisions: function decisions(game) {
 		game = game || this.state();
 		var players = this.players;
-		return basis.Future.all(game.activePlayers.map(function (p) {
-			return basis.when(players[p].decision(game, p));//FIXME when?
+		return Future.all(game.activePlayers.map(function (p) {
+			return Future.when(players[p].decision(game, p));//FIXME when?
 		}));
 	},
 
@@ -481,7 +522,7 @@ var Match = exports.Match = basis.declare({
 	run: function run(plys) {
 		plys = isNaN(plys) ? Infinity : +plys;
 		if (plys < 1) { // If the run must stop...
-			return basis.when(this);
+			return Future.when(this);
 		}
 		var ply = this.ply(), game = this.state(), results, next;
 		(ply < 0) && this.onBegin(game);
@@ -491,11 +532,11 @@ var Match = exports.Match = basis.declare({
 		results = game.result();
 		if (results) { // If the match has finished ...
 			this.onEnd(game, results);
-			return basis.when(this);
+			return Future.when(this);
 		} else { // Else the run must continue ...
 			var match = this;
 			return this.decisions(game).then(function (moves) {
-				moves = basis.iterable(game.activePlayers).zip(moves).toObject();
+				moves = iterable(game.activePlayers).zip(moves).toObject();
 				match.onMove(game, moves);
 				match.__advance__(game, game.next(moves));
 				return match.run(plys - 1);
@@ -508,7 +549,7 @@ var Match = exports.Match = basis.declare({
 	onBegin: function onBegin(game) {
 		this.events.emit('begin', this.players, game, this);
 		this.logger && this.logger.info('Match begins with ', 
-			basis.iterable(this.players).map(function (attr) {
+			iterable(this.players).map(function (attr) {
 				return attr[1] +' as '+ attr[0];
 			}).join(', '), '; for ', game, '.');
 	},
@@ -533,7 +574,7 @@ var Match = exports.Match = basis.declare({
 /** A tournament is a set of matches played between many players. The whole 
 	contest ranks the participants according to the result of the matches.
 */
-var Tournament = exports.Tournament = basis.declare({
+var Tournament = exports.Tournament = declare({
 	/** new Tournament(game, players):
 		Base class of all tournament controllers.
 	*/
@@ -550,12 +591,12 @@ var Tournament = exports.Tournament = basis.declare({
 			Tournament statistics. These include the accumulated score for 
 			each player, indexed by name.
 		*/
-		this.statistics = new basis.Statistics();
+		this.statistics = new Statistics();
 		/** Tournament.events:
 			Event handler for this match. Emitted events are: begin, 
 			beforeMatch, afterMatch & end.
 		*/
-		this.events = new basis.Events({ 
+		this.events = new Events({ 
 			events: ['begin', 'beforeMatch', 'afterMatch', 'end']
 		});
 	},
@@ -568,9 +609,9 @@ var Tournament = exports.Tournament = basis.declare({
 			results = match.result(), 
 			isDraw = false,
 			stats = this.statistics;
-		basis.raiseIf(!results, "Match doesn't have results. Has it finished?");
+		raiseIf(!results, "Match doesn't have results. Has it finished?");
 		// Player statistics.
-		basis.iterable(match.players).forEach(function (p) {
+		iterable(match.players).forEach(function (p) {
 			var role = p[0],
 				player = p[1],
 				playerResult = results[p[0]],
@@ -597,7 +638,7 @@ var Tournament = exports.Tournament = basis.declare({
 		this.onBegin();
 		var tournament = this;
 		matches = matches || this.matches();
-		return basis.Future.sequence(matches, function (match) {
+		return Future.sequence(matches, function (match) {
 			tournament.beforeMatch(match);
 			return match.run().then(function (match) {
 				tournament.account(match);
@@ -638,22 +679,26 @@ var Tournament = exports.Tournament = basis.declare({
 	}
 }); // declare Tournament
 
-/** tournaments:
-	Bundle of Tournament subclasses and related definitions.
-*/
-var tournaments = exports.tournaments = {};
-
 
 /** Representation of intermediate game states that depend on some form of 
 	randomness, like: dice, card decks, roulettes, etc.
 */
-var Aleatory = exports.Aleatory = basis.declare({
+var Aleatory = exports.Aleatory = declare({
 	/** new Aleatory(next, random=basis.Randomness.DEFAULT):
 		Base constructor for a aleatory game state.
 	*/
 	constructor: function Aleatory(next, random) {
-		this.next = next;
-		this.random = random || basis.Randomness.DEFAULT;
+		this.random = random || Randomness.DEFAULT;
+		if (typeof next === 'function') {
+			this.next = next;
+		}
+	},
+	
+	/** Aleatory.next(value):
+		Returns a new game state given a random value.
+	*/
+	next: function next() {
+		throw new Error((this.constructor.name || 'Aleatory') +".next() not implemented! Please override.");
 	},
 	
 	/** Aleatory.instantiate():
@@ -668,11 +713,11 @@ var Aleatory = exports.Aleatory = basis.declare({
 	*/
 	value: function value() {
 		var n = random.random(), value;
-		basis.iterable(this.distribution()).forEach(function (pair) {
+		iterable(this.distribution()).forEach(function (pair) {
 			n -= pair[1];
 			if (n <= 0) {
 				value = pair[0];
-				throw basis.Iterable.STOP_ITERATION;
+				throw Iterable.STOP_ITERATION;
 			}
 		});
 		if (typeof value === 'undefined') {
@@ -691,22 +736,16 @@ var Aleatory = exports.Aleatory = basis.declare({
 	}
 }); // declare Aleatory.
 
-/** aleatories:
-	Bundle of random game states (i.e. Aleatory subclasses) and related 
-	definitions.
-*/
-var aleatories = exports.aleatories = {};
-
 
 /** Automatic players that moves fully randomly.
 */	
-players.RandomPlayer = basis.declare(Player, {
+players.RandomPlayer = declare(Player, {
 	/** new players.RandomPlayer(name, random=basis.Randomness.DEFAULT):
 		Builds a player that chooses its moves randomly.
 	*/
 	constructor: function RandomPlayer(name, random) {
 		Player.call(this, name);
-		this.random = random || basis.Randomness.DEFAULT;
+		this.random = random || Randomness.DEFAULT;
 	},
 
 	toString: function toString() {
@@ -724,14 +763,14 @@ players.RandomPlayer = basis.declare(Player, {
 
 /** Automatic player that is scripted previously.
 */
-players.TracePlayer = basis.declare(Player, {
+players.TracePlayer = declare(Player, {
 	/** new players.TracePlayer(name, trace):
 		Builds a player that makes his decisions based on a trace, a list of 
 		moves to follow.
 	*/
 	constructor: function TracePlayer(name, trace) {
 		Player.call(this, name);
-		this.trace = basis.iterable(trace);
+		this.trace = iterable(trace);
 		this.__iterator__ = this.trace.__iter__();
 		this.__decision__ = this.__iterator__();
 	},
@@ -748,7 +787,7 @@ players.TracePlayer = basis.declare(Player, {
 		try {
 			this.__decision__ = this.__iterator__();
 		} catch (err) {
-			basis.Iterable.prototype.catchStop(err);
+			Iterable.prototype.catchStop(err);
 		}
 		return this.__decision__;
 	}
@@ -758,20 +797,20 @@ players.TracePlayer = basis.declare(Player, {
 /** Base type for automatic players based on heuristic evaluations of game
 	states or moves.
 */
-var HeuristicPlayer = players.HeuristicPlayer = basis.declare(Player, {
-	/** new players.HeuristicPlayer(name, random, heuristic):
+var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
+	/** new players.HeuristicPlayer(name, params):
 		Builds a player that evaluates its moves and chooses one of the best
 		evaluated.
 	*/
-	constructor: function HeuristicPlayer(name, random, moveEvaluation, stateEvaluation) {
+	constructor: function HeuristicPlayer(name, params) {
 		Player.call(this, name);
-		this.random = random || basis.Randomness.DEFAULT;
-		if (moveEvaluation) {
-			this.moveEvaluation = moveEvaluation;
-		}
-		if (stateEvaluation) {
-			this.stateEvaluation = stateEvaluation;
-		}
+		initialize(this, params)
+		/** players.HeuristicPlayer.random=basis.Randomness.DEFAULT:
+			Pseudorandom number generator used for random decisions.
+		*/
+			.object('random', { defaultValue: Randomness.DEFAULT })
+			.func('moveEvaluation', { ignore: true })
+			.func('stateEvaluation', { ignore: true });
 	},
 
 	toString: function toString() {
@@ -784,7 +823,7 @@ var HeuristicPlayer = players.HeuristicPlayer = basis.declare(Player, {
 		stateEvaluation of it.
 	*/
 	moveEvaluation: function moveEvaluation(move, game, player) {
-		return this.stateEvaluation(game.next(basis.obj(player, move)), player);
+		return this.stateEvaluation(game.next(obj(player, move)), player);
 	},
 
 	/** players.HeuristicPlayer.stateEvaluation(game, player):
@@ -799,49 +838,53 @@ var HeuristicPlayer = players.HeuristicPlayer = basis.declare(Player, {
 		return gameResult ? gameResult[player] : this.random.random(-0.5, 0.5);
 	},
 
+	/** players.HeuristicPlayer.selectMoves(moves, game, player):
+		Return an array with the best evaluated moves. The evaluation is done by
+		the moveEvaluation method. The default implementation always returns a
+		Future.
+	*/
+	selectMoves: function selectMoves(moves, game, player) {
+		var heuristicPlayer = this;
+		return Future.all(moves.map(function (move) {
+			return heuristicPlayer.moveEvaluation(move, game, player);
+		})).then(function (evals) {
+			return iterable(moves).zip(evals).greater(function (pair) {
+				return pair[1];
+			}).map(function (pair) {
+				return pair[0];
+			});
+		});
+	},
+	
 	/** players.HeuristicPlayer.decision(game, player):
 		Selects randomly from the best evaluated moves.
 	*/
 	decision: function decision(game, player) {
-		var heuristicPlayer = this,
-			future = new basis.Future();
-		setTimeout(function () {
-			try {
-				var max = -Infinity, best = [], 
-					moves = heuristicPlayer.__moves__(game, player), move, e;
-				for (var i = 0; i < moves.length; i++) {
-					move = moves[i];
-					e = heuristicPlayer.moveEvaluation(move, game, player);
-					if (e > max) {
-						best = [move];
-						max = e;
-					} else if (e == max) {
-						best.push(move);
-					}
-				}
-				future.resolve(heuristicPlayer.random.choice(best));
-			} catch (err) {
-				future.reject(err);
-			}
-		}, 1);
-		return future;
+		var heuristicPlayer = this;
+		return Future.when(
+			heuristicPlayer.selectMoves(heuristicPlayer.__moves__(game, player), game, player)
+		).then(function (bestMoves) {
+			return heuristicPlayer.random.choice(bestMoves);
+		});
 	}
 }); // declare HeuristicPlayer.
 
 
 /** Automatic players based on MiniMax with alfa-beta pruning.
 */
-players.MiniMaxPlayer = basis.declare(HeuristicPlayer, {
-	/** new players.MiniMaxPlayer(name='MiniMax', heuristic, horizon=3, random=randomness.DEFAULT):
+players.MiniMaxPlayer = declare(HeuristicPlayer, {
+	/** new players.MiniMaxPlayer(name='MiniMax', params):
 		Builds a player that chooses its moves using the MiniMax algorithm with
 		alfa-beta pruning.
 	*/
-	constructor: function MiniMaxPlayer(name, heuristic, horizon, random) {
-		HeuristicPlayer.call(this, name, random);
-		this.horizon = +(horizon || 3);
-		if (heuristic) {
-			this.heuristic = heuristic;
-		}
+	constructor: function MiniMaxPlayer(name, params) {
+		HeuristicPlayer.call(this, name, params);
+		initialize(this, params)
+		/** players.MiniMaxPlayer.horizon=3:
+			Maximum depth for the MiniMax search.
+		*/
+			.integer('horizon', { defaultValue: 3, coerce: true })
+			.func('heuristic', { ignore: true });
 	},
 
 	toString: function toString() {
@@ -883,7 +926,7 @@ players.MiniMaxPlayer = basis.declare(HeuristicPlayer, {
 			throw new Error('No moves for unfinished game '+ game +'.');
 		}
 		for (var i = 0; i < moves.length; i++) {
-			next = game.next(basis.obj(activePlayer, moves[i]));
+			next = game.next(obj(activePlayer, moves[i]));
 			value = this.minimax(next, player, depth + 1, alpha, beta);
 			if (isActive) {
 				if (alpha < value) { // MAX
@@ -903,20 +946,56 @@ players.MiniMaxPlayer = basis.declare(HeuristicPlayer, {
 }); // declare MiniMaxPlayer.
 
 
-/** Automatic players based on Monte Carlo tree search.
+/** Automatic player based on pure Monte Carlo tree search.
 */
-players.MonteCarloPlayer = basis.declare(HeuristicPlayer, {
-	/** new players.MonteCarloPlayer(name, random, simulationCount=30):
-		Builds a player that evaluates its moves using Monte-Carlo 
-		simulations (random games).
+players.MonteCarloPlayer = declare(HeuristicPlayer, {
+	/** new players.MonteCarloPlayer(name, params):
+		Builds a player that chooses its moves using the [pure Monte Carlo game
+		tree search method](http://en.wikipedia.org/wiki/Monte-Carlo_tree_search).
 	*/
-	constructor: function MonteCarloPlayer(name, random, simulationCount) {
-		HeuristicPlayer.call(this, name, random);
-		this.simulationCount = isNaN(simulationCount) ? 30 : +simulationCount >> 0;
+	constructor: function MonteCarloPlayer(name, params) {
+		HeuristicPlayer.call(this, name, params);
+		initialize(this, params)
+		/** players.MonteCarloPlayer.simulationCount=30:
+			Maximum amount of simulations performed for each available move at
+			each decision.
+		*/
+			.integer('simulationCount', { defaultValue: 30, coerce: true })
+		/** players.MonteCarloPlayer.timeCap=1000ms:
+			Time limit for the player to decide.
+		*/
+			.integer('timeCap', { defaultValue: 1000, coerce: true });
+	},
+	
+	/** players.MonteCarloPlayer.selectMoves(moves, game, player):
+		Return an array with the best evaluated moves.
+	*/
+	selectMoves: function selectMoves(moves, game, player) {
+		var monteCarloPlayer = this,
+			endTime = Date.now() + this.timeCap,
+			moves = moves.map(function (move) {
+				return { 
+					move: move, 
+					next: game.next(obj(player, move)), 
+					sum: 0,
+					count: 0
+				};
+			});
+		for (var i = this.simulationCount; i > 0 && Date.now() < endTime; --i) {
+			moves.forEach(function (move) {
+				move.sum += monteCarloPlayer.simulation(move.next, player);
+				++move.count;
+			});
+		}
+		return iterable(moves).greater(function (move) {
+			return move.sum / move.count;
+		}).map(function (move) {
+			return move.move;
+		});
 	},
 	
 	/** players.MonteCarloPlayer.stateEvaluation(game, player):
-		Returns the minimax value for the given game and player.
+		Runs this.simulationCount simulations and returns the average result.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
 		var resultSum = 0;
@@ -932,12 +1011,21 @@ players.MonteCarloPlayer = basis.declare(HeuristicPlayer, {
 	*/
 	simulation: function simulation(game, player) {
 		var mc = this, move, moves;
-		for (moves = game.moves(); moves; moves = game.moves()) {
-			move = {};
-			game.activePlayers.forEach(function (activePlayer) {
-				move[activePlayer] = mc.random.choice(moves[activePlayer]);
-			});
-			game = game.next(move)
+		while (true) {
+			if (game instanceof Aleatory) {
+				game = game.instantiate();
+			} else {
+				moves = game.moves();
+				if (moves) {
+					move = {};
+					game.activePlayers.forEach(function (activePlayer) {
+						move[activePlayer] = mc.random.choice(moves[activePlayer]);
+					});
+					game = game.next(move);
+				} else {
+					break;
+				}
+			}
 		}
 		return game.result()[player];
 	}
@@ -947,7 +1035,7 @@ players.MonteCarloPlayer = basis.declare(HeuristicPlayer, {
 /** Implementation of player user interfaces and proxies in the Ludorum 
 	library.
 */
-var UserInterfacePlayer = players.UserInterfacePlayer = basis.declare(Player, {
+var UserInterfacePlayer = players.UserInterfacePlayer = declare(Player, {
 	/** new players.UserInterfacePlayer(name):
 		Base class of all players that are proxies of user interfaces.
 	*/
@@ -964,7 +1052,7 @@ var UserInterfacePlayer = players.UserInterfacePlayer = basis.declare(Player, {
 			var error = new Error("Last decision has not been made. Match probably aborted.");
 			this.__future__.reject(error);
 		}
-		return this.__future__ = new basis.Future();
+		return this.__future__ = new Future();
 	},
 	
 	/** players.UserInterfacePlayer.perform(action):
@@ -981,14 +1069,14 @@ var UserInterfacePlayer = players.UserInterfacePlayer = basis.declare(Player, {
 	}
 }); // declare UserInterfacePlayer.
 
-var UserInterface = players.UserInterface = basis.declare({ ////////////////////
+var UserInterface = players.UserInterface = declare({ ////////////////////
 	/** new players.UserInterface(match, config):
 		Base class for user interfaces that display a game and allow one
 		or more players to play.
 	*/
 	constructor: function UserInterface(match, config) {
 		this.match = match;
-		basis.initialize(this, config)
+		initialize(this, config)
 			.array('players', { defaultValue: match.state().players });
 		match.events.on('begin', this.onBegin.bind(this));
 		match.events.on('move', this.onMove.bind(this));
@@ -1043,7 +1131,7 @@ var UserInterface = players.UserInterface = basis.declare({ ////////////////////
 	}
 }); // declare UserInterface.
 	
-UserInterface.BasicHTMLInterface = basis.declare(UserInterface, { //////////////
+UserInterface.BasicHTMLInterface = declare(UserInterface, { //////////////
 	/** new players.UserInterface.BasicHTMLInterface(match, players, domElement):
 		Simple HTML based UI, that renders the game to the given domElement
 		using its toHTML method.
@@ -1066,13 +1154,13 @@ UserInterface.BasicHTMLInterface = basis.declare(UserInterface, { //////////////
 	}
 }); // declare HTMLInterface.
 	
-UserInterface.KineticJSInterface = basis.declare(UserInterface, { //////////////
+UserInterface.KineticJSInterface = declare(UserInterface, { //////////////
 	/** new players.UserInterface.KineticJSInterface(match, config):
 		TODO.
 	*/
 	constructor: function KineticJSInterface(match, config) {
 		exports.UserInterface.call(this, match, config);
-		basis.initialize(this, config)
+		initialize(this, config)
 			.object('container')
 			.object('Kinetic', { defaultValue: window.Kinetic });
 		this.container.destroyChildren(); // Clear the container.
@@ -1083,7 +1171,7 @@ UserInterface.KineticJSInterface = basis.declare(UserInterface, { //////////////
 /** Simple reference games with a predefined outcome, mostly for testing 
 	purposes.
 */
-games.__Predefined__ = basis.declare(Game, {
+games.__Predefined__ = declare(Game, {
 	/** new games.__Predefined__(activePlayer, results, height=5, width=5):
 		A pseudogame used for testing purposes. It will give width amount of 
 		moves for each player until height moves pass. Then the match is 
@@ -1116,8 +1204,8 @@ games.__Predefined__ = basis.declare(Game, {
 	*/
 	moves: function moves() {
 		if (this.height > 0) {
-			return basis.obj(this.activePlayer(), 
-				basis.Iterable.range(1, this.width + 1).toArray()
+			return obj(this.activePlayer(), 
+				Iterable.range(1, this.width + 1).toArray()
 			);
 		}
 	},
@@ -1150,7 +1238,7 @@ games.__Predefined__ = basis.declare(Game, {
 /** Simple silly game where players can instantly choose to win, loose, draw or
 	just continue. Mostly for testing purposes.
 */
-games.Choose2Win = basis.declare(Game, {
+games.Choose2Win = declare(Game, {
 	/** new games.Choose2Win(turns=Infinity, activePlayer=players[0], winner=none):
 		Choose2Win is a silly game indeed. Each turn one of the players can
 		decide to win, to lose or to pass the turn. It is meant to be used 
@@ -1175,7 +1263,7 @@ games.Choose2Win = basis.declare(Game, {
 	*/
 	moves: function moves() {
 		if (!this.__winner__ && this.__turns__ > 0) {
-			return basis.obj(this.activePlayer(), ['win', 'lose', 'pass']);
+			return obj(this.activePlayer(), ['win', 'lose', 'pass']);
 		}
 	},
 
@@ -1200,7 +1288,7 @@ games.Choose2Win = basis.declare(Game, {
 			case 'pass': return new this.constructor(this.__turns__ - 1, opponent);
 			default: break; // So the lint would not complaint.
 		}
-		return basis.raise('Invalid move '+ moves[activePlayer] +' for player '+ activePlayer +'.');
+		throw new Error('Invalid move '+ moves[activePlayer] +' for player '+ activePlayer +'.');
 	},
 	
 	args: function args() {
@@ -1216,7 +1304,7 @@ games.Choose2Win = basis.declare(Game, {
 
 /** Classic child game, implemented as a simple example of a simultaneous game.
 */
-games.OddsAndEvens = basis.declare(Game, {
+games.OddsAndEvens = declare(Game, {
 	/** new games.OddsAndEvens(turns=1, points=<cero for both players>):
 		Odds and evens is a very simple simultaneous game. Each turn both 
 		players draw either a one or a two.
@@ -1275,7 +1363,7 @@ games.OddsAndEvens = basis.declare(Game, {
 
 /** Implementation of the traditional Tic-Tac-Toe game.
 */
-games.TicTacToe = basis.declare(Game, {
+games.TicTacToe = declare(Game, {
 	/** new games.TicTacToe(activePlayer="Xs", board='_________'):
 		Constructor of TicTacToe games. The first player is always Xs.
 	*/
@@ -1317,8 +1405,8 @@ games.TicTacToe = basis.declare(Game, {
 	moves: function moves() {
 		if (!this.result()) {
 			var result = {};
-			result[this.activePlayer()] = basis.iterable(this.board).filter(function (chr, i) {
-				return chr == '_'; // Keep only empty squares.
+			result[this.activePlayer()] = iterable(this.board).filter(function (chr, i) {
+				return chr === '_'; // Keep only empty squares.
 			}, function (chr, i) {
 				return i; // Grab the index.
 			}).toArray();
@@ -1334,8 +1422,10 @@ games.TicTacToe = basis.declare(Game, {
 	next: function next(moves) {
 		var activePlayer = this.activePlayer(), 
 			move = +moves[activePlayer];
-		basis.raiseIf(this.board.charAt(move) !== '_', 'Invalid move ', move, ' for board ', this.board, 
-			' (moves= ', JSON.stringify(moves) +').');
+		if (this.board.charAt(move) !== '_') {
+			throw new Error('Invalid move '+ JSON.stringify(moves) +' for board '+ this.board
+					+' (moves= '+ JSON.stringify(moves) +').');
+		}
 		var newBoard = this.board.substring(0, move) + activePlayer.charAt(0) + this.board.substring(move + 1);
 		return new this.constructor(this.opponent(activePlayer), newBoard);
 	},
@@ -1368,7 +1458,7 @@ games.TicTacToe.heuristics = {};
 	ignored, opponent squares considered negative.
 */
 games.TicTacToe.heuristics.heuristicFromWeights = function heuristicFromWeights(weights) {
-	var weightSum = basis.iterable(weights).map(Math.abs).sum();
+	var weightSum = iterable(weights).map(Math.abs).sum();
 	function __heuristic__(game, player) {
 		var playerChar = player.charAt(0);
 		return iterable(game.board).map(function (square, i) {
@@ -1385,10 +1475,10 @@ games.TicTacToe.heuristics.heuristicFromWeights = function heuristicFromWeights(
 games.TicTacToe.heuristics.defaultHeuristic = games.TicTacToe.heuristics.heuristicFromWeights([2,1,2,1,5,1,2,1,2]);
 
 
-/** Implementation of the Toads & Frogs game. 
-	See <http://en.wikipedia.org/wiki/Toads_and_Frogs_%28game%29>.
+/** Implementation of the [Toads & Frogs](http://en.wikipedia.org/wiki/Toads_and_Frogs_%28game%29) 
+	game.
 */
-games.ToadsAndFrogs = basis.declare(Game, {
+games.ToadsAndFrogs = declare(Game, {
 	/** new games.ToadsAndFrogs(activePlayer="Toads", board='TTT__FFF'):
 		Constructor of Toads & Frogs games. The first player is always Toads.
 	*/
@@ -1471,7 +1561,7 @@ games.ToadsAndFrogs.board = function board(chips, separation) {
 
 /** Implementation of the Kalah member of the Mancala family of games.
 */
-games.Mancala = basis.declare(Game, {
+games.Mancala = declare(Game, {
 	/** new games.Mancala(activePlayer="North", board=makeBoard()):
 		TODO.
 	*/
@@ -1532,8 +1622,8 @@ games.Mancala = basis.declare(Game, {
 	*/
 	houses: function houses(player){
 		switch (this.players.indexOf(player)) {
-			case 0: return basis.Iterable.range(0, this.board.length / 2 - 1).toArray(); // Store of North.
-			case 1: return basis.Iterable.range(this.board.length / 2, this.board.length - 1).toArray(); // Store of South.
+			case 0: return Iterable.range(0, this.board.length / 2 - 1).toArray(); // Store of North.
+			case 1: return Iterable.range(this.board.length / 2, this.board.length - 1).toArray(); // Store of South.
 			default: throw new Error("Invalid player "+ player +".");
 		}
 	},
@@ -1610,7 +1700,7 @@ games.Mancala = basis.declare(Game, {
 			seeds = newBoard[move],
 			freeTurn = false,
 			store, oppositeHouse;
-		basis.raiseIf(seeds < 1, "Invalid move ", move, " for game ", this);
+		raiseIf(seeds < 1, "Invalid move ", move, " for game ", this);
 		// Move.
 		newBoard[move] = 0;
 		for (; seeds > 0; seeds--) {
@@ -1640,7 +1730,7 @@ games.Mancala = basis.declare(Game, {
 		board. It is very unlikely to get these result though.
 	*/
 	resultBounds: function resultBounds() {
-		var stoneCount = basis.iterable(this.board).sum();
+		var stoneCount = iterable(this.board).sum();
 		return [-stoneCount,+stoneCount];
 	},
 	
@@ -1688,7 +1778,7 @@ games.Mancala.heuristics = {};
 	the board. The result of the function is the normalized weighted sum.
 */
 games.Mancala.heuristics.heuristicFromWeights = function heuristicFromWeights(weights) {
-	var weightSum = basis.iterable(weights).map(Math.abs).sum();
+	var weightSum = iterable(weights).map(Math.abs).sum();
 	function __heuristic__(game, player) {
 		var seedSum = 0, signum;
 		switch (game.players.indexOf(player)) {
@@ -1696,7 +1786,7 @@ games.Mancala.heuristics.heuristicFromWeights = function heuristicFromWeights(we
 			case 1: signum = -1; break; // South.
 			default: throw new Error("Invalid player "+ player +".");
 		}
-		return basis.iterable(game.board).map(function (seeds, i) {
+		return iterable(game.board).map(function (seeds, i) {
 			seedSum += seeds;
 			return seeds * weights[i]; //TODO Normalize weights before.
 		}).sum() / weightSum / seedSum * signum;
@@ -1714,24 +1804,30 @@ games.Mancala.heuristics.defaultHeuristic = games.Mancala.heuristics.heuristicFr
 );
 
 
-/** Simple dice game, an example of a game with random variables. See
-	<http://en.wikipedia.org/wiki/Pig_%28dice_game%29>.
+/* Pig is a simple dice game, used here as an example of a game with random 
+	variables.
 */
-games.Pig = basis.declare(Game, {
-	/** new games.Pig(activePlayer='One', scores, rolls):
-		Pig is a dice betting game, where the active player rolls dice until it
-		rolls one or passes its turn scoring the sum of previous rolls.
+games.Pig = declare(Game, {
+	/** new games.Pig(activePlayer='One', goal=100, scores, rolls):
+		[Pig](http://en.wikipedia.org/wiki/Pig_%28dice_game%29) is a dice 
+		betting game, where the active player rolls dice until it rolls one or 
+		passes its turn scoring the sum of previous rolls.
 	*/
-	constructor: function Pig(activePlayer, scores, rolls) {
+	constructor: function Pig(activePlayer, goal, scores, rolls) {
 		Game.call(this, activePlayer);
-		this.__scores__ = scores || basis.iterable(this.players).zip([0, 0]).toObject();
-		this.rolls = rolls || [];
+		/** games.Pig.goal=100:
+			Amount of points a player has to reach to win the game.
+		*/
+		this.goal = isNaN(goal) ? 100 : +goal;
+		/** games.Pig.__scores__:
+			Current players' scores.
+		*/
+		this.__scores__ = scores || iterable(this.players).zip([0, 0]).toObject();
+		/** games.Pig.__rolls__:
+			Active player's rolls.
+		*/
+		this.__rolls__ = rolls || [];
 	},
-
-	/** games.Pig.goal=100:
-		Amount of points a player has to reach to win the game.
-	*/
-	goal: 100,
 	
 	name: 'Pig',
 	
@@ -1745,7 +1841,9 @@ games.Pig = basis.declare(Game, {
 	*/
 	moves: function moves() {
 		if (!this.result()) {
-			return basis.obj(this.activePlayer(), ['roll', 'hold']);
+			var activePlayer = this.activePlayer(),
+				currentScore = this.__scores__[activePlayer] + iterable(this.__rolls__).sum();
+			return obj(activePlayer, currentScore < this.goal ? ['roll', 'hold'] : ['hold']);
 		}
 	},
 
@@ -1755,9 +1853,11 @@ games.Pig = basis.declare(Game, {
 		opponent's score.
 	*/
 	result: function result() {
-		if (this.__scores__[this.players[0]] >= this.goal || this.__scores__[this.players[1]] >= this.goal) {
+		var score0 = this.__scores__[this.players[0]],
+			score1 = this.__scores__[this.players[1]];
+		if (score0 >= this.goal || score1 >= this.goal) {
 			var r = {};
-			r[this.players[0]] = this.__scores__[this.players[0]] - this.__scores__[this.players[1]];
+			r[this.players[0]] = score0 - score1;
 			r[this.players[1]] = -r[this.players[0]];
 			return r;
 		}
@@ -1770,15 +1870,15 @@ games.Pig = basis.declare(Game, {
 		var activePlayer = this.activePlayer(),
 			move = moves[activePlayer];
 		if (move === 'hold') {
-			var scores = basis.copy(this.__scores__);
-			scores[activePlayer] += basis.iterable(this.rolls).sum();
-			return new this.constructor(this.opponent(), scores, []);
+			var scores = copy(this.__scores__);
+			scores[activePlayer] += iterable(this.__rolls__).sum();
+			return new this.constructor(this.opponent(), this.goal, scores, []);
 		} else if (move === 'roll') {
 			var game = this;
-			return new aleatories.Dice(6, function (value) {
+			return new aleatories.Dice(function (value) {
 				return (value > 1) 
-					? new game.constructor(activePlayer, game.__scores__, game.rolls.concat(value))
-					: new game.constructor(game.opponent(), game.__scores__, []);
+					? new game.constructor(activePlayer,  game.goal, game.__scores__, game.__rolls__.concat(value))
+					: new game.constructor(game.opponent(), game.goal, game.__scores__, []);
 			});
 		} else {
 			throw new Error("Invalid moves: "+ JSON.stringify(moves));
@@ -1786,7 +1886,7 @@ games.Pig = basis.declare(Game, {
 	},
 	
 	args: function args() {
-		return [this.name, this.activePlayer(), this.__scores__, this.rolls];
+		return [this.name, this.activePlayer(), this.goal, this.__scores__, this.__rolls__];
 	}
 }); // declare Pig.
 
@@ -1795,7 +1895,7 @@ games.Pig = basis.declare(Game, {
 	times.
 	See <http://en.wikipedia.org/wiki/Round-robin_tournament>.
 */
-tournaments.RoundRobin = basis.declare(Tournament, {
+tournaments.RoundRobin = declare(Tournament, {
 	/** new tournaments.RoundRobin(game, players, matchCount=game.players.length):
 		A tournament that confronts all players against each other rotating 
 		their roles in the matches.
@@ -1812,8 +1912,8 @@ tournaments.RoundRobin = basis.declare(Tournament, {
 	matches: function matches() {
 		var tournament = this,
 			game = this.game,
-			ms = basis.iterable(this.players);
-		ms = ms.product.apply(ms, basis.Iterable.repeat(this.players, game.players.length - 1).toArray());
+			ms = iterable(this.players);
+		ms = ms.product.apply(ms, Iterable.repeat(this.players, game.players.length - 1).toArray());
 		return ms.filter(function (tuple) { // Check for repeated.
 			for (var i = 1; i < tuple.length; i++) {
 				for (var j = 0; j < i; j++) {
@@ -1823,7 +1923,7 @@ tournaments.RoundRobin = basis.declare(Tournament, {
 				}
 			}
 			return true;
-		}).product(basis.Iterable.range(this.matchCount)).map(function (tuple) {
+		}).product(Iterable.range(this.matchCount)).map(function (tuple) {
 			return new Match(game, tuple[0]);
 		});
 	}
@@ -1833,7 +1933,7 @@ tournaments.RoundRobin = basis.declare(Tournament, {
 /** Measurement tournament pit the player being measured against others in order
 	to assess that player's performance at a game.
 */
-tournaments.Measurement = basis.declare(Tournament, {
+tournaments.Measurement = declare(Tournament, {
 	/** new tournaments.Measurement(game, players, opponents, matchCount=game.players.length):
 		A tournament used to evaluate how well the players play by confronting
 		them with the opponents, rotating their roles in the matches.
@@ -1841,7 +1941,7 @@ tournaments.Measurement = basis.declare(Tournament, {
 	constructor: function Measurement(game, players, opponents, matchCount) {
 		Tournament.call(this, game, Array.isArray(players) ? players : [players]);
 		this.opponents = Array.isArray(opponents) ? opponents : [opponents];
-		basis.raiseIf(this.opponents.length < game.players.length - 1, "Not enough opponents.");
+		raiseIf(this.opponents.length < game.players.length - 1, "Not enough opponents.");
 		this.matchCount = isNaN(matchCount) ? game.players.length : +matchCount;
 	},
 
@@ -1852,19 +1952,19 @@ tournaments.Measurement = basis.declare(Tournament, {
 	matches: function matches() {
 		var game = this.game,
 			playerCount = game.players.length,
-			opponentCombinations = basis.iterable(this.opponents);
+			opponentCombinations = iterable(this.opponents);
 		if (playerCount > 2) {
 			opponentCombinations = opponentCombinations.product.apply(opponentCombinations, 
-				basis.Iterable.repeat(this.opponents, playerCount - 2).toArray());
+				Iterable.repeat(this.opponents, playerCount - 2).toArray());
 		} else {
 			opponentCombinations = opponentCombinations.map(function (p) {
 				return [p];
 			});
 		}
-		return basis.iterable(this.players).product( 
-			basis.Iterable.range(playerCount),
+		return iterable(this.players).product( 
+			Iterable.range(playerCount),
 			opponentCombinations,
-			basis.Iterable.range(this.matchCount)).map(function (tuple){
+			Iterable.range(this.matchCount)).map(function (tuple){
 				var players = tuple[2].slice(0);
 				players.splice(tuple[1], 0, tuple[0]);
 				return new Match(game, players);
@@ -1875,11 +1975,11 @@ tournaments.Measurement = basis.declare(Tournament, {
 
 /** Dice random variables.
 */
-aleatories.Dice = basis.declare(Aleatory, {
+aleatories.Dice = declare(Aleatory, {
 	/** new aleatories.Dice(name, base=6, random=basis.Randomness.DEFAULT):
 		Simple uniform random variable with values in [1, base]. 
 	*/
-	constructor: function Dice(base, next, random) {
+	constructor: function Dice(next, base, random) {
 		Aleatory.call(this, next, random);
 		/** aleatories.Dice.base=6:
 			Amount of different values this dice can take.
@@ -1887,6 +1987,9 @@ aleatories.Dice = basis.declare(Aleatory, {
 		this.base = isNaN(base) ? 6 : Math.max(2, +base);
 	},
 	
+	/** aleatories.Dice.value():
+		Returns a random value between 1 and base.
+	*/
 	value: function value() {
 		return this.random.randomInt(1, this.base + 1);
 	},
@@ -1895,12 +1998,365 @@ aleatories.Dice = basis.declare(Aleatory, {
 		Values from 1 to this.base, with uniform probabilities.
 	*/
 	distribution: function distribution() {
-		var prob = 1 / this.base;
-		return basis.Iterable.range(1, this.base + 1).map(function (n, i) {
-			return [n, prob];
-		});
+		return this.__distribution__ || (this.__distribution__ = (function (base) {
+			return Iterable.range(1, base + 1).map(function (n, i) {
+				return [n, 1 / base];
+			}).toArray();
+		})(this.base));
 	}		
 }); // declare Dice.
 
+
+/** Base class for checkerboards based on several different data structures.
+*/
+boards.Checkerboard = declare({
+	/** new boards.Checkerboard(height, width):
+		The base constructor only sets the board dimensions.
+	*/
+	constructor: function Checkerboard(height, width) {
+		if (!isNaN(height)) {
+			this.height = +height | 0;
+		}
+		if (!isNaN(width)) {
+			this.width = +width | 0;
+		}
+	},
+	
+	/** boards.Checkerboard.emptySquare=null:
+		The value of empty squares.
+	*/
+	emptySquare: null,
+	
+// Board information. //////////////////////////////////////////////////////////
+	
+	/** boards.Checkerboard.isValidCoord(coord):
+		Returns true if coord is an array with two numbers between this board's
+		dimensions.
+	*/
+	isValidCoord: function isValidCoord(coord) {
+		return Array.isArray(coord) && !isNaN(coord[0]) && !isNaN(coord[1])
+			&& coord[0] >= 0 && coord[0] < this.height 
+			&& coord[1] >= 0 && coord[1] < this.width;
+	},
+	
+	/** boards.Checkerboard.horizontals():
+		Returns an iterable of all the horizontal lines (rows) in the board.
+	*/
+	horizontals: function horizontals() {
+		var width = this.width;
+		return Iterable.range(this.height).map(function (row) {
+			return Iterable.range(width).map(function (column) {
+				return [row, column];
+			});
+		});
+	},
+	
+	/** boards.Checkerboard.verticals():
+		Returns an iterable of all the vertical lines (columns) in the board.
+	*/
+	verticals: function verticals() {
+		var height = this.height;
+		return Iterable.range(this.width).map(function (column) {
+			return Iterable.range(height).map(function (row) {
+				return [row, column];
+			});
+		});
+	},
+	
+	/** boards.Checkerboard.orthogonals():
+		Returns an iterable of all the horizontal (rows) and vertical lines 
+		(columns) in the board.
+	*/
+	orthogonals: function orthogonals() {
+		return this.horizontals().chain(this.verticals());
+	},
+	
+	/** boards.Checkerboard.positiveDiagonals():
+		Returns an iterable of all the positive diagonals lines (those where 
+		row = k + column).
+	*/
+	positiveDiagonals: function positiveDiagonals() {
+		var width = this.width, height = this.height, count = height + width - 1;
+		return Iterable.range(count).map(function (i) {
+			var row = Math.max(0, height - i - 1),
+				column = Math.max(0, i - height + 1);
+			return Iterable.range(Math.min(i + 1, count - i)).map(function (j) {
+				return [row + j, column + j];
+			});
+		});
+	},
+	
+	/** boards.Checkerboard.negativeDiagonals():
+		Returns an iterable of all the negative diagonals lines (those where 
+		row = k - column).
+	*/
+	negativeDiagonals: function negativeDiagonals() {
+		var width = this.width, height = this.height, count = height + width - 1;
+		return Iterable.range(count).map(function (i) {
+			var row = Math.min(i, height - 1),
+				column = Math.max(0, i - height + 1);
+			return Iterable.range(Math.min(i + 1, count - i)).map(function (j) {
+				return [row - j, column + j];
+			});
+		});
+	},
+	
+	/** boards.Checkerboard.diagonals():
+		Returns an iterable of all the diagonal lines in the board.
+	*/
+	diagonals: function diagonals() {
+		return this.positiveDiagonals().chain(this.negativeDiagonals());
+	},
+	
+	/** boards.Checkerboard.lines():
+		Returns an iterable of all the horizontal, vertical and diagonal lines 
+		in the board.
+	*/
+	lines: function lines() {
+		return this.orthogonals().chain(this.diagonals());
+	},
+	
+	/** abstract boards.Checkerboard.square(row, column, outside):
+		Returns the content of the square at the given coordinate, or outside if
+		the coordinate is not inside the board.
+	*/
+	square: function square(row, column, outside) {
+		throw new Error('boards.Checkerboard.square() is not implemented. Please override.');
+	},
+	
+// Board modification. /////////////////////////////////////////////////////////
+
+	/** abstract boards.Checkerboard.place(coord, value):
+		Places value at coord, replacing whatever was there. Returns a new 
+		instance of Checkerboard.
+	*/
+	place: function place(coord, value) {
+		throw new Error('boards.Checkerboard.place() is not implemented. Please override.');
+	},
+
+	/** boards.Checkerboard.move(coordFrom, coordTo, valueLeft=this.emptySquare):
+		Moves the contents at coordFrom to coordTo. Whatever coordTo is 
+		replaced, and at coordFrom valueLeft is placed. Returns a new instance 
+		of Checkerboard.
+	*/
+	move: function move(coordFrom, coordTo, valueLeft) {
+		return this
+			.place(coordTo, this.square(coordFrom[0], coordFrom[1]))
+			.place(coordFrom, typeof valueLeft === 'undefined' ? this.emptySquare : valueLeft);
+	},
+	
+	/** boards.Checkerboard.swap(coordFrom, coordTo):
+		Moves the contents at coordFrom to coordTo, and viceversa. Returns a new
+		instance of Checkerboard.
+	*/
+	swap: function swap(coordFrom, coordTo) {
+		var valueTo = this.square(coordTo[0], coordTo[1]);
+		return this
+			.place(coordTo, this.square(coordFrom[0], coordFrom[1]))
+			.place(coordFrom, valueTo);
+	}	
+}); // declare boards.Checkerboard.
+
+
+/** Checkerboards represented by simple strings.
+*/
+boards.CheckerboardFromString = declare(boards.Checkerboard, {
+	/** new boards.CheckerboardFromString(height, width, string, emptySquare='.'):
+		A checkerboard represented by a string, each character being a square.
+	*/
+	constructor: function CheckerboardFromString(height, width, string, emptySquare) {
+		boards.Checkerboard.call(this, height, width);
+		if (emptySquare) {
+			this.emptySquare = (emptySquare + this.emptySquare).charAt(0);
+		}
+		/** boards.CheckerboardFromString.string:
+			The string representation of the board.
+		*/
+		if (string && string.length !== height * width) {
+			throw new Error('Given string '+ JSON.stringify(string) +' does not match board dimensions.');
+		}
+		this.string = string || this.emptySquare.repeat(height * width);
+	},
+	
+	/** boards.CheckerboardFromString.emptySquare='.':
+		The character used to represent empty squares.
+	*/
+	emptySquare: '.',
+	
+	/** boards.CheckerboardFromString.square(row, column, outside=undefined):
+		Return the character at (row * width + column) if the coordinate is 
+		inside the board. Else returns the value of the outside argument.
+	*/
+	square: function square(row, column, outside) {
+		if (row >= 0 && row < this.height && column >= 0 && column < this.width) {
+			return this.string.charAt(row * this.width + column);
+		} else {
+			return outside;
+		}
+	},
+	
+	/** boards.CheckerboardFromString.place(coord, value):
+		Returns a new board with the character at the given coord changed to
+		value.
+	*/
+	place: function place(coord, value) {
+		raiseIf(!this.isValidCoord(coord), "Invalid coordinate ", coord, ".");
+		value = (value + this.emptySquare).charAt(0);
+		var i = coord[0] * this.width + coord[1],
+			newString = this.string.substr(0, i) + value + this.string.substr(i + 1);
+		return new this.constructor(this.height, this.width, newString, this.emptySquare);
+	},
+	
+	/** boards.CheckerboardFromString.toString():
+		Prints the board one line by row, last row on top.
+	*/
+	toString: function toString() {
+		var string = this.string, height = this.height, width = this.width;
+		return Iterable.range(height).map(function (i) {
+			return string.substr((height - i - 1) * width, width);
+		}).join('\n');
+	}
+}); // declare boards.CheckerboardFromString
+
+
+
+/** Component for scanning a game's tree.
+*/
+exports.utils.Scanner = declare({
+	/** new utils.Scanner(config):
+		A Scanner builds a sample of a game tree, in order to get statistics 
+		from some of all possible matches.
+	*/
+	constructor: function Scanner(config) {
+		initialize(this, config)
+		/** utils.Scanner.game:
+			Game to scan.
+		*/
+			.object("game", { ignore: true })
+		/** utils.Scanner.maxWidth=1000:
+			Maximum amount of game states held at each step.
+		*/
+			.integer("maxWidth", { defaultValue: 1000, coerce: true })
+		/** utils.Scanner.maxLength=50:
+			Maximum length of simulated matches.
+		*/
+			.integer("maxLength", { defaultValue: 50, coerce: true })
+		/** utils.Scanner.random=randomness.DEFAULT:
+			Pseudorandom number generator to use in the simulations.
+		*/			
+			.object("random", { defaultValue: Randomness.DEFAULT })
+		/** utils.Scanner.statistics:
+			Component to gather relevant statistics. These include:
+			* `game.result`: Final game state results. Also available for victory and defeat.
+			* `game.length`: Match length in plies. Also available for victory and defeat.
+			* `game.width`: Number of available moves.
+			* `draw.length`: Drawn match length in plies.
+		*/
+			.object("statistics", { defaultValue: new Statistics() });
+	},
+	
+	/** utils.Scanner.scan(players, games...=[this.game]):
+		Scans the trees of the given game (using this scanner's game by 
+		default). This means reproducing and sampling the set of all possible 
+		matches from the given game states. The simulation halts at maxLength
+		plies, and never holds more than maxWidth game states.
+		The players argument may provide a player for some or all of the games'
+		roles. If available, they will be used to decide which move is applied
+		to each game state. If missing, all next game states will be added. Ergo
+		no players means a simulation off all possible matches.		
+	*/
+	scan: function scan(players) {
+		var scanner = this,
+			window = arguments.length < 2 ? (this.game ? [this.game] : []) : Array.prototype.slice.call(arguments, 1),
+			ply = 0; 
+		return Future.whileDo(function () {
+			return window.length > 0 && ply < scanner.maxLength;
+		}, function () {
+			return Future.all(window.map(function (game) {
+				return scanner.__advance__(players, game, ply);
+			})).then(function (level) {
+				window = iterable(level).flatten().sample(scanner.maxWidth, scanner.random).toArray();
+				ply++;
+			});
+		}).then(function () {
+			scanner.statistics.add(['aborted'], window.length);
+			return scanner.statistics;
+		});
+	},
+	
+	/** utils.Scanner.__advance__(players, game, ply):
+		Advances the given game by one ply. This may mean for non final game 
+		states either instantiate random variables, ask the available player 
+		for a decision, or take all next game states. Final game states are 
+		removed. All game states are accounted in the scanner's statistics. The
+		result is an Iterable with the game states to add to the next scan
+		window.
+	*/
+	__advance__: function __advance__(players, game, ply) {
+		if (game instanceof Aleatory) {
+			return iterable(game.distribution()).map(function (value) {
+				return game.next(value[0]);
+			});
+		} else if (this.account(players, game, ply)) {
+			return Iterable.EMPTY;
+		} else {
+			var scanner = this,
+				moves = game.moves();
+			return Future.all(game.activePlayers.map(function (activePlayer) {
+				if (players && players[activePlayer]) {
+					var decisionTime = stats.stat(['decision.time', 'game:'+ game.name, 'role:'+ role, 'player:'+ p]);
+					decisionTime.startTime();
+					return Future.when(players[activePlayer].decision(game, activePlayer)).then(function (move) {
+						decisionTime.addTime();
+						return [move];
+					});
+				} else {
+					return moves[activePlayer];
+				}
+			})).then(function (decisions) {
+				return Iterable.product.apply(this, decisions).map(function (moves) {
+					return game.next(iterable(game.activePlayers).zip(moves).toObject());
+				});
+			});
+		}
+	},
+			
+	/** utils.Scanner.account(players, game, ply):
+		Gathers statistics about the game. Returns whether the given game state
+		is final or not.
+	*/
+	account: function account(players, game, ply) {
+		var result = game.result(),
+			stats = this.statistics;
+		if (result) {
+			iterable(game.players).forEach(function (role) {
+				var r = result[role],
+					p = players && players[role] ? players[role].name : '',
+					keys = ['game:'+ game.name, 'role:'+ role, 'player:'+ p];
+				stats.add(['game.result'].concat(keys), r, game);
+				stats.add(['game.length'].concat(keys), ply, game);
+				if (r < 0) {
+					stats.add(['defeat.result'].concat(keys), r, game);
+					stats.add(['defeat.length'].concat(keys), ply, game);
+				} else if (r > 0) {
+					stats.add(['victory.result'].concat(keys), r, game);
+					stats.add(['victory.length'].concat(keys), ply, game);
+				} else {
+					stats.add(['draw.length'].concat(keys), ply, game);
+				}
+			});
+			return true;
+		} else {
+			var moves = game.moves();
+			iterable(game.activePlayers).forEach(function (role) {
+				stats.add(['game.width', 'game:'+ game.name, 'role:'+ role], moves[role].length);
+			});
+			return false;
+		}
+	}
+}); // declare utils.Scanner.
+
+
+// See __prologue__.js
 return exports;
 });

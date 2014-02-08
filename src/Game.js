@@ -1,6 +1,6 @@
 ﻿/** Game is the base type for all games.
 */
-var Game = exports.Game = basis.declare({
+var Game = exports.Game = declare({
 	/** new Game(activePlayers=first player):
 		Base abstract class of games.
 	*/
@@ -41,7 +41,7 @@ var Game = exports.Game = basis.declare({
 		return result;
 	},
 
-	/** Game.next(moves):
+	/** abstract Game.next(moves):
 		Performs the given moves and returns a new game instance with the 
 		resulting state. The moves object should have a move for each active
 		player.
@@ -88,8 +88,8 @@ var Game = exports.Game = basis.declare({
 	*/
 	activePlayer: function activePlayer() {
 		var len = this.activePlayers.length;
-		basis.raiseIf(len < 1, 'There is no active player.');
-		basis.raiseIf(len > 1, 'More than one player is active.');
+		raiseIf(len < 1, 'There is no active player.');
+		raiseIf(len > 1, 'More than one player is active.');
 		return this.activePlayers[0];
 	},
 
@@ -186,7 +186,7 @@ var Game = exports.Game = basis.declare({
 
 	// Game state //////////////////////////////////////////////////////////////
 
-	/** Game.args():
+	/** abstract Game.args():
 		Returns an array, where the first element should be the name of the 
 		game, and the rest the arguments to call the game's constructor in order
 		to rebuild this game's state. Not implemented, so please override.
@@ -224,11 +224,6 @@ var Game = exports.Game = basis.declare({
 	}
 }); // declare Game.
 	
-/** games:
-	Bundle of Game subclasses and related definitions.
-*/
-var games = exports.games = {};
-
 // Serialized simultaneous games. //////////////////////////////////////////////
 	
 /** static Game.serialized():
@@ -238,7 +233,7 @@ var games = exports.games = {};
 Game.serialized = function serialized() {
 	var super_moves = this.prototype.moves,
 		super_next = this.prototype.next;
-	return basis.declare(this, {
+	return declare(this, {
 		/** Game.serialized.moves():
 			Returns the moves of the player deemed as the active player, if 
 			there are any moves.
@@ -268,7 +263,7 @@ Game.serialized = function serialized() {
 			that has to move becomes active.
 		*/
 		next: function next(moves) {
-			var nextFixedMoves = basis.copy({}, this.fixedMoves || {}, moves),
+			var nextFixedMoves = copy({}, this.fixedMoves || {}, moves),
 				allMoved = iterable(this.players).all(function (p) {
 						return nextFixedMoves.hasOwnProperty(p);
 					}),
@@ -296,7 +291,7 @@ Game.cached = function cached() {
 	var super_moves = this.prototype.moves,
 		super_result = this.prototype.result,
 		super_next = this.prototype.next;
-	return basis.declare(this, {
+	return declare(this, {
 		/** Game.cached.moves():
 			The first time it is called, delegates to game.moves(), and 
 			keeps the result for future calls.

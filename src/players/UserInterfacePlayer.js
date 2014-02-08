@@ -1,7 +1,7 @@
 ﻿/** Implementation of player user interfaces and proxies in the Ludorum 
 	library.
 */
-var UserInterfacePlayer = players.UserInterfacePlayer = basis.declare(Player, {
+var UserInterfacePlayer = players.UserInterfacePlayer = declare(Player, {
 	/** new players.UserInterfacePlayer(name):
 		Base class of all players that are proxies of user interfaces.
 	*/
@@ -18,7 +18,7 @@ var UserInterfacePlayer = players.UserInterfacePlayer = basis.declare(Player, {
 			var error = new Error("Last decision has not been made. Match probably aborted.");
 			this.__future__.reject(error);
 		}
-		return this.__future__ = new basis.Future();
+		return this.__future__ = new Future();
 	},
 	
 	/** players.UserInterfacePlayer.perform(action):
@@ -35,14 +35,14 @@ var UserInterfacePlayer = players.UserInterfacePlayer = basis.declare(Player, {
 	}
 }); // declare UserInterfacePlayer.
 
-var UserInterface = players.UserInterface = basis.declare({ ////////////////////
+var UserInterface = players.UserInterface = declare({ ////////////////////
 	/** new players.UserInterface(match, config):
 		Base class for user interfaces that display a game and allow one
 		or more players to play.
 	*/
 	constructor: function UserInterface(match, config) {
 		this.match = match;
-		basis.initialize(this, config)
+		initialize(this, config)
 			.array('players', { defaultValue: match.state().players });
 		match.events.on('begin', this.onBegin.bind(this));
 		match.events.on('move', this.onMove.bind(this));
@@ -97,7 +97,7 @@ var UserInterface = players.UserInterface = basis.declare({ ////////////////////
 	}
 }); // declare UserInterface.
 	
-UserInterface.BasicHTMLInterface = basis.declare(UserInterface, { //////////////
+UserInterface.BasicHTMLInterface = declare(UserInterface, { //////////////
 	/** new players.UserInterface.BasicHTMLInterface(match, players, domElement):
 		Simple HTML based UI, that renders the game to the given domElement
 		using its toHTML method.
@@ -120,13 +120,13 @@ UserInterface.BasicHTMLInterface = basis.declare(UserInterface, { //////////////
 	}
 }); // declare HTMLInterface.
 	
-UserInterface.KineticJSInterface = basis.declare(UserInterface, { //////////////
+UserInterface.KineticJSInterface = declare(UserInterface, { //////////////
 	/** new players.UserInterface.KineticJSInterface(match, config):
 		TODO.
 	*/
 	constructor: function KineticJSInterface(match, config) {
 		exports.UserInterface.call(this, match, config);
-		basis.initialize(this, config)
+		initialize(this, config)
 			.object('container')
 			.object('Kinetic', { defaultValue: window.Kinetic });
 		this.container.destroyChildren(); // Clear the container.

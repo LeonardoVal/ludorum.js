@@ -1,7 +1,7 @@
-/** Implementation of the Toads & Frogs game. 
-	See <http://en.wikipedia.org/wiki/Toads_and_Frogs_%28game%29>.
+/** Implementation of the [Toads & Frogs](http://en.wikipedia.org/wiki/Toads_and_Frogs_%28game%29) 
+	game.
 */
-games.ToadsAndFrogs = basis.declare(Game, {
+games.ToadsAndFrogs = declare(Game, {
 	/** new games.ToadsAndFrogs(activePlayer="Toads", board='TTT__FFF'):
 		Constructor of Toads & Frogs games. The first player is always Toads.
 	*/

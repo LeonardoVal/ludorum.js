@@ -1,13 +1,13 @@
 ﻿/** Automatic player that is scripted previously.
 */
-players.TracePlayer = basis.declare(Player, {
+players.TracePlayer = declare(Player, {
 	/** new players.TracePlayer(name, trace):
 		Builds a player that makes his decisions based on a trace, a list of 
 		moves to follow.
 	*/
 	constructor: function TracePlayer(name, trace) {
 		Player.call(this, name);
-		this.trace = basis.iterable(trace);
+		this.trace = iterable(trace);
 		this.__iterator__ = this.trace.__iter__();
 		this.__decision__ = this.__iterator__();
 	},
@@ -24,7 +24,7 @@ players.TracePlayer = basis.declare(Player, {
 		try {
 			this.__decision__ = this.__iterator__();
 		} catch (err) {
-			basis.Iterable.prototype.catchStop(err);
+			Iterable.prototype.catchStop(err);
 		}
 		return this.__decision__;
 	}

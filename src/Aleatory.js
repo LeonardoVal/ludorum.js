@@ -1,13 +1,22 @@
 ﻿/** Representation of intermediate game states that depend on some form of 
 	randomness, like: dice, card decks, roulettes, etc.
 */
-var Aleatory = exports.Aleatory = basis.declare({
+var Aleatory = exports.Aleatory = declare({
 	/** new Aleatory(next, random=basis.Randomness.DEFAULT):
 		Base constructor for a aleatory game state.
 	*/
 	constructor: function Aleatory(next, random) {
-		this.next = next;
-		this.random = random || basis.Randomness.DEFAULT;
+		this.random = random || Randomness.DEFAULT;
+		if (typeof next === 'function') {
+			this.next = next;
+		}
+	},
+	
+	/** Aleatory.next(value):
+		Returns a new game state given a random value.
+	*/
+	next: function next() {
+		throw new Error((this.constructor.name || 'Aleatory') +".next() not implemented! Please override.");
 	},
 	
 	/** Aleatory.instantiate():
@@ -22,11 +31,11 @@ var Aleatory = exports.Aleatory = basis.declare({
 	*/
 	value: function value() {
 		var n = random.random(), value;
-		basis.iterable(this.distribution()).forEach(function (pair) {
+		iterable(this.distribution()).forEach(function (pair) {
 			n -= pair[1];
 			if (n <= 0) {
 				value = pair[0];
-				throw basis.Iterable.STOP_ITERATION;
+				throw Iterable.STOP_ITERATION;
 			}
 		});
 		if (typeof value === 'undefined') {
@@ -44,9 +53,3 @@ var Aleatory = exports.Aleatory = basis.declare({
 		throw new Error((this.constructor.name || 'Aleatory') +".distribution() is not implemented! Please override.");
 	}
 }); // declare Aleatory.
-
-/** aleatories:
-	Bundle of random game states (i.e. Aleatory subclasses) and related 
-	definitions.
-*/
-var aleatories = exports.aleatories = {};

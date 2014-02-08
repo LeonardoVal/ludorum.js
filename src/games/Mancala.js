@@ -1,6 +1,6 @@
 /** Implementation of the Kalah member of the Mancala family of games.
 */
-games.Mancala = basis.declare(Game, {
+games.Mancala = declare(Game, {
 	/** new games.Mancala(activePlayer="North", board=makeBoard()):
 		TODO.
 	*/
@@ -61,8 +61,8 @@ games.Mancala = basis.declare(Game, {
 	*/
 	houses: function houses(player){
 		switch (this.players.indexOf(player)) {
-			case 0: return basis.Iterable.range(0, this.board.length / 2 - 1).toArray(); // Store of North.
-			case 1: return basis.Iterable.range(this.board.length / 2, this.board.length - 1).toArray(); // Store of South.
+			case 0: return Iterable.range(0, this.board.length / 2 - 1).toArray(); // Store of North.
+			case 1: return Iterable.range(this.board.length / 2, this.board.length - 1).toArray(); // Store of South.
 			default: throw new Error("Invalid player "+ player +".");
 		}
 	},
@@ -139,7 +139,7 @@ games.Mancala = basis.declare(Game, {
 			seeds = newBoard[move],
 			freeTurn = false,
 			store, oppositeHouse;
-		basis.raiseIf(seeds < 1, "Invalid move ", move, " for game ", this);
+		raiseIf(seeds < 1, "Invalid move ", move, " for game ", this);
 		// Move.
 		newBoard[move] = 0;
 		for (; seeds > 0; seeds--) {
@@ -169,7 +169,7 @@ games.Mancala = basis.declare(Game, {
 		board. It is very unlikely to get these result though.
 	*/
 	resultBounds: function resultBounds() {
-		var stoneCount = basis.iterable(this.board).sum();
+		var stoneCount = iterable(this.board).sum();
 		return [-stoneCount,+stoneCount];
 	},
 	
@@ -217,7 +217,7 @@ games.Mancala.heuristics = {};
 	the board. The result of the function is the normalized weighted sum.
 */
 games.Mancala.heuristics.heuristicFromWeights = function heuristicFromWeights(weights) {
-	var weightSum = basis.iterable(weights).map(Math.abs).sum();
+	var weightSum = iterable(weights).map(Math.abs).sum();
 	function __heuristic__(game, player) {
 		var seedSum = 0, signum;
 		switch (game.players.indexOf(player)) {
@@ -225,7 +225,7 @@ games.Mancala.heuristics.heuristicFromWeights = function heuristicFromWeights(we
 			case 1: signum = -1; break; // South.
 			default: throw new Error("Invalid player "+ player +".");
 		}
-		return basis.iterable(game.board).map(function (seeds, i) {
+		return iterable(game.board).map(function (seeds, i) {
 			seedSum += seeds;
 			return seeds * weights[i]; //TODO Normalize weights before.
 		}).sum() / weightSum / seedSum * signum;

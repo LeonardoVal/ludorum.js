@@ -1,16 +1,18 @@
 ﻿/** Automatic players based on MiniMax with alfa-beta pruning.
 */
-players.MiniMaxPlayer = basis.declare(HeuristicPlayer, {
-	/** new players.MiniMaxPlayer(name='MiniMax', heuristic, horizon=3, random=randomness.DEFAULT):
+players.MiniMaxPlayer = declare(HeuristicPlayer, {
+	/** new players.MiniMaxPlayer(name='MiniMax', params):
 		Builds a player that chooses its moves using the MiniMax algorithm with
 		alfa-beta pruning.
 	*/
-	constructor: function MiniMaxPlayer(name, heuristic, horizon, random) {
-		HeuristicPlayer.call(this, name, random);
-		this.horizon = +(horizon || 3);
-		if (heuristic) {
-			this.heuristic = heuristic;
-		}
+	constructor: function MiniMaxPlayer(name, params) {
+		HeuristicPlayer.call(this, name, params);
+		initialize(this, params)
+		/** players.MiniMaxPlayer.horizon=3:
+			Maximum depth for the MiniMax search.
+		*/
+			.integer('horizon', { defaultValue: 3, coerce: true })
+			.func('heuristic', { ignore: true });
 	},
 
 	toString: function toString() {
@@ -52,7 +54,7 @@ players.MiniMaxPlayer = basis.declare(HeuristicPlayer, {
 			throw new Error('No moves for unfinished game '+ game +'.');
 		}
 		for (var i = 0; i < moves.length; i++) {
-			next = game.next(basis.obj(activePlayer, moves[i]));
+			next = game.next(obj(activePlayer, moves[i]));
 			value = this.minimax(next, player, depth + 1, alpha, beta);
 			if (isActive) {
 				if (alpha < value) { // MAX

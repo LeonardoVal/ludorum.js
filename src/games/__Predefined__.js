@@ -1,7 +1,7 @@
 ﻿/** Simple reference games with a predefined outcome, mostly for testing 
 	purposes.
 */
-games.__Predefined__ = basis.declare(Game, {
+games.__Predefined__ = declare(Game, {
 	/** new games.__Predefined__(activePlayer, results, height=5, width=5):
 		A pseudogame used for testing purposes. It will give width amount of 
 		moves for each player until height moves pass. Then the match is 
@@ -34,8 +34,8 @@ games.__Predefined__ = basis.declare(Game, {
 	*/
 	moves: function moves() {
 		if (this.height > 0) {
-			return basis.obj(this.activePlayer(), 
-				basis.Iterable.range(1, this.width + 1).toArray()
+			return obj(this.activePlayer(), 
+				Iterable.range(1, this.width + 1).toArray()
 			);
 		}
 	},

@@ -1,12 +1,12 @@
 ﻿/** Automatic players that moves fully randomly.
 */	
-players.RandomPlayer = basis.declare(Player, {
+players.RandomPlayer = declare(Player, {
 	/** new players.RandomPlayer(name, random=basis.Randomness.DEFAULT):
 		Builds a player that chooses its moves randomly.
 	*/
 	constructor: function RandomPlayer(name, random) {
 		Player.call(this, name);
-		this.random = random || basis.Randomness.DEFAULT;
+		this.random = random || Randomness.DEFAULT;
 	},
 
 	toString: function toString() {

@@ -1,7 +1,7 @@
 ﻿/** A tournament is a set of matches played between many players. The whole 
 	contest ranks the participants according to the result of the matches.
 */
-var Tournament = exports.Tournament = basis.declare({
+var Tournament = exports.Tournament = declare({
 	/** new Tournament(game, players):
 		Base class of all tournament controllers.
 	*/
@@ -18,12 +18,12 @@ var Tournament = exports.Tournament = basis.declare({
 			Tournament statistics. These include the accumulated score for 
 			each player, indexed by name.
 		*/
-		this.statistics = new basis.Statistics();
+		this.statistics = new Statistics();
 		/** Tournament.events:
 			Event handler for this match. Emitted events are: begin, 
 			beforeMatch, afterMatch & end.
 		*/
-		this.events = new basis.Events({ 
+		this.events = new Events({ 
 			events: ['begin', 'beforeMatch', 'afterMatch', 'end']
 		});
 	},
@@ -36,9 +36,9 @@ var Tournament = exports.Tournament = basis.declare({
 			results = match.result(), 
 			isDraw = false,
 			stats = this.statistics;
-		basis.raiseIf(!results, "Match doesn't have results. Has it finished?");
+		raiseIf(!results, "Match doesn't have results. Has it finished?");
 		// Player statistics.
-		basis.iterable(match.players).forEach(function (p) {
+		iterable(match.players).forEach(function (p) {
 			var role = p[0],
 				player = p[1],
 				playerResult = results[p[0]],
@@ -65,7 +65,7 @@ var Tournament = exports.Tournament = basis.declare({
 		this.onBegin();
 		var tournament = this;
 		matches = matches || this.matches();
-		return basis.Future.sequence(matches, function (match) {
+		return Future.sequence(matches, function (match) {
 			tournament.beforeMatch(match);
 			return match.run().then(function (match) {
 				tournament.account(match);
@@ -105,8 +105,3 @@ var Tournament = exports.Tournament = basis.declare({
 		this.logger && this.logger.info('Tournament ends for game ', game.name, ':\n', this.statistics, '\n');
 	}
 }); // declare Tournament
-
-/** tournaments:
-	Bundle of Tournament subclasses and related definitions.
-*/
-var tournaments = exports.tournaments = {};

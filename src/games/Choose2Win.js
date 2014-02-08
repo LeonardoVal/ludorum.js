@@ -1,7 +1,7 @@
 ﻿/** Simple silly game where players can instantly choose to win, loose, draw or
 	just continue. Mostly for testing purposes.
 */
-games.Choose2Win = basis.declare(Game, {
+games.Choose2Win = declare(Game, {
 	/** new games.Choose2Win(turns=Infinity, activePlayer=players[0], winner=none):
 		Choose2Win is a silly game indeed. Each turn one of the players can
 		decide to win, to lose or to pass the turn. It is meant to be used 
@@ -26,7 +26,7 @@ games.Choose2Win = basis.declare(Game, {
 	*/
 	moves: function moves() {
 		if (!this.__winner__ && this.__turns__ > 0) {
-			return basis.obj(this.activePlayer(), ['win', 'lose', 'pass']);
+			return obj(this.activePlayer(), ['win', 'lose', 'pass']);
 		}
 	},
 
@@ -51,7 +51,7 @@ games.Choose2Win = basis.declare(Game, {
 			case 'pass': return new this.constructor(this.__turns__ - 1, opponent);
 			default: break; // So the lint would not complaint.
 		}
-		return basis.raise('Invalid move '+ moves[activePlayer] +' for player '+ activePlayer +'.');
+		throw new Error('Invalid move '+ moves[activePlayer] +' for player '+ activePlayer +'.');
 	},
 	
 	args: function args() {

@@ -1,6 +1,6 @@
 /** Implementation of the traditional Tic-Tac-Toe game.
 */
-games.TicTacToe = basis.declare(Game, {
+games.TicTacToe = declare(Game, {
 	/** new games.TicTacToe(activePlayer="Xs", board='_________'):
 		Constructor of TicTacToe games. The first player is always Xs.
 	*/
@@ -42,8 +42,8 @@ games.TicTacToe = basis.declare(Game, {
 	moves: function moves() {
 		if (!this.result()) {
 			var result = {};
-			result[this.activePlayer()] = basis.iterable(this.board).filter(function (chr, i) {
-				return chr == '_'; // Keep only empty squares.
+			result[this.activePlayer()] = iterable(this.board).filter(function (chr, i) {
+				return chr === '_'; // Keep only empty squares.
 			}, function (chr, i) {
 				return i; // Grab the index.
 			}).toArray();
@@ -59,8 +59,10 @@ games.TicTacToe = basis.declare(Game, {
 	next: function next(moves) {
 		var activePlayer = this.activePlayer(), 
 			move = +moves[activePlayer];
-		basis.raiseIf(this.board.charAt(move) !== '_', 'Invalid move ', move, ' for board ', this.board, 
-			' (moves= ', JSON.stringify(moves) +').');
+		if (this.board.charAt(move) !== '_') {
+			throw new Error('Invalid move '+ JSON.stringify(moves) +' for board '+ this.board
+					+' (moves= '+ JSON.stringify(moves) +').');
+		}
 		var newBoard = this.board.substring(0, move) + activePlayer.charAt(0) + this.board.substring(move + 1);
 		return new this.constructor(this.opponent(activePlayer), newBoard);
 	},
@@ -93,7 +95,7 @@ games.TicTacToe.heuristics = {};
 	ignored, opponent squares considered negative.
 */
 games.TicTacToe.heuristics.heuristicFromWeights = function heuristicFromWeights(weights) {
-	var weightSum = basis.iterable(weights).map(Math.abs).sum();
+	var weightSum = iterable(weights).map(Math.abs).sum();
 	function __heuristic__(game, player) {
 		var playerChar = player.charAt(0);
 		return iterable(game.board).map(function (square, i) {

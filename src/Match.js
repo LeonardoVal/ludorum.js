@@ -1,6 +1,6 @@
 ﻿/** Match is the controller for a game, managing player decisions.
 */
-var Match = exports.Match = basis.declare({
+var Match = exports.Match = declare({
 	/** new Match(game, players):
 		Match objects are game controllers, handling the flow of the turns 
 		between the players. They also provide game events that players and 
@@ -10,7 +10,7 @@ var Match = exports.Match = basis.declare({
 	*/
 	constructor: function Match(game, players) {
 		this.game = game;
-		this.players = Array.isArray(players) ? basis.iterable(game.players).zip(players).toObject() : players;
+		this.players = Array.isArray(players) ? iterable(game.players).zip(players).toObject() : players;
 		/** Match.history:
 			Game state array, from the initial game state to the last.
 		*/
@@ -19,7 +19,7 @@ var Match = exports.Match = basis.declare({
 			Event handler for this match. Emitted events are: begin, end, move
 			& next.
 		*/
-		this.events = new basis.Events({ 
+		this.events = new Events({ 
 			events: ['begin', 'move', 'next', 'end']
 		});
 		// Participate the players.
@@ -62,8 +62,8 @@ var Match = exports.Match = basis.declare({
 	decisions: function decisions(game) {
 		game = game || this.state();
 		var players = this.players;
-		return basis.Future.all(game.activePlayers.map(function (p) {
-			return basis.when(players[p].decision(game, p));//FIXME when?
+		return Future.all(game.activePlayers.map(function (p) {
+			return Future.when(players[p].decision(game, p));//FIXME when?
 		}));
 	},
 
@@ -80,7 +80,7 @@ var Match = exports.Match = basis.declare({
 	run: function run(plys) {
 		plys = isNaN(plys) ? Infinity : +plys;
 		if (plys < 1) { // If the run must stop...
-			return basis.when(this);
+			return Future.when(this);
 		}
 		var ply = this.ply(), game = this.state(), results, next;
 		(ply < 0) && this.onBegin(game);
@@ -90,11 +90,11 @@ var Match = exports.Match = basis.declare({
 		results = game.result();
 		if (results) { // If the match has finished ...
 			this.onEnd(game, results);
-			return basis.when(this);
+			return Future.when(this);
 		} else { // Else the run must continue ...
 			var match = this;
 			return this.decisions(game).then(function (moves) {
-				moves = basis.iterable(game.activePlayers).zip(moves).toObject();
+				moves = iterable(game.activePlayers).zip(moves).toObject();
 				match.onMove(game, moves);
 				match.__advance__(game, game.next(moves));
 				return match.run(plys - 1);
@@ -107,7 +107,7 @@ var Match = exports.Match = basis.declare({
 	onBegin: function onBegin(game) {
 		this.events.emit('begin', this.players, game, this);
 		this.logger && this.logger.info('Match begins with ', 
-			basis.iterable(this.players).map(function (attr) {
+			iterable(this.players).map(function (attr) {
 				return attr[1] +' as '+ attr[0];
 			}).join(', '), '; for ', game, '.');
 	},

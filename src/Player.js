@@ -1,6 +1,6 @@
 ﻿/** Player is the base type for all playing agents.
 */
-var Player = exports.Player = basis.declare({
+var Player = exports.Player = declare({
 	/** new Player(name):
 		A player is an agent that plays a game. This means deciding which 
 		move to make from the set of moves available to the player, each 
@@ -20,7 +20,7 @@ var Player = exports.Player = basis.declare({
 	*/
 	__moves__: function __moves__(game, role) {
 		var moves = game.moves();
-		basis.raiseIf(!moves || !moves[role] || moves[role].length < 1, 
+		raiseIf(!moves || !moves[role] || moves[role].length < 1, 
 			"Player ", role, " has no moves for game ", game, ".");
 		return moves[role];
 	},
@@ -56,8 +56,3 @@ var Player = exports.Player = basis.declare({
 		};
 	},
 }); // declare Player.
-
-/** players:
-	Bundle of Player subclasses and related definitions.
-*/
-var players = exports.players = {};
