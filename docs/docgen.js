@@ -22,7 +22,7 @@ module.exports = function (grunt) {
 	function parseComment(text) {
 		text = escapeHTML(text.trim()) // Escape HTML special characters.
 			.replace(/\s*\n\s+/g, '\n') // Clean spaces around ends of lines.
-			.replace(/\.\n/g, '.\n\n'); // Put blank lines between paragraphs.
+			.replace(/([.:]\n)/g, '$1\n'); // Put blank lines between paragraphs.
 		var nameMatch = /^(\w+\s+)*((\w+\.)*\w+)\s*[(:=]/.exec(text),
 			lines = text.split('\n'),
 			header = nameMatch ? lines.shift() : '',
@@ -31,11 +31,14 @@ module.exports = function (grunt) {
 		content = content
 			.replace(/\[(.*?)\]\(((https?|ftp|mailto):.*?)\)/g, '<a href="$2" target="_blank">$1</a>') // Transform links.
 			.replace(/`(.*?)`/g, '<code>$1</code>') // Transform code text.
+			.replace(/(\n\s+[*-][^\n]*)+/g, function (match) { // Transform lists.
+				return '\n<ul>'+ match.replace(/\n\s+[*-]([^\n]*)/g, '<li>$1</li>') +'</ul>';
+			});
 		return {
 			name: nameMatch ? nameMatch[2] : '',
 			header: header,
 			content: content.split('\n\n'), // Split into paragraphs.
-			modifiers: ['new', 'static'].filter(function (modifier) {
+			modifiers: ['new', 'static', 'abstract'].filter(function (modifier) {
 				return header && header.match(new RegExp('\\b'+ modifier +'\\s'));
 			})
 		};

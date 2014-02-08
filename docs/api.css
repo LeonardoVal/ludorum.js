@@ -39,8 +39,7 @@ body a {
 }
 #api_detail h4 {
 	font-weight: normal;
-	border-bottom: 1px solid lightgrey;
-	background-color: rgb(240, 240, 240);
+	background-color: rgb(220, 250, 255);
 	padding: 1px;
 }
 
@@ -50,10 +49,18 @@ body a {
 .item_static {
 	font-style: italic;
 }
+.item_abstract {
+	color: rgb(0,0,128);
+	font-style: italic;
+}
 
 header {
 	border-bottom: 1px solid black;
 }
+header h1 {
+	background-color: rgb(255, 253, 200);
+}
+
 footer {
 	border-top: 1px solid black;
 	text-align: right;
