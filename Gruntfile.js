@@ -1,33 +1,28 @@
-﻿/** Gruntfile for basis.
-	
-	@author <a href="mailto:leonardo.val@creatartis.com">Leonardo Val</a>
-	@licence MIT Licence
+﻿/** Gruntfile for [ludorum.js](http://github.com/LeonardoVal/ludorum.js).
 */
-var umdWrapper = function (init) {
-	if (typeof define === 'function' && define.amd) {
-		define(['basis'], init); // AMD module.
-	} else if (typeof module === 'object' && module.exports) {
-		module.exports = init(require('basis')); // CommonJS module.
-	} else {
-		var global = (0, eval)('this');
-		global.inveniemus = init(global.basis); // Global namespace.
-	}
-};
-
-var sourceFiles = [
+var sourceFiles = [ 'src/__prologue__.js',
 	'src/Game.js', 'src/Player.js', 'src/Match.js', 
 		'src/Tournament.js', 'src/Aleatory.js',
+	// players.
 	'src/players/RandomPlayer.js', 'src/players/TracePlayer.js',
 		'src/players/HeuristicPlayer.js', 'src/players/MiniMaxPlayer.js',
 		'src/players/MonteCarloPlayer.js',
 		'src/players/UserInterfacePlayer.js',
+	// games.
 	'src/games/__Predefined__.js',  'src/games/Choose2Win.js',
 		'src/games/OddsAndEvens.js', 'src/games/TicTacToe.js',
 		'src/games/ToadsAndFrogs.js', 'src/games/Mancala.js',
 		'src/games/Pig.js',
+	// tournaments.
 	'src/tournaments/RoundRobin.js', 'src/tournaments/Measurement.js',
-	'src/aleatories/Dice.js'
-];
+	// aleatories.
+	'src/aleatories/Dice.js',
+	// boards.
+	'src/boards/Checkerboard.js', 'src/boards/CheckerboardFromString.js',
+	// utils.
+	'src/utils/Scanner.js',
+// end
+	'src/__epilogue__.js'];
 
 module.exports = function(grunt) {
 // Init config. ////////////////////////////////////////////////////////////////
@@ -35,9 +30,7 @@ module.exports = function(grunt) {
 		pkg: grunt.file.readJSON('package.json'),
 		concat: { //////////////////////////////////////////////////////////////
 			options: {
-				separator: '\n\n',
-				banner: '"use strict"; ('+ umdWrapper +')(function (basis){ var exports = {};\n',
-				footer: '\nreturn exports;\n});'
+				separator: '\n\n'
 			},
 			build: {
 				src: sourceFiles,
@@ -46,7 +39,7 @@ module.exports = function(grunt) {
 		},
 		uglify: { //////////////////////////////////////////////////////////////
 		  options: {
-			banner: '//! <%= pkg.name %> <%= pkg.version %> (<%= grunt.template.today("yyyy-mm-dd") %>)\n',
+			banner: '//! <%= pkg.name %> <%= pkg.version %>\n',
 			report: 'min'
 		  },
 		  build: {
