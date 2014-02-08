@@ -14,7 +14,7 @@
 	"licence": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "http://github.com/LeonardoVal/ludorum"
+		"url": "http://github.com/LeonardoVal/ludorum.js"
 	},
 	"dependencies": { },
 	"devDependencies": {
