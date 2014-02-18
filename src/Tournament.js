@@ -43,14 +43,17 @@ var Tournament = exports.Tournament = declare({
 				player = p[1],
 				playerResult = results[p[0]],
 				keys = ['game:'+ game.name, 'role:'+ role, 'player:'+ player.name];
-			stats.add(keys.concat('results'), playerResult);
-			stats.add(keys.concat(playerResult > 0 ? 'victories' : playerResult < 0 ? 'defeats' : 'draws'), playerResult);
-			stats.add(keys.concat('length'), match.ply()); //FIXME This may not be accurate if the game has random variables.
+			stats.add({key:'results', game:game.name, role:role, player:player.name}, playerResult);
+			stats.add({key:(playerResult > 0 ? 'victories' : playerResult < 0 ? 'defeats' : 'draws'),
+				game:game.name, role:role, player:player.name}, playerResult);
+			//FIXME This may not be accurate if the game has random variables.
+			stats.add({key:'length', game:game.name, role:role, player:player.name}, match.ply()); 
 			match.history.forEach(function (entry) {
 				if (typeof entry.moves === 'function') {
 					var moves = entry.moves();	
 					if (moves && moves.hasOwnProperty(role) && moves[role].length > 0) {
-						stats.add(keys.concat('width'), moves[role].length);
+						stats.add({key:'width', game:game.name, role:role, player:player.name}, 
+							moves[role].length);
 					}
 				}
 			})

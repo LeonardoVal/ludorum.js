@@ -616,14 +616,17 @@ var Tournament = exports.Tournament = declare({
 				player = p[1],
 				playerResult = results[p[0]],
 				keys = ['game:'+ game.name, 'role:'+ role, 'player:'+ player.name];
-			stats.add(keys.concat('results'), playerResult);
-			stats.add(keys.concat(playerResult > 0 ? 'victories' : playerResult < 0 ? 'defeats' : 'draws'), playerResult);
-			stats.add(keys.concat('length'), match.ply()); //FIXME This may not be accurate if the game has random variables.
+			stats.add({key:'results', game:game.name, role:role, player:player.name}, playerResult);
+			stats.add({key:(playerResult > 0 ? 'victories' : playerResult < 0 ? 'defeats' : 'draws'),
+				game:game.name, role:role, player:player.name}, playerResult);
+			//FIXME This may not be accurate if the game has random variables.
+			stats.add({key:'length', game:game.name, role:role, player:player.name}, match.ply()); 
 			match.history.forEach(function (entry) {
 				if (typeof entry.moves === 'function') {
 					var moves = entry.moves();	
 					if (moves && moves.hasOwnProperty(role) && moves[role].length > 0) {
-						stats.add(keys.concat('width'), moves[role].length);
+						stats.add({key:'width', game:game.name, role:role, player:player.name}, 
+							moves[role].length);
 					}
 				}
 			})
@@ -2279,7 +2282,7 @@ exports.utils.Scanner = declare({
 				ply++;
 			});
 		}).then(function () {
-			scanner.statistics.add(['aborted'], window.length);
+			scanner.statistics.add({key:'aborted'}, window.length);
 			return scanner.statistics;
 		});
 	},
@@ -2304,7 +2307,7 @@ exports.utils.Scanner = declare({
 				moves = game.moves();
 			return Future.all(game.activePlayers.map(function (activePlayer) {
 				if (players && players[activePlayer]) {
-					var decisionTime = stats.stat(['decision.time', 'game:'+ game.name, 'role:'+ role, 'player:'+ p]);
+					var decisionTime = stats.stat({key:'decision.time', game: game.name, role: role, player: p});
 					decisionTime.startTime();
 					return Future.when(players[activePlayer].decision(game, activePlayer)).then(function (move) {
 						decisionTime.addTime();
@@ -2333,26 +2336,81 @@ exports.utils.Scanner = declare({
 				var r = result[role],
 					p = players && players[role] ? players[role].name : '',
 					keys = ['game:'+ game.name, 'role:'+ role, 'player:'+ p];
-				stats.add(['game.result'].concat(keys), r, game);
-				stats.add(['game.length'].concat(keys), ply, game);
+				stats.add({key:'game.result', game:game.name, role:role, player:p}, r, game);
+				stats.add({key:'game.length', game:game.name, role:role, player:p}, ply, game);
 				if (r < 0) {
-					stats.add(['defeat.result'].concat(keys), r, game);
-					stats.add(['defeat.length'].concat(keys), ply, game);
+					stats.add({key:'defeat.result', game:game.name, role:role, player:p}, r, game);
+					stats.add({key:'defeat.length', game:game.name, role:role, player:p}, ply, game);
 				} else if (r > 0) {
-					stats.add(['victory.result'].concat(keys), r, game);
-					stats.add(['victory.length'].concat(keys), ply, game);
+					stats.add({key:'victory.result', game:game.name, role:role, player:p}, r, game);
+					stats.add({key:'victory.result', game:game.name, role:role, player:p}, ply, game);
 				} else {
-					stats.add(['draw.length'].concat(keys), ply, game);
+					stats.add({key:'draw.length', game:game.name, role:role, player:p}, ply, game);
 				}
 			});
 			return true;
 		} else {
 			var moves = game.moves();
 			iterable(game.activePlayers).forEach(function (role) {
-				stats.add(['game.width', 'game:'+ game.name, 'role:'+ role], moves[role].length);
+				stats.add({key:'game.width', game:game.name, role:role}, moves[role].length);
 			});
 			return false;
 		}
+	},
+	
+	assessPlayer: function assessPlayer(player, game) {
+		game = game || this.game;
+		var scanner = this;
+		return Future.sequence(game.players, function (role) {
+			var players = {};
+			players[role] = player;
+			return scanner.scan(players, game);
+		}).then(function (stats) {
+			var resultBounds = game.resultBounds(),
+				expectedResult = stats.average({key:'game.result', game:game.name, players:player.name});
+			stats.add({key:'player.expectedResult', game:game.name, players:player.name}, expectedResult);
+			stats.add({key:'player.expectedResultNormalized', game:game.name, players:player.name}, 
+				(expectedResult - resultBounds[0]) / (resultBounds[1] - resultBounds[0]) * 2 - 1
+			);
+			stats.add({key:'player.expectedOutcome', game:game.name, players:player.name},
+				(stats.count({key:'victory.result', game:game.name, players:player.name})
+					- stats.count({key:'defeat.result', game:game.name, players:player.name})
+				) / stats.count({key:'game.result', game:game.name, players:player.name})
+			);
+			return stats;
+		});
+	},
+	
+	assessGame: function assessGame(game, expectedDuration, expectedBreath) {
+		game = game || this.game;
+		var scanner = this;
+		return this.scan({}, game).then(function (stats) {
+			var fairness = stats.stat({key:'fairness', game:game.name}),
+				competitiveness = stats.stat({key:'competitiveness', game:game.name}),
+				duration = stats.stat({key:'duration', game:game.name}),
+				breath = stats.stat({key:'breath', game:game.name});
+			game.players.forEach(function (role) {
+				var resultBounds = game.resultBounds(),
+					keys = ['game:'+ game.name, 'role:'+ role];
+				fairness.add(1 - Math.abs(
+					(stats.average({key:'game.result', game:game.name, role:role}) - resultBounds[0]) 
+					/ (resultBounds[1] - resultBounds[0]) * 2 - 1
+				));
+				competitiveness.add(1 - stats.count({key:'draw.length', game:game.name, role:role}) 
+					/ stats.count({key:'game.length', game:game.name, role:role}));
+				duration.add(1 / (1 + 
+					stats.standardDeviation({key:'game.length', game:game.name, role:role}, expectedDuration)
+					/ (stats.maximum({key:'game.length', game:game.name, role:role}) 
+						- stats.minimum({key:'game.length', game:game.name, role:role}))
+				));
+				breath.add(1 / (1 + 
+					stats.standardDeviation({key:'game.width', game:game.name, role:role}, expectedBreath)
+					/ (stats.maximum({key:'game.length', game:game.name, role:role})
+						- stats.minimum({key:'game.length', game:game.name, role:role}))
+				));
+			});
+			return stats;
+		});
 	}
 }); // declare utils.Scanner.
 

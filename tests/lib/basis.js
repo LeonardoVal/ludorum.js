@@ -9,48 +9,44 @@
 })(function (){ var exports = {};
 /* Core generic algorithms and utility definitions.
 */
-// Objects and object orientation. /////////////////////////////////////////////
 
-/** declare(supers..., members={}):
-	Object oriented implementations, influenced by Dojo's. The first super 
-	is considered the parent. The following supers add to the returned 
-	constructor's prototype, but do not override. The given members always
-	override.
-	See [Dojo's declare](http://dojotoolkit.org/reference-guide/1.9/dojo/_base/declare.html).
+/** Global:
+	Global scope of the current execution environment. Usually (window) in 
+	browsers and (global) under NodeJS.
 */
-var declare = exports.declare = function declare() {
-	var args = Array.prototype.slice.call(arguments),
-		parent = args.length > 1 ? args.shift() : Object,
-		members = args.length > 0 ? args.pop() : {},
-		constructor = members.hasOwnProperty('constructor') ? members.constructor : undefined, //WARN ({}).constructor == Object.
-		placeholder, proto;
-	if (typeof constructor !== 'function') { // If no constructor is given ...
-		constructor = (function () { // ... provide a default constructor.
-			parent.apply(this, arguments);
-		});
+var Global = exports.Global = (0, eval)('this');
+
+/** raise(message...):
+	Builds a new instance of Error with the concatenation of the arguments 
+	as its message and throws it.
+*/
+var raise = exports.raise = function raise() {
+	throw new Error(Array.prototype.slice.call(arguments, 0).join(''));
+};
+
+/** raiseIf(condition, message...):
+	If the condition is true a new Error is built and risen like in 
+	basis.raise().
+*/
+var raiseIf = exports.raiseIf = function raiseIf(condition) {
+	if (condition) {
+		raise.call(this, Array.prototype.slice.call(arguments, 1));
 	}
-	/* This is the way goog.inherits does it in Google's Closure Library. It
-		is preferred since it does not require the parent constructor to 
-		support being called without arguments.			
-	*/
-	placeholder = function () {};
-	placeholder.prototype = parent.prototype;
-	proto = constructor.prototype = new placeholder();
-	for (var id in members) { // Copy members to the new prototype.
-		if (members.hasOwnProperty(id)) {
-			proto[id] = members[id];
-		}
-	} 
-	proto.constructor = constructor;
-	args.forEach(function (superMembers) { // Copy other members in the other supers, if they do not override.
-		superMembers = typeof superMembers === 'function' ? superMembers.prototype : superMembers;
-		for (id in superMembers) {
-			if (typeof proto[id] === 'undefined') {
-				proto[id] = superMembers[id];
-			}
-		}
-	});
-	return constructor;
+};
+
+/** callStack(error=none):
+	Returns an array with the callstack of error or (if missing) a new one 
+	is used, hence returning the current callStack.
+*/
+var callStack = exports.callStack = function callStack(exception) {
+	if (exception) {
+		return (exception.stack || exception.stacktrace || '').split('\n');
+	} else try {
+		throw new Error();
+	} catch (e) {
+		exception = e;
+	}
+	return (exception.stack || exception.stacktrace || '').split('\n').slice(1);
 };
 
 /** obj(key, value...):
@@ -87,46 +83,106 @@ var copy = exports.copy = function copy(objTo) {
 	return objTo;
 };
 
-/** Global:
-	Global scope of the current execution environment. Usually (window) in 
-	browsers and (global) under NodeJS.
+/** objects:
+	Bundle of OOP related functions and definitions.
 */
-var Global = exports.Global = (0, eval)('this');
+var objects = exports.objects = (function () {
+	/** objects.subconstructor(parent, constructor=<new constructor>):
+		Returns a new constructor (or the given constructor) with an adjusted
+		prototype inheriting from the parent.
+	*/
+	var subconstructor = this.subconstructor = function subconstructor(parent, constructor) {
+		var proto, placeholder;
+		if (typeof constructor !== 'function') { // If no constructor is given ...
+			constructor = (function () { // ... provide a default constructor.
+				parent.apply(this, arguments);
+			});
+		}
+		/* This is the way goog.inherits does it in Google's Closure Library. It
+			is preferred since it does not require the parent constructor to 
+			support being called without arguments.			
+		*/
+		placeholder = function () {};
+		placeholder.prototype = parent.prototype;
+		constructor.prototype = new placeholder();
+		constructor.prototype.constructor = constructor;
+		return constructor;
+	};
+	
+	/** objects.addMember(constructor, key, value, force=false):
+		Adds the value as a member of the constructor's type. If the constructor
+		already has a member with the given key, it is overriden only if force
+		is true.
+	*/
+	var addMember = this.addMember = function addMember(constructor, key, value, force) {
+		var modifiers = key.split(/\s+/),
+			key = modifiers.pop(),
+			scope = constructor.prototype;
+		if (modifiers.indexOf('static') >= 0) {
+			scope = constructor;
+		}
+		if (force || typeof scope[key] === 'undefined') {
+			if (modifiers.indexOf('property') >= 0) {
+				return Object.defineProperty(scope, key, value);
+			} else {
+				return scope[key] = value;
+			}
+		}
+	};
+	
+	/** objects.addMembers(constructor, members, force=false):
+		Adds all own properties of members to the constructor's type, using
+		addMember.
+	*/
+	var addMembers = this.addMembers = function addMembers(constructor, members, force) {
+		Object.keys(members).map(function (id) {
+			addMember(constructor, id, members[id], force);
+		});
+	};
+	
+	/** objects.declare(supers..., members={}):
+		Object oriented implementations, influenced by Dojo's. The first super 
+		is considered the parent. The following supers add to the returned 
+		constructor's prototype, but do not override. The given members always
+		override.
+		See [Dojo's declare](http://dojotoolkit.org/reference-guide/1.9/dojo/_base/declare.html).
+	*/
+	var declare = exports.declare = this.declare = function declare() {
+		var args = Array.prototype.slice.call(arguments),
+			parent = args.length > 1 ? args.shift() : Object,
+			members = args.length > 0 ? args.pop() : {},
+			constructor = subconstructor(parent, members.hasOwnProperty('constructor') ? members.constructor : undefined), //WARN ({}).constructor == Object.
+			initializer = members[''];
+		Object.keys(members).map(function (id) {
+			if (id !== '' && id !== 'constructor') {
+				addMember(constructor, id, members[id], true);
+			}
+		});
+		args.forEach(function (members) {
+			if (typeof members === 'function') {
+				members = members.prototype;
+			}
+			addMembers(constructor, members, false);
+		});
+		if (typeof initializer === 'function') {
+			initializer.apply(constructor);
+		}
+		return constructor;
+	};
 
-// Errors //////////////////////////////////////////////////////////////////////
+	/** objects.unimplemented(cls, id):
+		Returns a function that raises an "unimplemented method" exception.
+	*/
+	var unimplemented = this.unimplemented = function unimplemented(cls, id) {
+		return function () {
+			throw new Error((this.constructor.name || cls) +"."+ id +"() not implemented! Please override.");
+		};
+	};
+	
+	return this;
+}).call({}); // Objects.
 
-/** raise(message...):
-	Builds a new instance of Error with the concatenation of the arguments 
-	as its message and throws it.
-*/
-var raise = exports.raise = function raise() {
-	throw new Error(Array.prototype.slice.call(arguments, 0).join(''));
-};
-
-/** raiseIf(condition, message...):
-	If the condition is true a new Error is built and risen like in 
-	basis.raise().
-*/
-var raiseIf = exports.raiseIf = function raiseIf(condition) {
-	if (condition) {
-		raise(Array.prototype.slice.call(arguments, 1).join(''));
-	}
-};
-
-/** callStack(error=none):
-	Returns an array with the callstack of error or (if missing) a new one 
-	is used, hence returning the current callStack.
-*/
-var callStack = exports.callStack = function callStack(exception) {
-	if (exception) {
-		return (exception.stack || exception.stacktrace || '').split('\n');
-	} else try {
-		throw new Error();
-	} catch (e) {
-		exception = e;
-	}
-	return (exception.stack || exception.stacktrace || '').split('\n').slice(1);
-};
+var declare = objects.declare;
 
 /* Text manipulation definitions.
 */
@@ -1751,197 +1807,200 @@ var Future = exports.Future = declare({
 	
 	toString: function toString() {
 		return 'Future:'+ this.STATES[this.state];
+	},
+	
+// Functions dealing with Futures. /////////////////////////////////////////////
+
+	/** static Future.when(value):
+		Unifies asynchronous and synchronous behaviours. If value is a Future
+		it is returned as it is. Else a resolved Future is returned with the 
+		given value.
+	*/
+	'static when': function when(value) {
+		return value instanceof Future ? value : new Future(value);
+	},
+
+	/** static Future.invoke(fn, _this, args...):
+		Calls the function synchronously, returning a future resolved with the 
+		call's result. If an exceptions is raised, the future is rejected with it.
+	*/
+	'static invoke': function invoke(fn, _this) {
+		try {
+			return when(fn.apply(_this, Array.prototype.slice.call(arguments, 2)));
+		} catch (error) {
+			var result = new Future();
+			result.reject(error);
+			return result;
+		}
+	},
+
+	/** static Future.all(futures):
+		Returns a Future that is resolved when all the given futures are 
+		resolved, or rejected when one is rejected. If no futures are given,
+		the result is resolved with [].
+	*/
+	'static all': function all(futures) {
+		futures = Array.isArray(futures) ? futures : iterable(futures).toArray();
+		var result = new Future(),
+			count = futures.length,
+			values = new Array(count), future,
+			doneCallback = function (index, value) {
+				values[index] = value;
+				if (--count < 1) {
+					//console.log("all() resolved with "+ values.length +" values.");//FIXME
+					result.resolve(values);
+				}
+			};
+		if (count < 1) {
+			result.resolve([]);
+		} else for (var i = 0; i < futures.length; i++) {
+			future = when(futures[i]);
+			future.done(doneCallback.bind(this, i));
+			future.fail(result.reject.bind(result));
+			future.__onCancel__(result.cancel.bind(result));
+		}
+		return result;
+	},
+
+	/** static Future.any(futures):
+		Returns a Future that is resolved when any of the given futures are 
+		resolved, or rejected when all are rejected. If no futures are given,
+		the result is rejected with undefined.
+	*/
+	'static any': function any(futures) {
+		futures = iterables.iterable(futures).toArray();
+		var result = new Future(), 
+			count = futures.length,
+			values = new Array(count), future;
+		if (count < 1) {
+			result.reject();
+		} else for (var i = 0; i < futures.length; i++) {
+			future = when(futures[i]);
+			future.fail((function (index) {
+				return function (value) {
+					values[index] = value;
+					count--;
+					if (count < 1) {
+						result.reject(value);
+					}
+				};
+			})(i));
+			future.done(result.resolve.bind(result));
+			future.__onCancel__(result.cancel.bind(result));
+		}
+		return result;
+	},
+
+	/** static Future.sequence(xs, f=None):
+		Evaluates all values and futures in the iterable xs in sequence. If it
+		is given, the function f is called for each value.
+	*/
+	'static sequence': function sequence(xs, f) {
+		var result = new Future(), x,
+			rejection = result.reject.bind(result),
+			it = iterable(xs).__iter__(),
+			action = function action(lastValue) {
+				try {
+					x = it();
+					if (f) {
+						return when(x).then(f, rejection).then(action, rejection);
+					} else {
+						return when(x).then(action, rejection);
+					}
+				} catch (err) {
+					if (err === STOP_ITERATION) {
+						result.resolve(lastValue);
+					} else {
+						result.reject(err);
+					}
+				}
+			};
+		action();
+		return result;
+	},
+
+	/** static Future.doWhile(action, condition):
+		Perform the action until the condition fails. The action is first called
+		without arguments, and afterwards is called with the previous value. The
+		conditions is always called with the last value returned by action. 
+		Both action and condition may return futures. The condition by default
+		is the boolean conversion of the action's returned value.
+	*/
+	'static doWhile': function doWhile(action, condition) {
+		condition = condition || function (value) {
+			return !!value;
+		};
+		var loopEnd = new Future(),
+			reject = loopEnd.reject.bind(loopEnd);
+		function loop(value) {
+			Future.invoke(condition, this, value).then(function (checks) {
+				if (checks) {
+					Future.invoke(action, this, value).then(loop, reject);
+				} else {
+					loopEnd.resolve(value);
+				}
+			}, reject);
+		}
+		Future.invoke(action).then(loop, reject);
+		return loopEnd;
+	},
+
+	/** static Future.whileDo(condition, action):
+		Similar to futures.doWhile, but evaluates the condition first.
+	*/
+	'static whileDo': function whileDo(condition, action) {
+		return Future.invoke(condition).then(function (checks) {
+			return Future.doWhile(action, condition);
+		});
+	},
+
+	/** static Future.delay(ms, value):
+		Return a future that will be resolved with the given value after the 
+		given time in milliseconds. Time is forced to be at least 10ms. If value
+		is undefined, the timestamp when the function is called is used.
+	*/
+	'static delay': function delay(ms, value) {
+		ms = isNaN(ms) ? 10 : Math.max(+ms, 10);
+		value = typeof value === 'undefined' ? Date.now() : value;
+		var result = new Future();
+		setTimeout(result.resolve.bind(result, value), ms);
+		return result;
+	},
+
+	/** static Future.retrying(f, t=10, delay=100ms, delayFactor=2, maxDelay=5min):
+		Calls the function f upto t times until it returns a value or a future that
+		is resolved. Each time is separated by a delay that gets increased by
+		delayFactor upto maxDelay.
+	*/
+	'static retrying': function retrying(f, times, delay, delayFactor, maxDelay) {
+		times = isNaN(times) ? 10 : +times;
+		return times < 1 ? Future.invoke(f) : Future.invoke(f).then(undefined, function () {
+			delay = isNaN(delay) ? 100 : +delay;
+			delayFactor = isNaN(delayFactor) ? 2.0 : +delayFactor;
+			maxDelay = isNaN(maxDelay) ? 300000 : +maxDelay;
+			return Future.delay(delay).then(function () {
+				return Future.retrying(f, times - 1, Math.min(maxDelay, delay * delayFactor), delayFactor, maxDelay);
+			});
+		});
+	},
+
+	/** static Future.imports(...modules):
+		Builds a future that loads the given modules using RequireJS' require 
+		function, and resolves to an array of the loaded modules.
+	*/
+	'static imports': function imports() {
+		var result = new Future();
+		require(Array.prototype.slice.call(arguments), function () {
+			result.resolve(Array.prototype.slice.call(arguments));
+		}, function (err) {
+			result.reject(err);
+		});
+		return result;
 	}
 }); // declare Future.
 
-// Functions dealing with Futures. /////////////////////////////////////////////
+var when = Future.when;
 
-/** static Future.when(value):
-	Unifies asynchronous and synchronous behaviours. If value is a Future
-	it is returned as it is. Else a resolved Future is returned with the 
-	given value.
-*/
-var when = Future.when = function when(value) {
-	return value instanceof Future ? value : new Future(value);
-};
-
-/** static Future.invoke(fn, _this, args...):
-	Calls the function synchronously, returning a future resolved with the 
-	call's result. If an exceptions is raised, the future is rejected with it.
-*/
-Future.invoke = function invoke(fn, _this) {
-	try {
-		return when(fn.apply(_this, Array.prototype.slice.call(arguments, 2)));
-	} catch (error) {
-		var result = new Future();
-		result.reject(error);
-		return result;
-	}
-};
-
-/** static Future.all(futures):
-	Returns a Future that is resolved when all the given futures are 
-	resolved, or rejected when one is rejected. If no futures are given,
-	the result is resolved with [].
-*/
-Future.all = function all(futures) {
-	futures = Array.isArray(futures) ? futures : iterable(futures).toArray();
-	var result = new Future(),
-		count = futures.length,
-		values = new Array(count), future,
-		doneCallback = function (index, value) {
-			values[index] = value;
-			if (--count < 1) {
-				//console.log("all() resolved with "+ values.length +" values.");//FIXME
-				result.resolve(values);
-			}
-		};
-	if (count < 1) {
-		result.resolve([]);
-	} else for (var i = 0; i < futures.length; i++) {
-		future = when(futures[i]);
-		future.done(doneCallback.bind(this, i));
-		future.fail(result.reject.bind(result));
-		future.__onCancel__(result.cancel.bind(result));
-	}
-	return result;
-};
-
-/** static Future.any(futures):
-	Returns a Future that is resolved when any of the given futures are 
-	resolved, or rejected when all are rejected. If no futures are given,
-	the result is rejected with undefined.
-*/
-Future.any = function any(futures) {
-	futures = iterables.iterable(futures).toArray();
-	var result = new Future(), 
-		count = futures.length,
-		values = new Array(count), future;
-	if (count < 1) {
-		result.reject();
-	} else for (var i = 0; i < futures.length; i++) {
-		future = when(futures[i]);
-		future.fail((function (index) {
-			return function (value) {
-				values[index] = value;
-				count--;
-				if (count < 1) {
-					result.reject(value);
-				}
-			};
-		})(i));
-		future.done(result.resolve.bind(result));
-		future.__onCancel__(result.cancel.bind(result));
-	}
-	return result;
-};
-
-/** static Future.sequence(xs, f=None):
-	Evaluates all values and futures in the iterable xs in sequence. If it
-	is given, the function f is called for each value.
-*/
-Future.sequence = function sequence(xs, f) {
-	var result = new Future(), x,
-		rejection = result.reject.bind(result),
-		it = iterable(xs).__iter__(),
-		action = function action(lastValue) {
-			try {
-				x = it();
-				if (f) {
-					return when(x).then(f, rejection).then(action, rejection);
-				} else {
-					return when(x).then(action, rejection);
-				}
-			} catch (err) {
-				if (err === STOP_ITERATION) {
-					result.resolve(lastValue);
-				} else {
-					result.reject(err);
-				}
-			}
-		};
-	action();
-	return result;
-};
-
-/** static Future.doWhile(action, condition):
-	Perform the action until the condition fails. The action is first called
-	without arguments, and afterwards is called with the previous value. The
-	conditions is always called with the last value returned by action. 
-	Both action and condition may return futures. The condition by default
-	is the boolean conversion of the action's returned value.
-*/
-Future.doWhile = function doWhile(action, condition) {
-	condition = condition || function (value) {
-		return !!value;
-	};
-	var loopEnd = new Future(),
-		reject = loopEnd.reject.bind(loopEnd);
-	function loop(value) {
-		Future.invoke(condition, this, value).then(function (checks) {
-			if (checks) {
-				Future.invoke(action, this, value).then(loop, reject);
-			} else {
-				loopEnd.resolve(value);
-			}
-		}, reject);
-	}
-	Future.invoke(action).then(loop, reject);
-	return loopEnd;
-};
-
-/** static Future.whileDo(condition, action):
-	Similar to futures.doWhile, but evaluates the condition first.
-*/
-Future.whileDo = function whileDo(condition, action) {
-	return Future.invoke(condition).then(function (checks) {
-		return Future.doWhile(action, condition);
-	});
-};
-
-/** static Future.delay(ms, value):
-	Return a future that will be resolved with the given value after the 
-	given time in milliseconds. Time is forced to be at least 10ms. If value
-	is undefined, the timestamp when the function is called is used.
-*/
-Future.delay = function delay(ms, value) {
-	ms = isNaN(ms) ? 10 : Math.max(+ms, 10);
-	value = typeof value === 'undefined' ? Date.now() : value;
-	var result = new Future();
-	setTimeout(result.resolve.bind(result, value), ms);
-	return result;
-};
-
-/** static Future.retrying(f, t=10, delay=100ms, delayFactor=2, maxDelay=5min):
-	Calls the function f upto t times until it returns a value or a future that
-	is resolved. Each time is separated by a delay that gets increased by
-	delayFactor upto maxDelay.
-*/
-Future.retrying = function retrying(f, times, delay, delayFactor, maxDelay) {
-	times = isNaN(times) ? 10 : +times;
-	return times < 1 ? Future.invoke(f) : Future.invoke(f).then(undefined, function () {
-		delay = isNaN(delay) ? 100 : +delay;
-		delayFactor = isNaN(delayFactor) ? 2.0 : +delayFactor;
-		maxDelay = isNaN(maxDelay) ? 300000 : +maxDelay;
-		return Future.delay(delay).then(function () {
-			return Future.retrying(f, times - 1, Math.min(maxDelay, delay * delayFactor), delayFactor, maxDelay);
-		});
-	});
-};
-
-/** static Future.imports(...modules):
-	Builds a future that loads the given modules using RequireJS' require 
-	function, and resolves to an array of the loaded modules.
-*/
-Future.imports = function imports() {
-	var result = new Future();
-	require(Array.prototype.slice.call(arguments), function () {
-		result.resolve(Array.prototype.slice.call(arguments));
-	}, function (err) {
-		result.reject(err);
-	});
-	return result;
-};
 
 /* A wrapper of XMLHttpRequest, adding some functionality and dealing with
 	asynchronism with Futures.
@@ -2415,33 +2474,22 @@ var Chronometer = exports.Chronometer = declare({
 }); // declare Chronometer.
 
 
-/* Statistical accounting, measurements and related functions.
+/* Component representing statistical accounting for one concept.
 */
-// Statistic. //////////////////////////////////////////////////////////////////
-
-function __getKeySet__(keys) {
-	var result = {};
-	if (typeof keys !== 'undefined' || keys !== null) {
-		if (!Array.isArray(keys)) {
-			if (typeof keys === 'object') {
-				keys = Object.keys(keys);
-			} else {
-				keys = (keys +'').split(/\s+/);
-			}
-		}
-		keys.forEach(function (key) {
-			result[key +''] = true;
-		});		
-	}
-	return result;
-}
-
 var Statistic = exports.Statistic = declare({
 	/** new Statistic(keys):
 		Statistical logger object, representing one numerical value.
 	*/
 	constructor: function Statistic(keys) {
-		this.keys = __getKeySet__(keys);
+		switch (typeof keys) {
+			case 'undefined': break;
+			case 'object': 
+				if (keys !== null) {
+					this.keys = keys;
+					break;
+				}
+			default: this.keys = keys === null ? '' : keys +'';
+		}
 		this.reset(); // At first all stats must be reset.
 	},
 	
@@ -2459,6 +2507,40 @@ var Statistic = exports.Statistic = declare({
 		return this; // For chaining.
 	},
 
+	/** Statistic.applies(keys):
+		Checks if all the given keys are this statistic's keys.
+	*/
+	applies: function applies(keys) {
+		if (typeof keys === 'undefined') {
+			return false;
+		} else if (keys === null) {
+			keys = '';
+		}
+		switch (typeof this.keys) {
+			case 'undefined': return false;
+			case 'object':
+				if (typeof keys === 'object') {
+					if (Array.isArray(this.keys) && Array.isArray(keys)) {
+						for (var i in keys) {
+							if (this.keys.indexOf(keys[i]) < 0) {
+								return false;
+							}
+						}
+					} else { 
+						for (var i in keys) {
+							if (typeof this.keys[i] === 'undefined' || keys[i] !== this.keys[i]) {
+								return false;
+							}
+						}
+					}
+					return true;
+				} else {
+					return false;
+				}
+			default: return typeof keys !== 'object' && this.keys === keys +'';
+		}
+	},
+	
 	/** Statistic.add(value, data=none):
 		Updates the statistics with the given value. Optionally data about 
 		the instances can be attached.
@@ -2519,19 +2601,6 @@ var Statistic = exports.Statistic = declare({
 			this.gain(values[i], factor, data);
 		}
 		return this; // For chaining.
-	},
-	
-	/** Statistic.applies(keys):
-		Checks if all the given keys are this statistic's keys.
-	*/
-	applies: function applies(keys) {
-		keys = __getKeySet__(keys);
-		for (var key in keys) {
-			if (!this.keys.hasOwnProperty(key)) {
-				return false;
-			}
-		}
-		return true;
 	},
 	
 	/** Statistic.count():
@@ -2667,9 +2736,10 @@ var Statistic = exports.Statistic = declare({
 			this.maximum(), this.standardDeviation()].join(sep);
 	}
 }); // declare Statistic.
-	
-// Statistics. /////////////////////////////////////////////////////////////////
-	
+
+
+/* Statistical accounting, measurements and related functions.
+*/
 var Statistics = exports.Statistics = declare({
 	/** new Statistics():
 		Bundle of Statistic objects by name.
@@ -2688,13 +2758,30 @@ var Statistics = exports.Statistics = declare({
 			return stat.applies(keys);
 		}).toArray();
 	},
+
+	/** Statistics.__id__(keys):
+		Generates an id for a Statistic object with the given keys.
+	*/
+	__id__: function __id__(keys) {
+		if (typeof keys === 'object' && keys !== null) {
+			if (Array.isArray(keys)) {
+				return JSON.stringify(keys.slice().sort());
+			} else {
+				return Object.keys(keys).sort().map(function (n) {
+					return JSON.stringify(n) +':'+ JSON.stringify(keys[n]);
+				}).join(',');
+			}
+		} else {
+			return JSON.stringify(keys)+'';
+		}
+	},
 	
 	/** Statistics.stat(keys):
 		Get the Statistic that applies to all the given keys, or create it if it 
 		does not exist.
 	*/
 	stat: function stat(keys) {
-		var id = JSON.stringify(__getKeySet__(keys));
+		var id = this.__id__(keys);
 		return this.__stats__[id] || (this.__stats__[id] = new Statistic(keys));
 	},
 	

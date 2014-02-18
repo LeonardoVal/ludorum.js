@@ -12,17 +12,17 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 			maxLength: 10
 		});
 		return scanner.scan().then(function (stats) {
-			verifier.assertEqual(0, stats.average(['game.result']));
-			verifier.assertEqual(1, stats.average(['game.result', 'role:A']));
-			verifier.assertEqual(stats.count(['victory.result']),
-				stats.count(['victory.result', 'role:A']));
-			verifier.assertEqual(-1, stats.average(['game.result', 'role:B']));
-			verifier.assertEqual(stats.count(['defeat.result']),
-				stats.count(['defeat.result', 'role:B']));
-			verifier.assertEqual(0, stats.count(['draw.length']));
-			verifier.assertEqual(5, stats.average(['game.width']));
-			verifier.assertEqual(6, stats.average(['game.length']));
-			verifier.assertEqual(0, stats.average(['aborted']));
+			verifier.assertEqual(0, stats.average({key:'game.result'}));
+			verifier.assertEqual(1, stats.average({key:'game.result', role:'A'}));
+			verifier.assertEqual(stats.count({key:'victory.result'}),
+				stats.count({key:'victory.result', role:'A'}));
+			verifier.assertEqual(-1, stats.average({key:'game.result', role:'B'}));
+			verifier.assertEqual(stats.count({key:'defeat.result'}),
+				stats.count({key:'defeat.result', role:'B'}));
+			verifier.assertEqual(0, stats.count({key:'draw.length'}));
+			verifier.assertEqual(5, stats.average({key:'game.width'}));
+			verifier.assertEqual(6, stats.average({key:'game.length'}));
+			verifier.assertEqual(0, stats.average({key:'aborted'}));
 		});
 	}); // Scanner with games.__Predefined__()
 	
@@ -33,16 +33,16 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 			maxLength: 10
 		});
 		return scanner.scan().then(function (stats) {
-			verifier.assertEqual(0, stats.average(['game.result']));
-			verifier.assertEqual(0, stats.average(['game.result', 'role:This']));
-			verifier.assertEqual(1, stats.maximum(['game.result', 'role:This']));
-			verifier.assertEqual(-1, stats.minimum(['game.result', 'role:This']));
-			verifier.assertEqual(0, stats.average(['game.result', 'role:That']));
-			verifier.assertEqual(1, stats.maximum(['game.result', 'role:That']));
-			verifier.assertEqual(-1, stats.minimum(['game.result', 'role:That']));
-			verifier.assertEqual(0, stats.count(['draw.length']));
-			verifier.assertEqual(3, stats.average(['game.width']));
-			verifier.assertEqual(3, stats.average(['aborted']));
+			verifier.assertEqual(0, stats.average({key:'game.result'}));
+			verifier.assertEqual(0, stats.average({key:'game.result', role:'This'}));
+			verifier.assertEqual(1, stats.maximum({key:'game.result', role:'This'}));
+			verifier.assertEqual(-1, stats.minimum({key:'game.result', role:'This'}));
+			verifier.assertEqual(0, stats.average({key:'game.result', role:'That'}));
+			verifier.assertEqual(1, stats.maximum({key:'game.result', role:'That'}));
+			verifier.assertEqual(-1, stats.minimum({key:'game.result', role:'That'}));
+			verifier.assertEqual(0, stats.count({key:'draw.length'}));
+			verifier.assertEqual(3, stats.average({key:'game.width'}));
+			verifier.assertEqual(3, stats.average({key:'aborted'}));
 		});
 	}); // Scanner with games.Choose2Win()
 	

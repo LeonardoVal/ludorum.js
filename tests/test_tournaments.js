@@ -18,14 +18,14 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 		return contest.run().then(function () {
 			var stats = contest.statistics;
 			verifier.assertEqual(4, matchCount);
-			verifier.assertEqual(4, stats.count(['player:RandomPlayer#1', 'results']));
-			verifier.assertEqual(2, stats.count(['player:RandomPlayer#1', 'role:This', 'results']));
-			verifier.assertEqual(2, stats.count(['player:RandomPlayer#1', 'role:That', 'results']));
-			verifier.assertEqual(4, stats.count(['player:RandomPlayer#2', 'results']));
-			verifier.assertEqual(2, stats.count(['player:RandomPlayer#2', 'role:This', 'results']));
-			verifier.assertEqual(2, stats.count(['player:RandomPlayer#2', 'role:That', 'results']));
-			verifier.assertEqual(0, stats.sum(['results'])); // Choose2Win is a zero-sum game.
-			return 'Tournament played '+ stats.count(['results']) / 2 +' matches.';
+			verifier.assertEqual(4, stats.count({key:'results', player:'RandomPlayer#1'}));
+			verifier.assertEqual(2, stats.count({key:'results', player:'RandomPlayer#1', role:'This'}));
+			verifier.assertEqual(2, stats.count({key:'results', player:'RandomPlayer#1', role:'That'}));
+			verifier.assertEqual(4, stats.count({key:'results', player:'RandomPlayer#2'}));
+			verifier.assertEqual(2, stats.count({key:'results', player:'RandomPlayer#2', role:'This'}));
+			verifier.assertEqual(2, stats.count({key:'results', player:'RandomPlayer#2', role:'That'}));
+			verifier.assertEqual(0, stats.sum({key:'results'})); // Choose2Win is a zero-sum game.
+			return 'Tournament played '+ stats.count({key:'results'}) / 2 +' matches.';
 		});
 	}); // tournaments.RoundRobin()
 	
@@ -43,17 +43,17 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 		return contest.run().then(function () {
 			var stats = contest.statistics;
 			verifier.assertEqual(8, matchCount);
-			verifier.assertEqual(8, stats.count(['player:RandomPlayer#1', 'results']));
-			verifier.assertEqual(4, stats.count(['player:RandomPlayer#1', 'role:This', 'results']));
-			verifier.assertEqual(4, stats.count(['player:RandomPlayer#1', 'role:That', 'results']));
-			verifier.assertEqual(4, stats.count(['player:RandomPlayer#2', 'results']));
-			verifier.assertEqual(2, stats.count(['player:RandomPlayer#2', 'role:This', 'results']));
-			verifier.assertEqual(2, stats.count(['player:RandomPlayer#2', 'role:That', 'results']));
-			verifier.assertEqual(4, stats.count(['player:RandomPlayer#3', 'results']));
-			verifier.assertEqual(2, stats.count(['player:RandomPlayer#3', 'role:This', 'results']));
-			verifier.assertEqual(2, stats.count(['player:RandomPlayer#3', 'role:That', 'results']));
-			verifier.assertEqual(0, stats.sum(['results'])); // Choose2Win is a zero-sum game.
-			return 'Tournament played '+ stats.count(['results']) / 2 +' matches.';
+			verifier.assertEqual(8, stats.count({key:'results', player:'RandomPlayer#1'}));
+			verifier.assertEqual(4, stats.count({key:'results', player:'RandomPlayer#1', role:'This'}));
+			verifier.assertEqual(4, stats.count({key:'results', player:'RandomPlayer#1', role:'That'}));
+			verifier.assertEqual(4, stats.count({key:'results', player:'RandomPlayer#2'}));
+			verifier.assertEqual(2, stats.count({key:'results', player:'RandomPlayer#2', role:'This'}));
+			verifier.assertEqual(2, stats.count({key:'results', player:'RandomPlayer#2', role:'That'}));
+			verifier.assertEqual(4, stats.count({key:'results', player:'RandomPlayer#3'}));
+			verifier.assertEqual(2, stats.count({key:'results', player:'RandomPlayer#3', role:'This'}));
+			verifier.assertEqual(2, stats.count({key:'results', player:'RandomPlayer#3', role:'That'}));
+			verifier.assertEqual(0, stats.sum({key:'results'}));
+			return 'Tournament played '+ stats.count({key:'results'}) / 2 +' matches.';
 		});
 	}); // tournaments.Measurement()
 	
