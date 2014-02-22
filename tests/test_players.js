@@ -7,7 +7,8 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 		RANDOM = basis.Randomness.DEFAULT;
 
 	var autonomousPlayers = [players.RandomPlayer, players.HeuristicPlayer, 
-		players.MiniMaxPlayer, players.MonteCarloPlayer];
+		players.MiniMaxPlayer, players.AlphaBetaPlayer, 
+		players.MonteCarloPlayer];
 	
 	autonomousPlayers.forEach(function (player) { //////////////////////////////
 		var matchCount = 10;
@@ -35,7 +36,7 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 	autonomousPlayers.forEach(function (player) { //////////////////////////////
 		var matchCount = 10,
 			game = new games.Choose2Win(),
-			passer = new players.TracePlayer('', ['pass']);
+			passer = new players.TracePlayer({trace: ['pass']});
 		verifier.test("games.Choose2Win() with players."+ player.name +"()", function () {
 			return basis.Future.all(basis.Iterable.range(matchCount).map(function (i) {
 				var match = new ludorum.Match(game, [new player(), new player()]);
