@@ -1,22 +1,22 @@
 ﻿/** Automatic player based on pure Monte Carlo tree search.
 */
 players.MonteCarloPlayer = declare(HeuristicPlayer, {
-	/** new players.MonteCarloPlayer(name, params):
+	/** new players.MonteCarloPlayer(params):
 		Builds a player that chooses its moves using the [pure Monte Carlo game
 		tree search method](http://en.wikipedia.org/wiki/Monte-Carlo_tree_search).
 	*/
-	constructor: function MonteCarloPlayer(name, params) {
-		HeuristicPlayer.call(this, name, params);
+	constructor: function MonteCarloPlayer(params) {
+		HeuristicPlayer.call(this, params);
 		initialize(this, params)
 		/** players.MonteCarloPlayer.simulationCount=30:
 			Maximum amount of simulations performed for each available move at
 			each decision.
 		*/
-			.integer('simulationCount', { defaultValue: 30, coerce: true })
+			.number('simulationCount', { defaultValue: 30, coerce: true })
 		/** players.MonteCarloPlayer.timeCap=1000ms:
 			Time limit for the player to decide.
 		*/
-			.integer('timeCap', { defaultValue: 1000, coerce: true });
+			.number('timeCap', { defaultValue: 1000, coerce: true });
 	},
 	
 	/** players.MonteCarloPlayer.selectMoves(moves, game, player):
@@ -68,17 +68,22 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 				game = game.instantiate();
 			} else {
 				moves = game.moves();
-				if (moves) {
-					move = {};
-					game.activePlayers.forEach(function (activePlayer) {
-						move[activePlayer] = mc.random.choice(moves[activePlayer]);
-					});
-					game = game.next(move);
-				} else {
+				if (!moves) {
 					break;
 				}
+				move = {};
+				game.activePlayers.forEach(function (activePlayer) {
+					return move[activePlayer] = mc.random.choice(moves[activePlayer]);
+				});
+				game = game.next(move);
 			}
 		}
 		return game.result()[player];
+	},
+	
+	toString: function toString() {
+		return (this.constructor.name || 'MonteCarloPlayer') +'('+ JSON.stringify({
+			name: this.name, simulationCount: this.simulationCount, timeCap: this.timeCap
+		}) +')';
 	}
 }); // declare MonteCarloPlayer
