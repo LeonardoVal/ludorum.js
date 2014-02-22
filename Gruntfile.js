@@ -5,7 +5,8 @@ var sourceFiles = [ 'src/__prologue__.js',
 		'src/Tournament.js', 'src/Aleatory.js',
 	// players.
 	'src/players/RandomPlayer.js', 'src/players/TracePlayer.js',
-		'src/players/HeuristicPlayer.js', 'src/players/MiniMaxPlayer.js',
+		'src/players/HeuristicPlayer.js', 
+		'src/players/MiniMaxPlayer.js', 'src/players/AlphaBetaPlayer.js',
 		'src/players/MonteCarloPlayer.js',
 		'src/players/UserInterfacePlayer.js',
 	// games.

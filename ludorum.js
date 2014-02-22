@@ -383,7 +383,7 @@ Game.cached = function cached() {
 /** Player is the base type for all playing agents.
 */
 var Player = exports.Player = declare({
-	/** new Player(name):
+	/** new Player(params):
 		A player is an agent that plays a game. This means deciding which 
 		move to make from the set of moves available to the player, each 
 		time the game enables the player to do so.
@@ -391,8 +391,9 @@ var Player = exports.Player = declare({
 	*/
 	constructor: (function () {
 		var __PlayerCount__ = 0; // Used by the Player's default naming.
-		return function Player(name) {
-			this.name = ''+ (name || 'Player' + (__PlayerCount__++));
+		return function Player(params) {
+			initialize(this, params)
+				.string('name', { defaultValue: 'Player' + (__PlayerCount__++), coerce: true });
 		};
 	})(),
 
@@ -426,6 +427,10 @@ var Player = exports.Player = declare({
 		return this;
 	},
 	
+	toString: function toString() {
+		return (this.constructor.name || 'Player') +'('+ JSON.stringify({name: this.name}) +')';
+	},
+	
 	// Match commands. /////////////////////////////////////////////////////
 	
 	commandQuit: function commandQuit(role) {
@@ -436,7 +441,7 @@ var Player = exports.Player = declare({
 		return { command: 'reset', role: role, 
 			ply: isNaN(ply) ? 0 : +ply 
 		};
-	},
+	}
 }); // declare Player.
 
 
@@ -525,7 +530,7 @@ var Match = exports.Match = declare({
 			return Future.when(this);
 		}
 		var ply = this.ply(), game = this.state(), results, next;
-		(ply < 0) && this.onBegin(game);
+		(ply < 1) && this.onBegin(game);
 		while (game instanceof Aleatory) { // Instantiate all random variables.
 			game = this.__advance__(game, game.instantiate());
 		}
@@ -547,7 +552,7 @@ var Match = exports.Match = declare({
 	// Events //////////////////////////////////////////////////////////////////
 	
 	onBegin: function onBegin(game) {
-		this.events.emit('begin', this.players, game, this);
+		this.events.emit('begin', game, this);
 		this.logger && this.logger.info('Match begins with ', 
 			iterable(this.players).map(function (attr) {
 				return attr[1] +' as '+ attr[0];
@@ -555,7 +560,7 @@ var Match = exports.Match = declare({
 	},
 	
 	onMove: function onMove(game, moves) {
-		this.events.emit('move', moves, game, this);
+		this.events.emit('move', game, moves, this);
 		this.logger && this.logger.info('Players move: ', JSON.stringify(moves), ' in ', game);
 	},
 	
@@ -567,7 +572,11 @@ var Match = exports.Match = declare({
 	onEnd: function onEnd(game, results) {
 		this.events.emit('end', game, results, this);
 		this.logger && this.logger.info('Match for ', game, 'ends with ', JSON.stringify(results));
-	}
+	},
+	
+	// Match control. //////////////////////////////////////////////////////////
+	
+	
 }); // declare Match.
 
 
@@ -743,16 +752,13 @@ var Aleatory = exports.Aleatory = declare({
 /** Automatic players that moves fully randomly.
 */	
 players.RandomPlayer = declare(Player, {
-	/** new players.RandomPlayer(name, random=basis.Randomness.DEFAULT):
+	/** new players.RandomPlayer(params):
 		Builds a player that chooses its moves randomly.
 	*/
-	constructor: function RandomPlayer(name, random) {
-		Player.call(this, name);
-		this.random = random || Randomness.DEFAULT;
-	},
-
-	toString: function toString() {
-		return 'RandomPlayer('+ JSON.stringify(this.name) +')';
+	constructor: function RandomPlayer(params) {
+		Player.call(this, params);
+		initialize(this, params)
+			.object('random', { defaultValue: Randomness.DEFAULT });
 	},
 
 	/** players.RandomPlayer.decision(game, player):
@@ -767,19 +773,21 @@ players.RandomPlayer = declare(Player, {
 /** Automatic player that is scripted previously.
 */
 players.TracePlayer = declare(Player, {
-	/** new players.TracePlayer(name, trace):
+	/** new players.TracePlayer(params):
 		Builds a player that makes his decisions based on a trace, a list of 
 		moves to follow.
 	*/
-	constructor: function TracePlayer(name, trace) {
-		Player.call(this, name);
-		this.trace = iterable(trace);
+	constructor: function TracePlayer(params) {
+		Player.call(this, params);
+		this.trace = iterable(params.trace);
 		this.__iterator__ = this.trace.__iter__();
 		this.__decision__ = this.__iterator__();
 	},
 
 	toString: function toString() {
-		return 'TracePlayer('+ JSON.stringify(this.name) +', ['+ this.trace.join(', ') +'])';
+		return (this.constructor.name || 'Player') +'('+ JSON.stringify({
+			name: this.name, trace: this.trace.toArray()
+		}) +')';
 	},
 
 	/** players.TracePlayer.decision(game, player):
@@ -801,12 +809,12 @@ players.TracePlayer = declare(Player, {
 	states or moves.
 */
 var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
-	/** new players.HeuristicPlayer(name, params):
+	/** new players.HeuristicPlayer(params):
 		Builds a player that evaluates its moves and chooses one of the best
 		evaluated.
 	*/
-	constructor: function HeuristicPlayer(name, params) {
-		Player.call(this, name);
+	constructor: function HeuristicPlayer(params) {
+		Player.call(this, params);
 		initialize(this, params)
 		/** players.HeuristicPlayer.random=basis.Randomness.DEFAULT:
 			Pseudorandom number generator used for random decisions.
@@ -814,10 +822,6 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 			.object('random', { defaultValue: Randomness.DEFAULT })
 			.func('moveEvaluation', { ignore: true })
 			.func('stateEvaluation', { ignore: true });
-	},
-
-	toString: function toString() {
-		return 'HeuristicPlayer('+ JSON.stringify(this.name) +')';
 	},
 
 	/** players.HeuristicPlayer.moveEvaluation(move, game, player):
@@ -873,15 +877,15 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 }); // declare HeuristicPlayer.
 
 
-/** Automatic players based on MiniMax with alfa-beta pruning.
+/** Automatic players based on pure MiniMax.
 */
-players.MiniMaxPlayer = declare(HeuristicPlayer, {
-	/** new players.MiniMaxPlayer(name='MiniMax', params):
+var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
+	/** new players.MiniMaxPlayer(params):
 		Builds a player that chooses its moves using the MiniMax algorithm with
 		alfa-beta pruning.
 	*/
-	constructor: function MiniMaxPlayer(name, params) {
-		HeuristicPlayer.call(this, name, params);
+	constructor: function MiniMaxPlayer(params) {
+		HeuristicPlayer.call(this, params);
 		initialize(this, params)
 		/** players.MiniMaxPlayer.horizon=3:
 			Maximum depth for the MiniMax search.
@@ -890,16 +894,11 @@ players.MiniMaxPlayer = declare(HeuristicPlayer, {
 			.func('heuristic', { ignore: true });
 	},
 
-	toString: function toString() {
-		return 'MiniMaxPlayer('+ JSON.stringify(this.name) +', '+ this.horizon +')';
-	},
-
 	/** players.MiniMaxPlayer.stateEvaluation(game, player):
 		Returns the minimax value for the given game and player.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
-		var result = this.minimax(game, player, 0, -Infinity, Infinity);
-		return result;
+		return this.minimax(game, player, 0);
 	},
 
 	/** players.MiniMaxPlayer.heuristic(game, player):
@@ -910,21 +909,93 @@ players.MiniMaxPlayer = declare(HeuristicPlayer, {
 		return this.random.random(-0.5, 0.5);
 	},
 
-	/** players.MiniMaxPlayer.minimax(game, player, depth, alfa, beta):
-		Minimax evaluation of the given game for the given player. If the game
-		is not finished and the depth is greater than the horizon, the heuristic
-		is used.
+	/** players.MiniMaxPlayer.quiescence(game, player, depth):
+		An stability test for the given game state. If the game is quiescent, 
+		this function must return an evaluation. Else it must return NaN or an
+		equivalente value. Final game states are always quiescent, and their
+		evaluation is the game's result for the given player. This default
+		implementation also return an heuristic evaluation for every game
+		state at a deeper depth than the player's horizon.
 	*/
-	minimax: function minimax(game, player, depth, alpha, beta) {
+	quiescence: function quiescence(game, player, depth) {
 		var results = game.result();
 		if (results) {
 			return results[player];
 		} else if (depth >= this.horizon) {
 			return this.heuristic(game, player);
+		} else {
+			return NaN;
+		}
+	},
+	
+	/** players.MiniMaxPlayer.minimax(game, player, depth):
+		Minimax evaluation of the given game for the given player. If the game
+		is not finished and the depth is greater than the horizon, the heuristic
+		is used.
+	*/
+	minimax: function minimax(game, player, depth) {
+		var value = this.quiescence(game, player, depth);
+		if (isNaN(value)) { // game is not quiescent.
+			var activePlayer = game.activePlayer(),
+				moves = this.__moves__(game, activePlayer), 
+				comparison, next;
+			if (moves.length < 1) {
+				throw new Error('No moves for unfinished game '+ game +'.');
+			}
+			if (activePlayer == player) {
+				value = -Infinity;
+				comparison = Math.max;
+			} else {
+				value = +Infinity;
+				comparison = Math.min;
+			}
+			for (var i = 0; i < moves.length; ++i) {
+				next = game.next(obj(activePlayer, moves[i]));
+				value = comparison(value, this.minimax(next, player, depth + 1));
+			}
+		}
+		return value;
+	},
+	
+	toString: function toString() {
+		return (this.constructor.name || 'MiniMaxPlayer') +'('+ JSON.stringify({
+			name: this.name, horizon: this.horizon
+		}) +')';
+	}
+}); // declare MiniMaxPlayer.
+
+
+/** Automatic players based on MiniMax with alfa-beta pruning.
+*/
+players.AlphaBetaPlayer = declare(MiniMaxPlayer, {
+	/** new players.AlphaBetaPlayer(params):
+		Builds a player that chooses its moves using the MiniMax algorithm with
+		alfa-beta pruning.
+	*/
+	constructor: function AlphaBetaPlayer(params) {
+		MiniMaxPlayer.call(this, params);
+	},
+
+	/** players.AlphaBetaPlayer.stateEvaluation(game, player):
+		Returns the minimax value for the given game and player.
+	*/
+	stateEvaluation: function stateEvaluation(game, player) {
+		return this.minimax(game, player, 0, -Infinity, Infinity);
+	},
+
+	/** players.AlphaBetaPlayer.minimax(game, player, depth, alfa, beta):
+		Minimax evaluation of the given game for the given player. If the game
+		is not finished and the depth is greater than the horizon, the heuristic
+		is used.
+	*/
+	minimax: function minimax(game, player, depth, alpha, beta) {
+		var value = this.quiescence(game, player, depth);
+		if (!isNaN(value)) {
+			return value;
 		}
 		var activePlayer = game.activePlayer(),
 			isActive = activePlayer == player,
-			moves = this.__moves__(game, activePlayer), value, next;
+			moves = this.__moves__(game, activePlayer), next;
 		if (moves.length < 1) {
 			throw new Error('No moves for unfinished game '+ game +'.');
 		}
@@ -946,28 +1017,28 @@ players.MiniMaxPlayer = declare(HeuristicPlayer, {
 		}
 		return isActive ? alpha : beta;
 	}
-}); // declare MiniMaxPlayer.
+}); // declare AlphaBetaPlayer.
 
 
 /** Automatic player based on pure Monte Carlo tree search.
 */
 players.MonteCarloPlayer = declare(HeuristicPlayer, {
-	/** new players.MonteCarloPlayer(name, params):
+	/** new players.MonteCarloPlayer(params):
 		Builds a player that chooses its moves using the [pure Monte Carlo game
 		tree search method](http://en.wikipedia.org/wiki/Monte-Carlo_tree_search).
 	*/
-	constructor: function MonteCarloPlayer(name, params) {
-		HeuristicPlayer.call(this, name, params);
+	constructor: function MonteCarloPlayer(params) {
+		HeuristicPlayer.call(this, params);
 		initialize(this, params)
 		/** players.MonteCarloPlayer.simulationCount=30:
 			Maximum amount of simulations performed for each available move at
 			each decision.
 		*/
-			.integer('simulationCount', { defaultValue: 30, coerce: true })
+			.number('simulationCount', { defaultValue: 30, coerce: true })
 		/** players.MonteCarloPlayer.timeCap=1000ms:
 			Time limit for the player to decide.
 		*/
-			.integer('timeCap', { defaultValue: 1000, coerce: true });
+			.number('timeCap', { defaultValue: 1000, coerce: true });
 	},
 	
 	/** players.MonteCarloPlayer.selectMoves(moves, game, player):
@@ -1019,18 +1090,23 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 				game = game.instantiate();
 			} else {
 				moves = game.moves();
-				if (moves) {
-					move = {};
-					game.activePlayers.forEach(function (activePlayer) {
-						move[activePlayer] = mc.random.choice(moves[activePlayer]);
-					});
-					game = game.next(move);
-				} else {
+				if (!moves) {
 					break;
 				}
+				move = {};
+				game.activePlayers.forEach(function (activePlayer) {
+					return move[activePlayer] = mc.random.choice(moves[activePlayer]);
+				});
+				game = game.next(move);
 			}
 		}
 		return game.result()[player];
+	},
+	
+	toString: function toString() {
+		return (this.constructor.name || 'MonteCarloPlayer') +'('+ JSON.stringify({
+			name: this.name, simulationCount: this.simulationCount, timeCap: this.timeCap
+		}) +')';
 	}
 }); // declare MonteCarloPlayer
 
@@ -1039,11 +1115,11 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 	library.
 */
 var UserInterfacePlayer = players.UserInterfacePlayer = declare(Player, {
-	/** new players.UserInterfacePlayer(name):
+	/** new players.UserInterfacePlayer(params):
 		Base class of all players that are proxies of user interfaces.
 	*/
-	constructor: function UserInterfacePlayer(name) {
-		Player.call(this, name);
+	constructor: function UserInterfacePlayer(params) {
+		Player.call(this, params);
 	},
 
 	/** players.UserInterfacePlayer.decision(game, player):
@@ -1053,7 +1129,7 @@ var UserInterfacePlayer = players.UserInterfacePlayer = declare(Player, {
 	decision: function decision(game, player) {
 		if (this.__future__ && this.__future__.isPending()) {
 			var error = new Error("Last decision has not been made. Match probably aborted.");
-			this.__future__.reject(error);
+			this.__future__.reject(error); //TODO This should resolve to QUIT.
 		}
 		return this.__future__ = new Future();
 	},
@@ -1077,35 +1153,50 @@ var UserInterface = players.UserInterface = declare({ ////////////////////
 		Base class for user interfaces that display a game and allow one
 		or more players to play.
 	*/
-	constructor: function UserInterface(match, config) {
-		this.match = match;
-		initialize(this, config)
-			.array('players', { defaultValue: match.state().players });
-		match.events.on('begin', this.onBegin.bind(this));
-		match.events.on('move', this.onMove.bind(this));
-		match.events.on('end', this.onEnd.bind(this));
+	constructor: function UserInterface(config) {
+		this.onBegin = this.onBegin.bind(this);
+		this.onNext = this.onNext.bind(this);
+		this.onEnd = this.onEnd.bind(this);
+		if (config.match) {
+			this.show(config.match);
+		}
 	},
 	
-	/** players.UserInterface.onBegin(players, game):
+	/** players.UserInterface.show(match):
+		Discards the current state and sets up to display the given match.
+	*/
+	show: function show(match) {
+		if (this.match) {
+			match.events.off('begin', this.onBegin);
+			match.events.off('next', this.onNext);
+			match.events.off('end', this.onEnd);
+		}
+		this.match = match;
+		match.events.on('begin', this.onBegin);
+		match.events.on('next', this.onNext);
+		match.events.on('end', this.onEnd);
+	},
+	
+	/** players.UserInterface.onBegin(game):
 		Handler for the 'begin' event of the match.
 	*/
-	onBegin: function onBegin(players, game) {
+	onBegin: function onBegin(game) {
 		this.activePlayer = game.activePlayer();
 		this.display(game);
 	},
 	
-	/** players.UserInterface.onMove(moves, game, next):
+	/** players.UserInterface.onNext(game, next):
 		Handler for the 'move' event of the match.
 	*/
-	onMove: function onMove(moves, game, next) {
+	onNext: function onNext(game, next) {
 		this.activePlayer = next.activePlayer();
 		this.display(next);
 	},
 	
-	/** players.UserInterface.onEnd(results, game):
+	/** players.UserInterface.onEnd(game, results):
 		Handler for the 'end' event of the match.
 	*/
-	onEnd: function onEnd(results, game) {
+	onEnd: function onEnd(game, results) {
 		this.activePlayer = null;
 		this.results = results;
 		this.display(game);
@@ -1125,11 +1216,9 @@ var UserInterface = players.UserInterface = declare({ ////////////////////
 	*/
 	perform: function perform(action, player) {
 		player = player || this.match.state().activePlayer();
-		if (this.players.indexOf(player) >= 0) {
-			var activePlayer = this.match.players[player];
-			if (activePlayer && typeof activePlayer.perform === 'function') {
-				activePlayer.perform(action);
-			}
+		var activePlayer = this.match.players[player];
+		if (activePlayer instanceof UserInterfacePlayer) {
+			activePlayer.perform(action);
 		}
 	}
 }); // declare UserInterface.
@@ -1139,11 +1228,11 @@ UserInterface.BasicHTMLInterface = declare(UserInterface, { //////////////
 		Simple HTML based UI, that renders the game to the given domElement
 		using its toHTML method.
 	*/
-	constructor: function BasicHTMLInterfacePlayer(match, config) {
-		exports.UserInterface.call(this, match, config);
-		this.domElement = config.domElement;
-		if (typeof this.domElement === 'string') {
-			this.domElement = document.getElementById(this.domElement);
+	constructor: function BasicHTMLInterfacePlayer(config) {
+		UserInterface.call(this, config);
+		this.container = config.container;
+		if (typeof this.container === 'string') {
+			this.container = document.getElementById(this.container);
 		}
 	},
 
@@ -1153,22 +1242,17 @@ UserInterface.BasicHTMLInterface = declare(UserInterface, { //////////////
 		step in the match.
 	*/
 	display: function display(game) {
-		domElement.innerHTML = game.toHTML();
+		var ui = this, 
+			container = this.container;
+		container.innerHTML = game.toHTML();
+		Array.prototype.slice.call(container.querySelectorAll('[data-ludorum]')).forEach(function (elem) {
+			var data = eval('({'+ elem.getAttribute('data-ludorum') +'})');
+			if (data.hasOwnProperty('move')) {
+				elem.onclick = ui.perform.bind(ui, data.move, data.activePlayer);
+			}
+		});
 	}
 }); // declare HTMLInterface.
-	
-UserInterface.KineticJSInterface = declare(UserInterface, { //////////////
-	/** new players.UserInterface.KineticJSInterface(match, config):
-		TODO.
-	*/
-	constructor: function KineticJSInterface(match, config) {
-		exports.UserInterface.call(this, match, config);
-		initialize(this, config)
-			.object('container')
-			.object('Kinetic', { defaultValue: window.Kinetic });
-		this.container.destroyChildren(); // Clear the container.
-	}
-}); // declare KineticJSInterface.
 
 
 /** Simple reference games with a predefined outcome, mostly for testing 
@@ -1441,11 +1525,31 @@ games.TicTacToe = declare(Game, {
 		Text version of the TicTacToe board.
 	*/
 	toString: function toString() {
+		var board = this.board;
 		return [
-			this.board.substring(0,2).split('').join('|'), '-+-+-',
-			board.substring(3,5).split('').join('|'), '-+-+-',
-			board.substring(6,8).split('').join('|')
+			board.substr(0,3).split('').join('|'), '-+-+-',
+			board.substr(3,3).split('').join('|'), '-+-+-',
+			board.substr(6,3).split('').join('|')
 		].join('\n');
+	},
+	
+	/** games.TicTacToe.toHTML():
+		Renders the TicTacToe board as a HTML table.
+	*/
+	toHTML: function toHTML() {
+		var activePlayer = this.activePlayer(),
+			board = this.board.split('').map(function (chr, i) {
+				if (chr === '_') {
+					return '<td data-ludorum="move: '+ i +', activePlayer: \''+ activePlayer +'\'">&nbsp;</td>';
+				} else {
+					return '<td>'+ chr +'</td>';
+				}
+			});
+		return '<table><tr>'+ [
+				board.slice(0,3).join(''),
+				board.slice(3,6).join(''),
+				board.slice(6,9).join('')
+			].join('</tr><tr>') +'</tr></table>';
 	}
 }); // declare TicTacToe
 	
@@ -1656,13 +1760,17 @@ games.Mancala = declare(Game, {
 		A move for this game is an index of the square in the board.
 	*/
 	moves: function moves(){
-		var board = this.board,
-			result = {},
-			activePlayer = this.activePlayer();
-		result[activePlayer] = this.houses(activePlayer).filter(function(house){
-			return board[house] > 0; // The house has seeds.
-		});
-		return result[activePlayer].length > 0 ? result : null;
+		if (this.result()) {
+			return null;
+		} else {
+			var board = this.board,
+				result = {},
+				activePlayer = this.activePlayer();			
+			result[activePlayer] = this.houses(activePlayer).filter(function(house){
+				return board[house] > 0; // The house has seeds.
+			});
+			return result[activePlayer].length > 0 ? result : null;
+		}
 	},
 	
 	/** games.Mancala.result():
@@ -1671,25 +1779,25 @@ games.Mancala = declare(Game, {
 		If a player has seeds in his side, those are added to his count.
 	*/
 	result: function result() {
-		if (!this.moves()) {
-			var result = {}, 
-				game = this,
-				board = this.board;
+		var game = this,
+			board = this.board,
+			sides = this.players.map(function (player) {
+				return iterable(game.houses(player)).map(function (h) {
+					return board[h];
+				}).sum();
+			});
+		if (sides[0] && sides[1]) {
+			return null;
+		} else { // One side has no seeds.
+			var result = {};
 			// Calculate score.
-			this.players.forEach(function (player) {
-				result[player] = board[game.store(player)];
-				if (game.countRemainingSeeds) {
-					game.houses(player).forEach(function (house) {
-						result[player] += board[house];
-					});
-				}
+			this.players.forEach(function (player, i) {
+				result[player] = board[game.store(player)] + game.countRemainingSeeds * sides[i];
 			});
 			// Calculate result.
 			result[this.players[0]] -= result[this.players[1]];
 			result[this.players[1]] = -result[this.players[0]];
 			return result;
-		} else {
-			return null;
 		}
 	},
 	
@@ -1749,21 +1857,48 @@ games.Mancala = declare(Game, {
 		}).join('');
 	},
 
+	/** games.Mancala.toString():
+		Text version of the Mancala board.
+	*/
 	toString: function toString() {
 		var game = this,
+			lpad = basis.Text.lpad,
 			north = this.players[0],
 			northHouses = this.houses(north).map(function (h) {
-				return (''+ game.board[h]).lpad(2, '0');
+				return lpad(''+ game.board[h], 2, '0');
 			}).reverse(),
-			northStore = (''+ this.board[this.store(north)]).lpad(2, '0'),
+			northStore = lpad(''+ this.board[this.store(north)], 2, '0'),
 			south = this.players[1],
 			southHouses = this.houses(south).map(function (h) {
-				return (''+ game.board[h]).lpad(2, '0');
+				return lpad(''+ game.board[h], 2, '0');
 			}),
-			southStore = (''+ this.board[this.store(south)]).lpad(2, '0');
+			southStore = lpad(''+ this.board[this.store(south)], 2, '0');
 		return "   "+ northHouses.join(" | ") +"   \n"+
 			northStore +" ".repeat(northHouses.length * 2 + (northHouses.length - 1) * 3 + 2) + southStore +"\n"+
 			"   "+ southHouses.join(" | ") +"   ";
+	},
+	
+	/** games.Mancala.toHTML():
+		Renders the Mancala board as a HTML table.
+	*/
+	toHTML: function toHTML() {
+		var moves = this.moves(),
+			north = this.players[0],
+			south = this.players[1];
+		function renderHouse(player, h) {
+			if (!moves || !moves[player] || !moves[player].indexOf(h) < 0) { // Not a move.
+				return '<td>'+ this.board[h] +'</td>';
+			} else {
+				return '<td data-ludorum="move:'+ h +', activePlayer: \''+ player +'\'">'+ this.board[h] +'</td>';
+			}
+		}
+		return '<table><tr>'
+			+ '<td rowspan="2">'+ this.board[this.store(north)] +'</td>'
+			+ this.houses(north).map(renderHouse.bind(this, north)).reverse().join('') 
+			+ '<td rowspan="2">'+ this.board[this.store(south)] +'</td>'
+			+ '</tr><tr>'
+			+ this.houses(south).map(renderHouse.bind(this, south)).join('') 
+			+ '</tr></table>';
 	}
 }); // declare Mancala.
 	
@@ -2356,61 +2491,6 @@ exports.utils.Scanner = declare({
 			});
 			return false;
 		}
-	},
-	
-	assessPlayer: function assessPlayer(player, game) {
-		game = game || this.game;
-		var scanner = this;
-		return Future.sequence(game.players, function (role) {
-			var players = {};
-			players[role] = player;
-			return scanner.scan(players, game);
-		}).then(function (stats) {
-			var resultBounds = game.resultBounds(),
-				expectedResult = stats.average({key:'game.result', game:game.name, players:player.name});
-			stats.add({key:'player.expectedResult', game:game.name, players:player.name}, expectedResult);
-			stats.add({key:'player.expectedResultNormalized', game:game.name, players:player.name}, 
-				(expectedResult - resultBounds[0]) / (resultBounds[1] - resultBounds[0]) * 2 - 1
-			);
-			stats.add({key:'player.expectedOutcome', game:game.name, players:player.name},
-				(stats.count({key:'victory.result', game:game.name, players:player.name})
-					- stats.count({key:'defeat.result', game:game.name, players:player.name})
-				) / stats.count({key:'game.result', game:game.name, players:player.name})
-			);
-			return stats;
-		});
-	},
-	
-	assessGame: function assessGame(game, expectedDuration, expectedBreath) {
-		game = game || this.game;
-		var scanner = this;
-		return this.scan({}, game).then(function (stats) {
-			var fairness = stats.stat({key:'fairness', game:game.name}),
-				competitiveness = stats.stat({key:'competitiveness', game:game.name}),
-				duration = stats.stat({key:'duration', game:game.name}),
-				breath = stats.stat({key:'breath', game:game.name});
-			game.players.forEach(function (role) {
-				var resultBounds = game.resultBounds(),
-					keys = ['game:'+ game.name, 'role:'+ role];
-				fairness.add(1 - Math.abs(
-					(stats.average({key:'game.result', game:game.name, role:role}) - resultBounds[0]) 
-					/ (resultBounds[1] - resultBounds[0]) * 2 - 1
-				));
-				competitiveness.add(1 - stats.count({key:'draw.length', game:game.name, role:role}) 
-					/ stats.count({key:'game.length', game:game.name, role:role}));
-				duration.add(1 / (1 + 
-					stats.standardDeviation({key:'game.length', game:game.name, role:role}, expectedDuration)
-					/ (stats.maximum({key:'game.length', game:game.name, role:role}) 
-						- stats.minimum({key:'game.length', game:game.name, role:role}))
-				));
-				breath.add(1 / (1 + 
-					stats.standardDeviation({key:'game.width', game:game.name, role:role}, expectedBreath)
-					/ (stats.maximum({key:'game.length', game:game.name, role:role})
-						- stats.minimum({key:'game.length', game:game.name, role:role}))
-				));
-			});
-			return stats;
-		});
 	}
 }); // declare utils.Scanner.
 
