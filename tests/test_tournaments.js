@@ -8,7 +8,10 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 
 	verifier.test("tournaments.RoundRobin() with games.Choose2Win() & players.RandomPlayer()", function () {
 		var game = new games.Choose2Win(),
-			participants = [new players.RandomPlayer('RandomPlayer#1'), new players.RandomPlayer('RandomPlayer#2')],
+			participants = [
+				new players.RandomPlayer({name: 'RandomPlayer#1'}), 
+				new players.RandomPlayer({name: 'RandomPlayer#2'})
+			],
 			contest = new tournaments.RoundRobin(game, participants, 2),
 			matchCount = 0;
 		contest.events.on('beforeMatch', function (match) {
@@ -33,8 +36,9 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 		var game = new games.Choose2Win(),
 			participants = [new players.RandomPlayer('RandomPlayer#1'), new players.RandomPlayer('RandomPlayer#2')],
 			contest = new tournaments.Measurement(game, 
-				[new players.RandomPlayer('RandomPlayer#1')],
-				[new players.RandomPlayer('RandomPlayer#2'), new players.RandomPlayer('RandomPlayer#3')], 2),
+				[new players.RandomPlayer({name: 'RandomPlayer#1'})],
+				[new players.RandomPlayer({name: 'RandomPlayer#2'}), 
+					new players.RandomPlayer({name: 'RandomPlayer#3'})], 2),
 			matchCount = 0;
 		contest.events.on('beforeMatch', function (match) {
 			verifier.assertSame(game, match.state());
