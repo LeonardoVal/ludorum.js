@@ -2,11 +2,11 @@
 	library.
 */
 var UserInterfacePlayer = players.UserInterfacePlayer = declare(Player, {
-	/** new players.UserInterfacePlayer(name):
+	/** new players.UserInterfacePlayer(params):
 		Base class of all players that are proxies of user interfaces.
 	*/
-	constructor: function UserInterfacePlayer(name) {
-		Player.call(this, name);
+	constructor: function UserInterfacePlayer(params) {
+		Player.call(this, params);
 	},
 
 	/** players.UserInterfacePlayer.decision(game, player):
@@ -16,7 +16,7 @@ var UserInterfacePlayer = players.UserInterfacePlayer = declare(Player, {
 	decision: function decision(game, player) {
 		if (this.__future__ && this.__future__.isPending()) {
 			var error = new Error("Last decision has not been made. Match probably aborted.");
-			this.__future__.reject(error);
+			this.__future__.reject(error); //TODO This should resolve to QUIT.
 		}
 		return this.__future__ = new Future();
 	},
@@ -40,35 +40,50 @@ var UserInterface = players.UserInterface = declare({ ////////////////////
 		Base class for user interfaces that display a game and allow one
 		or more players to play.
 	*/
-	constructor: function UserInterface(match, config) {
-		this.match = match;
-		initialize(this, config)
-			.array('players', { defaultValue: match.state().players });
-		match.events.on('begin', this.onBegin.bind(this));
-		match.events.on('move', this.onMove.bind(this));
-		match.events.on('end', this.onEnd.bind(this));
+	constructor: function UserInterface(config) {
+		this.onBegin = this.onBegin.bind(this);
+		this.onNext = this.onNext.bind(this);
+		this.onEnd = this.onEnd.bind(this);
+		if (config.match) {
+			this.show(config.match);
+		}
 	},
 	
-	/** players.UserInterface.onBegin(players, game):
+	/** players.UserInterface.show(match):
+		Discards the current state and sets up to display the given match.
+	*/
+	show: function show(match) {
+		if (this.match) {
+			match.events.off('begin', this.onBegin);
+			match.events.off('next', this.onNext);
+			match.events.off('end', this.onEnd);
+		}
+		this.match = match;
+		match.events.on('begin', this.onBegin);
+		match.events.on('next', this.onNext);
+		match.events.on('end', this.onEnd);
+	},
+	
+	/** players.UserInterface.onBegin(game):
 		Handler for the 'begin' event of the match.
 	*/
-	onBegin: function onBegin(players, game) {
+	onBegin: function onBegin(game) {
 		this.activePlayer = game.activePlayer();
 		this.display(game);
 	},
 	
-	/** players.UserInterface.onMove(moves, game, next):
+	/** players.UserInterface.onNext(game, next):
 		Handler for the 'move' event of the match.
 	*/
-	onMove: function onMove(moves, game, next) {
+	onNext: function onNext(game, next) {
 		this.activePlayer = next.activePlayer();
 		this.display(next);
 	},
 	
-	/** players.UserInterface.onEnd(results, game):
+	/** players.UserInterface.onEnd(game, results):
 		Handler for the 'end' event of the match.
 	*/
-	onEnd: function onEnd(results, game) {
+	onEnd: function onEnd(game, results) {
 		this.activePlayer = null;
 		this.results = results;
 		this.display(game);
@@ -88,11 +103,9 @@ var UserInterface = players.UserInterface = declare({ ////////////////////
 	*/
 	perform: function perform(action, player) {
 		player = player || this.match.state().activePlayer();
-		if (this.players.indexOf(player) >= 0) {
-			var activePlayer = this.match.players[player];
-			if (activePlayer && typeof activePlayer.perform === 'function') {
-				activePlayer.perform(action);
-			}
+		var activePlayer = this.match.players[player];
+		if (activePlayer instanceof UserInterfacePlayer) {
+			activePlayer.perform(action);
 		}
 	}
 }); // declare UserInterface.
@@ -102,11 +115,11 @@ UserInterface.BasicHTMLInterface = declare(UserInterface, { //////////////
 		Simple HTML based UI, that renders the game to the given domElement
 		using its toHTML method.
 	*/
-	constructor: function BasicHTMLInterfacePlayer(match, config) {
-		exports.UserInterface.call(this, match, config);
-		this.domElement = config.domElement;
-		if (typeof this.domElement === 'string') {
-			this.domElement = document.getElementById(this.domElement);
+	constructor: function BasicHTMLInterfacePlayer(config) {
+		UserInterface.call(this, config);
+		this.container = config.container;
+		if (typeof this.container === 'string') {
+			this.container = document.getElementById(this.container);
 		}
 	},
 
@@ -116,19 +129,14 @@ UserInterface.BasicHTMLInterface = declare(UserInterface, { //////////////
 		step in the match.
 	*/
 	display: function display(game) {
-		domElement.innerHTML = game.toHTML();
+		var ui = this, 
+			container = this.container;
+		container.innerHTML = game.toHTML();
+		Array.prototype.slice.call(container.querySelectorAll('[data-ludorum]')).forEach(function (elem) {
+			var data = eval('({'+ elem.getAttribute('data-ludorum') +'})');
+			if (data.hasOwnProperty('move')) {
+				elem.onclick = ui.perform.bind(ui, data.move, data.activePlayer);
+			}
+		});
 	}
 }); // declare HTMLInterface.
-	
-UserInterface.KineticJSInterface = declare(UserInterface, { //////////////
-	/** new players.UserInterface.KineticJSInterface(match, config):
-		TODO.
-	*/
-	constructor: function KineticJSInterface(match, config) {
-		exports.UserInterface.call(this, match, config);
-		initialize(this, config)
-			.object('container')
-			.object('Kinetic', { defaultValue: window.Kinetic });
-		this.container.destroyChildren(); // Clear the container.
-	}
-}); // declare KineticJSInterface.
