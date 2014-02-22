@@ -75,11 +75,31 @@ games.TicTacToe = declare(Game, {
 		Text version of the TicTacToe board.
 	*/
 	toString: function toString() {
+		var board = this.board;
 		return [
-			this.board.substring(0,2).split('').join('|'), '-+-+-',
-			board.substring(3,5).split('').join('|'), '-+-+-',
-			board.substring(6,8).split('').join('|')
+			board.substr(0,3).split('').join('|'), '-+-+-',
+			board.substr(3,3).split('').join('|'), '-+-+-',
+			board.substr(6,3).split('').join('|')
 		].join('\n');
+	},
+	
+	/** games.TicTacToe.toHTML():
+		Renders the TicTacToe board as a HTML table.
+	*/
+	toHTML: function toHTML() {
+		var activePlayer = this.activePlayer(),
+			board = this.board.split('').map(function (chr, i) {
+				if (chr === '_') {
+					return '<td data-ludorum="move: '+ i +', activePlayer: \''+ activePlayer +'\'">&nbsp;</td>';
+				} else {
+					return '<td>'+ chr +'</td>';
+				}
+			});
+		return '<table><tr>'+ [
+				board.slice(0,3).join(''),
+				board.slice(3,6).join(''),
+				board.slice(6,9).join('')
+			].join('</tr><tr>') +'</tr></table>';
 	}
 }); // declare TicTacToe
 	
