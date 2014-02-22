@@ -1,7 +1,7 @@
 ﻿/** Player is the base type for all playing agents.
 */
 var Player = exports.Player = declare({
-	/** new Player(name):
+	/** new Player(params):
 		A player is an agent that plays a game. This means deciding which 
 		move to make from the set of moves available to the player, each 
 		time the game enables the player to do so.
@@ -9,8 +9,9 @@ var Player = exports.Player = declare({
 	*/
 	constructor: (function () {
 		var __PlayerCount__ = 0; // Used by the Player's default naming.
-		return function Player(name) {
-			this.name = ''+ (name || 'Player' + (__PlayerCount__++));
+		return function Player(params) {
+			initialize(this, params)
+				.string('name', { defaultValue: 'Player' + (__PlayerCount__++), coerce: true });
 		};
 	})(),
 
@@ -44,6 +45,10 @@ var Player = exports.Player = declare({
 		return this;
 	},
 	
+	toString: function toString() {
+		return (this.constructor.name || 'Player') +'('+ JSON.stringify({name: this.name}) +')';
+	},
+	
 	// Match commands. /////////////////////////////////////////////////////
 	
 	commandQuit: function commandQuit(role) {
@@ -54,5 +59,5 @@ var Player = exports.Player = declare({
 		return { command: 'reset', role: role, 
 			ply: isNaN(ply) ? 0 : +ply 
 		};
-	},
+	}
 }); // declare Player.

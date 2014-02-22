@@ -1,19 +1,21 @@
 ﻿/** Automatic player that is scripted previously.
 */
 players.TracePlayer = declare(Player, {
-	/** new players.TracePlayer(name, trace):
+	/** new players.TracePlayer(params):
 		Builds a player that makes his decisions based on a trace, a list of 
 		moves to follow.
 	*/
-	constructor: function TracePlayer(name, trace) {
-		Player.call(this, name);
-		this.trace = iterable(trace);
+	constructor: function TracePlayer(params) {
+		Player.call(this, params);
+		this.trace = iterable(params.trace);
 		this.__iterator__ = this.trace.__iter__();
 		this.__decision__ = this.__iterator__();
 	},
 
 	toString: function toString() {
-		return 'TracePlayer('+ JSON.stringify(this.name) +', ['+ this.trace.join(', ') +'])';
+		return (this.constructor.name || 'Player') +'('+ JSON.stringify({
+			name: this.name, trace: this.trace.toArray()
+		}) +')';
 	},
 
 	/** players.TracePlayer.decision(game, player):

@@ -2,12 +2,12 @@
 	states or moves.
 */
 var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
-	/** new players.HeuristicPlayer(name, params):
+	/** new players.HeuristicPlayer(params):
 		Builds a player that evaluates its moves and chooses one of the best
 		evaluated.
 	*/
-	constructor: function HeuristicPlayer(name, params) {
-		Player.call(this, name);
+	constructor: function HeuristicPlayer(params) {
+		Player.call(this, params);
 		initialize(this, params)
 		/** players.HeuristicPlayer.random=basis.Randomness.DEFAULT:
 			Pseudorandom number generator used for random decisions.
@@ -15,10 +15,6 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 			.object('random', { defaultValue: Randomness.DEFAULT })
 			.func('moveEvaluation', { ignore: true })
 			.func('stateEvaluation', { ignore: true });
-	},
-
-	toString: function toString() {
-		return 'HeuristicPlayer('+ JSON.stringify(this.name) +')';
 	},
 
 	/** players.HeuristicPlayer.moveEvaluation(move, game, player):
