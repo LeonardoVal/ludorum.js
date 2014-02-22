@@ -83,7 +83,7 @@ var Match = exports.Match = declare({
 			return Future.when(this);
 		}
 		var ply = this.ply(), game = this.state(), results, next;
-		(ply < 0) && this.onBegin(game);
+		(ply < 1) && this.onBegin(game);
 		while (game instanceof Aleatory) { // Instantiate all random variables.
 			game = this.__advance__(game, game.instantiate());
 		}
@@ -105,7 +105,7 @@ var Match = exports.Match = declare({
 	// Events //////////////////////////////////////////////////////////////////
 	
 	onBegin: function onBegin(game) {
-		this.events.emit('begin', this.players, game, this);
+		this.events.emit('begin', game, this);
 		this.logger && this.logger.info('Match begins with ', 
 			iterable(this.players).map(function (attr) {
 				return attr[1] +' as '+ attr[0];
@@ -113,7 +113,7 @@ var Match = exports.Match = declare({
 	},
 	
 	onMove: function onMove(game, moves) {
-		this.events.emit('move', moves, game, this);
+		this.events.emit('move', game, moves, this);
 		this.logger && this.logger.info('Players move: ', JSON.stringify(moves), ' in ', game);
 	},
 	
@@ -125,5 +125,9 @@ var Match = exports.Match = declare({
 	onEnd: function onEnd(game, results) {
 		this.events.emit('end', game, results, this);
 		this.logger && this.logger.info('Match for ', game, 'ends with ', JSON.stringify(results));
-	}
+	},
+	
+	// Match control. //////////////////////////////////////////////////////////
+	
+	
 }); // declare Match.
