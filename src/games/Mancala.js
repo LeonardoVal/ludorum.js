@@ -92,13 +92,17 @@ games.Mancala = declare(Game, {
 		A move for this game is an index of the square in the board.
 	*/
 	moves: function moves(){
-		var board = this.board,
-			result = {},
-			activePlayer = this.activePlayer();
-		result[activePlayer] = this.houses(activePlayer).filter(function(house){
-			return board[house] > 0; // The house has seeds.
-		});
-		return result[activePlayer].length > 0 ? result : null;
+		if (this.result()) {
+			return null;
+		} else {
+			var board = this.board,
+				result = {},
+				activePlayer = this.activePlayer();			
+			result[activePlayer] = this.houses(activePlayer).filter(function(house){
+				return board[house] > 0; // The house has seeds.
+			});
+			return result[activePlayer].length > 0 ? result : null;
+		}
 	},
 	
 	/** games.Mancala.result():
@@ -107,25 +111,25 @@ games.Mancala = declare(Game, {
 		If a player has seeds in his side, those are added to his count.
 	*/
 	result: function result() {
-		if (!this.moves()) {
-			var result = {}, 
-				game = this,
-				board = this.board;
+		var game = this,
+			board = this.board,
+			sides = this.players.map(function (player) {
+				return iterable(game.houses(player)).map(function (h) {
+					return board[h];
+				}).sum();
+			});
+		if (sides[0] && sides[1]) {
+			return null;
+		} else { // One side has no seeds.
+			var result = {};
 			// Calculate score.
-			this.players.forEach(function (player) {
-				result[player] = board[game.store(player)];
-				if (game.countRemainingSeeds) {
-					game.houses(player).forEach(function (house) {
-						result[player] += board[house];
-					});
-				}
+			this.players.forEach(function (player, i) {
+				result[player] = board[game.store(player)] + game.countRemainingSeeds * sides[i];
 			});
 			// Calculate result.
 			result[this.players[0]] -= result[this.players[1]];
 			result[this.players[1]] = -result[this.players[0]];
 			return result;
-		} else {
-			return null;
 		}
 	},
 	
@@ -185,21 +189,48 @@ games.Mancala = declare(Game, {
 		}).join('');
 	},
 
+	/** games.Mancala.toString():
+		Text version of the Mancala board.
+	*/
 	toString: function toString() {
 		var game = this,
+			lpad = basis.Text.lpad,
 			north = this.players[0],
 			northHouses = this.houses(north).map(function (h) {
-				return (''+ game.board[h]).lpad(2, '0');
+				return lpad(''+ game.board[h], 2, '0');
 			}).reverse(),
-			northStore = (''+ this.board[this.store(north)]).lpad(2, '0'),
+			northStore = lpad(''+ this.board[this.store(north)], 2, '0'),
 			south = this.players[1],
 			southHouses = this.houses(south).map(function (h) {
-				return (''+ game.board[h]).lpad(2, '0');
+				return lpad(''+ game.board[h], 2, '0');
 			}),
-			southStore = (''+ this.board[this.store(south)]).lpad(2, '0');
+			southStore = lpad(''+ this.board[this.store(south)], 2, '0');
 		return "   "+ northHouses.join(" | ") +"   \n"+
 			northStore +" ".repeat(northHouses.length * 2 + (northHouses.length - 1) * 3 + 2) + southStore +"\n"+
 			"   "+ southHouses.join(" | ") +"   ";
+	},
+	
+	/** games.Mancala.toHTML():
+		Renders the Mancala board as a HTML table.
+	*/
+	toHTML: function toHTML() {
+		var moves = this.moves(),
+			north = this.players[0],
+			south = this.players[1];
+		function renderHouse(player, h) {
+			if (!moves || !moves[player] || !moves[player].indexOf(h) < 0) { // Not a move.
+				return '<td>'+ this.board[h] +'</td>';
+			} else {
+				return '<td data-ludorum="move:'+ h +', activePlayer: \''+ player +'\'">'+ this.board[h] +'</td>';
+			}
+		}
+		return '<table><tr>'
+			+ '<td rowspan="2">'+ this.board[this.store(north)] +'</td>'
+			+ this.houses(north).map(renderHouse.bind(this, north)).reverse().join('') 
+			+ '<td rowspan="2">'+ this.board[this.store(south)] +'</td>'
+			+ '</tr><tr>'
+			+ this.houses(south).map(renderHouse.bind(this, south)).join('') 
+			+ '</tr></table>';
 	}
 }); // declare Mancala.
 	
