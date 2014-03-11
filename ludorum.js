@@ -1,17 +1,19 @@
 /** Package wrapper and layout.
 */
+"use strict";
 (function (init) { // Universal Module Definition.
 	if (typeof define === 'function' && define.amd) {
 		define(['basis'], init); // AMD module.
 	} else if (typeof module === 'object' && module.exports) {
 		module.exports = init(require('basis')); // CommonJS module.
-	} else {
+	} else { // Browser or web worker (probably).
 		var global = (0, eval)('this');
-		global.ludorum = init(global.basis); // Global namespace.
+		global.ludorum = init(global.basis); // Assumes basis is loaded.
 	}
-})(function (basis){ "use strict";
+})(function __init__(basis){
 // Import synonyms. ////////////////////////////////////////////////////////////
 	var declare = basis.declare,
+		unimplemented = basis.objects.unimplemented,
 		obj = basis.obj,
 		copy = basis.copy,
 		raiseIf = basis.raiseIf,
@@ -24,7 +26,10 @@
 		Events = basis.Events;
 
 // Library layout. /////////////////////////////////////////////////////////////
-	var exports = {};
+	var exports = {
+		__init__: __init__
+	};
+	exports.__init__.dependencies = [basis];
 
 	/** games:
 		Bundle of game implementations (as Game subclasses) and utility definitions.
@@ -111,9 +116,7 @@ var Game = exports.Game = declare({
 		returning the next game state.
 		Note: it is strongly advised to double check the moves object. 
 	*/
-	next: function next(moves) {
-		throw new Error((this.constructor.name || 'Game') +".next() not implemented! Please override.");
-	},
+	next: unimplemented("Game", "next"),
 
 	/** Game.result():
 		If the game is finished the result of the game is an object with 
@@ -245,24 +248,22 @@ var Game = exports.Game = declare({
 		return result;
 	},
 
-	// Game state //////////////////////////////////////////////////////////////
+	// Conversions & presentations. ////////////////////////////////////////////
 
-	/** abstract Game.args():
+	/** abstract Game.__serialize__():
 		Returns an array, where the first element should be the name of the 
 		game, and the rest the arguments to call the game's constructor in order
 		to rebuild this game's state. Not implemented, so please override.
 	*/
-	args: function args() {
-		throw new Error("Game.args() not implemented! Please override.");
-	},
+	__serialize__: unimplemented("Game", "__serialize__"),
 	
 	/** Game.clone():
-		Creates a copy of this game state. Uses this.arguments().
+		Creates a copy of this game state. Uses this.__serialize__().
 	*/
 	clone: function clone() {
-		var args = this.args();
-		args[0] = this.constructor;
-		return new (args[0].bind.apply(args[0], args))();
+		var args = this.__serialize__();
+		args.shift(); // Remove first element (game's name).
+		return new (this.constructor.bind.apply(this.constructor, args))();
 	},
 
 	/** Game.identifier():
@@ -271,17 +272,46 @@ var Game = exports.Game = declare({
 		JSON.
 	*/
 	identifier: function identifier() {
-		return JSON.stringify(this.args());
+		var args = this.__serialize__();
+		return args.shift() + args.map(JSON.stringify).join('');
 	},
 
-	// Presentation functions. /////////////////////////////////////////////////
-
 	/** Game.toString():
-		Returns a textual representation of this game state.
+		Returns a textual representation of this game state. Meant for logging
+		or debugging, but not for user presentation.
 	*/
 	toString: function toString() {
-		var args = this.args();
+		var args = this.__serialize__();
 		return args.shift() +'('+ args.map(JSON.stringify).join(',') +')';
+	},
+	
+	/** Game.toJSON():
+		Encodes the game in JSON for decoding with the fromJSON method. The 
+		encoded data must be an array starting with this games name, followed
+		by its constructor arguments.
+	*/
+	toJSON: function toJSON() {
+		return JSON.stringify(this.__serialize__());
+	},
+	
+	/** static Game.fromJSON(data):
+		Creates a new instance of this game from the given JSON. The function
+		in the Game abstract class finds the proper constructor with the game
+		name and calls it.
+	*/
+	"static fromJSON": function fromJSON(data) {
+		if (typeof data === 'string') {
+			data = JSON.parse(data);
+		}
+		raiseIf(!Array.isArray(data) || data.length < 1, "Invalid JSON data: "+ data +"!");
+		var cons = games[data[0]];
+		raiseIf(typeof cons !== 'function', "Unknown game '", data[0], "'!");
+		if (typeof cons.fromJSON === 'function') {
+			return cons.fromJSON(data); // Call game's fromJSON.
+		} else {
+			data[0] = basis.global; // Call game's constructor.
+			return new (cons.bind.apply(cons, data))();
+		}
 	}
 }); // declare Game.
 	
@@ -427,20 +457,21 @@ var Player = exports.Player = declare({
 		return this;
 	},
 	
+	// Conversions & presentations. ////////////////////////////////////////////
+
+	/** abstract Player.__serialize__():
+		Returns an array, where the first element should be the name of the 
+		game, and the rest the arguments to call the player's constructor in 
+		order to rebuild this player's state. Default implementation is pretty
+		useless, so please override.
+	*/
+	__serialize__: function __serialize__() {
+		return [this.constructor.name, {name: this.name}];
+	},
+	
 	toString: function toString() {
-		return (this.constructor.name || 'Player') +'('+ JSON.stringify({name: this.name}) +')';
-	},
-	
-	// Match commands. /////////////////////////////////////////////////////
-	
-	commandQuit: function commandQuit(role) {
-		return { command: 'quit', role: role };
-	},
-	
-	commandReset: function commandReset(role, ply) {
-		return { command: 'reset', role: role, 
-			ply: isNaN(ply) ? 0 : +ply 
-		};
+		var args = this.__serialize__();
+		return args.shift() +'('+ args.map(JSON.stringify).join(',') +')';
 	}
 }); // declare Player.
 
@@ -463,11 +494,11 @@ var Match = exports.Match = declare({
 		*/
 		this.history = [game];
 		/** Match.events:
-			Event handler for this match. Emitted events are: begin, end, move
-			& next.
+			Event handler for this match. Emitted events are: begin, end, move,
+			next and quit.
 		*/
 		this.events = new Events({ 
-			events: ['begin', 'move', 'next', 'end']
+			events: ['begin', 'move', 'next', 'end', 'quit']
 		});
 		// Participate the players.
 		for (var p in this.players) {
@@ -508,16 +539,50 @@ var Match = exports.Match = declare({
 	*/
 	decisions: function decisions(game) {
 		game = game || this.state();
-		var players = this.players;
-		return Future.all(game.activePlayers.map(function (p) {
-			return Future.when(players[p].decision(game, p));//FIXME when?
-		}));
+		var match = this,
+			players = this.players,
+			activePlayers = game.activePlayers;
+		return Future.all(activePlayers.map(function (p) {
+			return players[p].decision(game, p);
+		})).then(function (decisions) {
+			var moves = iterable(activePlayers).zip(decisions).toObject();
+			match.onMove(game, moves);
+			return moves;
+		});
 	},
 
-	__advance__: function __advance__(game, next) {
+	/** Match.__advanceAleatories__(game):
+		If the given game has random variables (i.e. is an instance of Aleatory)
+		it instantiates them until the players must move again.
+	*/
+	__advanceAleatories__: function __advanceAleatories__(game, moves) {
+		for (var next; game instanceof Aleatory; game = next) {
+			next = game.instantiate();
+			this.history.push(next);
+			this.onNext(game, next);
+		}
+		return game;
+	},
+	
+	/** Match.__advance__(game, moves):
+		Checks the moves for commands. If the match must continue, it pushes the 
+		next game state in the match's history and returns true. Else it returns
+		false.
+	*/
+	__advance__: function __advance__(game, moves) {
+		var match = this,
+			quitters = game.activePlayers.filter(function (p) {
+				return match.isQuitCommand(moves[p]);
+			});
+		if (quitters.length > 0) {
+			match.onQuit(game, quitters[0]);
+			return false;
+		}
+		// Match must go on.
+		var next = game.next(moves);
 		this.history.push(next);
 		this.onNext(game, next);
-		return next;
+		return true;
 	},
 	
 	/** Match.run(plys=Infinity):
@@ -531,9 +596,7 @@ var Match = exports.Match = declare({
 		}
 		var ply = this.ply(), game = this.state(), results, next;
 		(ply < 1) && this.onBegin(game);
-		while (game instanceof Aleatory) { // Instantiate all random variables.
-			game = this.__advance__(game, game.instantiate());
-		}
+		game = this.__advanceAleatories__(game); // Instantiate all random variables.
 		results = game.result();
 		if (results) { // If the match has finished ...
 			this.onEnd(game, results);
@@ -541,16 +604,33 @@ var Match = exports.Match = declare({
 		} else { // Else the run must continue ...
 			var match = this;
 			return this.decisions(game).then(function (moves) {
-				moves = iterable(game.activePlayers).zip(moves).toObject();
-				match.onMove(game, moves);
-				match.__advance__(game, game.next(moves));
-				return match.run(plys - 1);
+				if (match.__advance__(game, moves)) {
+					return match.run(plys - 1);
+				} else {
+					return match;
+				}				
 			});
 		}
 	},
 	
+	// Commands. ///////////////////////////////////////////////////////////////
+	
+	/** Match.isQuitCommand(move):
+		Checks if the move is a QUIT command. Such command means that the player
+		that issued it is leaving the match. The match is then aborted.
+		A QUIT command is any move that has a true '.QUIT' attribute.
+	*/
+	isQuitCommand: function (move) { 
+		return move && move['.QUIT'];
+	},
+	
+	"static commandQuit": { '.QUIT': true },
+	
 	// Events //////////////////////////////////////////////////////////////////
 	
+	/** Match.onBegin(game):
+		Emits the 'begin' event, meant to signal when the match starts.
+	*/
 	onBegin: function onBegin(game) {
 		this.events.emit('begin', game, this);
 		this.logger && this.logger.info('Match begins with ', 
@@ -559,24 +639,40 @@ var Match = exports.Match = declare({
 			}).join(', '), '; for ', game, '.');
 	},
 	
+	/** Match.onMove(game, moves):
+		Emits the 'move' event, meant to signal when the active players have 
+		moved.
+	*/
 	onMove: function onMove(game, moves) {
 		this.events.emit('move', game, moves, this);
 		this.logger && this.logger.info('Players move: ', JSON.stringify(moves), ' in ', game);
 	},
 	
+	/** Match.onNext(game, next):
+		Emits the 'next' event, meant to signal when the match advances to the
+		next game state.
+	*/
 	onNext: function onNext(game, next) {
 		this.events.emit('next', game, next, this);
 		this.logger && this.logger.info('Match advances from ', game, ' to ', next);
 	},
 	
+	/** Match.onEnd(game, results):
+		Emits the 'end' event, meant to signal when the match has ended.
+	*/
 	onEnd: function onEnd(game, results) {
 		this.events.emit('end', game, results, this);
 		this.logger && this.logger.info('Match for ', game, 'ends with ', JSON.stringify(results));
 	},
 	
-	// Match control. //////////////////////////////////////////////////////////
-	
-	
+	/** Match.onQuit(game, player):
+		Emits the 'quit' command, meant to signal the match is aborted due to
+		the given player leaving it.
+	*/
+	onQuit: function onQuit(game, player) {
+		this.events.emit('quit', game, player, this);
+		this.logger && this.logger.info('Match for ', game, ' aborted because player '+ player +' quitted.');
+	}
 }); // declare Match.
 
 
@@ -784,12 +880,6 @@ players.TracePlayer = declare(Player, {
 		this.__decision__ = this.__iterator__();
 	},
 
-	toString: function toString() {
-		return (this.constructor.name || 'Player') +'('+ JSON.stringify({
-			name: this.name, trace: this.trace.toArray()
-		}) +')';
-	},
-
 	/** players.TracePlayer.decision(game, player):
 		Returns the next move in the trace, or the last one if the trace has
 		ended.
@@ -801,6 +891,10 @@ players.TracePlayer = declare(Player, {
 			Iterable.prototype.catchStop(err);
 		}
 		return this.__decision__;
+	},
+	
+	__serialize__: function __serialize__() {
+		return ['TracePlayer', {name: this.name, trace: this.trace.toArray() }];
 	}
 }); // declare TracePlayer.
 
@@ -820,8 +914,7 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 			Pseudorandom number generator used for random decisions.
 		*/
 			.object('random', { defaultValue: Randomness.DEFAULT })
-			.func('moveEvaluation', { ignore: true })
-			.func('stateEvaluation', { ignore: true });
+			.func('heuristic', { ignore: true });
 	},
 
 	/** players.HeuristicPlayer.moveEvaluation(move, game, player):
@@ -836,15 +929,23 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 	/** players.HeuristicPlayer.stateEvaluation(game, player):
 		Calculates a number as the assessment of the given game state. The 
 		base implementation returns the result for the player is the game 
-		has results. 
-		Else it returns a random number in [-0.5, 0.5). This is only useful 
-		in testing this framework. Any serious use should override it.
+		has results. Else it returns the heuristic value for the state.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
 		var gameResult = game.result();
-		return gameResult ? gameResult[player] : this.random.random(-0.5, 0.5);
+		return gameResult ? gameResult[player] : this.heuristic(game, player);
 	},
 
+	/** players.HeuristicPlayer.heuristic(game, player):
+		Game state evaluation used at states that are not finished games. The
+		default implementation returns a random number in [-0.5, 0.5). This is
+		only useful in testing this framework. Any serious use should redefine 
+		it.
+	*/
+	heuristic: function heuristic(game, player) {
+		return this.random.random(-0.5, 0.5);
+	},
+	
 	/** players.HeuristicPlayer.selectMoves(moves, game, player):
 		Return an array with the best evaluated moves. The evaluation is done by
 		the moveEvaluation method. The default implementation always returns a
@@ -854,8 +955,8 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 		var heuristicPlayer = this;
 		return Future.all(moves.map(function (move) {
 			return heuristicPlayer.moveEvaluation(move, game, player);
-		})).then(function (evals) {
-			return iterable(moves).zip(evals).greater(function (pair) {
+		})).then(function (evaluations) {
+			return iterable(moves).zip(evaluations).greater(function (pair) {
 				return pair[1];
 			}).map(function (pair) {
 				return pair[0];
@@ -877,12 +978,97 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 }); // declare HeuristicPlayer.
 
 
+/** Automatic players based on the MaxN algorithm.
+*/
+var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
+	/** new players.MaxNPlayer(params):
+		Builds a player that chooses its moves using the MiniMax algorithm with
+		alfa-beta pruning.
+	*/
+	constructor: function MaxNPlayer(params) {
+		HeuristicPlayer.call(this, params);
+		initialize(this, params)
+		/** players.MaxNPlayer.horizon=3:
+			Maximum depth for the MiniMax search.
+		*/
+			.integer('horizon', { defaultValue: 3, coerce: true })
+	},
+
+	/** players.MaxNPlayer.stateEvaluation(game, player):
+		Returns the minimax value for the given game and player.
+	*/
+	stateEvaluation: function stateEvaluation(game, player) {
+		return this.maxN(game, player, 0)[player];
+	},
+
+	/** players.MaxNPlayer.heuristics(game):
+		Returns the heuristics value for each players in the game, as an object.
+	*/
+	heuristics: function heuristic(game) {
+		var result = {}, maxN = this;
+		game.players.forEach(function (role) {
+			result[role] = maxN.heuristic(game, role);
+		});
+		return result;
+	},
+
+	/** players.MaxNPlayer.quiescence(game, player, depth):
+		An stability test for the given game state. If the game is quiescent, 
+		this function must return evaluations. Else it must return null. 
+		Final game states are always quiescent, and their evaluations are the 
+		game's result for each player. This default implementation also return 
+		heuristic evaluations for every game state at a deeper depth than the 
+		player's horizon.
+	*/
+	quiescence: function quiescence(game, player, depth) {
+		var results = game.result();
+		if (results) {
+			return results;
+		} else if (depth >= this.horizon) {
+			return this.heuristics(game);
+		} else {
+			return null;
+		}
+	},
+	
+	/** players.MaxNPlayer.maxN(game, player, depth):
+		Return the evaluations for each player of the given game, assuming each
+		player tries to maximize its own evaluation regardless of the others'.
+	*/
+	maxN: function maxN(game, player, depth) {
+		var values = this.quiescence(game, player, depth);
+		if (!values) { // game is not quiescent.
+			var activePlayer = game.activePlayer(),
+				moves = this.__moves__(game, activePlayer),
+				values = {},
+				otherValues, next;
+			if (moves.length < 1) {
+				throw new Error('No moves for unfinished game '+ game +'.');
+			}
+			for (var i = 0; i < moves.length; ++i) {
+				next = game.next(obj(activePlayer, moves[i]));
+				otherValues = this.maxN(next, player, depth + 1);
+				if (otherValues[activePlayer] > (values[activePlayer] || -Infinity)) {
+					values = otherValues;
+				}
+			}
+		}
+		return values;
+	},
+	
+	toString: function toString() {
+		return (this.constructor.name || 'MaxNPlayer') +'('+ JSON.stringify({
+			name: this.name, horizon: this.horizon
+		}) +')';
+	}
+}); // declare MiniMaxPlayer.
+
+
 /** Automatic players based on pure MiniMax.
 */
 var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 	/** new players.MiniMaxPlayer(params):
-		Builds a player that chooses its moves using the MiniMax algorithm with
-		alfa-beta pruning.
+		Builds a player that chooses its moves using the MiniMax algorithm.
 	*/
 	constructor: function MiniMaxPlayer(params) {
 		HeuristicPlayer.call(this, params);
@@ -890,8 +1076,7 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 		/** players.MiniMaxPlayer.horizon=3:
 			Maximum depth for the MiniMax search.
 		*/
-			.integer('horizon', { defaultValue: 3, coerce: true })
-			.func('heuristic', { ignore: true });
+			.integer('horizon', { defaultValue: 3, coerce: true });
 	},
 
 	/** players.MiniMaxPlayer.stateEvaluation(game, player):
@@ -901,21 +1086,14 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 		return this.minimax(game, player, 0);
 	},
 
-	/** players.MiniMaxPlayer.heuristic(game, player):
-		Game state evaluation used at the leaves of the game search tree that
-		are not finished games.
-	*/
-	heuristic: function heuristic(game, player) {
-		return this.random.random(-0.5, 0.5);
-	},
-
 	/** players.MiniMaxPlayer.quiescence(game, player, depth):
 		An stability test for the given game state. If the game is quiescent, 
 		this function must return an evaluation. Else it must return NaN or an
-		equivalente value. Final game states are always quiescent, and their
-		evaluation is the game's result for the given player. This default
-		implementation also return an heuristic evaluation for every game
-		state at a deeper depth than the player's horizon.
+		equivalente value. 
+		Final game states are always quiescent, and their evaluation is the 
+		game's result for the given player. This default implementation also 
+		return an heuristic evaluation for every game state at a deeper depth 
+		than the player's horizon.
 	*/
 	quiescence: function quiescence(game, player, depth) {
 		var results = game.result();
@@ -1055,14 +1233,15 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 					count: 0
 				};
 			});
-		for (var i = this.simulationCount; i > 0 && Date.now() < endTime; --i) {
+		for (var i = 0; i < this.simulationCount && Date.now() < endTime; ++i) {
 			moves.forEach(function (move) {
-				move.sum += monteCarloPlayer.simulation(move.next, player);
+				var sim = monteCarloPlayer.simulation(move.next, player);
+				move.sum += sim.result[player];
 				++move.count;
 			});
 		}
 		return iterable(moves).greater(function (move) {
-			return move.sum / move.count;
+			return move.count > 0 ? move.sum / move.count : 0;
 		}).map(function (move) {
 			return move.move;
 		});
@@ -1080,12 +1259,13 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 	},
 	
 	/** players.MonteCarloPlayer.simulation(game, player):
-		Simulates a random match from the given game and returns the result
-		for the given player.
+		Simulates a random match from the given game and returns an object with
+		the final state (game), its result (result) and the number of plies 
+		simulated (plies).
 	*/
 	simulation: function simulation(game, player) {
 		var mc = this, move, moves;
-		while (true) {
+		for (var plies = 0; true; ++plies) {
 			if (game instanceof Aleatory) {
 				game = game.instantiate();
 			} else {
@@ -1100,7 +1280,7 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 				game = game.next(move);
 			}
 		}
-		return game.result()[player];
+		return { game: game, result: game.result(), plies: plies };
 	},
 	
 	toString: function toString() {
@@ -1122,14 +1302,21 @@ var UserInterfacePlayer = players.UserInterfacePlayer = declare(Player, {
 		Player.call(this, params);
 	},
 
+	/** players.UserInterfacePlayer.participate(match, role):
+		Assigns this players role to the given role.
+	*/
+	participate: function participate(match, role) {
+		this.role = role;
+		return this;
+	},
+	
 	/** players.UserInterfacePlayer.decision(game, player):
 		Returns a future that will be resolved when the perform() method is 
 		called.
 	*/
 	decision: function decision(game, player) {
 		if (this.__future__ && this.__future__.isPending()) {
-			var error = new Error("Last decision has not been made. Match probably aborted.");
-			this.__future__.reject(error); //TODO This should resolve to QUIT.
+			this.__future__.resolve(Match.commandQuit);
 		}
 		return this.__future__ = new Future();
 	},
@@ -1181,7 +1368,6 @@ var UserInterface = players.UserInterface = declare({ ////////////////////
 		Handler for the 'begin' event of the match.
 	*/
 	onBegin: function onBegin(game) {
-		this.activePlayer = game.activePlayer();
 		this.display(game);
 	},
 	
@@ -1189,7 +1375,6 @@ var UserInterface = players.UserInterface = declare({ ////////////////////
 		Handler for the 'move' event of the match.
 	*/
 	onNext: function onNext(game, next) {
-		this.activePlayer = next.activePlayer();
 		this.display(next);
 	},
 	
@@ -1197,7 +1382,6 @@ var UserInterface = players.UserInterface = declare({ ////////////////////
 		Handler for the 'end' event of the match.
 	*/
 	onEnd: function onEnd(game, results) {
-		this.activePlayer = null;
 		this.results = results;
 		this.display(game);
 	},
@@ -1210,16 +1394,18 @@ var UserInterface = players.UserInterface = declare({ ////////////////////
 		throw new Error("UserInterface.display is not defined. Please override.");
 	},
 	
-	/** players.UserInterface.perform(action, player=<active player>):
+	/** players.UserInterface.perform(action, actionRole=undefined):
 		Makes the given player perform the action if the player has a 
 		perform method and is included in this UI's players.
 	*/
-	perform: function perform(action, player) {
-		player = player || this.match.state().activePlayer();
-		var activePlayer = this.match.players[player];
-		if (activePlayer instanceof UserInterfacePlayer) {
-			activePlayer.perform(action);
-		}
+	perform: function perform(action, actionRole) {
+		iterable(this.match.players).forEach(function (pair) {
+			var role = pair[0], player = pair[1];
+			if (player instanceof UserInterfacePlayer 
+			&& (!actionRole || player.role === actionRole)) {
+				player.perform(action);
+			}
+		});
 	}
 }); // declare UserInterface.
 	
@@ -1228,7 +1414,7 @@ UserInterface.BasicHTMLInterface = declare(UserInterface, { //////////////
 		Simple HTML based UI, that renders the game to the given domElement
 		using its toHTML method.
 	*/
-	constructor: function BasicHTMLInterfacePlayer(config) {
+	constructor: function BasicHTMLInterface(config) {
 		UserInterface.call(this, config);
 		this.container = config.container;
 		if (typeof this.container === 'string') {
@@ -1253,6 +1439,577 @@ UserInterface.BasicHTMLInterface = declare(UserInterface, { //////////////
 		});
 	}
 }); // declare HTMLInterface.
+
+
+/** A proxy for another player executing inside a webworker.
+*/
+var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
+	/** new players.WebWorkerPlayer(params):
+		Builds a player that is a proxy for another player executing in a web
+		worker.
+	*/
+	constructor: function WebWorkerPlayer(params) {
+		Player.call(this, params);
+		initialize(this, params)
+		/** players.WebWorkerPlayer.worker:
+			The Worker instance where the actual player is executing.
+		*/
+			.object('worker');
+		this.worker.onmessage = basis.Parallel.prototype.__onmessage__.bind(this);
+	},
+	
+	/** static WebWorkerPlayer.createWorker(playerBuilder):
+		Asynchronously creates and initializes a web worker. The modules basis
+		and	ludorum are loaded in the global namespace (self), before calling 
+		the given playerBuilder function. Its results will be stored in the 
+		global variable PLAYER.
+	*/
+	"static createWorker": function createWorker(playerBuilder) {
+		raiseIf('string function'.indexOf(typeof playerBuilder) < 0, 
+			"Invalid player builder: "+ playerBuilder +"!");
+		var parallel = new basis.Parallel();
+		return parallel.run('self.ludorum = ('+ exports.__init__ +')(self.basis), "OK"'
+			).then(function () {
+				return parallel.run('self.PLAYER = ('+ playerBuilder +').call(self), "OK"');
+			}).then(function () {
+				return parallel.worker;
+			});
+	},
+	
+	/** static WebWorkerPlayer.create(params):
+		Asynchronously creates and initializes a WebWorkerPlayer, with a web 
+		worker ready to play. The params must include the playerBuilder function
+		to execute on the web worker's environment.
+	*/
+	"static create": function create(params) {
+		var WebWorkerPlayer = this;
+		return WebWorkerPlayer.createWorker(params.playerBuilder).then(function (worker) {
+			return new WebWorkerPlayer({name: name, worker: worker}); 
+		});
+	},
+	
+	/** players.WebWorkerPlayer.decision(game, player):
+		The decision is delegated to this player's webworker, returning a future
+		that will be resolved when the parallel execution is over. 
+		Warning! If this method is called while another decision is pending, the 
+		player will assume the previous match was aborted, issuing a QUIT 
+		command.
+	*/
+	decision: function decision(game, player) {
+		if (this.__future__ && this.__future__.isPending()) {
+			this.__future__.resolve(Match.commandQuit);
+		}
+		this.__future__ = new Future();
+		this.worker.postMessage('PLAYER.decision(ludorum.Game.fromJSON('+ game.toJSON() 
+			+'), '+ JSON.stringify(player) +')');
+		return this.__future__;
+	}
+}); // declare WebWorkerPlayer
+
+/** Dice random variables.
+*/
+aleatories.Dice = declare(Aleatory, {
+	/** new aleatories.Dice(name, base=6, random=basis.Randomness.DEFAULT):
+		Simple uniform random variable with values in [1, base]. 
+	*/
+	constructor: function Dice(next, base, random) {
+		Aleatory.call(this, next, random);
+		/** aleatories.Dice.base=6:
+			Amount of different values this dice can take.
+		*/
+		this.base = isNaN(base) ? 6 : Math.max(2, +base);
+	},
+	
+	/** aleatories.Dice.value():
+		Returns a random value between 1 and base.
+	*/
+	value: function value() {
+		return this.random.randomInt(1, this.base + 1);
+	},
+	
+	/** aleatories.Dice.distribution():
+		Values from 1 to this.base, with uniform probabilities.
+	*/
+	distribution: function distribution() {
+		return this.__distribution__ || (this.__distribution__ = (function (base) {
+			return Iterable.range(1, base + 1).map(function (n, i) {
+				return [n, 1 / base];
+			}).toArray();
+		})(this.base));
+	}		
+}); // declare Dice.
+
+
+/** Base class for checkerboards based on several different data structures.
+*/
+boards.Checkerboard = declare({
+	/** new boards.Checkerboard(height, width):
+		The base constructor only sets the board dimensions.
+	*/
+	constructor: function Checkerboard(height, width) {
+		if (!isNaN(height)) {
+			this.height = +height >> 0;
+		}
+		if (!isNaN(width)) {
+			this.width = +width >> 0;
+		}
+	},
+	
+	/** boards.Checkerboard.emptySquare=null:
+		The value of empty squares.
+	*/
+	emptySquare: null,
+	
+// Board information. //////////////////////////////////////////////////////////
+	
+	/** boards.Checkerboard.isValidCoord(coord):
+		Returns true if coord is an array with two numbers between this board's
+		dimensions.
+	*/
+	isValidCoord: function isValidCoord(coord) {
+		return Array.isArray(coord) && !isNaN(coord[0]) && !isNaN(coord[1])
+			&& coord[0] >= 0 && coord[0] < this.height 
+			&& coord[1] >= 0 && coord[1] < this.width;
+	},
+	
+	/** boards.Checkerboard.horizontals():
+		Returns an iterable of all the horizontal lines (rows) in the board, as
+		a list of coordinates.
+	*/
+	horizontals: function horizontals() {
+		var width = this.width;
+		return Iterable.range(this.height).map(function (row) {
+			return Iterable.range(width).map(function (column) {
+				return [row, column];
+			});
+		});
+	},
+	
+	/** boards.Checkerboard.verticals():
+		Returns an iterable of all the vertical lines (columns) in the board, as
+		a list of coordinates.
+	*/
+	verticals: function verticals() {
+		var height = this.height;
+		return Iterable.range(this.width).map(function (column) {
+			return Iterable.range(height).map(function (row) {
+				return [row, column];
+			});
+		});
+	},
+	
+	/** boards.Checkerboard.orthogonals():
+		Returns an iterable of all the horizontal (rows) and vertical lines 
+		(columns) in the board, as a list of coordinates.
+	*/
+	orthogonals: function orthogonals() {
+		return this.horizontals().chain(this.verticals());
+	},
+	
+	/** boards.Checkerboard.positiveDiagonals():
+		Returns an iterable of all the positive diagonals lines (those where 
+		row = k + column), as a list of coordinates.
+	*/
+	positiveDiagonals: function positiveDiagonals() {
+		var width = this.width, 
+			height = this.height, 
+			count = height + width - 1;
+		return Iterable.range(count).map(function (i) {
+			var row = Math.max(0, height - i - 1),
+				column = Math.max(0, i - height + 1);
+			return Iterable.range(Math.min(i + 1, count - i)).map(function (j) {
+				return [row + j, column + j];
+			});
+		});
+	},
+	
+	/** boards.Checkerboard.negativeDiagonals():
+		Returns an iterable of all the negative diagonals lines (those where 
+		row = k - column), as a list of coordinates.
+	*/
+	negativeDiagonals: function negativeDiagonals() {
+		var width = this.width, 
+			height = this.height, 
+			count = height + width - 1;
+		return Iterable.range(count).map(function (i) {
+			var row = Math.min(i, height - 1),
+				column = Math.max(0, i - height + 1);
+			return Iterable.range(Math.min(i + 1, count - i)).map(function (j) {
+				return [row - j, column + j];
+			});
+		});
+	},
+	
+	/** boards.Checkerboard.diagonals():
+		Returns an iterable of all the diagonal lines in the board, as a list 
+		of coordinates.
+	*/
+	diagonals: function diagonals() {
+		return this.positiveDiagonals().chain(this.negativeDiagonals());
+	},
+	
+	/** boards.Checkerboard.lines():
+		Returns an iterable of all the horizontal, vertical and diagonal lines 
+		in the board, as a list of coordinates.
+	*/
+	lines: function lines() {
+		return this.orthogonals().chain(this.diagonals());
+	},
+	
+	/** boards.Checkerboard.sublines(lines, length):
+		Returns an iterable of all sublines of the given lines with the given 
+		length.
+	*/
+	sublines: function sublines(lines, length) {
+		return iterable(lines).map(function (line) {
+			return Array.isArray(line) ? line : iterable(line).toArray();
+		}, function (line) {
+			return line.length >= length;
+		}).map(function (line) {
+			return Iterable.range(0, line.length - length + 1).map(function (i) {
+				return line.slice(i, i + length);
+			});
+		}).flatten();
+	},
+	
+	/** abstract boards.Checkerboard.square(coord, outside):
+		Returns the content of the square at the given coordinate ([row, 
+		column]), or outside if the coordinate is not inside the board.
+	*/
+	square: function square(coord, outside) {
+		throw new Error('boards.Checkerboard.square() is not implemented. Please override.');
+	},
+	
+	/** boards.Checkerboard.walk(coord, delta):
+		Returns an iterable with coordinates ([row, column]) from the given 
+		coord and on, adding delta's row and column until going off the board.
+	*/
+	walk: function walk(coord, delta) {
+		var board = this;
+		return new Iterable(function __iter__() {
+			var current = coord.slice();
+			return function __walkIterator__() {
+				if (board.isValidCoord(current)) {
+					var result = current.slice();
+					current[0] += delta[0];
+					current[1] += delta[1];
+					return result;
+				} else {
+					throw Iterable.STOP_ITERATION;
+				}
+			};
+		});
+	},
+	
+	/** boards.Checkerboard.walks(coord, deltas):
+		Returns all walks from the given coord with each given delta.
+	*/
+	walks: function walks(coord, deltas) {
+		var board = this;
+		return deltas.map(function (delta) {
+			return board.walk(coord, delta);
+		});
+	},
+	
+// Board modification. /////////////////////////////////////////////////////////
+
+	/** abstract boards.Checkerboard.place(coord, value):
+		Places value at coord, replacing whatever was there. Returns a new 
+		instance of Checkerboard.
+	*/
+	place: function place(coord, value) {
+		throw new Error('boards.Checkerboard.place() is not implemented. Please override.');
+	},
+
+	/** boards.Checkerboard.move(coordFrom, coordTo, valueLeft=this.emptySquare):
+		Moves the contents at coordFrom to coordTo. Whatever coordTo is 
+		replaced, and at coordFrom valueLeft is placed. Returns a new instance 
+		of Checkerboard.
+	*/
+	move: function move(coordFrom, coordTo, valueLeft) {
+		return this
+			.place(coordTo, this.square(coordFrom))
+			.place(coordFrom, typeof valueLeft === 'undefined' ? this.emptySquare : valueLeft);
+	},
+	
+	/** boards.Checkerboard.swap(coordFrom, coordTo):
+		Moves the contents at coordFrom to coordTo, and viceversa. Returns a new
+		instance of Checkerboard.
+	*/
+	swap: function swap(coordFrom, coordTo) {
+		var valueTo = this.square(coordTo);
+		return this
+			.place(coordTo, this.square(coordFrom))
+			.place(coordFrom, valueTo);
+	}
+}); // declare boards.Checkerboard.
+
+
+/** Checkerboards represented by simple strings.
+*/
+boards.CheckerboardFromString = declare(boards.Checkerboard, {
+	/** new boards.CheckerboardFromString(height, width, string, emptySquare='.'):
+		A checkerboard represented by a string, each character being a square.
+	*/
+	constructor: function CheckerboardFromString(height, width, string, emptySquare) {
+		boards.Checkerboard.call(this, height, width);
+		if (emptySquare) {
+			this.emptySquare = (emptySquare + this.emptySquare).charAt(0);
+		}
+		/** boards.CheckerboardFromString.string:
+			The string representation of the board.
+		*/
+		if (string && string.length !== height * width) {
+			throw new Error('Given string '+ JSON.stringify(string) +' does not match board dimensions.');
+		}
+		this.string = string || this.emptySquare.repeat(height * width);
+	},
+	
+// Board information. //////////////////////////////////////////////////////////
+	
+	/** boards.CheckerboardFromString.emptySquare='.':
+		The character used to represent empty squares.
+	*/
+	emptySquare: '.',	
+	
+	/** boards.CheckerboardFromString.square(coord, outside=undefined):
+		Return the character at (row * width + column) if the coordinate is 
+		inside the board. Else returns the value of the outside argument.
+	*/
+	square: function square(coord, outside) {
+		var row = coord[0], 
+			column = coord[1],
+			width = this.width;
+		if (row >= 0 && row < this.height && column >= 0 && column < width) {
+			return this.string.charAt(row * width + column);
+		} else {
+			return outside;
+		}
+	},
+	
+	/** boards.CheckerboardFromString.place(coord, value):
+		Returns a new board with the character at the given coord changed to
+		value.
+	*/
+	place: function place(coord, value) {
+		raiseIf(!this.isValidCoord(coord), "Invalid coordinate ", coord, ".");
+		value = (value + this.emptySquare).charAt(0);
+		var i = coord[0] * this.width + coord[1],
+			newString = this.string.substr(0, i) + value + this.string.substr(i + 1);
+		return new this.constructor(this.height, this.width, newString, this.emptySquare);
+	},
+	
+	/** boards.CheckerboardFromString.toString():
+		Prints the board one line by row, last row on top.
+	*/
+	toString: function toString() {
+		var string = this.string, height = this.height, width = this.width;
+		return Iterable.range(height).map(function (i) {
+			return string.substr((height - i - 1) * width, width);
+		}).join('\n');
+	},
+	
+	/** boards.CheckerboardFromString.asString(line):
+		Takes a line (iterable of coordinates) and returns a string with a
+		character for each square.
+	*/
+	asString: function asString(line) {
+		var board = this;
+		return line.map(function (coord) {
+			return board.square(coord);
+		}).join('');
+	},
+	
+	/** boards.CheckerboardFromString.asStrings(lines):
+		Takes an iterable of lines (each being an iterable of coordinates) and 
+		returns an iterable of strings for each line.
+	*/
+	asStrings: function asStrings(lines) {
+		var board = this;
+		return lines.map(function (line) {
+			return board.asString(line);
+		});
+	},
+	
+	/** boards.CheckerboardFromString.asRegExp(line, insideLine, outsideLine='.'):
+		Takes a line (iterable of coordinates) and returns a string with a 
+		regular expression. This may be used to tests the whole board string for
+		the line.
+		Warning! Both insideLine and outsideLine must be simple regular 
+		expressions (e.g. a character or atom). If more complex expressions are
+		required they must be provided between parenthesis.
+	*/
+	asRegExp: function asRegExp(line, insideLine, outsideLine) {
+		outsideLine = outsideLine || '.';
+		var width = this.width,
+			squares = Iterable.repeat(false, width * this.height).toArray();
+		line.forEach(function (coord) {
+			squares[coord[0] * width + coord[1]] = true;
+		});
+		var result = '', count = 0, current;
+		for (var i = 0; i < squares.length; count = 0) {
+			current = squares[i];
+			do {
+				++count;
+			} while (++i < squares.length && squares[i] === current);
+			if (count < 2) {
+				result += current ? insideLine : outsideLine;
+			} else {
+				result += (current ? insideLine : outsideLine) +'{'+ count +'}';
+			}
+		}
+		return result;
+	},
+	
+	/** boards.CheckerboardFromString.asRegExps(lines, insideLine, outsideLine='.'):
+		Takes a sequence of lines (each a sequence of coordinates) and returns a
+		string with a regular expression, as the union of the regular expression
+		for each line.
+	*/
+	asRegExps: function asRegExps(lines, insideLine, outsideLine) {
+		var board = this;
+		return lines.map(function (line) {
+			return board.asRegExp(line, insideLine, outsideLine);
+		}).join('|');
+	}
+}); // declare boards.CheckerboardFromString
+
+
+/** Component for scanning a game's tree.
+*/
+exports.utils.Scanner = declare({
+	/** new utils.Scanner(config):
+		A Scanner builds a sample of a game tree, in order to get statistics 
+		from some of all possible matches.
+	*/
+	constructor: function Scanner(config) {
+		initialize(this, config)
+		/** utils.Scanner.game:
+			Game to scan.
+		*/
+			.object("game", { ignore: true })
+		/** utils.Scanner.maxWidth=1000:
+			Maximum amount of game states held at each step.
+		*/
+			.integer("maxWidth", { defaultValue: 1000, coerce: true })
+		/** utils.Scanner.maxLength=50:
+			Maximum length of simulated matches.
+		*/
+			.integer("maxLength", { defaultValue: 50, coerce: true })
+		/** utils.Scanner.random=randomness.DEFAULT:
+			Pseudorandom number generator to use in the simulations.
+		*/			
+			.object("random", { defaultValue: Randomness.DEFAULT })
+		/** utils.Scanner.statistics:
+			Component to gather relevant statistics. These include:
+			* `game.result`: Final game state results. Also available for victory and defeat.
+			* `game.length`: Match length in plies. Also available for victory and defeat.
+			* `game.width`: Number of available moves.
+			* `draw.length`: Drawn match length in plies.
+		*/
+			.object("statistics", { defaultValue: new Statistics() });
+	},
+	
+	/** utils.Scanner.scan(players, games...=[this.game]):
+		Scans the trees of the given game (using this scanner's game by 
+		default). This means reproducing and sampling the set of all possible 
+		matches from the given game states. The simulation halts at maxLength
+		plies, and never holds more than maxWidth game states.
+		The players argument may provide a player for some or all of the games'
+		roles. If available, they will be used to decide which move is applied
+		to each game state. If missing, all next game states will be added. Ergo
+		no players means a simulation off all possible matches.		
+	*/
+	scan: function scan(players) {
+		var scanner = this,
+			window = arguments.length < 2 ? (this.game ? [this.game] : []) : Array.prototype.slice.call(arguments, 1),
+			ply = 0; 
+		return Future.whileDo(function () {
+			return window.length > 0 && ply < scanner.maxLength;
+		}, function () {
+			return Future.all(window.map(function (game) {
+				return scanner.__advance__(players, game, ply);
+			})).then(function (level) {
+				window = iterable(level).flatten().sample(scanner.maxWidth, scanner.random).toArray();
+				ply++;
+			});
+		}).then(function () {
+			scanner.statistics.add({key:'aborted'}, window.length);
+			return scanner.statistics;
+		});
+	},
+	
+	/** utils.Scanner.__advance__(players, game, ply):
+		Advances the given game by one ply. This may mean for non final game 
+		states either instantiate random variables, ask the available player 
+		for a decision, or take all next game states. Final game states are 
+		removed. All game states are accounted in the scanner's statistics. The
+		result is an Iterable with the game states to add to the next scan
+		window.
+	*/
+	__advance__: function __advance__(players, game, ply) {
+		if (game instanceof Aleatory) {
+			return iterable(game.distribution()).map(function (value) {
+				return game.next(value[0]);
+			});
+		} else if (this.account(players, game, ply)) {
+			return Iterable.EMPTY;
+		} else {
+			var scanner = this,
+				moves = game.moves();
+			return Future.all(game.activePlayers.map(function (activePlayer) {
+				if (players && players[activePlayer]) {
+					var decisionTime = stats.stat({key:'decision.time', game: game.name, role: role, player: p});
+					decisionTime.startTime();
+					return Future.when(players[activePlayer].decision(game, activePlayer)).then(function (move) {
+						decisionTime.addTime();
+						return [move];
+					});
+				} else {
+					return moves[activePlayer];
+				}
+			})).then(function (decisions) {
+				return Iterable.product.apply(this, decisions).map(function (moves) {
+					return game.next(iterable(game.activePlayers).zip(moves).toObject());
+				});
+			});
+		}
+	},
+			
+	/** utils.Scanner.account(players, game, ply):
+		Gathers statistics about the game. Returns whether the given game state
+		is final or not.
+	*/
+	account: function account(players, game, ply) {
+		var result = game.result(),
+			stats = this.statistics;
+		if (result) {
+			iterable(game.players).forEach(function (role) {
+				var r = result[role],
+					p = players && players[role] ? players[role].name : '',
+					keys = ['game:'+ game.name, 'role:'+ role, 'player:'+ p];
+				stats.add({key:'game.result', game:game.name, role:role, player:p}, r, game);
+				stats.add({key:'game.length', game:game.name, role:role, player:p}, ply, game);
+				if (r < 0) {
+					stats.add({key:'defeat.result', game:game.name, role:role, player:p}, r, game);
+					stats.add({key:'defeat.length', game:game.name, role:role, player:p}, ply, game);
+				} else if (r > 0) {
+					stats.add({key:'victory.result', game:game.name, role:role, player:p}, r, game);
+					stats.add({key:'victory.result', game:game.name, role:role, player:p}, ply, game);
+				} else {
+					stats.add({key:'draw.length', game:game.name, role:role, player:p}, ply, game);
+				}
+			});
+			return true;
+		} else {
+			var moves = game.moves();
+			iterable(game.activePlayers).forEach(function (role) {
+				stats.add({key:'game.width', game:game.name, role:role}, moves[role].length);
+			});
+			return false;
+		}
+	}
+}); // declare utils.Scanner.
 
 
 /** Simple reference games with a predefined outcome, mostly for testing 
@@ -1311,13 +2068,8 @@ games.__Predefined__ = declare(Game, {
 		return new this.constructor(this.opponent(), this.__results__, this.height - 1, this.width);
 	},
 	
-	args: function args() {
+	__serialize__: function __serialize__() {
 		return [this.name, this.activePlayer(), this.results, this.height, this.width];
-	},
-	
-	toString: function toString() {
-		return '__Predefined__('+ [this.activePlayer(), this.__results__,
-			this.height, this.width].map(JSON.stringify).join(', ') +')';
 	}
 }); // declare __Predefined__.
 
@@ -1378,13 +2130,8 @@ games.Choose2Win = declare(Game, {
 		throw new Error('Invalid move '+ moves[activePlayer] +' for player '+ activePlayer +'.');
 	},
 	
-	args: function args() {
+	__serialize__: function __serialize__() {
 		return [this.name, this.__turns__, this.activePlayer(), this.__winner__];
-	},
-	
-	toString: function toString() {
-		//WARN JSON does not support Infinity nor -Infinity.
-		return 'Choose2Win('+ this.__turns__ +","+ JSON.stringify(this.activePlayer()) +","+ JSON.stringify(this.__winner__) +')';
 	}
 }); // declare Choose2Win.
 
@@ -1437,13 +2184,9 @@ games.OddsAndEvens = declare(Game, {
 			Odds: this.points.Odds + (parity ? 0 : 1)
 		});
 	},
-	
-	args: function args() {
+
+	__serialize__: function __serialize__() {
 		return [this.name, this.turns, this.points];
-	},
-	
-	toString: function toString() {
-		return JSON.stringify(this.points);
 	}
 }); // declare OddsAndEvens.
 
@@ -1471,12 +2214,10 @@ games.TicTacToe = declare(Game, {
 		board is full, or null otherwise.
 	*/
 	result: (function () {
-		var WIN_X = /XXX......|...XXX...|......XXX|X..X..X..|.X..X..X.|..X..X..X|X...X...X|..X.X.X../,
-			WIN_O = /OOO......|...OOO...|......OOO|O..O..O..|.O..O..O.|..O..O..O|O...O...O|..O.O.O../;
 		return function result() {			
-			if (this.board.match(WIN_X)) { // Xs wins.
+			if (this.board.match(this.WIN_X)) { // Xs wins.
 				return this.victory(["Xs"]);
-			} else if (this.board.match(WIN_O)) { // Os wins.
+			} else if (this.board.match(this.WIN_O)) { // Os wins.
 				return this.victory(["Os"]);
 			} else if (this.board.indexOf('_') < 0) { // No empty squares means a tie.
 				return this.draw();
@@ -1517,10 +2258,6 @@ games.TicTacToe = declare(Game, {
 		return new this.constructor(this.opponent(activePlayer), newBoard);
 	},
 
-	args: function args() {
-		return [this.name, this.activePlayer(), this.board];
-	},
-	
 	/** games.TicTacToe.toString():
 		Text version of the TicTacToe board.
 	*/
@@ -1550,31 +2287,44 @@ games.TicTacToe = declare(Game, {
 				board.slice(3,6).join(''),
 				board.slice(6,9).join('')
 			].join('</tr><tr>') +'</tr></table>';
-	}
-}); // declare TicTacToe
+	},
 	
-// TicTacToe AI ////////////////////////////////////////////////////////////////
-/** static games.TicTacToe.heuristics:
-	Bundle of heuristic evaluation functions for TicTacToe.
-*/
-games.TicTacToe.heuristics = {};
-
-/** games.TicTacToe.heuristics.heuristicFromWeights(weights):
-	Builds an heuristic evaluation function from weights for each square in the 
-	board. The result of the function is the weighted sum, empty squares being
-	ignored, opponent squares considered negative.
-*/
-games.TicTacToe.heuristics.heuristicFromWeights = function heuristicFromWeights(weights) {
-	var weightSum = iterable(weights).map(Math.abs).sum();
-	function __heuristic__(game, player) {
-		var playerChar = player.charAt(0);
-		return iterable(game.board).map(function (square, i) {
-			return (square === '_' ? 0 : weights[i] * (square === playerChar ? 1 : -1));
-		}).sum() / weightSum;
-	}
-	__heuristic__.weights = weights;
-	return __heuristic__;
-};
+	__serialize__: function __serialize__() {
+		return [this.name, this.activePlayer(), this.board];
+	},
+	
+	// Heuristics and AI ///////////////////////////////////////////////////////
+	
+	/** static games.TicTacToe.heuristics:
+		Bundle of heuristic evaluation functions for TicTacToe.
+	*/
+	"static heuristics": {
+		/** games.TicTacToe.heuristics.heuristicFromWeights(weights):
+			Builds an heuristic evaluation function from weights for each square 
+			in the board. The result of the function is the weighted sum, empty 
+			squares being ignored, opponent squares considered negative.
+		*/
+		heuristicFromWeights: function heuristicFromWeights(weights) {
+			var weightSum = iterable(weights).map(Math.abs).sum();
+			function __heuristic__(game, player) {
+				var playerChar = player.charAt(0);
+				return iterable(game.board).map(function (square, i) {
+					return (square === '_' ? 0 : weights[i] * (square === playerChar ? 1 : -1));
+				}).sum() / weightSum;
+			}
+			__heuristic__.weights = weights;
+			return __heuristic__;
+		}
+	},
+	
+	'': function () { // Class initializer. ////////////////////////////////////
+		// Build the regular expressions used in the victory test.
+		var board3x3 = new boards.CheckerboardFromString(3, 3, '_'.repeat(9)),
+			lines = board3x3.sublines(board3x3.lines(), 3);
+		this.prototype.WIN_X = new RegExp(board3x3.asRegExps(lines, 'X', '.'));
+		this.prototype.WIN_O = new RegExp(board3x3.asRegExps(lines, 'O', '.'));
+	}	
+}); // declare TicTacToe
 	
 /** games.TicTacToe.heuristics.defaultHeuristic(game, player):
 	Default heuristic for TicTacToe, based on weights for each square.
@@ -1592,6 +2342,17 @@ games.ToadsAndFrogs = declare(Game, {
 	constructor: function ToadsAndFrogs(activePlayer, board) {
 		Game.call(this, activePlayer);
 		this.board = board || ToadsAndFrogs.board();
+	},
+	
+	/** static games.ToadsAndFrogs.board(chips=3, separation=2):
+		Makes a board for Toads & Frogs. This is a single row with the given 
+		number of chips for each player (toads to the left and frogs to the
+		right) separated by the given number of empty spaces.
+	*/
+	"static board": function board(chips, separation) {
+		chips = isNaN(chips) ? 3 : +chips;
+		separation = isNaN(separation) ? 2 : +separation;
+		return 'T'.repeat(chips) + '_'.repeat(separation) + 'F'.repeat(chips);
 	},
 	
 	name: 'ToadsAndFrogs',
@@ -1642,28 +2403,10 @@ games.ToadsAndFrogs = declare(Game, {
 		return new this.constructor(this.opponent(activePlayer), board);
 	},
 
-	args: function args() {
+	__serialize__: function __serialize__() {
 		 return [this.name, this.activePlayer, this.board];
-	},
-	
-	/** games.ToadsAndFrogs.toString():
-		Prints the game's board.
-	*/
-	toString: function toString() {
-		return this.board;
-	}
+	}	
 }); // declare ToadsAndFrogs
-	
-/** static games.ToadsAndFrogs.board(chips=3, separation=2):
-	Makes a board for Toads & Frogs. This is a single row with the given 
-	number of chips for each player (toads to the left and frogs to the
-	right) separated by the given number of empty spaces.
-*/
-games.ToadsAndFrogs.board = function board(chips, separation) {
-	chips = isNaN(chips) ? 3 : +chips;
-	separation = isNaN(separation) ? 2 : +separation;
-	return 'T'.repeat(chips) + '_'.repeat(separation) + 'F'.repeat(chips);
-};
 
 
 /** Implementation of the Kalah member of the Mancala family of games.
@@ -1847,7 +2590,7 @@ games.Mancala = declare(Game, {
 	
 	// Utility methods. ////////////////////////////////////////////////////
 	
-	args: function args() {
+	__serialize__: function __serialize__() {
 		return [this.name, this.activePlayer(), this.board.slice()];
 	},
 
@@ -1899,47 +2642,51 @@ games.Mancala = declare(Game, {
 			+ '</tr><tr>'
 			+ this.houses(south).map(renderHouse.bind(this, south)).join('') 
 			+ '</tr></table>';
+	},
+	
+// Heuristics. /////////////////////////////////////////////////////////////////
+
+	/** static games.Mancala.heuristics:
+		Bundle of heuristic evaluation functions for Mancala.
+	*/
+	'static heuristics': {
+		/** games.Mancala.heuristics.heuristicFromWeights(weights=default weights):
+			Builds an heuristic evaluation function from weights for each square 
+			in the board. The result of the function is the normalized weighted 
+			sum.
+		*/
+		heuristicFromWeights: function heuristicFromWeights(weights) {
+			var weightSum = iterable(weights).map(Math.abs).sum();
+			function __heuristic__(game, player) {
+				var seedSum = 0, signum;
+				switch (game.players.indexOf(player)) {
+					case 0: signum = 1; break; // North.
+					case 1: signum = -1; break; // South.
+					default: throw new Error("Invalid player "+ player +".");
+				}
+				return iterable(game.board).map(function (seeds, i) {
+					seedSum += seeds;
+					return seeds * weights[i]; //TODO Normalize weights before.
+				}).sum() / weightSum / seedSum * signum;
+			}
+			__heuristic__.weights = weights;
+			return __heuristic__;
+		}
+	},
+	
+// Static initializer. /////////////////////////////////////////////////////////
+	
+	'': function () {
+		this.makeBoard = this.prototype.makeBoard;
+		/** games.Mancala.heuristics.defaultHeuristic(game, player):
+			Default heuristic for Mancala, based on weights for each square.
+		*/
+		this.heuristics.defaultHeuristic = this.heuristics.heuristicFromWeights(
+			[+1,+1,+1,+1,+1,+1,+5, 
+			 -1,-1,-1,-1,-1,-1,-5]
+		);
 	}
 }); // declare Mancala.
-	
-games.Mancala.makeBoard = games.Mancala.prototype.makeBoard;
-
-// Heuristics //////////////////////////////////////////////////////////////////
-
-/** static games.Mancala.heuristics:
-	Bundle of heuristic evaluation functions for Mancala.
-*/
-games.Mancala.heuristics = {};
-	
-/** games.Mancala.heuristics.heuristicFromWeights(weights):
-	Builds an heuristic evaluation function from weights for each square in
-	the board. The result of the function is the normalized weighted sum.
-*/
-games.Mancala.heuristics.heuristicFromWeights = function heuristicFromWeights(weights) {
-	var weightSum = iterable(weights).map(Math.abs).sum();
-	function __heuristic__(game, player) {
-		var seedSum = 0, signum;
-		switch (game.players.indexOf(player)) {
-			case 0: signum = 1; break; // North.
-			case 1: signum = -1; break; // South.
-			default: throw new Error("Invalid player "+ player +".");
-		}
-		return iterable(game.board).map(function (seeds, i) {
-			seedSum += seeds;
-			return seeds * weights[i]; //TODO Normalize weights before.
-		}).sum() / weightSum / seedSum * signum;
-	}
-	__heuristic__.weights = weights;
-	return __heuristic__;
-};
-	
-/** games.Mancala.heuristics.defaultHeuristic(game, player):
-	Default heuristic for Mancala, based on weights for each square.
-*/
-games.Mancala.heuristics.defaultHeuristic = games.Mancala.heuristics.heuristicFromWeights(
-	[+1,+1,+1,+1,+1,+1,+5,
-	 -1,-1,-1,-1,-1,-1,-5]
-);
 
 
 /* Pig is a simple dice game, used here as an example of a game with random 
@@ -2023,10 +2770,156 @@ games.Pig = declare(Game, {
 		}
 	},
 	
-	args: function args() {
+	__serialize__: function __serialize__() {
 		return [this.name, this.activePlayer(), this.goal, this.__scores__, this.__rolls__];
 	}
 }); // declare Pig.
+
+
+/** .
+*/
+games.ConnectFour = declare(Game, {
+	/** games.ConnectFour.height=6:
+		Number of rows in the ConnectFour board.
+	*/
+	height: 6,
+	
+	/** games.ConnectFour.width=7:
+		Number of columns in the ConnectFour board.
+	*/
+	width: 7,
+	
+	/** new games.ConnectFour(activePlayer=players[0], board=<empty board>):
+		Builds a new game state for Connect Four.
+	*/
+	constructor: function ConnectFour(activePlayer, board, height, width) {
+		Game.call(this, activePlayer);
+		if (!isNaN(height) && this.height !== +height) {
+			this.height = +height;
+		}
+		if (!isNaN(width) && this.width !== +width) {
+			this.width = +width;
+		}
+		/** games.ConnectFour.board:
+			ConnectFour board as a string.
+		*/
+		this.board = (board instanceof boards.CheckerboardFromString) ? board :
+			new boards.CheckerboardFromString(this.height, this.width, 
+				(board || '.'.repeat(this.height * this.width)) +''
+			);
+	},
+
+	name: 'ConnectFour',
+	
+	/** games.ConnectFour.players=['Yellow', 'Red']:
+		Connect Four's players.
+	*/
+	players: ['Yellow', 'Red'],
+	
+	/* Cache of lines to accelerate the result calculation. */
+	__lines__: (function () {
+		var CACHE = {};
+		function __lines__(height, width) {
+			var key = height +'x'+ width;
+			if (!CACHE.hasOwnProperty(key)) {
+				var board = new boards.CheckerboardFromString(height, width, '.'.repeat(height * width));
+				CACHE[key] = board.lines().map(function (line) {
+					return line.toArray();
+				}, function (line) {
+					return line.length >= 4;
+				}).toArray();
+			}
+			return CACHE[key];
+		}
+		__lines__.CACHE = CACHE;
+		return __lines__;
+	})(),
+	
+	/** games.ConnectFour.result():
+		A Connect Four game ends when whether player gets four pieces aligned
+		(either horizontally, vertically or diagonally), then winning the game.
+		The match ends in a tie if the board gets full.
+	*/
+	result: function result() {
+		var lines = this.board.asStrings(this.__lines__(this.height, this.width)).join(' ');
+		if (lines.indexOf('0000') >= 0) { // Yellow wins.
+			return this.victory([this.players[0]]);
+		} else if (lines.indexOf('1111') >= 0) { // Red wins.
+			return this.victory([this.players[1]]);
+		} else if (lines.indexOf('.') < 0) { // No empty squares means a tie.
+			return this.draw();
+		} else {
+			return null; // The game continues.
+		}
+	},
+	
+	/** games.ConnectFour.moves():
+		Return the index of every column that has not reached the top height.
+	*/
+	moves: function moves() {
+		var result = null;
+		if (!this.result()) {
+			var ms = [],
+				board = this.board.string,
+				offset = (this.height - 1) * this.width;
+			for (var i = 0; i < board.length; ++i) {
+				if (board.charAt(offset + i) === '.') {
+					ms.push(i);
+				}
+			}
+			if (ms.length > 0) {
+				result = {};
+				result[this.activePlayer()] = ms;
+			}
+		}
+		return result;
+	},
+
+	/** games.ConnectFour.next(moves):
+		Each ConnectFour move is a column index.
+	*/
+	next: function next(moves) {
+		var activePlayer = this.activePlayer(),
+			board = this.board.string,
+			column = +moves[activePlayer],
+			height = this.height,
+			width = this.width;
+		for (var row = 0; row < height; ++row) {
+			if (board.charAt(row * width + column) === '.') {
+				return new this.constructor(this.opponent(), 
+					this.board.place([row, column], activePlayer === this.players[0] ? '0' : '1'));
+			}
+		}
+		throw new Error('Invalid move '+ JSON.stringify(moves) +'!');
+	},
+	
+	/** games.ConnectFour.toHTML():
+		Renders the ConnectFour board as a HTML table.
+	*/
+	toHTML: function toHTML() {
+		var moves = this.moves(),
+			activePlayer = this.activePlayer(),
+			board = this.board;
+		moves = moves && moves[activePlayer];
+		return '<table>'+
+			'<colgroup>'+ '<col/>'.repeat(this.board.width) +'</colgroup>'+
+			board.horizontals().reverse().map(function (line) {
+				return '<tr>'+ line.map(function (coord) {
+					var data = '',
+						value = board.square(coord);
+					if (moves && moves.indexOf(coord[1]) >= 0) {
+						data = ' data-ludorum="move: '+ coord[1] +', activePlayer: \''+ activePlayer +'\'"';
+					}
+					return (value === '.') ? '<td '+ data +'>&nbsp;</td>'
+						: '<td class="ludorum-player'+ value +'" '+ data +'>&#x25CF;</td>';
+				}).join('') +'</tr>';
+			}).join('') + '</table>';
+	},
+	
+	__serialize__: function __serialize__() {
+		return [this.name, this.activePlayer(), this.board.string, this.board.height, this.board.width];
+	}
+}); // declare ConnectFour.
 
 
 /** Tournament where all players play against each other a certain number of
@@ -2111,390 +3004,6 @@ tournaments.Measurement = declare(Tournament, {
 }); // declare Measurement.
 
 
-/** Dice random variables.
-*/
-aleatories.Dice = declare(Aleatory, {
-	/** new aleatories.Dice(name, base=6, random=basis.Randomness.DEFAULT):
-		Simple uniform random variable with values in [1, base]. 
-	*/
-	constructor: function Dice(next, base, random) {
-		Aleatory.call(this, next, random);
-		/** aleatories.Dice.base=6:
-			Amount of different values this dice can take.
-		*/
-		this.base = isNaN(base) ? 6 : Math.max(2, +base);
-	},
-	
-	/** aleatories.Dice.value():
-		Returns a random value between 1 and base.
-	*/
-	value: function value() {
-		return this.random.randomInt(1, this.base + 1);
-	},
-	
-	/** aleatories.Dice.distribution():
-		Values from 1 to this.base, with uniform probabilities.
-	*/
-	distribution: function distribution() {
-		return this.__distribution__ || (this.__distribution__ = (function (base) {
-			return Iterable.range(1, base + 1).map(function (n, i) {
-				return [n, 1 / base];
-			}).toArray();
-		})(this.base));
-	}		
-}); // declare Dice.
-
-
-/** Base class for checkerboards based on several different data structures.
-*/
-boards.Checkerboard = declare({
-	/** new boards.Checkerboard(height, width):
-		The base constructor only sets the board dimensions.
-	*/
-	constructor: function Checkerboard(height, width) {
-		if (!isNaN(height)) {
-			this.height = +height | 0;
-		}
-		if (!isNaN(width)) {
-			this.width = +width | 0;
-		}
-	},
-	
-	/** boards.Checkerboard.emptySquare=null:
-		The value of empty squares.
-	*/
-	emptySquare: null,
-	
-// Board information. //////////////////////////////////////////////////////////
-	
-	/** boards.Checkerboard.isValidCoord(coord):
-		Returns true if coord is an array with two numbers between this board's
-		dimensions.
-	*/
-	isValidCoord: function isValidCoord(coord) {
-		return Array.isArray(coord) && !isNaN(coord[0]) && !isNaN(coord[1])
-			&& coord[0] >= 0 && coord[0] < this.height 
-			&& coord[1] >= 0 && coord[1] < this.width;
-	},
-	
-	/** boards.Checkerboard.horizontals():
-		Returns an iterable of all the horizontal lines (rows) in the board.
-	*/
-	horizontals: function horizontals() {
-		var width = this.width;
-		return Iterable.range(this.height).map(function (row) {
-			return Iterable.range(width).map(function (column) {
-				return [row, column];
-			});
-		});
-	},
-	
-	/** boards.Checkerboard.verticals():
-		Returns an iterable of all the vertical lines (columns) in the board.
-	*/
-	verticals: function verticals() {
-		var height = this.height;
-		return Iterable.range(this.width).map(function (column) {
-			return Iterable.range(height).map(function (row) {
-				return [row, column];
-			});
-		});
-	},
-	
-	/** boards.Checkerboard.orthogonals():
-		Returns an iterable of all the horizontal (rows) and vertical lines 
-		(columns) in the board.
-	*/
-	orthogonals: function orthogonals() {
-		return this.horizontals().chain(this.verticals());
-	},
-	
-	/** boards.Checkerboard.positiveDiagonals():
-		Returns an iterable of all the positive diagonals lines (those where 
-		row = k + column).
-	*/
-	positiveDiagonals: function positiveDiagonals() {
-		var width = this.width, height = this.height, count = height + width - 1;
-		return Iterable.range(count).map(function (i) {
-			var row = Math.max(0, height - i - 1),
-				column = Math.max(0, i - height + 1);
-			return Iterable.range(Math.min(i + 1, count - i)).map(function (j) {
-				return [row + j, column + j];
-			});
-		});
-	},
-	
-	/** boards.Checkerboard.negativeDiagonals():
-		Returns an iterable of all the negative diagonals lines (those where 
-		row = k - column).
-	*/
-	negativeDiagonals: function negativeDiagonals() {
-		var width = this.width, height = this.height, count = height + width - 1;
-		return Iterable.range(count).map(function (i) {
-			var row = Math.min(i, height - 1),
-				column = Math.max(0, i - height + 1);
-			return Iterable.range(Math.min(i + 1, count - i)).map(function (j) {
-				return [row - j, column + j];
-			});
-		});
-	},
-	
-	/** boards.Checkerboard.diagonals():
-		Returns an iterable of all the diagonal lines in the board.
-	*/
-	diagonals: function diagonals() {
-		return this.positiveDiagonals().chain(this.negativeDiagonals());
-	},
-	
-	/** boards.Checkerboard.lines():
-		Returns an iterable of all the horizontal, vertical and diagonal lines 
-		in the board.
-	*/
-	lines: function lines() {
-		return this.orthogonals().chain(this.diagonals());
-	},
-	
-	/** abstract boards.Checkerboard.square(row, column, outside):
-		Returns the content of the square at the given coordinate, or outside if
-		the coordinate is not inside the board.
-	*/
-	square: function square(row, column, outside) {
-		throw new Error('boards.Checkerboard.square() is not implemented. Please override.');
-	},
-	
-// Board modification. /////////////////////////////////////////////////////////
-
-	/** abstract boards.Checkerboard.place(coord, value):
-		Places value at coord, replacing whatever was there. Returns a new 
-		instance of Checkerboard.
-	*/
-	place: function place(coord, value) {
-		throw new Error('boards.Checkerboard.place() is not implemented. Please override.');
-	},
-
-	/** boards.Checkerboard.move(coordFrom, coordTo, valueLeft=this.emptySquare):
-		Moves the contents at coordFrom to coordTo. Whatever coordTo is 
-		replaced, and at coordFrom valueLeft is placed. Returns a new instance 
-		of Checkerboard.
-	*/
-	move: function move(coordFrom, coordTo, valueLeft) {
-		return this
-			.place(coordTo, this.square(coordFrom[0], coordFrom[1]))
-			.place(coordFrom, typeof valueLeft === 'undefined' ? this.emptySquare : valueLeft);
-	},
-	
-	/** boards.Checkerboard.swap(coordFrom, coordTo):
-		Moves the contents at coordFrom to coordTo, and viceversa. Returns a new
-		instance of Checkerboard.
-	*/
-	swap: function swap(coordFrom, coordTo) {
-		var valueTo = this.square(coordTo[0], coordTo[1]);
-		return this
-			.place(coordTo, this.square(coordFrom[0], coordFrom[1]))
-			.place(coordFrom, valueTo);
-	}	
-}); // declare boards.Checkerboard.
-
-
-/** Checkerboards represented by simple strings.
-*/
-boards.CheckerboardFromString = declare(boards.Checkerboard, {
-	/** new boards.CheckerboardFromString(height, width, string, emptySquare='.'):
-		A checkerboard represented by a string, each character being a square.
-	*/
-	constructor: function CheckerboardFromString(height, width, string, emptySquare) {
-		boards.Checkerboard.call(this, height, width);
-		if (emptySquare) {
-			this.emptySquare = (emptySquare + this.emptySquare).charAt(0);
-		}
-		/** boards.CheckerboardFromString.string:
-			The string representation of the board.
-		*/
-		if (string && string.length !== height * width) {
-			throw new Error('Given string '+ JSON.stringify(string) +' does not match board dimensions.');
-		}
-		this.string = string || this.emptySquare.repeat(height * width);
-	},
-	
-	/** boards.CheckerboardFromString.emptySquare='.':
-		The character used to represent empty squares.
-	*/
-	emptySquare: '.',
-	
-	/** boards.CheckerboardFromString.square(row, column, outside=undefined):
-		Return the character at (row * width + column) if the coordinate is 
-		inside the board. Else returns the value of the outside argument.
-	*/
-	square: function square(row, column, outside) {
-		if (row >= 0 && row < this.height && column >= 0 && column < this.width) {
-			return this.string.charAt(row * this.width + column);
-		} else {
-			return outside;
-		}
-	},
-	
-	/** boards.CheckerboardFromString.place(coord, value):
-		Returns a new board with the character at the given coord changed to
-		value.
-	*/
-	place: function place(coord, value) {
-		raiseIf(!this.isValidCoord(coord), "Invalid coordinate ", coord, ".");
-		value = (value + this.emptySquare).charAt(0);
-		var i = coord[0] * this.width + coord[1],
-			newString = this.string.substr(0, i) + value + this.string.substr(i + 1);
-		return new this.constructor(this.height, this.width, newString, this.emptySquare);
-	},
-	
-	/** boards.CheckerboardFromString.toString():
-		Prints the board one line by row, last row on top.
-	*/
-	toString: function toString() {
-		var string = this.string, height = this.height, width = this.width;
-		return Iterable.range(height).map(function (i) {
-			return string.substr((height - i - 1) * width, width);
-		}).join('\n');
-	}
-}); // declare boards.CheckerboardFromString
-
-
-
-/** Component for scanning a game's tree.
-*/
-exports.utils.Scanner = declare({
-	/** new utils.Scanner(config):
-		A Scanner builds a sample of a game tree, in order to get statistics 
-		from some of all possible matches.
-	*/
-	constructor: function Scanner(config) {
-		initialize(this, config)
-		/** utils.Scanner.game:
-			Game to scan.
-		*/
-			.object("game", { ignore: true })
-		/** utils.Scanner.maxWidth=1000:
-			Maximum amount of game states held at each step.
-		*/
-			.integer("maxWidth", { defaultValue: 1000, coerce: true })
-		/** utils.Scanner.maxLength=50:
-			Maximum length of simulated matches.
-		*/
-			.integer("maxLength", { defaultValue: 50, coerce: true })
-		/** utils.Scanner.random=randomness.DEFAULT:
-			Pseudorandom number generator to use in the simulations.
-		*/			
-			.object("random", { defaultValue: Randomness.DEFAULT })
-		/** utils.Scanner.statistics:
-			Component to gather relevant statistics. These include:
-			* `game.result`: Final game state results. Also available for victory and defeat.
-			* `game.length`: Match length in plies. Also available for victory and defeat.
-			* `game.width`: Number of available moves.
-			* `draw.length`: Drawn match length in plies.
-		*/
-			.object("statistics", { defaultValue: new Statistics() });
-	},
-	
-	/** utils.Scanner.scan(players, games...=[this.game]):
-		Scans the trees of the given game (using this scanner's game by 
-		default). This means reproducing and sampling the set of all possible 
-		matches from the given game states. The simulation halts at maxLength
-		plies, and never holds more than maxWidth game states.
-		The players argument may provide a player for some or all of the games'
-		roles. If available, they will be used to decide which move is applied
-		to each game state. If missing, all next game states will be added. Ergo
-		no players means a simulation off all possible matches.		
-	*/
-	scan: function scan(players) {
-		var scanner = this,
-			window = arguments.length < 2 ? (this.game ? [this.game] : []) : Array.prototype.slice.call(arguments, 1),
-			ply = 0; 
-		return Future.whileDo(function () {
-			return window.length > 0 && ply < scanner.maxLength;
-		}, function () {
-			return Future.all(window.map(function (game) {
-				return scanner.__advance__(players, game, ply);
-			})).then(function (level) {
-				window = iterable(level).flatten().sample(scanner.maxWidth, scanner.random).toArray();
-				ply++;
-			});
-		}).then(function () {
-			scanner.statistics.add({key:'aborted'}, window.length);
-			return scanner.statistics;
-		});
-	},
-	
-	/** utils.Scanner.__advance__(players, game, ply):
-		Advances the given game by one ply. This may mean for non final game 
-		states either instantiate random variables, ask the available player 
-		for a decision, or take all next game states. Final game states are 
-		removed. All game states are accounted in the scanner's statistics. The
-		result is an Iterable with the game states to add to the next scan
-		window.
-	*/
-	__advance__: function __advance__(players, game, ply) {
-		if (game instanceof Aleatory) {
-			return iterable(game.distribution()).map(function (value) {
-				return game.next(value[0]);
-			});
-		} else if (this.account(players, game, ply)) {
-			return Iterable.EMPTY;
-		} else {
-			var scanner = this,
-				moves = game.moves();
-			return Future.all(game.activePlayers.map(function (activePlayer) {
-				if (players && players[activePlayer]) {
-					var decisionTime = stats.stat({key:'decision.time', game: game.name, role: role, player: p});
-					decisionTime.startTime();
-					return Future.when(players[activePlayer].decision(game, activePlayer)).then(function (move) {
-						decisionTime.addTime();
-						return [move];
-					});
-				} else {
-					return moves[activePlayer];
-				}
-			})).then(function (decisions) {
-				return Iterable.product.apply(this, decisions).map(function (moves) {
-					return game.next(iterable(game.activePlayers).zip(moves).toObject());
-				});
-			});
-		}
-	},
-			
-	/** utils.Scanner.account(players, game, ply):
-		Gathers statistics about the game. Returns whether the given game state
-		is final or not.
-	*/
-	account: function account(players, game, ply) {
-		var result = game.result(),
-			stats = this.statistics;
-		if (result) {
-			iterable(game.players).forEach(function (role) {
-				var r = result[role],
-					p = players && players[role] ? players[role].name : '',
-					keys = ['game:'+ game.name, 'role:'+ role, 'player:'+ p];
-				stats.add({key:'game.result', game:game.name, role:role, player:p}, r, game);
-				stats.add({key:'game.length', game:game.name, role:role, player:p}, ply, game);
-				if (r < 0) {
-					stats.add({key:'defeat.result', game:game.name, role:role, player:p}, r, game);
-					stats.add({key:'defeat.length', game:game.name, role:role, player:p}, ply, game);
-				} else if (r > 0) {
-					stats.add({key:'victory.result', game:game.name, role:role, player:p}, r, game);
-					stats.add({key:'victory.result', game:game.name, role:role, player:p}, ply, game);
-				} else {
-					stats.add({key:'draw.length', game:game.name, role:role, player:p}, ply, game);
-				}
-			});
-			return true;
-		} else {
-			var moves = game.moves();
-			iterable(game.activePlayers).forEach(function (role) {
-				stats.add({key:'game.width', game:game.name, role:role}, moves[role].length);
-			});
-			return false;
-		}
-	}
-}); // declare utils.Scanner.
-
-
 // See __prologue__.js
-return exports;
+	return exports;
 });

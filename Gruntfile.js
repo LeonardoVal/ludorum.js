@@ -6,22 +6,24 @@ var sourceFiles = [ 'src/__prologue__.js',
 	// players.
 	'src/players/RandomPlayer.js', 'src/players/TracePlayer.js',
 		'src/players/HeuristicPlayer.js', 
+		'src/players/MaxNPlayer.js',
 		'src/players/MiniMaxPlayer.js', 'src/players/AlphaBetaPlayer.js',
 		'src/players/MonteCarloPlayer.js',
 		'src/players/UserInterfacePlayer.js',
+		'src/players/WebWorkerPlayer.js',
+	// aleatories.
+		'src/aleatories/Dice.js',
+	// boards.
+		'src/boards/Checkerboard.js', 'src/boards/CheckerboardFromString.js',
+	// utils.
+		'src/utils/Scanner.js',
 	// games.
 	'src/games/__Predefined__.js',  'src/games/Choose2Win.js',
 		'src/games/OddsAndEvens.js', 'src/games/TicTacToe.js',
 		'src/games/ToadsAndFrogs.js', 'src/games/Mancala.js',
-		'src/games/Pig.js',
+		'src/games/Pig.js', 'src/games/ConnectFour.js',
 	// tournaments.
 	'src/tournaments/RoundRobin.js', 'src/tournaments/Measurement.js',
-	// aleatories.
-	'src/aleatories/Dice.js',
-	// boards.
-	'src/boards/Checkerboard.js', 'src/boards/CheckerboardFromString.js',
-	// utils.
-	'src/utils/Scanner.js',
 // end
 	'src/__epilogue__.js'];
 
