@@ -16,11 +16,11 @@ var Match = exports.Match = declare({
 		*/
 		this.history = [game];
 		/** Match.events:
-			Event handler for this match. Emitted events are: begin, end, move
-			& next.
+			Event handler for this match. Emitted events are: begin, end, move,
+			next and quit.
 		*/
 		this.events = new Events({ 
-			events: ['begin', 'move', 'next', 'end']
+			events: ['begin', 'move', 'next', 'end', 'quit']
 		});
 		// Participate the players.
 		for (var p in this.players) {
@@ -61,16 +61,50 @@ var Match = exports.Match = declare({
 	*/
 	decisions: function decisions(game) {
 		game = game || this.state();
-		var players = this.players;
-		return Future.all(game.activePlayers.map(function (p) {
-			return Future.when(players[p].decision(game, p));//FIXME when?
-		}));
+		var match = this,
+			players = this.players,
+			activePlayers = game.activePlayers;
+		return Future.all(activePlayers.map(function (p) {
+			return players[p].decision(game, p);
+		})).then(function (decisions) {
+			var moves = iterable(activePlayers).zip(decisions).toObject();
+			match.onMove(game, moves);
+			return moves;
+		});
 	},
 
-	__advance__: function __advance__(game, next) {
+	/** Match.__advanceAleatories__(game):
+		If the given game has random variables (i.e. is an instance of Aleatory)
+		it instantiates them until the players must move again.
+	*/
+	__advanceAleatories__: function __advanceAleatories__(game, moves) {
+		for (var next; game instanceof Aleatory; game = next) {
+			next = game.instantiate();
+			this.history.push(next);
+			this.onNext(game, next);
+		}
+		return game;
+	},
+	
+	/** Match.__advance__(game, moves):
+		Checks the moves for commands. If the match must continue, it pushes the 
+		next game state in the match's history and returns true. Else it returns
+		false.
+	*/
+	__advance__: function __advance__(game, moves) {
+		var match = this,
+			quitters = game.activePlayers.filter(function (p) {
+				return match.isQuitCommand(moves[p]);
+			});
+		if (quitters.length > 0) {
+			match.onQuit(game, quitters[0]);
+			return false;
+		}
+		// Match must go on.
+		var next = game.next(moves);
 		this.history.push(next);
 		this.onNext(game, next);
-		return next;
+		return true;
 	},
 	
 	/** Match.run(plys=Infinity):
@@ -84,9 +118,7 @@ var Match = exports.Match = declare({
 		}
 		var ply = this.ply(), game = this.state(), results, next;
 		(ply < 1) && this.onBegin(game);
-		while (game instanceof Aleatory) { // Instantiate all random variables.
-			game = this.__advance__(game, game.instantiate());
-		}
+		game = this.__advanceAleatories__(game); // Instantiate all random variables.
 		results = game.result();
 		if (results) { // If the match has finished ...
 			this.onEnd(game, results);
@@ -94,16 +126,33 @@ var Match = exports.Match = declare({
 		} else { // Else the run must continue ...
 			var match = this;
 			return this.decisions(game).then(function (moves) {
-				moves = iterable(game.activePlayers).zip(moves).toObject();
-				match.onMove(game, moves);
-				match.__advance__(game, game.next(moves));
-				return match.run(plys - 1);
+				if (match.__advance__(game, moves)) {
+					return match.run(plys - 1);
+				} else {
+					return match;
+				}				
 			});
 		}
 	},
 	
+	// Commands. ///////////////////////////////////////////////////////////////
+	
+	/** Match.isQuitCommand(move):
+		Checks if the move is a QUIT command. Such command means that the player
+		that issued it is leaving the match. The match is then aborted.
+		A QUIT command is any move that has a true '.QUIT' attribute.
+	*/
+	isQuitCommand: function (move) { 
+		return move && move['.QUIT'];
+	},
+	
+	"static commandQuit": { '.QUIT': true },
+	
 	// Events //////////////////////////////////////////////////////////////////
 	
+	/** Match.onBegin(game):
+		Emits the 'begin' event, meant to signal when the match starts.
+	*/
 	onBegin: function onBegin(game) {
 		this.events.emit('begin', game, this);
 		this.logger && this.logger.info('Match begins with ', 
@@ -112,22 +161,38 @@ var Match = exports.Match = declare({
 			}).join(', '), '; for ', game, '.');
 	},
 	
+	/** Match.onMove(game, moves):
+		Emits the 'move' event, meant to signal when the active players have 
+		moved.
+	*/
 	onMove: function onMove(game, moves) {
 		this.events.emit('move', game, moves, this);
 		this.logger && this.logger.info('Players move: ', JSON.stringify(moves), ' in ', game);
 	},
 	
+	/** Match.onNext(game, next):
+		Emits the 'next' event, meant to signal when the match advances to the
+		next game state.
+	*/
 	onNext: function onNext(game, next) {
 		this.events.emit('next', game, next, this);
 		this.logger && this.logger.info('Match advances from ', game, ' to ', next);
 	},
 	
+	/** Match.onEnd(game, results):
+		Emits the 'end' event, meant to signal when the match has ended.
+	*/
 	onEnd: function onEnd(game, results) {
 		this.events.emit('end', game, results, this);
 		this.logger && this.logger.info('Match for ', game, 'ends with ', JSON.stringify(results));
 	},
 	
-	// Match control. //////////////////////////////////////////////////////////
-	
-	
+	/** Match.onQuit(game, player):
+		Emits the 'quit' command, meant to signal the match is aborted due to
+		the given player leaving it.
+	*/
+	onQuit: function onQuit(game, player) {
+		this.events.emit('quit', game, player, this);
+		this.logger && this.logger.info('Match for ', game, ' aborted because player '+ player +' quitted.');
+	}
 }); // declare Match.
