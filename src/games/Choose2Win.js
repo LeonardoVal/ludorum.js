@@ -54,12 +54,7 @@ games.Choose2Win = declare(Game, {
 		throw new Error('Invalid move '+ moves[activePlayer] +' for player '+ activePlayer +'.');
 	},
 	
-	args: function args() {
+	__serialize__: function __serialize__() {
 		return [this.name, this.__turns__, this.activePlayer(), this.__winner__];
-	},
-	
-	toString: function toString() {
-		//WARN JSON does not support Infinity nor -Infinity.
-		return 'Choose2Win('+ this.__turns__ +","+ JSON.stringify(this.activePlayer()) +","+ JSON.stringify(this.__winner__) +')';
 	}
 }); // declare Choose2Win.

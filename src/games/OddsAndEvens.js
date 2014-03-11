@@ -46,12 +46,8 @@ games.OddsAndEvens = declare(Game, {
 			Odds: this.points.Odds + (parity ? 0 : 1)
 		});
 	},
-	
-	args: function args() {
+
+	__serialize__: function __serialize__() {
 		return [this.name, this.turns, this.points];
-	},
-	
-	toString: function toString() {
-		return JSON.stringify(this.points);
 	}
 }); // declare OddsAndEvens.

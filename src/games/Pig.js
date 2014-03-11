@@ -79,7 +79,7 @@ games.Pig = declare(Game, {
 		}
 	},
 	
-	args: function args() {
+	__serialize__: function __serialize__() {
 		return [this.name, this.activePlayer(), this.goal, this.__scores__, this.__rolls__];
 	}
 }); // declare Pig.

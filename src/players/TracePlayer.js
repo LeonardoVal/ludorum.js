@@ -12,12 +12,6 @@ players.TracePlayer = declare(Player, {
 		this.__decision__ = this.__iterator__();
 	},
 
-	toString: function toString() {
-		return (this.constructor.name || 'Player') +'('+ JSON.stringify({
-			name: this.name, trace: this.trace.toArray()
-		}) +')';
-	},
-
 	/** players.TracePlayer.decision(game, player):
 		Returns the next move in the trace, or the last one if the trace has
 		ended.
@@ -29,5 +23,9 @@ players.TracePlayer = declare(Player, {
 			Iterable.prototype.catchStop(err);
 		}
 		return this.__decision__;
+	},
+	
+	__serialize__: function __serialize__() {
+		return ['TracePlayer', {name: this.name, trace: this.trace.toArray() }];
 	}
 }); // declare TracePlayer.

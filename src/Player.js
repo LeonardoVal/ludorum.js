@@ -45,19 +45,20 @@ var Player = exports.Player = declare({
 		return this;
 	},
 	
+	// Conversions & presentations. ////////////////////////////////////////////
+
+	/** abstract Player.__serialize__():
+		Returns an array, where the first element should be the name of the 
+		game, and the rest the arguments to call the player's constructor in 
+		order to rebuild this player's state. Default implementation is pretty
+		useless, so please override.
+	*/
+	__serialize__: function __serialize__() {
+		return [this.constructor.name, {name: this.name}];
+	},
+	
 	toString: function toString() {
-		return (this.constructor.name || 'Player') +'('+ JSON.stringify({name: this.name}) +')';
-	},
-	
-	// Match commands. /////////////////////////////////////////////////////
-	
-	commandQuit: function commandQuit(role) {
-		return { command: 'quit', role: role };
-	},
-	
-	commandReset: function commandReset(role, ply) {
-		return { command: 'reset', role: role, 
-			ply: isNaN(ply) ? 0 : +ply 
-		};
+		var args = this.__serialize__();
+		return args.shift() +'('+ args.map(JSON.stringify).join(',') +')';
 	}
 }); // declare Player.

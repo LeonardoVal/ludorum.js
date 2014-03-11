@@ -6,15 +6,15 @@
 	} else {
 		(0, eval)('this').basis = init(); // Global namespace.
 	}
-})(function (){ var exports = {};
+})(function __init__(){ var exports = { __init__: __init__ };
 /* Core generic algorithms and utility definitions.
 */
 
-/** Global:
+/** global:
 	Global scope of the current execution environment. Usually (window) in 
 	browsers and (global) under NodeJS.
 */
-var Global = exports.Global = (0, eval)('this');
+var global = exports.global = (0, eval)('this');
 
 /** raise(message...):
 	Builds a new instance of Error with the concatenation of the arguments 
@@ -1403,9 +1403,10 @@ Iterable.prototype.chain = function chain() {
 	Chains all the iterables in the elements of this iterable.
 */
 Iterable.prototype.flatten = function flatten() {
-	var it = this.__iter__();
+	var self = this;
 	return new Iterable(function __iter__() {
-		var iterator = this.stop;
+		var it = self.__iter__(),
+			iterator = this.stop;
 		return function __flattenIterator__() {
 			while (true) try {
 				return iterator();
@@ -2091,6 +2092,90 @@ var HttpRequest = exports.HttpRequest = declare({
 	};
 });
 
+/* Wrapper for standard web workers, that includes bootstraping and a Future 
+	oriented interface.
+*/
+var Parallel = exports.Parallel = declare({
+	/** new Parallel(worker=<new worker>):
+		A wrapper around the standard web worker.
+	*/
+	constructor: function Parallel(worker) {
+		if (!worker) {
+			worker = Parallel.newWorker();
+		}
+		/** Parallel.worker:
+			Actual Worker instance behind this wrapper.
+		*/
+		worker.onmessage = this.__onmessage__.bind(this);
+		this.worker = worker;
+	},
+	
+	/** static Parallel.newWorker():
+		Builds a new web worker. Loading basis in its environment. Sets up a
+		message handler that evaluates posted messages as code, posting the
+		results back.
+	*/
+	"static newWorker": function newWorker() {
+		var src = 'self.basis = ('+ exports.__init__ +')();'+
+				'self.onmessage = ('+ (function (msg) {
+					try {
+						self.basis.Future.when(eval(msg.data)).then(function (result) {
+							self.postMessage(JSON.stringify({ result: result }));
+						});
+					} catch (err) {
+						self.postMessage(JSON.stringify({ error: err +'' }));
+					}
+				}) +');',
+			blob = new Blob([src], { type: 'text/javascript' });
+		return new Worker(URL.createObjectURL(blob));
+	},	
+	
+	/** Parallel.__onmessage__(msg):
+		The handler for this.worker onmessage event, that deals with the 
+		futures issued by this.run().
+	*/
+	__onmessage__: function __onmessage__(msg) {
+		var future = this.__future__;
+		if (future) {
+			this.__future__ = null;
+			try {
+				var data = JSON.parse(msg.data);
+				if (data.error) {
+					future.reject(data.error);
+				} else {
+					future.resolve(data.result);
+				}
+			} catch (err) {
+				future.reject(err);
+			}
+		}
+	},
+	
+	/** Parallel.run(code):
+		Sends the code to run in the web worker. Warning! This method will raise
+		an error if it is called while a previous execution is still running.
+	*/
+	run: function run(code) {
+		if (this.__future__) {
+			throw new Error('Worker is working!');
+		}
+		this.__future__ = new Future();
+		this.worker.postMessage(code +'');
+		return this.__future__;
+	},
+	
+	/** static Parallel.run(code):
+		Creates a web worker to run this code in parallel, and returns a future
+		for its result. After its finished the web worker is terminated.
+	*/
+	"static run": function run(code) {
+		var parallel = new Parallel();
+		return parallel.run(code).always(function () {
+			parallel.worker.terminate();
+		});
+	}
+}) // declare Parallel.
+
 /* Simple event manager.
 */
 var Events = exports.Events = declare({
@@ -2149,7 +2234,7 @@ var Events = exports.Events = declare({
 			.filter(function (listener) {
 				if (listener[1] > 0) {
 					setTimeout(function () {
-						return listener[0].apply(Global, args)
+						return listener[0].apply(global, args)
 					}, 1);
 					listener[1]--;
 					return listener[1] > 0;
@@ -2197,7 +2282,7 @@ var Events = exports.Events = declare({
 		if (Array.isArray(eventName)) {
 			var events = this;
 			eventName.forEach(function (name) {
-				events.off(name, callback, times);
+				events.off(name, callback);
 			});
 		} else if (this.__listeners__.hasOwnProperty(eventName)) {
 			this.__listeners__[eventName] = this.__listeners__[eventName]

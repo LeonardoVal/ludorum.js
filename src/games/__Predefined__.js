@@ -54,12 +54,7 @@ games.__Predefined__ = declare(Game, {
 		return new this.constructor(this.opponent(), this.__results__, this.height - 1, this.width);
 	},
 	
-	args: function args() {
+	__serialize__: function __serialize__() {
 		return [this.name, this.activePlayer(), this.results, this.height, this.width];
-	},
-	
-	toString: function toString() {
-		return '__Predefined__('+ [this.activePlayer(), this.__results__,
-			this.height, this.width].map(JSON.stringify).join(', ') +')';
 	}
 }); // declare __Predefined__.

@@ -50,9 +50,7 @@ var Game = exports.Game = declare({
 		returning the next game state.
 		Note: it is strongly advised to double check the moves object. 
 	*/
-	next: function next(moves) {
-		throw new Error((this.constructor.name || 'Game') +".next() not implemented! Please override.");
-	},
+	next: unimplemented("Game", "next"),
 
 	/** Game.result():
 		If the game is finished the result of the game is an object with 
@@ -184,24 +182,22 @@ var Game = exports.Game = declare({
 		return result;
 	},
 
-	// Game state //////////////////////////////////////////////////////////////
+	// Conversions & presentations. ////////////////////////////////////////////
 
-	/** abstract Game.args():
+	/** abstract Game.__serialize__():
 		Returns an array, where the first element should be the name of the 
 		game, and the rest the arguments to call the game's constructor in order
 		to rebuild this game's state. Not implemented, so please override.
 	*/
-	args: function args() {
-		throw new Error("Game.args() not implemented! Please override.");
-	},
+	__serialize__: unimplemented("Game", "__serialize__"),
 	
 	/** Game.clone():
-		Creates a copy of this game state. Uses this.arguments().
+		Creates a copy of this game state. Uses this.__serialize__().
 	*/
 	clone: function clone() {
-		var args = this.args();
-		args[0] = this.constructor;
-		return new (args[0].bind.apply(args[0], args))();
+		var args = this.__serialize__();
+		args.shift(); // Remove first element (game's name).
+		return new (this.constructor.bind.apply(this.constructor, args))();
 	},
 
 	/** Game.identifier():
@@ -210,17 +206,46 @@ var Game = exports.Game = declare({
 		JSON.
 	*/
 	identifier: function identifier() {
-		return JSON.stringify(this.args());
+		var args = this.__serialize__();
+		return args.shift() + args.map(JSON.stringify).join('');
 	},
 
-	// Presentation functions. /////////////////////////////////////////////////
-
 	/** Game.toString():
-		Returns a textual representation of this game state.
+		Returns a textual representation of this game state. Meant for logging
+		or debugging, but not for user presentation.
 	*/
 	toString: function toString() {
-		var args = this.args();
+		var args = this.__serialize__();
 		return args.shift() +'('+ args.map(JSON.stringify).join(',') +')';
+	},
+	
+	/** Game.toJSON():
+		Encodes the game in JSON for decoding with the fromJSON method. The 
+		encoded data must be an array starting with this games name, followed
+		by its constructor arguments.
+	*/
+	toJSON: function toJSON() {
+		return JSON.stringify(this.__serialize__());
+	},
+	
+	/** static Game.fromJSON(data):
+		Creates a new instance of this game from the given JSON. The function
+		in the Game abstract class finds the proper constructor with the game
+		name and calls it.
+	*/
+	"static fromJSON": function fromJSON(data) {
+		if (typeof data === 'string') {
+			data = JSON.parse(data);
+		}
+		raiseIf(!Array.isArray(data) || data.length < 1, "Invalid JSON data: "+ data +"!");
+		var cons = games[data[0]];
+		raiseIf(typeof cons !== 'function', "Unknown game '", data[0], "'!");
+		if (typeof cons.fromJSON === 'function') {
+			return cons.fromJSON(data); // Call game's fromJSON.
+		} else {
+			data[0] = basis.global; // Call game's constructor.
+			return new (cons.bind.apply(cons, data))();
+		}
 	}
 }); // declare Game.
 	
