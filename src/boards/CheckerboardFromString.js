@@ -18,18 +18,23 @@ boards.CheckerboardFromString = declare(boards.Checkerboard, {
 		this.string = string || this.emptySquare.repeat(height * width);
 	},
 	
+// Board information. //////////////////////////////////////////////////////////
+	
 	/** boards.CheckerboardFromString.emptySquare='.':
 		The character used to represent empty squares.
 	*/
-	emptySquare: '.',
+	emptySquare: '.',	
 	
-	/** boards.CheckerboardFromString.square(row, column, outside=undefined):
+	/** boards.CheckerboardFromString.square(coord, outside=undefined):
 		Return the character at (row * width + column) if the coordinate is 
 		inside the board. Else returns the value of the outside argument.
 	*/
-	square: function square(row, column, outside) {
-		if (row >= 0 && row < this.height && column >= 0 && column < this.width) {
-			return this.string.charAt(row * this.width + column);
+	square: function square(coord, outside) {
+		var row = coord[0], 
+			column = coord[1],
+			width = this.width;
+		if (row >= 0 && row < this.height && column >= 0 && column < width) {
+			return this.string.charAt(row * width + column);
 		} else {
 			return outside;
 		}
@@ -55,6 +60,69 @@ boards.CheckerboardFromString = declare(boards.Checkerboard, {
 		return Iterable.range(height).map(function (i) {
 			return string.substr((height - i - 1) * width, width);
 		}).join('\n');
+	},
+	
+	/** boards.CheckerboardFromString.asString(line):
+		Takes a line (iterable of coordinates) and returns a string with a
+		character for each square.
+	*/
+	asString: function asString(line) {
+		var board = this;
+		return line.map(function (coord) {
+			return board.square(coord);
+		}).join('');
+	},
+	
+	/** boards.CheckerboardFromString.asStrings(lines):
+		Takes an iterable of lines (each being an iterable of coordinates) and 
+		returns an iterable of strings for each line.
+	*/
+	asStrings: function asStrings(lines) {
+		var board = this;
+		return lines.map(function (line) {
+			return board.asString(line);
+		});
+	},
+	
+	/** boards.CheckerboardFromString.asRegExp(line, insideLine, outsideLine='.'):
+		Takes a line (iterable of coordinates) and returns a string with a 
+		regular expression. This may be used to tests the whole board string for
+		the line.
+		Warning! Both insideLine and outsideLine must be simple regular 
+		expressions (e.g. a character or atom). If more complex expressions are
+		required they must be provided between parenthesis.
+	*/
+	asRegExp: function asRegExp(line, insideLine, outsideLine) {
+		outsideLine = outsideLine || '.';
+		var width = this.width,
+			squares = Iterable.repeat(false, width * this.height).toArray();
+		line.forEach(function (coord) {
+			squares[coord[0] * width + coord[1]] = true;
+		});
+		var result = '', count = 0, current;
+		for (var i = 0; i < squares.length; count = 0) {
+			current = squares[i];
+			do {
+				++count;
+			} while (++i < squares.length && squares[i] === current);
+			if (count < 2) {
+				result += current ? insideLine : outsideLine;
+			} else {
+				result += (current ? insideLine : outsideLine) +'{'+ count +'}';
+			}
+		}
+		return result;
+	},
+	
+	/** boards.CheckerboardFromString.asRegExps(lines, insideLine, outsideLine='.'):
+		Takes a sequence of lines (each a sequence of coordinates) and returns a
+		string with a regular expression, as the union of the regular expression
+		for each line.
+	*/
+	asRegExps: function asRegExps(lines, insideLine, outsideLine) {
+		var board = this;
+		return lines.map(function (line) {
+			return board.asRegExp(line, insideLine, outsideLine);
+		}).join('|');
 	}
 }); // declare boards.CheckerboardFromString
-

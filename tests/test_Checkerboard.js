@@ -11,7 +11,7 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 			diagonals = positiveDiagonals.concat(negativeDiagonals),
 			lines = orthogonals.concat(diagonals);
 		function square(coord) {
-			return board.square.apply(board, coord);
+			return board.square(coord);
 		}
 		board.horizontals().zip(horizontals).forEach(function (pair) {
 			var line = pair[0].map(square).join('');
