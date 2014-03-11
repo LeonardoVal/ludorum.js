@@ -179,7 +179,7 @@ games.Mancala = declare(Game, {
 	
 	// Utility methods. ////////////////////////////////////////////////////
 	
-	args: function args() {
+	__serialize__: function __serialize__() {
 		return [this.name, this.activePlayer(), this.board.slice()];
 	},
 
@@ -231,44 +231,48 @@ games.Mancala = declare(Game, {
 			+ '</tr><tr>'
 			+ this.houses(south).map(renderHouse.bind(this, south)).join('') 
 			+ '</tr></table>';
+	},
+	
+// Heuristics. /////////////////////////////////////////////////////////////////
+
+	/** static games.Mancala.heuristics:
+		Bundle of heuristic evaluation functions for Mancala.
+	*/
+	'static heuristics': {
+		/** games.Mancala.heuristics.heuristicFromWeights(weights=default weights):
+			Builds an heuristic evaluation function from weights for each square 
+			in the board. The result of the function is the normalized weighted 
+			sum.
+		*/
+		heuristicFromWeights: function heuristicFromWeights(weights) {
+			var weightSum = iterable(weights).map(Math.abs).sum();
+			function __heuristic__(game, player) {
+				var seedSum = 0, signum;
+				switch (game.players.indexOf(player)) {
+					case 0: signum = 1; break; // North.
+					case 1: signum = -1; break; // South.
+					default: throw new Error("Invalid player "+ player +".");
+				}
+				return iterable(game.board).map(function (seeds, i) {
+					seedSum += seeds;
+					return seeds * weights[i]; //TODO Normalize weights before.
+				}).sum() / weightSum / seedSum * signum;
+			}
+			__heuristic__.weights = weights;
+			return __heuristic__;
+		}
+	},
+	
+// Static initializer. /////////////////////////////////////////////////////////
+	
+	'': function () {
+		this.makeBoard = this.prototype.makeBoard;
+		/** games.Mancala.heuristics.defaultHeuristic(game, player):
+			Default heuristic for Mancala, based on weights for each square.
+		*/
+		this.heuristics.defaultHeuristic = this.heuristics.heuristicFromWeights(
+			[+1,+1,+1,+1,+1,+1,+5, 
+			 -1,-1,-1,-1,-1,-1,-5]
+		);
 	}
 }); // declare Mancala.
-	
-games.Mancala.makeBoard = games.Mancala.prototype.makeBoard;
-
-// Heuristics //////////////////////////////////////////////////////////////////
-
-/** static games.Mancala.heuristics:
-	Bundle of heuristic evaluation functions for Mancala.
-*/
-games.Mancala.heuristics = {};
-	
-/** games.Mancala.heuristics.heuristicFromWeights(weights):
-	Builds an heuristic evaluation function from weights for each square in
-	the board. The result of the function is the normalized weighted sum.
-*/
-games.Mancala.heuristics.heuristicFromWeights = function heuristicFromWeights(weights) {
-	var weightSum = iterable(weights).map(Math.abs).sum();
-	function __heuristic__(game, player) {
-		var seedSum = 0, signum;
-		switch (game.players.indexOf(player)) {
-			case 0: signum = 1; break; // North.
-			case 1: signum = -1; break; // South.
-			default: throw new Error("Invalid player "+ player +".");
-		}
-		return iterable(game.board).map(function (seeds, i) {
-			seedSum += seeds;
-			return seeds * weights[i]; //TODO Normalize weights before.
-		}).sum() / weightSum / seedSum * signum;
-	}
-	__heuristic__.weights = weights;
-	return __heuristic__;
-};
-	
-/** games.Mancala.heuristics.defaultHeuristic(game, player):
-	Default heuristic for Mancala, based on weights for each square.
-*/
-games.Mancala.heuristics.defaultHeuristic = games.Mancala.heuristics.heuristicFromWeights(
-	[+1,+1,+1,+1,+1,+1,+5,
-	 -1,-1,-1,-1,-1,-1,-5]
-);
