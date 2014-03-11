@@ -7,7 +7,7 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 		RANDOM = basis.Randomness.DEFAULT;
 
 	var autonomousPlayers = [players.RandomPlayer, players.HeuristicPlayer, 
-		players.MiniMaxPlayer, players.AlphaBetaPlayer, 
+		players.MiniMaxPlayer, players.AlphaBetaPlayer, players.MaxNPlayer,
 		players.MonteCarloPlayer];
 	
 	autonomousPlayers.forEach(function (player) { //////////////////////////////
