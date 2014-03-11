@@ -10,6 +10,17 @@ games.ToadsAndFrogs = declare(Game, {
 		this.board = board || ToadsAndFrogs.board();
 	},
 	
+	/** static games.ToadsAndFrogs.board(chips=3, separation=2):
+		Makes a board for Toads & Frogs. This is a single row with the given 
+		number of chips for each player (toads to the left and frogs to the
+		right) separated by the given number of empty spaces.
+	*/
+	"static board": function board(chips, separation) {
+		chips = isNaN(chips) ? 3 : +chips;
+		separation = isNaN(separation) ? 2 : +separation;
+		return 'T'.repeat(chips) + '_'.repeat(separation) + 'F'.repeat(chips);
+	},
+	
 	name: 'ToadsAndFrogs',
 	
 	/** games.ToadsAndFrogs.players:
@@ -58,25 +69,7 @@ games.ToadsAndFrogs = declare(Game, {
 		return new this.constructor(this.opponent(activePlayer), board);
 	},
 
-	args: function args() {
+	__serialize__: function __serialize__() {
 		 return [this.name, this.activePlayer, this.board];
-	},
-	
-	/** games.ToadsAndFrogs.toString():
-		Prints the game's board.
-	*/
-	toString: function toString() {
-		return this.board;
-	}
+	}	
 }); // declare ToadsAndFrogs
-	
-/** static games.ToadsAndFrogs.board(chips=3, separation=2):
-	Makes a board for Toads & Frogs. This is a single row with the given 
-	number of chips for each player (toads to the left and frogs to the
-	right) separated by the given number of empty spaces.
-*/
-games.ToadsAndFrogs.board = function board(chips, separation) {
-	chips = isNaN(chips) ? 3 : +chips;
-	separation = isNaN(separation) ? 2 : +separation;
-	return 'T'.repeat(chips) + '_'.repeat(separation) + 'F'.repeat(chips);
-};
