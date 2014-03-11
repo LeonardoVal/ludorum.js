@@ -11,9 +11,12 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 		verifier.assertInstanceOf(ludorum.Game, game, "Game is not an instance of ludorum.Game()!");
 		verifier.assert(game.name, "Game has no name!");
 		verifier.assert(Array.isArray(game.players) && game.players.length > 0, "Game has no players!");
-		verifier.assert(Array.isArray(game.args()), "Invalid args for game!");
+		verifier.assert(Array.isArray(game.__serialize__()), "Invalid serialization for game!");
 		
 		for (var i = 0; i < 1000; i++) {
+			while (game && game instanceof ludorum.Aleatory) {
+				game = game.instantiate();
+			}
 			verifier.assertInstanceOf(ludorum.Game, game);
 			var result = game.result(),
 				moves = game.moves();
@@ -107,10 +110,20 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 		checkGame(game, { zeroSum: true, oneActivePlayerPerTurn: true });
 	}); // games.Mancala()
 	
+	verifier.test("games.ConnectFour()", function () { /////////////////////////////
+		var game = new games.ConnectFour();
+		checkGame(game, { zeroSum: true, oneActivePlayerPerTurn: true });
+	}); // games.ConnectFour()
+	
 	verifier.test("games.OddsAndEvens()", function () { ////////////////////////
 		var game = new games.ToadsAndFrogs();
 		checkGame(game, { zeroSum: true });
 	}); // games.OddsAndEvens()
+	
+	verifier.test("games.Pig()", function () { ////////////////////////
+		var game = new games.Pig();
+		checkGame(game, { zeroSum: true });
+	}); // games.Pig()	
 	
 /////////////////////////////////////////////////////////////////////////// Fin.
 	return verifier;
