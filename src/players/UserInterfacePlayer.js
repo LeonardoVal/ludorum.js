@@ -9,14 +9,21 @@ var UserInterfacePlayer = players.UserInterfacePlayer = declare(Player, {
 		Player.call(this, params);
 	},
 
+	/** players.UserInterfacePlayer.participate(match, role):
+		Assigns this players role to the given role.
+	*/
+	participate: function participate(match, role) {
+		this.role = role;
+		return this;
+	},
+	
 	/** players.UserInterfacePlayer.decision(game, player):
 		Returns a future that will be resolved when the perform() method is 
 		called.
 	*/
 	decision: function decision(game, player) {
 		if (this.__future__ && this.__future__.isPending()) {
-			var error = new Error("Last decision has not been made. Match probably aborted.");
-			this.__future__.reject(error); //TODO This should resolve to QUIT.
+			this.__future__.resolve(Match.commandQuit);
 		}
 		return this.__future__ = new Future();
 	},
@@ -68,7 +75,6 @@ var UserInterface = players.UserInterface = declare({ ////////////////////
 		Handler for the 'begin' event of the match.
 	*/
 	onBegin: function onBegin(game) {
-		this.activePlayer = game.activePlayer();
 		this.display(game);
 	},
 	
@@ -76,7 +82,6 @@ var UserInterface = players.UserInterface = declare({ ////////////////////
 		Handler for the 'move' event of the match.
 	*/
 	onNext: function onNext(game, next) {
-		this.activePlayer = next.activePlayer();
 		this.display(next);
 	},
 	
@@ -84,7 +89,6 @@ var UserInterface = players.UserInterface = declare({ ////////////////////
 		Handler for the 'end' event of the match.
 	*/
 	onEnd: function onEnd(game, results) {
-		this.activePlayer = null;
 		this.results = results;
 		this.display(game);
 	},
@@ -97,16 +101,18 @@ var UserInterface = players.UserInterface = declare({ ////////////////////
 		throw new Error("UserInterface.display is not defined. Please override.");
 	},
 	
-	/** players.UserInterface.perform(action, player=<active player>):
+	/** players.UserInterface.perform(action, actionRole=undefined):
 		Makes the given player perform the action if the player has a 
 		perform method and is included in this UI's players.
 	*/
-	perform: function perform(action, player) {
-		player = player || this.match.state().activePlayer();
-		var activePlayer = this.match.players[player];
-		if (activePlayer instanceof UserInterfacePlayer) {
-			activePlayer.perform(action);
-		}
+	perform: function perform(action, actionRole) {
+		iterable(this.match.players).forEach(function (pair) {
+			var role = pair[0], player = pair[1];
+			if (player instanceof UserInterfacePlayer 
+			&& (!actionRole || player.role === actionRole)) {
+				player.perform(action);
+			}
+		});
 	}
 }); // declare UserInterface.
 	
@@ -115,7 +121,7 @@ UserInterface.BasicHTMLInterface = declare(UserInterface, { //////////////
 		Simple HTML based UI, that renders the game to the given domElement
 		using its toHTML method.
 	*/
-	constructor: function BasicHTMLInterfacePlayer(config) {
+	constructor: function BasicHTMLInterface(config) {
 		UserInterface.call(this, config);
 		this.container = config.container;
 		if (typeof this.container === 'string') {
