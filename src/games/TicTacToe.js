@@ -21,12 +21,10 @@ games.TicTacToe = declare(Game, {
 		board is full, or null otherwise.
 	*/
 	result: (function () {
-		var WIN_X = /XXX......|...XXX...|......XXX|X..X..X..|.X..X..X.|..X..X..X|X...X...X|..X.X.X../,
-			WIN_O = /OOO......|...OOO...|......OOO|O..O..O..|.O..O..O.|..O..O..O|O...O...O|..O.O.O../;
 		return function result() {			
-			if (this.board.match(WIN_X)) { // Xs wins.
+			if (this.board.match(this.WIN_X)) { // Xs wins.
 				return this.victory(["Xs"]);
-			} else if (this.board.match(WIN_O)) { // Os wins.
+			} else if (this.board.match(this.WIN_O)) { // Os wins.
 				return this.victory(["Os"]);
 			} else if (this.board.indexOf('_') < 0) { // No empty squares means a tie.
 				return this.draw();
@@ -67,10 +65,6 @@ games.TicTacToe = declare(Game, {
 		return new this.constructor(this.opponent(activePlayer), newBoard);
 	},
 
-	args: function args() {
-		return [this.name, this.activePlayer(), this.board];
-	},
-	
 	/** games.TicTacToe.toString():
 		Text version of the TicTacToe board.
 	*/
@@ -100,31 +94,44 @@ games.TicTacToe = declare(Game, {
 				board.slice(3,6).join(''),
 				board.slice(6,9).join('')
 			].join('</tr><tr>') +'</tr></table>';
-	}
-}); // declare TicTacToe
+	},
 	
-// TicTacToe AI ////////////////////////////////////////////////////////////////
-/** static games.TicTacToe.heuristics:
-	Bundle of heuristic evaluation functions for TicTacToe.
-*/
-games.TicTacToe.heuristics = {};
-
-/** games.TicTacToe.heuristics.heuristicFromWeights(weights):
-	Builds an heuristic evaluation function from weights for each square in the 
-	board. The result of the function is the weighted sum, empty squares being
-	ignored, opponent squares considered negative.
-*/
-games.TicTacToe.heuristics.heuristicFromWeights = function heuristicFromWeights(weights) {
-	var weightSum = iterable(weights).map(Math.abs).sum();
-	function __heuristic__(game, player) {
-		var playerChar = player.charAt(0);
-		return iterable(game.board).map(function (square, i) {
-			return (square === '_' ? 0 : weights[i] * (square === playerChar ? 1 : -1));
-		}).sum() / weightSum;
-	}
-	__heuristic__.weights = weights;
-	return __heuristic__;
-};
+	__serialize__: function __serialize__() {
+		return [this.name, this.activePlayer(), this.board];
+	},
+	
+	// Heuristics and AI ///////////////////////////////////////////////////////
+	
+	/** static games.TicTacToe.heuristics:
+		Bundle of heuristic evaluation functions for TicTacToe.
+	*/
+	"static heuristics": {
+		/** games.TicTacToe.heuristics.heuristicFromWeights(weights):
+			Builds an heuristic evaluation function from weights for each square 
+			in the board. The result of the function is the weighted sum, empty 
+			squares being ignored, opponent squares considered negative.
+		*/
+		heuristicFromWeights: function heuristicFromWeights(weights) {
+			var weightSum = iterable(weights).map(Math.abs).sum();
+			function __heuristic__(game, player) {
+				var playerChar = player.charAt(0);
+				return iterable(game.board).map(function (square, i) {
+					return (square === '_' ? 0 : weights[i] * (square === playerChar ? 1 : -1));
+				}).sum() / weightSum;
+			}
+			__heuristic__.weights = weights;
+			return __heuristic__;
+		}
+	},
+	
+	'': function () { // Class initializer. ////////////////////////////////////
+		// Build the regular expressions used in the victory test.
+		var board3x3 = new boards.CheckerboardFromString(3, 3, '_'.repeat(9)),
+			lines = board3x3.sublines(board3x3.lines(), 3);
+		this.prototype.WIN_X = new RegExp(board3x3.asRegExps(lines, 'X', '.'));
+		this.prototype.WIN_O = new RegExp(board3x3.asRegExps(lines, 'O', '.'));
+	}	
+}); // declare TicTacToe
 	
 /** games.TicTacToe.heuristics.defaultHeuristic(game, player):
 	Default heuristic for TicTacToe, based on weights for each square.
