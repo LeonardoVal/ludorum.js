@@ -33,14 +33,15 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 					count: 0
 				};
 			});
-		for (var i = this.simulationCount; i > 0 && Date.now() < endTime; --i) {
+		for (var i = 0; i < this.simulationCount && Date.now() < endTime; ++i) {
 			moves.forEach(function (move) {
-				move.sum += monteCarloPlayer.simulation(move.next, player);
+				var sim = monteCarloPlayer.simulation(move.next, player);
+				move.sum += sim.result[player];
 				++move.count;
 			});
 		}
 		return iterable(moves).greater(function (move) {
-			return move.sum / move.count;
+			return move.count > 0 ? move.sum / move.count : 0;
 		}).map(function (move) {
 			return move.move;
 		});
@@ -58,12 +59,13 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 	},
 	
 	/** players.MonteCarloPlayer.simulation(game, player):
-		Simulates a random match from the given game and returns the result
-		for the given player.
+		Simulates a random match from the given game and returns an object with
+		the final state (game), its result (result) and the number of plies 
+		simulated (plies).
 	*/
 	simulation: function simulation(game, player) {
 		var mc = this, move, moves;
-		while (true) {
+		for (var plies = 0; true; ++plies) {
 			if (game instanceof Aleatory) {
 				game = game.instantiate();
 			} else {
@@ -78,7 +80,7 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 				game = game.next(move);
 			}
 		}
-		return game.result()[player];
+		return { game: game, result: game.result(), plies: plies };
 	},
 	
 	toString: function toString() {
