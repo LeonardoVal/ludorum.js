@@ -13,8 +13,7 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 			Pseudorandom number generator used for random decisions.
 		*/
 			.object('random', { defaultValue: Randomness.DEFAULT })
-			.func('moveEvaluation', { ignore: true })
-			.func('stateEvaluation', { ignore: true });
+			.func('heuristic', { ignore: true });
 	},
 
 	/** players.HeuristicPlayer.moveEvaluation(move, game, player):
@@ -29,15 +28,23 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 	/** players.HeuristicPlayer.stateEvaluation(game, player):
 		Calculates a number as the assessment of the given game state. The 
 		base implementation returns the result for the player is the game 
-		has results. 
-		Else it returns a random number in [-0.5, 0.5). This is only useful 
-		in testing this framework. Any serious use should override it.
+		has results. Else it returns the heuristic value for the state.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
 		var gameResult = game.result();
-		return gameResult ? gameResult[player] : this.random.random(-0.5, 0.5);
+		return gameResult ? gameResult[player] : this.heuristic(game, player);
 	},
 
+	/** players.HeuristicPlayer.heuristic(game, player):
+		Game state evaluation used at states that are not finished games. The
+		default implementation returns a random number in [-0.5, 0.5). This is
+		only useful in testing this framework. Any serious use should redefine 
+		it.
+	*/
+	heuristic: function heuristic(game, player) {
+		return this.random.random(-0.5, 0.5);
+	},
+	
 	/** players.HeuristicPlayer.selectMoves(moves, game, player):
 		Return an array with the best evaluated moves. The evaluation is done by
 		the moveEvaluation method. The default implementation always returns a
@@ -47,8 +54,8 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 		var heuristicPlayer = this;
 		return Future.all(moves.map(function (move) {
 			return heuristicPlayer.moveEvaluation(move, game, player);
-		})).then(function (evals) {
-			return iterable(moves).zip(evals).greater(function (pair) {
+		})).then(function (evaluations) {
+			return iterable(moves).zip(evaluations).greater(function (pair) {
 				return pair[1];
 			}).map(function (pair) {
 				return pair[0];

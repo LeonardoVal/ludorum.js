@@ -2,8 +2,7 @@
 */
 var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 	/** new players.MiniMaxPlayer(params):
-		Builds a player that chooses its moves using the MiniMax algorithm with
-		alfa-beta pruning.
+		Builds a player that chooses its moves using the MiniMax algorithm.
 	*/
 	constructor: function MiniMaxPlayer(params) {
 		HeuristicPlayer.call(this, params);
@@ -11,8 +10,7 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 		/** players.MiniMaxPlayer.horizon=3:
 			Maximum depth for the MiniMax search.
 		*/
-			.integer('horizon', { defaultValue: 3, coerce: true })
-			.func('heuristic', { ignore: true });
+			.integer('horizon', { defaultValue: 3, coerce: true });
 	},
 
 	/** players.MiniMaxPlayer.stateEvaluation(game, player):
@@ -22,21 +20,14 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 		return this.minimax(game, player, 0);
 	},
 
-	/** players.MiniMaxPlayer.heuristic(game, player):
-		Game state evaluation used at the leaves of the game search tree that
-		are not finished games.
-	*/
-	heuristic: function heuristic(game, player) {
-		return this.random.random(-0.5, 0.5);
-	},
-
 	/** players.MiniMaxPlayer.quiescence(game, player, depth):
 		An stability test for the given game state. If the game is quiescent, 
 		this function must return an evaluation. Else it must return NaN or an
-		equivalente value. Final game states are always quiescent, and their
-		evaluation is the game's result for the given player. This default
-		implementation also return an heuristic evaluation for every game
-		state at a deeper depth than the player's horizon.
+		equivalente value. 
+		Final game states are always quiescent, and their evaluation is the 
+		game's result for the given player. This default implementation also 
+		return an heuristic evaluation for every game state at a deeper depth 
+		than the player's horizon.
 	*/
 	quiescence: function quiescence(game, player, depth) {
 		var results = game.result();
