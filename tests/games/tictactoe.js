@@ -14,22 +14,25 @@ require(['basis', 'ludorum'], function (basis, ludorum) {
 	var PLAYER_OPTIONS = APP.PLAYER_OPTIONS = [
 		{title: "You", builder: function () { 
 			return new ludorum.players.UserInterfacePlayer(); 
-		}},
+		}, runOnWorker: false },
 		{title: "Random", builder: function () { 
 			return new ludorum.players.RandomPlayer();
-		}},
+		}, runOnWorker: false },
 		{title: "MonteCarlo (20 sims)", builder: function () {
 			return new ludorum.players.MonteCarloPlayer({ simulationCount: 20 });
-		}},
+		}, runOnWorker: true },
 		{title: "MonteCarlo (80 sims)", builder: function () {
 			return new ludorum.players.MonteCarloPlayer({ simulationCount: 80 });
-		}},
+		}, runOnWorker: true },
 		{title: "MiniMax AlfaBeta (4 plies)", builder: function () {
 			return new ludorum.players.AlphaBetaPlayer({ horizon: 4 });
-		}},
+		}, runOnWorker: true },
 		{title: "MiniMax AlfaBeta (6 plies)", builder: function () {
 			return new ludorum.players.AlphaBetaPlayer({ horizon: 6 });
-		}}
+		}, runOnWorker: true },
+		{title: "MaxN (6 plies)", builder: function () {
+			return new ludorum.players.MaxNPlayer({ horizon: 6 });
+		}, runOnWorker: true },
 	];
 	APP.players = [PLAYER_OPTIONS[0].builder(), PLAYER_OPTIONS[0].builder()];
 	PLAYER_OPTIONS.forEach(function (option, i) {
@@ -37,13 +40,17 @@ require(['basis', 'ludorum'], function (basis, ludorum) {
 		APP.elements.selectXs.innerHTML += html;
 		APP.elements.selectOs.innerHTML += html;
 	});
-	APP.elements.selectXs.onchange = function () {
-		APP.players[0] = PLAYER_OPTIONS[+this.value].builder();
-		APP.reset();
-	};
+	APP.elements.selectXs.onchange = 
 	APP.elements.selectOs.onchange = function () {
-		APP.players[1] = PLAYER_OPTIONS[+this.value].builder();
-		APP.reset();
+		var i = this === APP.elements.selectXs ? 0 : 1,
+			option = PLAYER_OPTIONS[+this.value];
+		(option.runOnWorker
+			? ludorum.players.WebWorkerPlayer.create({ playerBuilder: option.builder })
+			: basis.Future.when(option.builder())
+		).then(function (player) {
+			APP.players[i] = player;
+			APP.reset();
+		});
 	};
 
 // Buttons. ////////////////////////////////////////////////////////////////////

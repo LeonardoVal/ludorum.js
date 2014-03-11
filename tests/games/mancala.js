@@ -13,16 +13,26 @@ require(['basis', 'ludorum'], function (basis, ludorum) {
 			return new ludorum.players.RandomPlayer();
 		}},
 		{title: "MonteCarlo (20 sims)", builder: function () {
-			return new ludorum.players.MonteCarloPlayer({ simulationCount: 20 });
+			return new ludorum.players.MonteCarloPlayer({ simulationCount: 20, timeCap: 1500 });
 		}},
-		{title: "MonteCarlo (80 sims)", builder: function () {
-			return new ludorum.players.MonteCarloPlayer({ simulationCount: 80 });
+		{title: "MonteCarlo (50 sims)", builder: function () {
+			return new ludorum.players.MonteCarloPlayer({ simulationCount: 50, timeCap: 1500 });
 		}},
 		{title: "MiniMax AlfaBeta (4 plies)", builder: function () {
 			return new ludorum.players.AlphaBetaPlayer({ horizon: 4 });
 		}},
 		{title: "MiniMax AlfaBeta (6 plies)", builder: function () {
 			return new ludorum.players.AlphaBetaPlayer({ horizon: 6 });
+		}},
+		{title: "Default heuristic (4 plies)", builder: function () {
+			return new ludorum.players.AlphaBetaPlayer({ horizon: 4, 
+				heuristic: ludorum.games.Mancala.defaultHeuristic
+			});
+		}},
+		{title: "Default heuristic (6 plies)", builder: function () {
+			return new ludorum.players.AlphaBetaPlayer({ horizon: 6, 
+				heuristic: ludorum.games.Mancala.defaultHeuristic
+			});
 		}}
 	];
 	APP.players = [PLAYER_OPTIONS[0].builder(), PLAYER_OPTIONS[0].builder()];
@@ -41,7 +51,8 @@ require(['basis', 'ludorum'], function (basis, ludorum) {
 	
 // Buttons. ////////////////////////////////////////////////////////////////////
 	$('#reset').click(APP.reset = function reset() {
-		var game = new ludorum.games.Mancala(undefined, ludorum.games.Mancala.prototype.makeBoard(4)),
+		var board = ludorum.games.Mancala.prototype.makeBoard(4),
+			game = new ludorum.games.Mancala(undefined, board),
 			match = new ludorum.Match(game, APP.players);
 		$('#player0-name').html(basis.Text.escapeXML(game.players[0]));
 		$('#player1-name').html(basis.Text.escapeXML(game.players[1]));
