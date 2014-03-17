@@ -16,7 +16,13 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 		/** players.MonteCarloPlayer.timeCap=1000ms:
 			Time limit for the player to decide.
 		*/
-			.number('timeCap', { defaultValue: 1000, coerce: true });
+			.number('timeCap', { defaultValue: 1000, coerce: true })
+		/** players.MonteCarloPlayer.agent:
+			Player instance used in the simulations. If undefined moves are
+			chosen at random.
+			Warning! Agent with asynchronous decisions are not supported.
+		*/
+			.object('agent', { defaultValue: null });
 	},
 	
 	/** players.MonteCarloPlayer.selectMoves(moves, game, player):
@@ -25,25 +31,25 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 	selectMoves: function selectMoves(moves, game, player) {
 		var monteCarloPlayer = this,
 			endTime = Date.now() + this.timeCap,
-			moves = moves.map(function (move) {
-				return { 
-					move: move, 
-					next: game.next(obj(player, move)), 
-					sum: 0,
-					count: 0
+			options = moves.map(function (move) {
+				return { move: move, next: game.next(obj(player, move)), 
+					isFinal: false, sum: 0, count: 0 
 				};
 			});
 		for (var i = 0; i < this.simulationCount && Date.now() < endTime; ++i) {
-			moves.forEach(function (move) {
-				var sim = monteCarloPlayer.simulation(move.next, player);
-				move.sum += sim.result[player];
-				++move.count;
+			options.forEach(function (option) {
+				if (!option.isFinal) {
+					var sim = monteCarloPlayer.simulation(option.next, player);
+					option.isFinal = sim.plies < 1;
+					option.sum += sim.result[player];
+					++option.count;
+				}
 			});
 		}
-		return iterable(moves).greater(function (move) {
-			return move.count > 0 ? move.sum / move.count : 0;
-		}).map(function (move) {
-			return move.move;
+		return iterable(options).greater(function (option) {
+			return option.count > 0 ? option.sum / option.count : 0;
+		}).map(function (option) {
+			return option.move;
 		});
 	},
 	
@@ -51,11 +57,17 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 		Runs this.simulationCount simulations and returns the average result.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
-		var resultSum = 0;
-		for (var i = this.simulationCount; i > 0; i--) {
-			resultSum += this.simulation(game, player);
+		var resultSum = 0, 
+			simulationCount = this.simulationCount,
+			sim;
+		for (var i = 0; i < simulationCount; ++i) {
+			sim = this.simulation(game, player);
+			resultSum += sim.result[player];
+			if (sim.plies < 1) { // game is final.
+				break;
+			}
 		}
-		return resultSum / this.simulationCount;
+		return simulationCount > 0 ? resultSum / simulationCount : 0;
 	},
 	
 	/** players.MonteCarloPlayer.simulation(game, player):
@@ -64,23 +76,25 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 		simulated (plies).
 	*/
 	simulation: function simulation(game, player) {
-		var mc = this, move, moves;
-		for (var plies = 0; true; ++plies) {
+		var mc = this,
+			plies, move, moves;
+		for (plies = 0; true; ++plies) {
 			if (game instanceof Aleatory) {
 				game = game.instantiate();
 			} else {
 				moves = game.moves();
 				if (!moves) {
-					break;
+					return { game: game, result: game.result(), plies: plies };
 				}
 				move = {};
 				game.activePlayers.forEach(function (activePlayer) {
-					return move[activePlayer] = mc.random.choice(moves[activePlayer]);
+					move[activePlayer] = mc.agent ? mc.agent.decision(game, activePlayer) 
+						: mc.random.choice(moves[activePlayer]);
 				});
 				game = game.next(move);
 			}
 		}
-		return { game: game, result: game.result(), plies: plies };
+		//return { game: game, result: game.result(), plies: plies };
 	},
 	
 	toString: function toString() {
