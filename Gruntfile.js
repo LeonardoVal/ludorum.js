@@ -19,6 +19,7 @@ var sourceFiles = [ 'src/__prologue__.js',
 		'src/utils/Scanner.js',
 	// games.
 	'src/games/__Predefined__.js',  'src/games/Choose2Win.js',
+		'src/games/ConnectionGame.js',
 		'src/games/OddsAndEvens.js', 'src/games/TicTacToe.js',
 		'src/games/ToadsAndFrogs.js', 'src/games/Mancala.js',
 		'src/games/Pig.js', 'src/games/ConnectFour.js',

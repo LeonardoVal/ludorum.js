@@ -946,33 +946,52 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 		return this.random.random(-0.5, 0.5);
 	},
 	
+	/** players.HeuristicPlayer.bestMoves(evaluatedMoves):
+		Given a sequence of tuples [move, evaluation], returns the moves that
+		are best evaluated.
+	*/
+	bestMoves: function bestMoves(evaluatedMoves) {
+		return iterable(evaluatedMoves).greater(function (pair) {
+			return pair[1];
+		}).map(function (pair) {
+			return pair[0];
+		});
+	},
+	
 	/** players.HeuristicPlayer.selectMoves(moves, game, player):
 		Return an array with the best evaluated moves. The evaluation is done by
 		the moveEvaluation method. The default implementation always returns a
 		Future.
 	*/
 	selectMoves: function selectMoves(moves, game, player) {
-		var heuristicPlayer = this;
-		return Future.all(moves.map(function (move) {
-			return heuristicPlayer.moveEvaluation(move, game, player);
-		})).then(function (evaluations) {
-			return iterable(moves).zip(evaluations).greater(function (pair) {
-				return pair[1];
-			}).map(function (pair) {
-				return pair[0];
+		var heuristicPlayer = this,
+			asyncEvaluations = false,
+			evaluatedMoves = moves.map(function (move) {
+				var e = heuristicPlayer.moveEvaluation(move, game, player);
+				if (e instanceof Future) {
+					asyncEvaluations = asyncEvaluations || true;
+					return e.then(function (e) {
+						return [move, e];
+					});
+				} else {
+					return [move, e];
+				}
 			});
-		});
+		if (asyncEvaluations) { // Avoid using Future if possible.
+			return Future.all(evaluatedMoves).then(this.bestMoves);
+		} else {
+			return this.bestMoves(evaluatedMoves);
+		}
 	},
 	
 	/** players.HeuristicPlayer.decision(game, player):
 		Selects randomly from the best evaluated moves.
 	*/
 	decision: function decision(game, player) {
-		var heuristicPlayer = this;
-		return Future.when(
-			heuristicPlayer.selectMoves(heuristicPlayer.__moves__(game, player), game, player)
-		).then(function (bestMoves) {
-			return heuristicPlayer.random.choice(bestMoves);
+		var heuristicPlayer = this,
+			selectedMoves = heuristicPlayer.selectMoves(heuristicPlayer.__moves__(game, player), game, player);
+		return Future.then(selectedMoves, function (selectedMoves) {
+			return heuristicPlayer.random.choice(selectedMoves);
 		});
 	}
 }); // declare HeuristicPlayer.
@@ -1073,10 +1092,10 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 	constructor: function MiniMaxPlayer(params) {
 		HeuristicPlayer.call(this, params);
 		initialize(this, params)
-		/** players.MiniMaxPlayer.horizon=3:
+		/** players.MiniMaxPlayer.horizon=4:
 			Maximum depth for the MiniMax search.
 		*/
-			.integer('horizon', { defaultValue: 3, coerce: true });
+			.integer('horizon', { defaultValue: 4, coerce: true });
 	},
 
 	/** players.MiniMaxPlayer.stateEvaluation(game, player):
@@ -1216,7 +1235,13 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 		/** players.MonteCarloPlayer.timeCap=1000ms:
 			Time limit for the player to decide.
 		*/
-			.number('timeCap', { defaultValue: 1000, coerce: true });
+			.number('timeCap', { defaultValue: 1000, coerce: true })
+		/** players.MonteCarloPlayer.agent:
+			Player instance used in the simulations. If undefined moves are
+			chosen at random.
+			Warning! Agent with asynchronous decisions are not supported.
+		*/
+			.object('agent', { defaultValue: null });
 	},
 	
 	/** players.MonteCarloPlayer.selectMoves(moves, game, player):
@@ -1225,25 +1250,25 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 	selectMoves: function selectMoves(moves, game, player) {
 		var monteCarloPlayer = this,
 			endTime = Date.now() + this.timeCap,
-			moves = moves.map(function (move) {
-				return { 
-					move: move, 
-					next: game.next(obj(player, move)), 
-					sum: 0,
-					count: 0
+			options = moves.map(function (move) {
+				return { move: move, next: game.next(obj(player, move)), 
+					isFinal: false, sum: 0, count: 0 
 				};
 			});
 		for (var i = 0; i < this.simulationCount && Date.now() < endTime; ++i) {
-			moves.forEach(function (move) {
-				var sim = monteCarloPlayer.simulation(move.next, player);
-				move.sum += sim.result[player];
-				++move.count;
+			options.forEach(function (option) {
+				if (!option.isFinal) {
+					var sim = monteCarloPlayer.simulation(option.next, player);
+					option.isFinal = sim.plies < 1;
+					option.sum += sim.result[player];
+					++option.count;
+				}
 			});
 		}
-		return iterable(moves).greater(function (move) {
-			return move.count > 0 ? move.sum / move.count : 0;
-		}).map(function (move) {
-			return move.move;
+		return iterable(options).greater(function (option) {
+			return option.count > 0 ? option.sum / option.count : 0;
+		}).map(function (option) {
+			return option.move;
 		});
 	},
 	
@@ -1251,11 +1276,17 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 		Runs this.simulationCount simulations and returns the average result.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
-		var resultSum = 0;
-		for (var i = this.simulationCount; i > 0; i--) {
-			resultSum += this.simulation(game, player);
+		var resultSum = 0, 
+			simulationCount = this.simulationCount,
+			sim;
+		for (var i = 0; i < simulationCount; ++i) {
+			sim = this.simulation(game, player);
+			resultSum += sim.result[player];
+			if (sim.plies < 1) { // game is final.
+				break;
+			}
 		}
-		return resultSum / this.simulationCount;
+		return simulationCount > 0 ? resultSum / simulationCount : 0;
 	},
 	
 	/** players.MonteCarloPlayer.simulation(game, player):
@@ -1264,23 +1295,25 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 		simulated (plies).
 	*/
 	simulation: function simulation(game, player) {
-		var mc = this, move, moves;
-		for (var plies = 0; true; ++plies) {
+		var mc = this,
+			plies, move, moves;
+		for (plies = 0; true; ++plies) {
 			if (game instanceof Aleatory) {
 				game = game.instantiate();
 			} else {
 				moves = game.moves();
 				if (!moves) {
-					break;
+					return { game: game, result: game.result(), plies: plies };
 				}
 				move = {};
 				game.activePlayers.forEach(function (activePlayer) {
-					return move[activePlayer] = mc.random.choice(moves[activePlayer]);
+					move[activePlayer] = mc.agent ? mc.agent.decision(game, activePlayer) 
+						: mc.random.choice(moves[activePlayer]);
 				});
 				game = game.next(move);
 			}
 		}
-		return { game: game, result: game.result(), plies: plies };
+		//return { game: game, result: game.result(), plies: plies };
 	},
 	
 	toString: function toString() {
@@ -2136,6 +2169,146 @@ games.Choose2Win = declare(Game, {
 }); // declare Choose2Win.
 
 
+games.ConnectionGame = declare(Game, {
+	/** games.ConnectionGame.height=6:
+		Number of rows in the board.
+	*/
+	height: 6,
+	
+	/** games.ConnectionGame.width=6:
+		Number of columns in the board.
+	*/
+	width: 6,
+	
+	/** games.ConnectionGame.lineLength=4:
+		Length of the line required to win.
+	*/
+	lineLength: 4,
+
+	/** new games.ConnectionGame(activePlayer=players[0], board=<empty board>):
+		Builds a new connection game.
+	*/
+	constructor: function ConnectionGame(activePlayer, board) {
+		Game.call(this, activePlayer);
+		/** games.ConnectionGame.board:
+			Instance of boards.CheckerboardFromString.
+		*/
+		this.board = (board instanceof boards.CheckerboardFromString) ? board :
+			new boards.CheckerboardFromString(this.height, this.width, 
+				(board || '.'.repeat(this.height * this.width)) +''
+			);
+	},
+
+	name: 'ConnectionGame',
+	
+	/** games.ConnectionGame.players=['First', 'Second']:
+		Connection game's default players.
+	*/
+	players: ['First', 'Second'],
+	
+	/* Cache of lines to accelerate the result calculation. */
+	__lines__: (function () {
+		var CACHE = {};
+		function __lines__(height, width, lineLength) {
+			var key = height +'x'+ width;
+			if (!CACHE.hasOwnProperty(key)) {
+				var board = new boards.CheckerboardFromString(height, width, '.'.repeat(height * width));
+				CACHE[key] = board.lines().map(function (line) {
+					return line.toArray();
+				}, function (line) {
+					return line.length >= lineLength;
+				}).toArray();
+			}
+			return CACHE[key];
+		}
+		__lines__.CACHE = CACHE;
+		return __lines__;
+	})(),
+	
+	/** games.ConnectionGame.result():
+		A connection game ends when whether player gets the required amount of
+		pieces aligned (either horizontally, vertically or diagonally), then 
+		winning the game. The match ends in a tie if the board gets full.
+	*/
+	result: function result() {
+		if (this.hasOwnProperty('__result__')) {
+			return this.__result__;
+		}
+		var lineLength = this.lineLength,
+			lines = this.board.asStrings(this.__lines__(this.height, this.width, lineLength)).join(' ');
+		for (var i = 0; i < this.players.length; ++i) {
+			if (lines.indexOf(i.toString(36).repeat(lineLength)) >= 0) {
+				return this.__result__ = this.victory([this.players[i]]);
+			}
+		}
+		if (lines.indexOf('.') < 0) { // No empty squares means a tie.
+			return this.__result__ = this.draw();
+		}
+		return this.__result__ = null; // The game continues.
+	},
+	
+	/** games.ConnectionGame.moves():
+		Return the index of every empty square.
+	*/
+	moves: function moves() {
+		if (this.hasOwnProperty('__moves__')) {
+			return this.__moves__;
+		} else if (this.result()) {
+			return this.__moves__ = null;
+		} else {
+			return this.__moves__ = obj(this.activePlayer(), 
+				iterable(this.board.string).filter(function (c) {
+					return c === '.';
+				}, function (c, i) {
+					return i;
+				}).toArray()
+			);
+		}
+	},
+
+	/** games.ConnectionGame.next(moves):
+		Places a active player's piece in the given square.
+	*/
+	next: function next(moves) {
+		var activePlayer = this.activePlayer(),
+			playerIndex = this.players.indexOf(activePlayer),
+			squareIndex = +moves[activePlayer],
+			row = (squareIndex / this.width) >> 0,
+			column = squareIndex % this.width;
+		return new this.constructor((playerIndex + 1) % this.players.length, 
+			this.board.place([row, column], playerIndex.toString(36))
+		);
+	},
+	
+	/** games.ConnectionGame.toHTML():
+		Renders the board as a HTML table.
+	*/
+	toHTML: function toHTML() {
+		var moves = this.moves(),
+			activePlayer = this.activePlayer(),
+			board = this.board,
+			width = this.width;
+		moves = moves && moves[activePlayer];
+		return '<table>'+
+			board.horizontals().reverse().map(function (line) {
+				return '<tr>'+ line.map(function (coord) {
+					var data = '',
+						value = board.square(coord),
+						move = coord[0] * width + coord[1];
+					if (moves && moves.indexOf(move) >= 0) {
+						data = ' data-ludorum="move: '+ move +', activePlayer: \''+ activePlayer +'\'"';
+					}
+					return (value === '.') ? '<td '+ data +'>&nbsp;</td>'
+						: '<td class="ludorum-player'+ value +'" '+ data +'>&#x25CF;</td>';
+				}).join('') +'</tr>';
+			}).join('') + '</table>';
+	},
+	
+	__serialize__: function __serialize__() {
+		return [this.name, this.activePlayer(), this.board.string];
+	}
+}); // declare ConnectionGame.
+
 /** Classic child game, implemented as a simple example of a simultaneous game.
 */
 games.OddsAndEvens = declare(Game, {
@@ -2776,9 +2949,7 @@ games.Pig = declare(Game, {
 }); // declare Pig.
 
 
-/** .
-*/
-games.ConnectFour = declare(Game, {
+games.ConnectFour = declare(games.ConnectionGame, {
 	/** games.ConnectFour.height=6:
 		Number of rows in the ConnectFour board.
 	*/
@@ -2789,17 +2960,16 @@ games.ConnectFour = declare(Game, {
 	*/
 	width: 7,
 	
+	/** games.ConnectFour.lineLength=4:
+		Length of the line required to win.
+	*/
+	lineLength: 4,
+	
 	/** new games.ConnectFour(activePlayer=players[0], board=<empty board>):
 		Builds a new game state for Connect Four.
 	*/
-	constructor: function ConnectFour(activePlayer, board, height, width) {
+	constructor: function ConnectFour(activePlayer, board) {
 		Game.call(this, activePlayer);
-		if (!isNaN(height) && this.height !== +height) {
-			this.height = +height;
-		}
-		if (!isNaN(width) && this.width !== +width) {
-			this.width = +width;
-		}
 		/** games.ConnectFour.board:
 			ConnectFour board as a string.
 		*/
@@ -2815,43 +2985,6 @@ games.ConnectFour = declare(Game, {
 		Connect Four's players.
 	*/
 	players: ['Yellow', 'Red'],
-	
-	/* Cache of lines to accelerate the result calculation. */
-	__lines__: (function () {
-		var CACHE = {};
-		function __lines__(height, width) {
-			var key = height +'x'+ width;
-			if (!CACHE.hasOwnProperty(key)) {
-				var board = new boards.CheckerboardFromString(height, width, '.'.repeat(height * width));
-				CACHE[key] = board.lines().map(function (line) {
-					return line.toArray();
-				}, function (line) {
-					return line.length >= 4;
-				}).toArray();
-			}
-			return CACHE[key];
-		}
-		__lines__.CACHE = CACHE;
-		return __lines__;
-	})(),
-	
-	/** games.ConnectFour.result():
-		A Connect Four game ends when whether player gets four pieces aligned
-		(either horizontally, vertically or diagonally), then winning the game.
-		The match ends in a tie if the board gets full.
-	*/
-	result: function result() {
-		var lines = this.board.asStrings(this.__lines__(this.height, this.width)).join(' ');
-		if (lines.indexOf('0000') >= 0) { // Yellow wins.
-			return this.victory([this.players[0]]);
-		} else if (lines.indexOf('1111') >= 0) { // Red wins.
-			return this.victory([this.players[1]]);
-		} else if (lines.indexOf('.') < 0) { // No empty squares means a tie.
-			return this.draw();
-		} else {
-			return null; // The game continues.
-		}
-	},
 	
 	/** games.ConnectFour.moves():
 		Return the index of every column that has not reached the top height.
@@ -2917,10 +3050,9 @@ games.ConnectFour = declare(Game, {
 	},
 	
 	__serialize__: function __serialize__() {
-		return [this.name, this.activePlayer(), this.board.string, this.board.height, this.board.width];
+		return [this.name, this.activePlayer(), this.board.string];
 	}
 }); // declare ConnectFour.
-
 
 /** Tournament where all players play against each other a certain number of
 	times.

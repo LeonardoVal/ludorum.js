@@ -285,7 +285,7 @@ var Text = exports.Text = declare({
 				case 'S': return lpad((useUTC ? date.getUTCMilliseconds() : date.getMilliseconds()) +'', match.length, '0');
 				case 'a': return ['am','pm'][~~((useUTC ? date.getUTCHours() : date.getHours()) / 12)].substr(0, match.length);
 				case 'A': return ['AM','PM'][~~((useUTC ? date.getUTCHours() : date.getHours()) / 12)].substr(0, match.length);
-				case '"': return match.substr(1, match.length-1);
+				case '"': return match.substr(1, match.length-2);
 				default: return match;
 				}
 			});
@@ -1821,6 +1821,18 @@ var Future = exports.Future = declare({
 		return value instanceof Future ? value : new Future(value);
 	},
 
+	/** static Future.then(value, onResolved, onRejected=undefined):
+		Another way of unifying asynchronous and synchronous behaviours. If
+		value is a Future, it behaves like the instance Future.then(). Else it
+		calls onResolved with the given value. 
+		The main difference with Future.when is that of value is not a Future, 
+		the result may not be a Future neither. This may be useful for avoiding
+		asynchronism overhead when synchronism is more probable.
+	*/
+	'static then': function then(value, onResolved, onRejected) {
+		return value instanceof Future ? value.then(onResolved, onRejected) : onResolved(value);
+	},
+	
 	/** static Future.invoke(fn, _this, args...):
 		Calls the function synchronously, returning a future resolved with the 
 		call's result. If an exceptions is raised, the future is rejected with it.
@@ -2817,7 +2829,11 @@ var Statistic = exports.Statistic = declare({
 	*/
 	toString: function toString(sep) {
 		sep = ''+ (sep || '\t');
-		return [Object.keys(this.keys).join(' '), this.count(), this.minimum(), this.average(), 
+		var keys = typeof this.keys !== 'object' ? this.keys + '' :
+			iterable(this.keys).map(function (kv) {
+				return kv[0] +':'+ kv[1];
+			}).join(', ')
+		return [keys, this.count(), this.minimum(), this.average(), 
 			this.maximum(), this.standardDeviation()].join(sep);
 	}
 }); // declare Statistic.

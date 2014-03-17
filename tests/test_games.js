@@ -95,32 +95,25 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 		verifier.assertFalse(game.result(), "Passed turn should not have finished the game.");
 	}); // games.Choose2Win()
 	
-	verifier.test("games.TicTacToe()", function () { ///////////////////////////
-		var game = new games.TicTacToe();
-		checkGame(game, { zeroSum: true, oneActivePlayerPerTurn: true });
-	}); // games.TicTacToe()
-	
-	verifier.test("games.ToadsAndFrogs()", function () { ///////////////////////
-		var game = new games.ToadsAndFrogs();
-		checkGame(game, { zeroSum: true, oneActivePlayerPerTurn: true });
-	}); // games.ToadsAndFrogs()
-	
-	verifier.test("games.Mancala()", function () { /////////////////////////////
-		var game = new games.Mancala();
-		checkGame(game, { zeroSum: true, oneActivePlayerPerTurn: true });
-	}); // games.Mancala()
-	
-	verifier.test("games.ConnectFour()", function () { /////////////////////////////
-		var game = new games.ConnectFour();
-		checkGame(game, { zeroSum: true, oneActivePlayerPerTurn: true });
-	}); // games.ConnectFour()
+	basis.iterable({ // Zerosum one active player per turn games. //////////////
+		"games.ConnectionGame()":	games.ConnectionGame,
+		"games.TicTacToe()":		games.TicTacToe,
+		"games.ToadsAndFrogs()":	games.ToadsAndFrogs,
+		"games.Mancala()":			games.Mancala,
+		"games.ConnectFour()":		games.ConnectFour
+	}).forEach(function (pair) {
+		verifier.test(pair[0], function () {
+			var game = new pair[1]();
+			checkGame(game, { zeroSum: true, oneActivePlayerPerTurn: true });
+		});
+	});
 	
 	verifier.test("games.OddsAndEvens()", function () { ////////////////////////
 		var game = new games.ToadsAndFrogs();
 		checkGame(game, { zeroSum: true });
 	}); // games.OddsAndEvens()
 	
-	verifier.test("games.Pig()", function () { ////////////////////////
+	verifier.test("games.Pig()", function () { /////////////////////////////////
 		var game = new games.Pig();
 		checkGame(game, { zeroSum: true });
 	}); // games.Pig()	
