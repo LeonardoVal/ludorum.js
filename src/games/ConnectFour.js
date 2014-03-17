@@ -1,6 +1,4 @@
-﻿/** .
-*/
-games.ConnectFour = declare(Game, {
+﻿games.ConnectFour = declare(games.ConnectionGame, {
 	/** games.ConnectFour.height=6:
 		Number of rows in the ConnectFour board.
 	*/
@@ -11,17 +9,16 @@ games.ConnectFour = declare(Game, {
 	*/
 	width: 7,
 	
+	/** games.ConnectFour.lineLength=4:
+		Length of the line required to win.
+	*/
+	lineLength: 4,
+	
 	/** new games.ConnectFour(activePlayer=players[0], board=<empty board>):
 		Builds a new game state for Connect Four.
 	*/
-	constructor: function ConnectFour(activePlayer, board, height, width) {
+	constructor: function ConnectFour(activePlayer, board) {
 		Game.call(this, activePlayer);
-		if (!isNaN(height) && this.height !== +height) {
-			this.height = +height;
-		}
-		if (!isNaN(width) && this.width !== +width) {
-			this.width = +width;
-		}
 		/** games.ConnectFour.board:
 			ConnectFour board as a string.
 		*/
@@ -37,43 +34,6 @@ games.ConnectFour = declare(Game, {
 		Connect Four's players.
 	*/
 	players: ['Yellow', 'Red'],
-	
-	/* Cache of lines to accelerate the result calculation. */
-	__lines__: (function () {
-		var CACHE = {};
-		function __lines__(height, width) {
-			var key = height +'x'+ width;
-			if (!CACHE.hasOwnProperty(key)) {
-				var board = new boards.CheckerboardFromString(height, width, '.'.repeat(height * width));
-				CACHE[key] = board.lines().map(function (line) {
-					return line.toArray();
-				}, function (line) {
-					return line.length >= 4;
-				}).toArray();
-			}
-			return CACHE[key];
-		}
-		__lines__.CACHE = CACHE;
-		return __lines__;
-	})(),
-	
-	/** games.ConnectFour.result():
-		A Connect Four game ends when whether player gets four pieces aligned
-		(either horizontally, vertically or diagonally), then winning the game.
-		The match ends in a tie if the board gets full.
-	*/
-	result: function result() {
-		var lines = this.board.asStrings(this.__lines__(this.height, this.width)).join(' ');
-		if (lines.indexOf('0000') >= 0) { // Yellow wins.
-			return this.victory([this.players[0]]);
-		} else if (lines.indexOf('1111') >= 0) { // Red wins.
-			return this.victory([this.players[1]]);
-		} else if (lines.indexOf('.') < 0) { // No empty squares means a tie.
-			return this.draw();
-		} else {
-			return null; // The game continues.
-		}
-	},
 	
 	/** games.ConnectFour.moves():
 		Return the index of every column that has not reached the top height.
@@ -139,6 +99,6 @@ games.ConnectFour = declare(Game, {
 	},
 	
 	__serialize__: function __serialize__() {
-		return [this.name, this.activePlayer(), this.board.string, this.board.height, this.board.width];
+		return [this.name, this.activePlayer(), this.board.string];
 	}
 }); // declare ConnectFour.
