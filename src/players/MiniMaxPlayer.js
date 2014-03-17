@@ -7,10 +7,10 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 	constructor: function MiniMaxPlayer(params) {
 		HeuristicPlayer.call(this, params);
 		initialize(this, params)
-		/** players.MiniMaxPlayer.horizon=3:
+		/** players.MiniMaxPlayer.horizon=4:
 			Maximum depth for the MiniMax search.
 		*/
-			.integer('horizon', { defaultValue: 3, coerce: true });
+			.integer('horizon', { defaultValue: 4, coerce: true });
 	},
 
 	/** players.MiniMaxPlayer.stateEvaluation(game, player):
