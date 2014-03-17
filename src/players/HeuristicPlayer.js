@@ -45,33 +45,52 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 		return this.random.random(-0.5, 0.5);
 	},
 	
+	/** players.HeuristicPlayer.bestMoves(evaluatedMoves):
+		Given a sequence of tuples [move, evaluation], returns the moves that
+		are best evaluated.
+	*/
+	bestMoves: function bestMoves(evaluatedMoves) {
+		return iterable(evaluatedMoves).greater(function (pair) {
+			return pair[1];
+		}).map(function (pair) {
+			return pair[0];
+		});
+	},
+	
 	/** players.HeuristicPlayer.selectMoves(moves, game, player):
 		Return an array with the best evaluated moves. The evaluation is done by
 		the moveEvaluation method. The default implementation always returns a
 		Future.
 	*/
 	selectMoves: function selectMoves(moves, game, player) {
-		var heuristicPlayer = this;
-		return Future.all(moves.map(function (move) {
-			return heuristicPlayer.moveEvaluation(move, game, player);
-		})).then(function (evaluations) {
-			return iterable(moves).zip(evaluations).greater(function (pair) {
-				return pair[1];
-			}).map(function (pair) {
-				return pair[0];
+		var heuristicPlayer = this,
+			asyncEvaluations = false,
+			evaluatedMoves = moves.map(function (move) {
+				var e = heuristicPlayer.moveEvaluation(move, game, player);
+				if (e instanceof Future) {
+					asyncEvaluations = asyncEvaluations || true;
+					return e.then(function (e) {
+						return [move, e];
+					});
+				} else {
+					return [move, e];
+				}
 			});
-		});
+		if (asyncEvaluations) { // Avoid using Future if possible.
+			return Future.all(evaluatedMoves).then(this.bestMoves);
+		} else {
+			return this.bestMoves(evaluatedMoves);
+		}
 	},
 	
 	/** players.HeuristicPlayer.decision(game, player):
 		Selects randomly from the best evaluated moves.
 	*/
 	decision: function decision(game, player) {
-		var heuristicPlayer = this;
-		return Future.when(
-			heuristicPlayer.selectMoves(heuristicPlayer.__moves__(game, player), game, player)
-		).then(function (bestMoves) {
-			return heuristicPlayer.random.choice(bestMoves);
+		var heuristicPlayer = this,
+			selectedMoves = heuristicPlayer.selectMoves(heuristicPlayer.__moves__(game, player), game, player);
+		return Future.then(selectedMoves, function (selectedMoves) {
+			return heuristicPlayer.random.choice(selectedMoves);
 		});
 	}
 }); // declare HeuristicPlayer.
