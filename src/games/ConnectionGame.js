@@ -1,18 +1,18 @@
 ﻿games.ConnectionGame = declare(Game, {
-	/** games.ConnectionGame.height=6:
+	/** games.ConnectionGame.height=9:
 		Number of rows in the board.
 	*/
-	height: 6,
+	height: 9,
 	
-	/** games.ConnectionGame.width=6:
+	/** games.ConnectionGame.width=9:
 		Number of columns in the board.
 	*/
-	width: 6,
+	width: 9,
 	
-	/** games.ConnectionGame.lineLength=4:
+	/** games.ConnectionGame.lineLength=5:
 		Length of the line required to win.
 	*/
-	lineLength: 4,
+	lineLength: 5,
 
 	/** new games.ConnectionGame(activePlayer=players[0], board=<empty board>):
 		Builds a new connection game.
@@ -39,7 +39,7 @@
 	__lines__: (function () {
 		var CACHE = {};
 		function __lines__(height, width, lineLength) {
-			var key = height +'x'+ width;
+			var key = height +'x'+ width +'/'+ lineLength;
 			if (!CACHE.hasOwnProperty(key)) {
 				var board = new boards.CheckerboardFromString(height, width, '.'.repeat(height * width));
 				CACHE[key] = board.lines().map(function (line) {
