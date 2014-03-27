@@ -65,6 +65,15 @@ var Game = exports.Game = declare({
 		return this.moves() ? null : this.defeat(); // Defeat for the active players.
 	},
 
+	/** Game.scores():
+		If the game is finished returns an object with every player in the game
+		related to a number. Else it returns null. The default implementation is
+		equal to this.result(), but it does not have to be so necessarily.
+	*/
+	scores: function scores() {
+		return this.results();
+	},
+	
 	// Player information //////////////////////////////////////////////////////
 
 	/** Game.isActive(player...):

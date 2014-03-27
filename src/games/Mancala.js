@@ -105,12 +105,12 @@ games.Mancala = declare(Game, {
 		}
 	},
 	
-	/** games.Mancala.result():
-		The game ends when the active player cannot move. The result for
-		each player is the difference between the seed count of the stores.
-		If a player has seeds in his side, those are added to his count.
+	/** games.Mancala.scores():
+		The game ends when the active player cannot move. The score for
+		each player is the seed count of its store and (if countRemainingSeeds
+		is true) the houses on its side	of the board.
 	*/
-	result: function result() {
+	scores: function scores() {
 		var game = this,
 			board = this.board,
 			sides = this.players.map(function (player) {
@@ -118,19 +118,26 @@ games.Mancala = declare(Game, {
 					return board[h];
 				}).sum();
 			});
-		if (sides[0] && sides[1]) {
+		if (sides[0] > 0 && sides[1] > 0) { // Both sides have seeds.
 			return null;
 		} else { // One side has no seeds.
-			var result = {};
-			// Calculate score.
+			var _scores = {};
 			this.players.forEach(function (player, i) {
-				result[player] = board[game.store(player)] + game.countRemainingSeeds * sides[i];
+				_scores[player] = board[game.store(player)] + game.countRemainingSeeds * sides[i];
 			});
-			// Calculate result.
-			result[this.players[0]] -= result[this.players[1]];
-			result[this.players[1]] = -result[this.players[0]];
-			return result;
+			return _scores;
 		}
+	},
+	
+	/** games.Mancala.result():
+		The game ends when the active player cannot move. The result for
+		each player is the difference between the seed count of the stores.
+		If a player has seeds in his side, those are added to his count.
+	*/
+	result: function result() {
+		var scores = this.scores(),
+			players = this.players;
+		return scores && this.zerosumResult(scores[players[0]] - scores[players[1]], players[0]);
 	},
 	
 	/** games.Mancala.next(moves):
