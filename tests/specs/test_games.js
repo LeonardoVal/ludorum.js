@@ -100,23 +100,27 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 		"games.TicTacToe()":		games.TicTacToe,
 		"games.ToadsAndFrogs()":	games.ToadsAndFrogs,
 		"games.Mancala()":			games.Mancala,
-		"games.ConnectFour()":		games.ConnectFour
+		"games.ConnectFour()":		games.ConnectFour,
+		"games.Pig()":				games.Pig
 	}).forEach(function (pair) {
 		verifier.test(pair[0], function () {
-			var game = new pair[1]();
-			checkGame(game, { zeroSum: true, oneActivePlayerPerTurn: true });
+			for (var i = 0; i < 30; ++i) {
+				checkGame(new pair[1](), { zeroSum: true, oneActivePlayerPerTurn: true });
+			}
 		});
 	});
 	
 	verifier.test("games.OddsAndEvens()", function () { ////////////////////////
-		var game = new games.ToadsAndFrogs();
-		checkGame(game, { zeroSum: true });
+		for (var i = 0; i < 30; ++i) {
+			checkGame(new games.ToadsAndFrogs(), { zeroSum: true });
+		}
 	}); // games.OddsAndEvens()
 	
-	verifier.test("games.Pig()", function () { /////////////////////////////////
-		var game = new games.Pig();
-		checkGame(game, { zeroSum: true });
-	}); // games.Pig()	
+	verifier.test("games.Mutropas()", function () { ////////////////////////////
+		for (var i = 0; i < 30; ++i) {
+			checkGame(new games.Mutropas(), { zeroSum: true });
+		}
+	}); // games.Mutropas()	
 	
 /////////////////////////////////////////////////////////////////////////// Fin.
 	return verifier;

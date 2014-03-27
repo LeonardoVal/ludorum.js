@@ -1,6 +1,11 @@
 var APP = {};
 
-require.config({ paths: { basis: "../lib/basis", ludorum: "../../ludorum"} });
+require.config({
+	paths: {
+		basis: "../../lib/basis", 
+		ludorum: "../../build/ludorum"
+	}
+});
 require(['basis', 'ludorum'], function (basis, ludorum) {
 	APP.imports = {basis: basis, ludorum: ludorum};
 	APP.elements = {

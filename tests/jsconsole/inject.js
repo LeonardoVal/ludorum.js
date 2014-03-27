@@ -28,7 +28,7 @@
     doc = iframe.contentDocument || iframe.contentWindow.document;
 
     doc.open();
-    doc.write('<!DOCTYPE html><html id="jsconsole"><head><title>jsconsole</title><meta id="meta" name="viewport" content="width=device-width; height=device-height; user-scalable=no; initial-scale=1.0" /><link rel="stylesheet" href="lib/jsconsole/console.css" type="text/css" /></head><body><form><textarea autofocus id="exec" spellcheck="false" autocapitalize="off" autofocus rows="1"></textarea></form><div id="console"><ul id="output"></ul></div><div id="footer"><a href="http://github.com/remy/jsconsole">Fork on Github</a> &bull; <a href="http://twitter.com/rem">Built by @rem</a></div><script src="lib/jsconsole/prettify.js"></script><script src="lib/jsconsole/console.js"></script></body></html>');
+    doc.write('<!DOCTYPE html><html id="jsconsole"><head><title>jsconsole</title><meta id="meta" name="viewport" content="width=device-width; height=device-height; user-scalable=no; initial-scale=1.0" /><link rel="stylesheet" href="jsconsole/console.css" type="text/css" /></head><body><form><textarea autofocus id="exec" spellcheck="false" autocapitalize="off" autofocus rows="1"></textarea></form><div id="console"><ul id="output"></ul></div><div id="footer"><a href="http://github.com/remy/jsconsole">Fork on Github</a> &bull; <a href="http://twitter.com/rem">Built by @rem</a></div><script src="jsconsole/prettify.js"></script><script src="jsconsole/console.js"></script></body></html>');
     doc.close();
     
     iframe.contentWindow.onload = function () {

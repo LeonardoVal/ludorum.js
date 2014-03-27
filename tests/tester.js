@@ -1,8 +1,8 @@
 /** Javascript for tester.html, a test case runner in HTML.
 */
 var PATHS = {
-		"basis": "lib/basis",
-		"ludorum": "../ludorum"
+		"basis": "../lib/basis",
+		"ludorum": "../build/ludorum"
 	},
 	TESTS = [ // Put new test case files here.
 		'test_games', 'test_players', 'test_tournaments', 'test_Scanner', 
@@ -19,8 +19,8 @@ function main() { "use strict";
 			.format = basis.Logger.ROOT.htmlFormat();
 	// Define menu button click function.
 		var runTest = function runTest(path) {
-			basis.Logger.ROOT.info("Running test at <", path, ">.");
-			return basis.Future.imports(path).then(function (imports) {
+			basis.Logger.ROOT.info("Running test at <specs/", path, ">.");
+			return basis.Future.imports('specs/'+ path).then(function (imports) {
 				var verifier = imports[0];
 				verifier.logger = basis.Logger.ROOT;	
 				return verifier.run();
@@ -44,16 +44,5 @@ function main() { "use strict";
 			button.innerHTML = test.replace(/^test_/, '');
 			menuDiv.appendChild(button);
 		});
-		/*
-		basis.Future.sequence(TESTS, function (path) {
-			basis.Logger.ROOT.info("Running test at <", path, ">.");
-			return basis.Future.imports(path).then(function (imports) {
-				var verifier = imports[0];
-				verifier.logger = basis.Logger.ROOT;	
-				return verifier.run();
-			});
-		}).then(function () {
-			basis.Logger.ROOT.info("Fin.");
-		});*/
 	});
 }

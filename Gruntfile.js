@@ -23,6 +23,7 @@ var sourceFiles = [ 'src/__prologue__.js',
 		'src/games/OddsAndEvens.js', 'src/games/TicTacToe.js',
 		'src/games/ToadsAndFrogs.js', 'src/games/Mancala.js',
 		'src/games/Pig.js', 'src/games/ConnectFour.js',
+		'src/games/Mutropas.js',
 	// tournaments.
 	'src/tournaments/RoundRobin.js', 'src/tournaments/Measurement.js',
 // end
@@ -32,48 +33,41 @@ module.exports = function(grunt) {
 // Init config. ////////////////////////////////////////////////////////////////
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
-		concat: { //////////////////////////////////////////////////////////////
-			options: {
-				separator: '\n\n'
-			},
+		concat_sourcemap: { ////////////////////////////////////////////////////
 			build: {
 				src: sourceFiles,
-				dest: './<%= pkg.name %>.js',
+				dest: 'build/<%= pkg.name %>.js',
+				options: {
+					separator: '\n\n'
+				}
 			},
 		},
 		uglify: { //////////////////////////////////////////////////////////////
-		  options: {
-			banner: '//! <%= pkg.name %> <%= pkg.version %>\n',
-			report: 'min'
-		  },
-		  build: {
-			src: './<%= pkg.name %>.js',
-			dest: './<%= pkg.name %>.min.js'
-		  }
+			build: {
+				src: 'build/<%= pkg.name %>.js',
+				dest: 'build/<%= pkg.name %>.min.js',
+				options: {
+					banner: '//! <%= pkg.name %> <%= pkg.version %>\n',
+					report: 'min',
+					sourceMap: true,
+					sourceMapIn: 'build/<%= pkg.name %>.js.map',
+					sourceMapName: 'build/<%= pkg.name %>.min.js.map'
+				}
+			}
 		},
 		docgen: { //////////////////////////////////////////////////////////////
 			build: {
 				src: sourceFiles,
 				dest: 'docs/api.html'
 			}
-		},
-		markdown: { ////////////////////////////////////////////////////////////
-			build: {
-				files: [ {
-					expand: true,
-					src: 'docs/*.md',
-					ext: '.html'
-				}]
-			}
 		}
 	});
 
 // Load tasks. /////////////////////////////////////////////////////////////////
+	grunt.loadNpmTasks('grunt-concat-sourcemap');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
-	grunt.loadNpmTasks('grunt-contrib-concat');
-	grunt.loadNpmTasks('grunt-markdown');
 	require('./docs/docgen')(grunt); // In-house documentation generation.
 
 // Register tasks. /////////////////////////////////////////////////////////////
-	grunt.registerTask('default', ['concat', 'uglify', 'docgen', 'markdown']);
+	grunt.registerTask('default', ['concat_sourcemap', 'uglify', 'docgen']);
 };
