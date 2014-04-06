@@ -28,10 +28,10 @@ games.ToadsAndFrogs = declare(Game, {
 	*/
 	players: ['Toads', 'Frogs'],
 	
-	/** games.ToadsAndFrogs.results():
+	/** games.ToadsAndFrogs.result():
 		The match finishes when one player cannot move, hence losing the game.
 	*/
-	results: function results() {
+	result: function result() {
 		return this.moves() ? null : this.defeat();
 	},
 	
@@ -66,7 +66,7 @@ games.ToadsAndFrogs = declare(Game, {
 		} else {
 			throw new Error('Invalid move ', move, ' for board <', board, '>.');
 		}
-		return new this.constructor(this.opponent(activePlayer), board);
+		return new this.constructor(this.opponent(), board);
 	},
 
 	__serialize__: function __serialize__() {
