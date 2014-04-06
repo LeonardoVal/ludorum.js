@@ -1,63 +1,55 @@
-﻿/** Match is the controller for a game, managing player decisions.
+﻿/** ## Class `ludorum.Match`
+
+A match is a controller for a game, managing player decisions, handling the flow
+of the turns between the players by following the game's logic.
 */
 var Match = exports.Match = declare({
-	/** new Match(game, players):
-		Match objects are game controllers, handling the flow of the turns 
-		between the players. They also provide game events that players and 
-		spectators can be registered to.
-		The players argument must be either an array of Player objects or an
-		object with a member for each player with a Player object as value.
+	/** `Match` objects are build with the [game's](Game.html) starting state 
+	and the players that participate. The players argument must be either an 
+	array of [`Player`](Player.html) objects or an object with a member for each
+	of the game's players with a Player object as value.
 	*/
 	constructor: function Match(game, players) {
 		this.game = game;
 		this.players = Array.isArray(players) ? iterable(game.players).zip(players).toObject() : players;
-		/** Match.history:
-			Game state array, from the initial game state to the last.
+		/** The match records the sequence of game state in `Match.history`.
 		*/
 		this.history = [game];
-		/** Match.events:
-			Event handler for this match. Emitted events are: begin, end, move,
-			next and quit.
-		*/
 		this.events = new Events({ 
 			events: ['begin', 'move', 'next', 'end', 'quit']
 		});
-		// Participate the players.
-		for (var p in this.players) {
+		for (var p in this.players) { // Participate the players.
 			this.players[p] = this.players[p].participate(this, p) || this.players[p];
 		}
 	},
 
-	/** Match.ply():
-		Returns the current ply number.
+	/** Each step in the match's history is called a ply. `Match.ply()` 
+	indicates the current ply number.
 	*/
 	ply: function ply() {
 		return this.history.length - 1;
 	},
 	
-	toString: function toString() {
-		return 'Match('+ this.game +', '+ JSON.stringify(this.players) +')';
-	},
-
-	/** Match.state(ply=current):
-		Returns the game state of the given ply. If no one is specified, the
-		current game state is returned.
+	/** Each ply has a game state. `Match.state(ply=last)` retrieves the game 
+	state for the given ply, or the last one by default.
 	*/
 	state: function state(ply) {
 		ply = isNaN(ply) ? this.ply() : +ply < 0 ? this.ply() + (+ply) : +ply;
 		return this.history[ply | 0];
 	},
 
-	/** Match.result():
-		Returns the results of the current game state.
+	/** If the last game state is finished, then the whole match is finished. If
+	so, `Match.result()` returns the match result, which is the result of the 
+	last game state.
 	*/
 	result: function result() {
 		return this.state().result();
 	},
 
-	/** Match.decisions(game=current()):
-		Asks the active players in the game to choose their moves. Returns a 
-		future that is resolved when all players have decided.
+	/** If the last game state is not finished, then the match continues. To
+	move the play on, `Match.decisions(game=state())` asks the active players in 
+	the game to choose their moves. Returns a future that is resolved when all 
+	players have decided.
 	*/
 	decisions: function decisions(game) {
 		game = game || this.state();
@@ -73,43 +65,9 @@ var Match = exports.Match = declare({
 		});
 	},
 
-	/** Match.__advanceAleatories__(game):
-		If the given game has random variables (i.e. is an instance of Aleatory)
-		it instantiates them until the players must move again.
-	*/
-	__advanceAleatories__: function __advanceAleatories__(game, moves) {
-		for (var next; game instanceof Aleatory; game = next) {
-			next = game.instantiate();
-			this.history.push(next);
-			this.onNext(game, next);
-		}
-		return game;
-	},
-	
-	/** Match.__advance__(game, moves):
-		Checks the moves for commands. If the match must continue, it pushes the 
-		next game state in the match's history and returns true. Else it returns
-		false.
-	*/
-	__advance__: function __advance__(game, moves) {
-		var match = this,
-			quitters = game.activePlayers.filter(function (p) {
-				return match.isQuitCommand(moves[p]);
-			});
-		if (quitters.length > 0) {
-			match.onQuit(game, quitters[0]);
-			return false;
-		}
-		// Match must go on.
-		var next = game.next(moves);
-		this.history.push(next);
-		this.onNext(game, next);
-		return true;
-	},
-	
-	/** Match.run(plys=Infinity):
-		Runs the match the given number of plys or until the game finishes.
-		The result is a future that gets resolved when running ends.
+	/** `Match.run(plys=Infinity)` runs the match the given number of plys, or 
+	until the game finishes. The result is a future that gets resolved when the
+	game ends.
 	*/
 	run: function run(plys) {
 		plys = isNaN(plys) ? Infinity : +plys;
@@ -135,23 +93,52 @@ var Match = exports.Match = declare({
 		}
 	},
 	
-	// Commands. ///////////////////////////////////////////////////////////////
-	
-	/** Match.isQuitCommand(move):
-		Checks if the move is a QUIT command. Such command means that the player
-		that issued it is leaving the match. The match is then aborted.
-		A QUIT command is any move that has a true '.QUIT' attribute.
-	*/
-	isQuitCommand: function (move) { 
-		return move && move['.QUIT'];
+	__advanceAleatories__: function __advanceAleatories__(game, moves) {
+		for (var next; game instanceof Aleatory; game = next) {
+			next = game.next();
+			this.history.push(next);
+			this.onNext(game, next);
+		}
+		return game;
 	},
 	
-	"static commandQuit": { '.QUIT': true },
+	__advance__: function __advance__(game, moves) {
+		var match = this,
+			quitters = game.activePlayers.filter(function (p) {
+				return moves[p] instanceof Match.CommandQuit;
+			});
+		if (quitters.length > 0) {
+			match.onQuit(game, quitters[0]);
+			return false;
+		}
+		var next = game.next(moves); // Match must go on.
+		this.history.push(next);
+		this.onNext(game, next);
+		return true;
+	},
 	
-	// Events //////////////////////////////////////////////////////////////////
+	/** ### Commands ###########################################################
 	
-	/** Match.onBegin(game):
-		Emits the 'begin' event, meant to signal when the match starts.
+	Commands are pseudo-moves, which can be returned by the players instead of
+	valid moves for the game being played. Their intent is to control the match
+	itself.
+	
+	The available commands are:
+	*/
+	
+	/** + `CommandQuit()`: A quit command means the player that issued it is 
+	leaving the match. The match is then aborted.
+	*/
+	"static CommandQuit": function CommandQuit() { },
+	
+	/** ### Events #############################################################
+	
+	Matches provide game events that players and spectators can be registered 
+	to. `Match.events` is the event handler. Emitted events are:
+	*/
+	
+	/** + The `begin` event fired by `Match.onBegin(game)` when the match 
+	begins. The callbacks should have the signature `function (game, match)`.
 	*/
 	onBegin: function onBegin(game) {
 		this.events.emit('begin', game, this);
@@ -161,38 +148,44 @@ var Match = exports.Match = declare({
 			}).join(', '), '; for ', game, '.');
 	},
 	
-	/** Match.onMove(game, moves):
-		Emits the 'move' event, meant to signal when the active players have 
-		moved.
+	/** + The `move` event fired by `Match.onMove(game, moves)` every time the
+	active players make moves. The callbacks should have the signature 
+	`function (game, moves, match)`.
 	*/
 	onMove: function onMove(game, moves) {
 		this.events.emit('move', game, moves, this);
 		this.logger && this.logger.info('Players move: ', JSON.stringify(moves), ' in ', game);
 	},
 	
-	/** Match.onNext(game, next):
-		Emits the 'next' event, meant to signal when the match advances to the
-		next game state.
+	/** + The `next` event fired by `Match.onNext(game, next)` signals when the
+	match advances to the next game state. This may be due to moves or aleatory
+	instantiation.  The callbacks should have the signature 
+	`function (gameBefore, gameAfter, match)`.
 	*/
 	onNext: function onNext(game, next) {
 		this.events.emit('next', game, next, this);
 		this.logger && this.logger.info('Match advances from ', game, ' to ', next);
 	},
 	
-	/** Match.onEnd(game, results):
-		Emits the 'end' event, meant to signal when the match has ended.
+	/** + The `end` event triggered by `Match.onEnd(game, results)` notifies 
+	when the match ends.  The callbacks should have the signature 
+	`function (game, result, match)`.
 	*/
 	onEnd: function onEnd(game, results) {
 		this.events.emit('end', game, results, this);
 		this.logger && this.logger.info('Match for ', game, 'ends with ', JSON.stringify(results));
 	},
 	
-	/** Match.onQuit(game, player):
-		Emits the 'quit' command, meant to signal the match is aborted due to
-		the given player leaving it.
+	/** + The `quit` event triggered by `Match.onQuit(game, player)` is emitted
+	when the match is aborted due to the given player leaving it. The callbacks 
+	should have the signature `function (game, quitter, match)`.
 	*/
 	onQuit: function onQuit(game, player) {
 		this.events.emit('quit', game, player, this);
 		this.logger && this.logger.info('Match for ', game, ' aborted because player '+ player +' quitted.');
+	},
+	
+	toString: function toString() {
+		return 'Match('+ this.game +', '+ JSON.stringify(this.players) +')';
 	}
 }); // declare Match.
