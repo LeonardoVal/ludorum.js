@@ -42,6 +42,16 @@ module.exports = function(grunt) {
 				}
 			},
 		},
+		karma: { ///////////////////////////////////////////////////////////////
+			options: {
+				configFile: 'tests/karma.conf.js'
+			},
+			build: { browsers: ['PhantomJS'] },
+			chrome: { browsers: ['Chrome'] },
+			firefox: { browsers: ['Firefox'] },
+			opera: { browsers: ['Opera'] },
+			iexplore: { browsers: ['IE'] }
+		},
 		uglify: { //////////////////////////////////////////////////////////////
 			build: {
 				src: 'build/<%= pkg.name %>.js',
@@ -55,19 +65,28 @@ module.exports = function(grunt) {
 				}
 			}
 		},
-		docgen: { //////////////////////////////////////////////////////////////
-			build: {
-				src: sourceFiles,
-				dest: 'docs/api.html'
+		groc: { ////////////////////////////////////////////////////////////////
+			build: ["src/**/*.js", "README.md"],
+			options: {
+				"out": "docs/",
+				"style": "Default",
+				"silent": true
 			}
 		}
 	});
 
 // Load tasks. /////////////////////////////////////////////////////////////////
 	grunt.loadNpmTasks('grunt-concat-sourcemap');
+	grunt.loadNpmTasks('grunt-karma');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
-	require('./docs/docgen')(grunt); // In-house documentation generation.
+	grunt.loadNpmTasks('grunt-groc');
 
 // Register tasks. /////////////////////////////////////////////////////////////
-	grunt.registerTask('default', ['concat_sourcemap', 'uglify', 'docgen']);
+	grunt.registerTask('build', 
+		['concat_sourcemap:build', 'karma:build', 'uglify:build', 'groc:build']);
+	grunt.registerTask('default', 
+		['build']);
+	grunt.registerTask('test', 
+		['concat_sourcemap:build', 'karma:build', 'karma:chrome', 'karma:firefox', 
+		'karma:opera', 'karma:iexplore']);
 };

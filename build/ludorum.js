@@ -64,86 +64,99 @@
 	var utils = exports.utils = {};
 
 
-/** Game is the base type for all games.
+/** ## Class `ludorum.Game`
+
+The class `ludorum.Game` is the base type for all games.
 */
 var Game = exports.Game = declare({
-	/** new Game(activePlayers=first player):
-		Base abstract class of games.
+	/** Its constructor takes the active player/s. A player is active if and 
+	only if it can move. The argument may be either a player's name (string) or 
+	an array of players' names. It is used to initialize `Game.activePlayers`, 
+	an array with the active players' names.
 	*/
 	constructor: function Game(activePlayers) {
-		/** Game.activePlayers:
-			The players that can move in this turn.
-		*/
 		this.activePlayers = !activePlayers ? [this.players[0]] : 
 			(!Array.isArray(activePlayers) ? [activePlayers] : activePlayers);
 	},
 
-	/** Game.name:
-		The game's name as a string, for displaying purposes.
+	/** The game's name at `Game.name` is used mainly for displaying purposes.
 	*/
-	name: '',
+	name: '?',
 	
-	/** Game.players:
-		An array of role names (strings), that the players can assume in a 
-		match of this game. For example: "Xs" and "Os" in TicTacToe, or 
-		"Whites" and "Blacks" in Chess.
+	/** The game players are specified in the class property `Game.players`, an 
+	array of role names (strings), that the players can assume in a match of 
+	this game. For example: `"Xs"` and `"Os"` in TicTacToe, or `"Whites"` and 
+	`"Blacks"` in Chess.
 	*/
 	players: [],
 
-	/** Game.moves():
-		Returns an object with every active player related to the moves each
-		can make in this turn. If there are no moves available for any 
-		active player the game is assumed to be finished.
-		If the game has random variables to be instantiated, they are 
-		returned as members of this object (with RandomVariable instances as
-		values).
-		Warning! The base implementation returns no moves.
+	/** The moves of each active player are calculated by `Game.moves()`. This 
+	method returns an object with every active player related to the moves each
+	can make in this turn. For example: 
+	
+		{ Player1: ['Rock', 'Paper', 'Scissors'], 
+		Player2: ['Rock', 'Paper', 'Scissors'] }
+		
+	If the game has finished then a falsy value must be returned (`null` is 
+	recommended).
 	*/
-	moves: function moves() {
-		var result = ({});
-		for (var i = 0; i < this.activePlayers.length; i++) {
-			result[this.activePlayers[i]] = [];
-		}
-		return result;
-	},
+	moves: unimplemented("Game", "moves"),
 
-	/** abstract Game.next(moves):
-		Performs the given moves and returns a new game instance with the 
-		resulting state. The moves object should have a move for each active
-		player.
-		If the game has random variables, their instantiation can be added
-		to the moves object. Else the function must instantiate them, before
-		returning the next game state.
-		Note: it is strongly advised to double check the moves object. 
+	/** Once the players have chosen their moves, the method `Game.next(moves)`
+	is used to perform the given moves. It returns a new game instance with the
+	resulting state. The moves object should have a move for each active player.
+	For example:
+
+		{ Player1: 'Rock', Player2: 'Paper' }
+	
+	There isn't a default implementation, so it must be overriden. It is 
+	strongly advised to check if the moves argument has valid moves.
 	*/
 	next: unimplemented("Game", "next"),
 
-	/** Game.result():
-		If the game is finished the result of the game is an object with 
-		every player in the game related to a number. This number must be 
-		positive if the player wins, negative if the player loses or zero 
-		if the game is a tie. If the game is not finished, this function 
-		returns null.
-		Warning! The base implementation declares a defeat if the active 
-		players have no moves, with their opponents as winners.
+	/** If the game is finished the result of the game is calculated with 
+	`Game.result()`. It returns an object with every player in the game related 
+	to a number. This number must be positive if the player wins, negative if 
+	the player loses or zero if the game is a tie. For example:
+	
+		{ Player1: -1, Player2: +1 }
+	
+	If the game is not finished, this function must return a falsy value (`null`
+	is recommended).
 	*/
-	result: function result() {
-		return this.moves() ? null : this.defeat(); // Defeat for the active players.
-	},
+	result: unimplemented("Game", "result"),
 
-	/** Game.scores():
-		If the game is finished returns an object with every player in the game
-		related to a number. Else it returns null. The default implementation is
-		equal to this.result(), but it does not have to be so necessarily.
+	/** Some games may assign scores to the players in a finished game. This may
+	differ from the result, since the score sign doesn't have to indicate 
+	victory or defeat. For example:
+	
+		result: { Player1: -1, Player2: +1 }
+		scores: { Player1: 4, Player2: 15 }
+	
+	The method `Game.scores()` returns the scores if such is the case. By 
+	default, it return the same that `Game.result()` does.
 	*/
 	scores: function scores() {
 		return this.results();
 	},
 	
-	// Player information //////////////////////////////////////////////////////
+	/** In incomplete or imperfect information games all players have different
+	access to the game state data. `Game.view(player)` returns a modified 
+	version of this game, that shows only the information from the perspective 
+	of the given player. The other information is modelled as aleatory 
+	variables.
+	
+	In this way searches in the game tree can be performed without revealing to
+	the automatic player information it shouldn't have access to (a.k.a 
+	_cheating_).
+	*/
+	view: function view(player) {
+		return this;
+	},
+	
+	// ### Player information ##################################################
 
-	/** Game.isActive(player...):
-		Checks if the given players are all active.
+	/** `Game.isActive(player...)` checks if the given players are all active.
 	*/
 	isActive: function isActive() {
 		for (var i = 0; i < arguments.length; i++) {
@@ -154,10 +167,9 @@ var Game = exports.Game = declare({
 		return true;
 	},
 
-	/** Game.activePlayer():
-		Returns the active player's role if there is one and only one, else 
-		raises an error. This is convenient for AI algorithms that only 
-		support games with one active player at each ply.
+	/** In most games there is only one active player per turn. The method
+	`Game.activePlayer()` returns that active player's role if there is one and 
+	only one, else it raises an error.
 	*/
 	activePlayer: function activePlayer() {
 		var len = this.activePlayers.length;
@@ -166,52 +178,65 @@ var Game = exports.Game = declare({
 		return this.activePlayers[0];
 	},
 
-	/** Game.opponents(players=activePlayers):
-		Return an array with the opponent roles of the given players, or of
-		the active players by default. In this implementation the opponents 
-		are all the other players, but this can be overriden.
+	/** All players in a game are assumed to be opponents. The method 
+	`Game.opponents(players=activePlayers)` returns an array with the opponent 
+	roles of the given players, or of the active players by default. If not all
+	players are opponents this method can be overriden.
 	*/
 	opponents: function opponents(players) {
 		players = players || this.activePlayers;
-		return iterable(this.players).filter(function (p) {
+		return this.players.filter(function (p) {
 			return players.indexOf(p) < 0;
-		}).toArray();
+		});
 	},
 
-	/** Game.opponent(player=activePlayer):
-		Returns the opponent of the given player, or the active player by 
-		default. This assumes there are only two players in the game, and 
-		only one active player per turn.
+	/** Since most games have only two players, the method 
+	`Game.opponent(player=activePlayer)` conveniently returns the opponent of 
+	the given player, or the active player by default.
 	*/
 	opponent: function opponent(player) {
 		var playerIndex = this.players.indexOf(player || this.activePlayer());
 		return this.players[(playerIndex + 1) % this.players.length];
 	},
 
-	/** Game.doMove(move, player=activePlayer):
-		Performs a move of a single player and returns the next game state.
+	// ### Game flow ###########################################################
+	
+	/** Since `Game.next()` expects a moves object, the method 
+	`Game.perform(move, player=activePlayer, ...)` pretends to simplify simpler
+	game mechanics. It performs the given moves for the given players 
+	(activePlayer by default) and returns the next game state.
 	*/
-	doMove: function doMove(move, player) {
+	perform: function perform(move, player) {
 		player = player || this.activePlayer();
 		var moves = {};
 		moves[player] = move;
+		for (var i = 2; i < arguments.length; ++i) {
+			player = arguments[i+1] || this.activePlayer();
+			moves[player] = arguments[i];
+		}
 		return this.next(moves);
 	},
 
-	// Result functions ////////////////////////////////////////////////////////
+	// ### Result functions ####################################################
 
-	/** Game.resultBounds():
-		Returns an array with the minimum and the maximum results a player 
-		can have in this game. By default return =[-1,+1].
+	/** The maximum and minimum results may be useful and even required by some 
+	game search algorithm. To expose these values, `Game.resultBounds()` returns
+	an array with first the minimum and then the maximum. Most game have one type 
+	of victory (+1) and one type of defeat (-1). Thats why `Game.resultBounds()`
+	returns [-1,+1] by default. Yet some games can define different bounds by 
+	overriding it.
 	*/
 	resultBounds: function resultBounds() {
 		return [-1,+1];
 	},
 	
-	/** Game.zerosumResult(score, players=activePlayers):
-		Returns a game result object. The score is split between the given 
-		players (the active	players by default), and (-score) is split 
-		between their opponents.
+	/** Most games have victory and defeat results that cancel each other. It is
+	said that all the victors wins the defeated player loses. Those games are
+	called _zerosum games_. The method 
+	`Game.zerosumResult(score, players=activePlayers)` builds a game result 
+	object for a zerosum game. The given score is split between the given 
+	players (the active players by default), and (-score) is split between their 
+	opponents.
 	*/
 	zerosumResult: function zerosumResult(score, players) {
 		players = !players ? this.activePlayers : (!Array.isArray(players) ? [players] : players);
@@ -225,27 +250,27 @@ var Game = exports.Game = declare({
 		return result;
 	},
 
-	/** Game.victory(players=activePlayers, score=1):
-		Returns the zerosum game result with the given players (or the 
-		active players by default) as winners, and their opponents as 
-		losers.
+	/** `Game.zerosumResult()` has two shorcuts. 
+	`Game.victory(players=activePlayers, score=1)` returns the zerosum game 
+	result with the given players (or the active players by default) as winners,
+	and their opponents as losers.
 	*/
 	victory: function victory(players, score) {
 		return this.zerosumResult(score || 1, players);
 	},
 
-	/** Game.defeat(players=activePlayers, score=-1):
-		Returns the zerosum game result with the given players (or the 
-		active players by default) as losers, and their opponents as 
-		winners.
+	/** `Game.defeat(players=activePlayers, score=-1)` returns the zerosum game 
+	result with the given players (or the active players by default) as losers, 
+	and their opponents as winners.
 	*/
 	defeat: function defeat(players, score) {
 		return this.zerosumResult(score || -1, players);
 	},
 
-	/** Game.draw(players=this.players, score=0):
-		Returns the game result of a tied game with the given players (or 
-		the active players by default) all with the same score.
+	/** A tied game must always have the same result for all players. 
+	`Game.draw(players=this.players, score=0)` returns the game result of a tied 
+	game with the given players (or the active players by default) all with the 
+	same score (zero by default).
 	*/
 	draw: function draw(players, score) {
 		score = +(score || 0);
@@ -257,17 +282,17 @@ var Game = exports.Game = declare({
 		return result;
 	},
 
-	// Conversions & presentations. ////////////////////////////////////////////
+	// ### Conversions & presentations #########################################
 
-	/** abstract Game.__serialize__():
-		Returns an array, where the first element should be the name of the 
-		game, and the rest the arguments to call the game's constructor in order
-		to rebuild this game's state. Not implemented, so please override.
+	/** Many methods are based in the serialization of the game instances. The
+	abstract method `Game.__serialize__()` should returns an array, where the 
+	first element should be the name of the game, and the rest are the arguments
+	to call the game's constructor in order to rebuild this game's state.
 	*/
 	__serialize__: unimplemented("Game", "__serialize__"),
 	
-	/** Game.clone():
-		Creates a copy of this game state. Uses this.__serialize__().
+	/** Based on the game's serialization, `Game.clone()` creates a copy of this 
+	game state.
 	*/
 	clone: function clone() {
 		var args = this.__serialize__();
@@ -275,38 +300,35 @@ var Game = exports.Game = declare({
 		return new (this.constructor.bind.apply(this.constructor, args))();
 	},
 
-	/** Game.identifier():
-		Calculates a string that uniquely identifies this game state. Useful
-		for storing it in hash tables. By default returns this.arguments() in
-		JSON.
+	/** Some algorithms require an identifier for each game state, in order to 
+	store them in caches or hashes. `Game.identifier()` calculates a string that 
+	uniquely identifies this game state, based on the game's serialization.
 	*/
 	identifier: function identifier() {
 		var args = this.__serialize__();
 		return args.shift() + args.map(JSON.stringify).join('');
 	},
 
-	/** Game.toString():
-		Returns a textual representation of this game state. Meant for logging
-		or debugging, but not for user presentation.
+	/** The default string representation of a Game (i.e. `Game.toString()`) is
+	also based on the serialization. Changing this is not recommended.
 	*/
 	toString: function toString() {
 		var args = this.__serialize__();
 		return args.shift() +'('+ args.map(JSON.stringify).join(',') +')';
 	},
 	
-	/** Game.toJSON():
-		Encodes the game in JSON for decoding with the fromJSON method. The 
-		encoded data must be an array starting with this games name, followed
-		by its constructor arguments.
+	/** The default JSON representation (i.e. `Game.toJSON()`) is a straight 
+	JSON stringification of the serialization. It may be used to transfer the 
+	game state between server and client, frames or workers.
 	*/
 	toJSON: function toJSON() {
 		return JSON.stringify(this.__serialize__());
 	},
 	
-	/** static Game.fromJSON(data):
-		Creates a new instance of this game from the given JSON. The function
-		in the Game abstract class finds the proper constructor with the game
-		name and calls it.
+	/** The static counterpart of `Game.toJSON` is `Game.fromJSON(data)`, which
+	creates a new instance of this game from the given JSON. The function in the 
+	Game abstract class finds the proper constructor with the game name and 
+	calls it.
 	*/
 	"static fromJSON": function fromJSON(data) {
 		if (typeof data === 'string') {
@@ -419,14 +441,15 @@ Game.cached = function cached() {
 }; // Game.cached
 
 
-/** Player is the base type for all playing agents.
+/** ## Class `ludorum.Player`
+
+Player is the base type for all playing agents. Basically, playing a game means
+choosing a move from all available ones, each time the game enables the player 
+to do so.
 */
 var Player = exports.Player = declare({
-	/** new Player(params):
-		A player is an agent that plays a game. This means deciding which 
-		move to make from the set of moves available to the player, each 
-		time the game enables the player to do so.
-		This is an abstract class that is meant to be extended.
+	/** The default constructor takes only its `name` from the given `params`.
+	This is an abstract class that is meant to be extended.
 	*/
 	constructor: (function () {
 		var __PlayerCount__ = 0; // Used by the Player's default naming.
@@ -436,9 +459,17 @@ var Player = exports.Player = declare({
 		};
 	})(),
 
-	/** Player.__moves__(game, player):
-		Get the moves in the game for the player, checks if there are any, 
-		and if such is not the case it raises an error.
+	/** A player is asked to choose a move by calling 
+	`Player.decision(game, role)`. The result is the selected move if it can be 
+	obtained synchronously, else a future is returned.
+	*/
+	decision: function decision(game, role) {
+		return this.__moves__(game, role)[0]; // Indeed not a very thoughtful base implementation. 
+	},
+
+	/** To help implement the decision, `Player.__moves__(game, player)` gets
+	the moves in the game for the player. It also checks if there are any moves,
+	and if it not so an error is risen.
 	*/
 	__moves__: function __moves__(game, role) {
 		var moves = game.moves();
@@ -446,38 +477,30 @@ var Player = exports.Player = declare({
 			"Player ", role, " has no moves for game ", game, ".");
 		return moves[role];
 	},
-
-	/** Player.decision(game, player):
-		Ask the player to make a move in the given name for the given player 
-		(role). The result is the selected move if it can be obtained 
-		synchronously, else a Future is returned.
-	*/
-	decision: function decision(game, role) {
-		// Indeed not a very thoughtful base implementation.
-		return this.__moves__(game, role)[0]; 
-	},
-
-	/** Player.participate(match, role):
-		Called when the player joins a match, in order for the player to prepare
-		properly. If this implies building another instance of the player 
-		object, it must be returned in order to participate in the match.
+	
+	/** Before starting a [match](Match.html), all players are asked to join
+	by calling `Player.participate(match, role)`. This allows the player to
+	prepare properly. If this implies building another instance of the player 
+	object, it must be returned in order to participate in the match.
 	*/
 	participate: function participate(match, role) {
 		return this;
 	},
 	
-	// Conversions & presentations. ////////////////////////////////////////////
+	// ### Conversions & presentations #########################################
 
-	/** abstract Player.__serialize__():
-		Returns an array, where the first element should be the name of the 
-		game, and the rest the arguments to call the player's constructor in 
-		order to rebuild this player's state. Default implementation is pretty
-		useless, so please override.
+	/** Players can also be serialized, pretty much in the same way 
+	[games](Game.html) are. `Player.__serialize__()` returns an array, where the 
+	first element should be the name of the game, and the rest the arguments to 
+	call the player's constructor in order to rebuild this player's state.
 	*/
 	__serialize__: function __serialize__() {
 		return [this.constructor.name, {name: this.name}];
 	},
 	
+	/** The string representation of the player is derived straight from its
+	serialization.
+	*/
 	toString: function toString() {
 		var args = this.__serialize__();
 		return args.shift() +'('+ args.map(JSON.stringify).join(',') +')';
@@ -485,66 +508,58 @@ var Player = exports.Player = declare({
 }); // declare Player.
 
 
-/** Match is the controller for a game, managing player decisions.
+/** ## Class `ludorum.Match`
+
+A match is a controller for a game, managing player decisions, handling the flow
+of the turns between the players by following the game's logic.
 */
 var Match = exports.Match = declare({
-	/** new Match(game, players):
-		Match objects are game controllers, handling the flow of the turns 
-		between the players. They also provide game events that players and 
-		spectators can be registered to.
-		The players argument must be either an array of Player objects or an
-		object with a member for each player with a Player object as value.
+	/** `Match` objects are build with the [game's](Game.html) starting state 
+	and the players that participate. The players argument must be either an 
+	array of [`Player`](Player.html) objects or an object with a member for each
+	of the game's players with a Player object as value.
 	*/
 	constructor: function Match(game, players) {
 		this.game = game;
 		this.players = Array.isArray(players) ? iterable(game.players).zip(players).toObject() : players;
-		/** Match.history:
-			Game state array, from the initial game state to the last.
+		/** The match records the sequence of game state in `Match.history`.
 		*/
 		this.history = [game];
-		/** Match.events:
-			Event handler for this match. Emitted events are: begin, end, move,
-			next and quit.
-		*/
 		this.events = new Events({ 
 			events: ['begin', 'move', 'next', 'end', 'quit']
 		});
-		// Participate the players.
-		for (var p in this.players) {
+		for (var p in this.players) { // Participate the players.
 			this.players[p] = this.players[p].participate(this, p) || this.players[p];
 		}
 	},
 
-	/** Match.ply():
-		Returns the current ply number.
+	/** Each step in the match's history is called a ply. `Match.ply()` 
+	indicates the current ply number.
 	*/
 	ply: function ply() {
 		return this.history.length - 1;
 	},
 	
-	toString: function toString() {
-		return 'Match('+ this.game +', '+ JSON.stringify(this.players) +')';
-	},
-
-	/** Match.state(ply=current):
-		Returns the game state of the given ply. If no one is specified, the
-		current game state is returned.
+	/** Each ply has a game state. `Match.state(ply=last)` retrieves the game 
+	state for the given ply, or the last one by default.
 	*/
 	state: function state(ply) {
 		ply = isNaN(ply) ? this.ply() : +ply < 0 ? this.ply() + (+ply) : +ply;
 		return this.history[ply | 0];
 	},
 
-	/** Match.result():
-		Returns the results of the current game state.
+	/** If the last game state is finished, then the whole match is finished. If
+	so, `Match.result()` returns the match result, which is the result of the 
+	last game state.
 	*/
 	result: function result() {
 		return this.state().result();
 	},
 
-	/** Match.decisions(game=current()):
-		Asks the active players in the game to choose their moves. Returns a 
-		future that is resolved when all players have decided.
+	/** If the last game state is not finished, then the match continues. To
+	move the play on, `Match.decisions(game=state())` asks the active players in 
+	the game to choose their moves. Returns a future that is resolved when all 
+	players have decided.
 	*/
 	decisions: function decisions(game) {
 		game = game || this.state();
@@ -560,43 +575,9 @@ var Match = exports.Match = declare({
 		});
 	},
 
-	/** Match.__advanceAleatories__(game):
-		If the given game has random variables (i.e. is an instance of Aleatory)
-		it instantiates them until the players must move again.
-	*/
-	__advanceAleatories__: function __advanceAleatories__(game, moves) {
-		for (var next; game instanceof Aleatory; game = next) {
-			next = game.instantiate();
-			this.history.push(next);
-			this.onNext(game, next);
-		}
-		return game;
-	},
-	
-	/** Match.__advance__(game, moves):
-		Checks the moves for commands. If the match must continue, it pushes the 
-		next game state in the match's history and returns true. Else it returns
-		false.
-	*/
-	__advance__: function __advance__(game, moves) {
-		var match = this,
-			quitters = game.activePlayers.filter(function (p) {
-				return match.isQuitCommand(moves[p]);
-			});
-		if (quitters.length > 0) {
-			match.onQuit(game, quitters[0]);
-			return false;
-		}
-		// Match must go on.
-		var next = game.next(moves);
-		this.history.push(next);
-		this.onNext(game, next);
-		return true;
-	},
-	
-	/** Match.run(plys=Infinity):
-		Runs the match the given number of plys or until the game finishes.
-		The result is a future that gets resolved when running ends.
+	/** `Match.run(plys=Infinity)` runs the match the given number of plys, or 
+	until the game finishes. The result is a future that gets resolved when the
+	game ends.
 	*/
 	run: function run(plys) {
 		plys = isNaN(plys) ? Infinity : +plys;
@@ -622,23 +603,52 @@ var Match = exports.Match = declare({
 		}
 	},
 	
-	// Commands. ///////////////////////////////////////////////////////////////
-	
-	/** Match.isQuitCommand(move):
-		Checks if the move is a QUIT command. Such command means that the player
-		that issued it is leaving the match. The match is then aborted.
-		A QUIT command is any move that has a true '.QUIT' attribute.
-	*/
-	isQuitCommand: function (move) { 
-		return move && move['.QUIT'];
+	__advanceAleatories__: function __advanceAleatories__(game, moves) {
+		for (var next; game instanceof Aleatory; game = next) {
+			next = game.next();
+			this.history.push(next);
+			this.onNext(game, next);
+		}
+		return game;
 	},
 	
-	"static commandQuit": { '.QUIT': true },
+	__advance__: function __advance__(game, moves) {
+		var match = this,
+			quitters = game.activePlayers.filter(function (p) {
+				return moves[p] instanceof Match.CommandQuit;
+			});
+		if (quitters.length > 0) {
+			match.onQuit(game, quitters[0]);
+			return false;
+		}
+		var next = game.next(moves); // Match must go on.
+		this.history.push(next);
+		this.onNext(game, next);
+		return true;
+	},
 	
-	// Events //////////////////////////////////////////////////////////////////
+	/** ### Commands ###########################################################
 	
-	/** Match.onBegin(game):
-		Emits the 'begin' event, meant to signal when the match starts.
+	Commands are pseudo-moves, which can be returned by the players instead of
+	valid moves for the game being played. Their intent is to control the match
+	itself.
+	
+	The available commands are:
+	*/
+	
+	/** + `CommandQuit()`: A quit command means the player that issued it is 
+	leaving the match. The match is then aborted.
+	*/
+	"static CommandQuit": function CommandQuit() { },
+	
+	/** ### Events #############################################################
+	
+	Matches provide game events that players and spectators can be registered 
+	to. `Match.events` is the event handler. Emitted events are:
+	*/
+	
+	/** + The `begin` event fired by `Match.onBegin(game)` when the match 
+	begins. The callbacks should have the signature `function (game, match)`.
 	*/
 	onBegin: function onBegin(game) {
 		this.events.emit('begin', game, this);
@@ -648,75 +658,106 @@ var Match = exports.Match = declare({
 			}).join(', '), '; for ', game, '.');
 	},
 	
-	/** Match.onMove(game, moves):
-		Emits the 'move' event, meant to signal when the active players have 
-		moved.
+	/** + The `move` event fired by `Match.onMove(game, moves)` every time the
+	active players make moves. The callbacks should have the signature 
+	`function (game, moves, match)`.
 	*/
 	onMove: function onMove(game, moves) {
 		this.events.emit('move', game, moves, this);
 		this.logger && this.logger.info('Players move: ', JSON.stringify(moves), ' in ', game);
 	},
 	
-	/** Match.onNext(game, next):
-		Emits the 'next' event, meant to signal when the match advances to the
-		next game state.
+	/** + The `next` event fired by `Match.onNext(game, next)` signals when the
+	match advances to the next game state. This may be due to moves or aleatory
+	instantiation.  The callbacks should have the signature 
+	`function (gameBefore, gameAfter, match)`.
 	*/
 	onNext: function onNext(game, next) {
 		this.events.emit('next', game, next, this);
 		this.logger && this.logger.info('Match advances from ', game, ' to ', next);
 	},
 	
-	/** Match.onEnd(game, results):
-		Emits the 'end' event, meant to signal when the match has ended.
+	/** + The `end` event triggered by `Match.onEnd(game, results)` notifies 
+	when the match ends.  The callbacks should have the signature 
+	`function (game, result, match)`.
 	*/
 	onEnd: function onEnd(game, results) {
 		this.events.emit('end', game, results, this);
 		this.logger && this.logger.info('Match for ', game, 'ends with ', JSON.stringify(results));
 	},
 	
-	/** Match.onQuit(game, player):
-		Emits the 'quit' command, meant to signal the match is aborted due to
-		the given player leaving it.
+	/** + The `quit` event triggered by `Match.onQuit(game, player)` is emitted
+	when the match is aborted due to the given player leaving it. The callbacks 
+	should have the signature `function (game, quitter, match)`.
 	*/
 	onQuit: function onQuit(game, player) {
 		this.events.emit('quit', game, player, this);
 		this.logger && this.logger.info('Match for ', game, ' aborted because player '+ player +' quitted.');
+	},
+	
+	toString: function toString() {
+		return 'Match('+ this.game +', '+ JSON.stringify(this.players) +')';
 	}
 }); // declare Match.
 
 
-/** A tournament is a set of matches played between many players. The whole 
-	contest ranks the participants according to the result of the matches.
+/** ## Class `ludorum.Tournament`
+
+A tournament is a set of matches played between many players. The whole contest 
+ranks the participants according to the result of the matches. This is an 
+abstract base class for many different types of contests.
 */
 var Tournament = exports.Tournament = declare({
-	/** new Tournament(game, players):
-		Base class of all tournament controllers.
-	*/
 	constructor: function Tournament(game, players) {
-		/** Tournament.game:
-			The game played at the tournament.
+		/** The tournament always has one [`game`](Game.html) state from which 
+		all matches start.
 		*/
 		this.game = game;
-		/** Tournament.players:
-			An array with the participants in the tournament.
+		/** All the [`players`](Player.html) involved in the tournament must be
+		provided to the constructor in an array.
 		*/
 		this.players = Array.isArray(players) ? players : iterables.iterable(players).toArray();
-		/** Tournament.statistics:
-			Tournament statistics. These include the accumulated score for 
-			each player, indexed by name.
-		*/
 		this.statistics = new Statistics();
-		/** Tournament.events:
-			Event handler for this match. Emitted events are: begin, 
-			beforeMatch, afterMatch & end.
-		*/
 		this.events = new Events({ 
 			events: ['begin', 'beforeMatch', 'afterMatch', 'end']
 		});
 	},
 
-	/** Tournament.account(match):
-		Accounts the results of a finished match for the players' score.
+	/** A tournament is made from a sequence of matches, build by 
+	`Tournament.matches()`. It must return an iterable of [`Match`](Match.html) 
+	objects. There isn't a default implementation, so this method must be
+	overridden in all tournament implementations.
+	*/
+	matches: unimplemented("Tournament", "matches"),
+	
+	/** `Tournament.run(matches=this.matches())` plays the given matches, or the
+	ones returned by `Tournament.matches()` by default. Since running a match is
+	asynchronous, running a tournament is too. Hence the result is always a 
+	future, which will be resolved when all matches have been played.
+	*/
+	run: function run(matches) {
+		this.onBegin();
+		var tournament = this;
+		matches = matches || this.matches();
+		return Future.sequence(matches, function (match) {
+			tournament.beforeMatch(match);
+			return match.run().then(function (match) {
+				tournament.account(match);
+				tournament.afterMatch(match);
+				return tournament;
+			});
+		}).then(this.onEnd.bind(this));
+	},
+	
+	/** Tournaments gather information from the played matches using their
+	`statistics` property (instance of `basis.Statistics`). The method 
+	`Tournament.account(match)` is called to accounts the results of each 
+	finished match for the players' score.
+	
+	The match results are gathered in the `results` key. The keys `victories`,
+	`defeats` and `draws` count each result type. The length of each game is
+	recorded under `length`. The move count at each ply is aggregated under
+	`width`. All these numbers are open by game, role, player.
 	*/
 	account: function account(match) {
 		var game = this.game,
@@ -724,8 +765,7 @@ var Tournament = exports.Tournament = declare({
 			isDraw = false,
 			stats = this.statistics;
 		raiseIf(!results, "Match doesn't have results. Has it finished?");
-		// Player statistics.
-		iterable(match.players).forEach(function (p) {
+		iterable(match.players).forEach(function (p) { // Player statistics.
 			var role = p[0],
 				player = p[1],
 				playerResult = results[p[0]],
@@ -746,50 +786,44 @@ var Tournament = exports.Tournament = declare({
 			})
 		});
 	},
-
-	/** Tournament.run(matches=this.matches()):
-		Plays the given matches. This argument must be an Iterable of 
-		ludorum.Match objects.
-	*/
-	run: function run(matches) {
-		this.onBegin();
-		var tournament = this;
-		matches = matches || this.matches();
-		return Future.sequence(matches, function (match) {
-			tournament.beforeMatch(match);
-			return match.run().then(function (match) {
-				tournament.account(match);
-				tournament.afterMatch(match);
-				return tournament;
-			});
-		}).then(this.onEnd.bind(this));
-	},
-
-	/** Tournament.matches():
-		Returns the matches of this contest in an iterable. In this base 
-		implementation this method raises an exception. It must be overriden.
-	*/
-	matches: function matches() {
-		throw new Error("Tournament.matches is not implemented. Please override.");
-	},
 	
-	// Events //////////////////////////////////////////////////////////////////
+	/** ### Events #############################################################
 	
+	Tournaments provide events to enable further analysis and control over it. 
+	`Tournament.events` is the event handler. The emitted events are:
+	*/
+	
+	/** + The `begin` event fired by `Tournament.onBegin()` when the whole 
+	contest begins. The callbacks should have the signature 
+	`function (tournament)`.
+	*/	
 	onBegin: function onBegin() {
 		this.events.emit('begin', this);
 		this.logger && this.logger.info('Tournament begins for game ', game.name, '.');
 	},
 	
+	/** + The `beforeMatch` event triggered by `Tournament.beforeMatch(match)` 
+	just before starting a match. The callbacks should have the signature 
+	`function (match, tournament)`.
+	*/
 	beforeMatch: function beforeMatch(match) {
 		this.events.emit('beforeMatch', match, this);
 		this.logger && this.logger.debug('Beginning match with ', JSON.stringify(match.players), '.');
 	},
 	
+	/** + The `afterMatch` event triggered by `Tournament.afterMatch(match)` 
+	just after a match ends. The callbacks should have the signature 
+	`function (match, tournament)`.
+	*/
 	afterMatch: function afterMatch(match) {
 		this.events.emit('afterMatch', match, this);
 		this.logger && this.logger.debug('Finishing match with ', JSON.stringify(match.players), '.');
 	},
 	
+	/** + The `end` event triggered by `Tournament.onEnd()` when the whole 
+	contest is completed. The callbacks should have the signature 
+	`function (statistics, tournament)`.
+	*/
 	onEnd: function onEnd() {
 		this.events.emit('end', this.statistics, this);
 		this.logger && this.logger.info('Tournament ends for game ', game.name, ':\n', this.statistics, '\n');
@@ -797,12 +831,15 @@ var Tournament = exports.Tournament = declare({
 }); // declare Tournament
 
 
-/** Representation of intermediate game states that depend on some form of 
-	randomness, like: dice, card decks, roulettes, etc.
+/** ## Class `ludorum.Aleatory`
+
+Aleatories are representations of intermediate game states that depend on some 
+form of randomness. `Aleatory` is an abstract class from which different means
+of non determinism can be build, like: dice, card decks, roulettes, etcetera.
 */
 var Aleatory = exports.Aleatory = declare({
-	/** new Aleatory(next, random=basis.Randomness.DEFAULT):
-		Base constructor for a aleatory game state.
+	/** The constructor may take a next function and a random generator (an
+	instance of `basis.Randomness`).
 	*/
 	constructor: function Aleatory(next, random) {
 		this.random = random || Randomness.DEFAULT;
@@ -811,22 +848,9 @@ var Aleatory = exports.Aleatory = declare({
 		}
 	},
 	
-	/** Aleatory.next(value):
-		Returns a new game state given a random value.
-	*/
-	next: function next() {
-		throw new Error((this.constructor.name || 'Aleatory') +".next() not implemented! Please override.");
-	},
-	
-	/** Aleatory.instantiate():
-		Calls this.next() callback with a random value and returns its result.
-	*/
-	instantiate: function instantiate() {
-		return this.next(this.value());
-	},
-	
-	/** Aleatory.value():
-		Calculates a random value for this aleatory.
+	/** The aleatory is always related to a random variable of some sort. The
+	`Aleatory.value()` can be used to obtain a valid random value for that 
+	random variable.
 	*/
 	value: function value() {
 		var n = random.random(), value;
@@ -843,14 +867,20 @@ var Aleatory = exports.Aleatory = declare({
 		return value;
 	},
 	
-	/** Aleatory.distribution():
-		Computes the histogram for the random variables on which this aleatory
-		depends, as an iterable of pairs [value, probability]. Not implemented 
-		by default.
+	/** The function `Aleatory.next(value)` returns the next game state given a 
+	specific value for the random variable. This next game state may also be
+	another `Aleatory`, or the corresponding [`Game`](Game.html) instance.
+	If no value is given, then a random valid value is chosen, using the 
+	`Aleatory.random` randomness generator.
 	*/
-	distribution: function distribution() {
-		throw new Error((this.constructor.name || 'Aleatory') +".distribution() is not implemented! Please override.");
-	}
+	next: unimplemented("Aleatory", "next"),
+	
+	/** In order to properly search a game tree with aleatory nodes, the random
+	variables' distribution have to be known. `Aleatory.distribution()` computes
+	the histogram for the random variables on which this aleatory depends, as a
+	sequence of pairs `[value, probability]`.
+	*/
+	distribution: unimplemented("Aleatory", "distribution")
 }); // declare Aleatory.
 
 
@@ -1308,7 +1338,7 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 			plies, move, moves;
 		for (plies = 0; true; ++plies) {
 			if (game instanceof Aleatory) {
-				game = game.instantiate();
+				game = game.next();
 			} else {
 				moves = game.moves();
 				if (!moves) {
@@ -2544,10 +2574,10 @@ games.ToadsAndFrogs = declare(Game, {
 	*/
 	players: ['Toads', 'Frogs'],
 	
-	/** games.ToadsAndFrogs.results():
+	/** games.ToadsAndFrogs.result():
 		The match finishes when one player cannot move, hence losing the game.
 	*/
-	results: function results() {
+	result: function result() {
 		return this.moves() ? null : this.defeat();
 	},
 	
@@ -2582,7 +2612,7 @@ games.ToadsAndFrogs = declare(Game, {
 		} else {
 			throw new Error('Invalid move ', move, ' for board <', board, '>.');
 		}
-		return new this.constructor(this.opponent(activePlayer), board);
+		return new this.constructor(this.opponent(), board);
 	},
 
 	__serialize__: function __serialize__() {
@@ -2950,6 +2980,7 @@ games.Pig = declare(Game, {
 		} else if (move === 'roll') {
 			var game = this;
 			return new aleatories.Dice(function (value) {
+				value = isNaN(value) ? this.value() : +value;
 				return (value > 1) 
 					? new game.constructor(activePlayer,  game.goal, game.__scores__, game.__rolls__.concat(value))
 					: new game.constructor(game.opponent(), game.goal, game.__scores__, []);
