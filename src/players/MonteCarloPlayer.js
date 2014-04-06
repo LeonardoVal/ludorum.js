@@ -80,7 +80,7 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 			plies, move, moves;
 		for (plies = 0; true; ++plies) {
 			if (game instanceof Aleatory) {
-				game = game.instantiate();
+				game = game.next();
 			} else {
 				moves = game.moves();
 				if (!moves) {
