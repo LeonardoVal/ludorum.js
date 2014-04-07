@@ -14,20 +14,6 @@
 	*/
 	lineLength: 4,
 	
-	/** new games.ConnectFour(activePlayer=players[0], board=<empty board>):
-		Builds a new game state for Connect Four.
-	*/
-	constructor: function ConnectFour(activePlayer, board) {
-		Game.call(this, activePlayer);
-		/** games.ConnectFour.board:
-			ConnectFour board as a string.
-		*/
-		this.board = (board instanceof boards.CheckerboardFromString) ? board :
-			new boards.CheckerboardFromString(this.height, this.width, 
-				(board || '.'.repeat(this.height * this.width)) +''
-			);
-	},
-
 	name: 'ConnectFour',
 	
 	/** games.ConnectFour.players=['Yellow', 'Red']:

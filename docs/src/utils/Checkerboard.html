@@ -1,5 +1,8 @@
-<!DOCTYPE html><html lang="en"><head><title>src\boards\Checkerboard</title></head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"><meta name="groc-relative-root" content="../../"><meta name="groc-document-path" content="src\boards\Checkerboard"><meta name="groc-project-path" content="src\boards\Checkerboard.js"><link rel="stylesheet" type="text/css" media="all" href="../../assets/style.css"><script type="text/javascript" src="../../assets/behavior.js"></script><body><div id="meta"><div class="file-path">src\boards\Checkerboard.js</div></div><div id="document"><div class="segment"><div class="comments "><div class="wrapper"><p>Base class for checkerboards based on several different data structures.</p></div></div><div class="code"><div class="wrapper"><span class="nx">boards</span><span class="p">.</span><span class="nx">Checkerboard</span> <span class="o">=</span> <span class="nx">declare</span><span class="p">({</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>new boards.Checkerboard(height, width):
-    The base constructor only sets the board dimensions.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">constructor</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">Checkerboard</span><span class="p">(</span><span class="nx">height</span><span class="p">,</span> <span class="nx">width</span><span class="p">)</span> <span class="p">{</span>
+<!DOCTYPE html><html lang="en"><head><title>src\utils\Checkerboard</title></head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0"><meta name="groc-relative-root" content="../../"><meta name="groc-document-path" content="src\utils\Checkerboard"><meta name="groc-project-path" content="src\utils\Checkerboard.js"><link rel="stylesheet" type="text/css" media="all" href="../../assets/style.css"><script type="text/javascript" src="../../assets/behavior.js"></script><body><div id="meta"><div class="file-path">src\utils\Checkerboard.js</div></div><div id="document"><div class="segment"><div class="comments "><div class="wrapper"><h2 id="classcheckerboard">Class <code>Checkerboard</code></h2>
+
+<p>Base class for checkerboards representations based on several different data 
+structures.</p></div></div><div class="code"><div class="wrapper"><span class="kd">var</span> <span class="nx">Checkerboard</span> <span class="o">=</span> <span class="nx">utils</span><span class="p">.</span><span class="nx">Checkerboard</span> <span class="o">=</span> <span class="nx">declare</span><span class="p">({</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>The base constructor only sets the board dimensions: <code>height</code> and 
+<code>width</code>.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">constructor</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">Checkerboard</span><span class="p">(</span><span class="nx">height</span><span class="p">,</span> <span class="nx">width</span><span class="p">)</span> <span class="p">{</span>
     <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nb">isNaN</span><span class="p">(</span><span class="nx">height</span><span class="p">))</span> <span class="p">{</span>
       <span class="k">this</span><span class="p">.</span><span class="nx">height</span> <span class="o">=</span> <span class="o">+</span><span class="nx">height</span> <span class="o">&gt;&gt;</span> <span class="mi">0</span><span class="p">;</span>
     <span class="p">}</span>
@@ -7,18 +10,21 @@
       <span class="k">this</span><span class="p">.</span><span class="nx">width</span> <span class="o">=</span> <span class="o">+</span><span class="nx">width</span> <span class="o">&gt;&gt;</span> <span class="mi">0</span><span class="p">;</span>
     <span class="p">}</span>
   <span class="p">},</span>
-  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>boards.Checkerboard.emptySquare=null:
-    The value of empty squares.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">emptySquare</span><span class="o">:</span> <span class="kc">null</span><span class="p">,</span>
-  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Board information. //////////////////////////////////////////////////////////</p></div></div><div class="code"><div class="wrapper">  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>boards.Checkerboard.isValidCoord(coord):
-    Returns true if coord is an array with two numbers between this board's
-    dimensions.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">isValidCoord</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">isValidCoord</span><span class="p">(</span><span class="nx">coord</span><span class="p">)</span> <span class="p">{</span>
+  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>The value for empty squares is <code>emptySquare</code>. This will be used in 
+functions walking and traversing the board. </p></div></div><div class="code"><div class="wrapper">  <span class="nx">emptySquare</span><span class="o">:</span> <span class="kc">null</span><span class="p">,</span>
+  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h3 id="board-information">Board information</h3></div></div><div class="code"><div class="wrapper">  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>All coordinates are represented by <code>[row, column]</code> arrays. To check if
+a coordinate is inside the board, use <code>isValidCoord(coord)</code>.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">isValidCoord</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">isValidCoord</span><span class="p">(</span><span class="nx">coord</span><span class="p">)</span> <span class="p">{</span>
     <span class="k">return</span> <span class="nb">Array</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">coord</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nb">isNaN</span><span class="p">(</span><span class="nx">coord</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="nb">isNaN</span><span class="p">(</span><span class="nx">coord</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
       <span class="o">&amp;&amp;</span> <span class="nx">coord</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="nx">coord</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">height</span> 
       <span class="o">&amp;&amp;</span> <span class="nx">coord</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="nx">coord</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="k">this</span><span class="p">.</span><span class="nx">width</span><span class="p">;</span>
   <span class="p">},</span>
-  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>boards.Checkerboard.horizontals():
-    Returns an iterable of all the horizontal lines (rows) in the board, as
-    a list of coordinates.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">horizontals</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">horizontals</span><span class="p">()</span> <span class="p">{</span>
+  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Method <code>square(coord, outside)</code> should get the contents at a given 
+coordinate. If the coordinate is off the board, <code>outside</code> must be returned.
+This method is abstract so it must be overriden in subclasses.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">square</span><span class="o">:</span> <span class="nx">unimplemented</span><span class="p">(</span><span class="s1">&#39;utils.Checkerboard&#39;</span><span class="p">,</span> <span class="s1">&#39;square&#39;</span><span class="p">),</span>
+  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Many games must deal with line configurations of pieces. The following
+methods help with this kind of logic. Each line is a sequence of coordinates
+in the board.
++ <code>horizontals()</code>: All the horizontal lines (rows).</p></div></div><div class="code"><div class="wrapper">  <span class="nx">horizontals</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">horizontals</span><span class="p">()</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">width</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">width</span><span class="p">;</span>
     <span class="k">return</span> <span class="nx">Iterable</span><span class="p">.</span><span class="nx">range</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">height</span><span class="p">).</span><span class="nx">map</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">row</span><span class="p">)</span> <span class="p">{</span>
       <span class="k">return</span> <span class="nx">Iterable</span><span class="p">.</span><span class="nx">range</span><span class="p">(</span><span class="nx">width</span><span class="p">).</span><span class="nx">map</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">column</span><span class="p">)</span> <span class="p">{</span>
@@ -26,9 +32,9 @@
       <span class="p">});</span>
     <span class="p">});</span>
   <span class="p">},</span>
-  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>boards.Checkerboard.verticals():
-    Returns an iterable of all the vertical lines (columns) in the board, as
-    a list of coordinates.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">verticals</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">verticals</span><span class="p">()</span> <span class="p">{</span>
+  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
+<li><code>verticals()</code>: All the vertical lines (columns).</li>
+</ul></div></div><div class="code"><div class="wrapper">  <span class="nx">verticals</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">verticals</span><span class="p">()</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">height</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">height</span><span class="p">;</span>
     <span class="k">return</span> <span class="nx">Iterable</span><span class="p">.</span><span class="nx">range</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">width</span><span class="p">).</span><span class="nx">map</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">column</span><span class="p">)</span> <span class="p">{</span>
       <span class="k">return</span> <span class="nx">Iterable</span><span class="p">.</span><span class="nx">range</span><span class="p">(</span><span class="nx">height</span><span class="p">).</span><span class="nx">map</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">row</span><span class="p">)</span> <span class="p">{</span>
@@ -36,14 +42,16 @@
       <span class="p">});</span>
     <span class="p">});</span>
   <span class="p">},</span>
-  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>boards.Checkerboard.orthogonals():
-    Returns an iterable of all the horizontal (rows) and vertical lines 
-    (columns) in the board, as a list of coordinates.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">orthogonals</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">orthogonals</span><span class="p">()</span> <span class="p">{</span>
+  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
+<li><code>orthogonals()</code>: All the horizontal (rows) and vertical lines (columns) in 
+the board.</li>
+</ul></div></div><div class="code"><div class="wrapper">  <span class="nx">orthogonals</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">orthogonals</span><span class="p">()</span> <span class="p">{</span>
     <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">horizontals</span><span class="p">().</span><span class="nx">chain</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">verticals</span><span class="p">());</span>
   <span class="p">},</span>
-  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>boards.Checkerboard.positiveDiagonals():
-    Returns an iterable of all the positive diagonals lines (those where 
-    row = k + column), as a list of coordinates.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">positiveDiagonals</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">positiveDiagonals</span><span class="p">()</span> <span class="p">{</span>
+  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
+<li><code>positiveDiagonals()</code>: All the positive diagonals lines (those where 
+row = k + column).</li>
+</ul></div></div><div class="code"><div class="wrapper">  <span class="nx">positiveDiagonals</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">positiveDiagonals</span><span class="p">()</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">width</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">width</span><span class="p">,</span> 
       <span class="nx">height</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">height</span><span class="p">,</span> 
       <span class="nx">count</span> <span class="o">=</span> <span class="nx">height</span> <span class="o">+</span> <span class="nx">width</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
@@ -55,9 +63,10 @@
       <span class="p">});</span>
     <span class="p">});</span>
   <span class="p">},</span>
-  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>boards.Checkerboard.negativeDiagonals():
-    Returns an iterable of all the negative diagonals lines (those where 
-    row = k - column), as a list of coordinates.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">negativeDiagonals</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">negativeDiagonals</span><span class="p">()</span> <span class="p">{</span>
+  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
+<li><code>negativeDiagonals()</code>: All the negative diagonals lines (those where 
+row = k - column).</li>
+</ul></div></div><div class="code"><div class="wrapper">  <span class="nx">negativeDiagonals</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">negativeDiagonals</span><span class="p">()</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">width</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">width</span><span class="p">,</span> 
       <span class="nx">height</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">height</span><span class="p">,</span> 
       <span class="nx">count</span> <span class="o">=</span> <span class="nx">height</span> <span class="o">+</span> <span class="nx">width</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
@@ -69,19 +78,20 @@
       <span class="p">});</span>
     <span class="p">});</span>
   <span class="p">},</span>
-  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>boards.Checkerboard.diagonals():
-    Returns an iterable of all the diagonal lines in the board, as a list 
-    of coordinates.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">diagonals</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">diagonals</span><span class="p">()</span> <span class="p">{</span>
+  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
+<li><code>diagonals()</code>: All the diagonal lines in the board.</li>
+</ul></div></div><div class="code"><div class="wrapper">  <span class="nx">diagonals</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">diagonals</span><span class="p">()</span> <span class="p">{</span>
     <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">positiveDiagonals</span><span class="p">().</span><span class="nx">chain</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">negativeDiagonals</span><span class="p">());</span>
   <span class="p">},</span>
-  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>boards.Checkerboard.lines():
-    Returns an iterable of all the horizontal, vertical and diagonal lines 
-    in the board, as a list of coordinates.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">lines</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">lines</span><span class="p">()</span> <span class="p">{</span>
+  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><ul>
+<li><code>lines()</code>: All the horizontal, vertical and diagonal lines in the board.</li>
+</ul></div></div><div class="code"><div class="wrapper">  <span class="nx">lines</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">lines</span><span class="p">()</span> <span class="p">{</span>
     <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="nx">orthogonals</span><span class="p">().</span><span class="nx">chain</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">diagonals</span><span class="p">());</span>
   <span class="p">},</span>
-  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>boards.Checkerboard.sublines(lines, length):
-    Returns an iterable of all sublines of the given lines with the given 
-    length.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">sublines</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">sublines</span><span class="p">(</span><span class="nx">lines</span><span class="p">,</span> <span class="nx">length</span><span class="p">)</span> <span class="p">{</span>
+  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>The previous methods return the whole lines. Some times the game logic 
+demands checking lines of a certain length. These are sublines, and can be
+calculated by <code>sublines(lines, length)</code>. It obviously filters lines which
+are shorter than length.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">sublines</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">sublines</span><span class="p">(</span><span class="nx">lines</span><span class="p">,</span> <span class="nx">length</span><span class="p">)</span> <span class="p">{</span>
     <span class="k">return</span> <span class="nx">iterable</span><span class="p">(</span><span class="nx">lines</span><span class="p">).</span><span class="nx">map</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">line</span><span class="p">)</span> <span class="p">{</span>
       <span class="k">return</span> <span class="nb">Array</span><span class="p">.</span><span class="nx">isArray</span><span class="p">(</span><span class="nx">line</span><span class="p">)</span> <span class="o">?</span> <span class="nx">line</span> <span class="o">:</span> <span class="nx">iterable</span><span class="p">(</span><span class="nx">line</span><span class="p">).</span><span class="nx">toArray</span><span class="p">();</span>
     <span class="p">},</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">line</span><span class="p">)</span> <span class="p">{</span>
@@ -92,14 +102,10 @@
       <span class="p">});</span>
     <span class="p">}).</span><span class="nx">flatten</span><span class="p">();</span>
   <span class="p">},</span>
-  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>abstract boards.Checkerboard.square(coord, outside):
-    Returns the content of the square at the given coordinate ([row, 
-    column]), or outside if the coordinate is not inside the board.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">square</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">square</span><span class="p">(</span><span class="nx">coord</span><span class="p">,</span> <span class="nx">outside</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;boards.Checkerboard.square() is not implemented. Please override.&#39;</span><span class="p">);</span>
-  <span class="p">},</span>
-  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>boards.Checkerboard.walk(coord, delta):
-    Returns an iterable with coordinates ([row, column]) from the given 
-    coord and on, adding delta's row and column until going off the board.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">walk</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">walk</span><span class="p">(</span><span class="nx">coord</span><span class="p">,</span> <span class="nx">delta</span><span class="p">)</span> <span class="p">{</span>
+  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>A walk is a sequence of coordinates in the board that start at a given
+point and advances in a certain direction. The <code>walk(coord, delta)</code> method
+returns an iterable with coordinates from <code>coord</code> and on, adding <code>delta</code>'s 
+row and column until going off the board.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">walk</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">walk</span><span class="p">(</span><span class="nx">coord</span><span class="p">,</span> <span class="nx">delta</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">board</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
     <span class="k">return</span> <span class="k">new</span> <span class="nx">Iterable</span><span class="p">(</span><span class="kd">function</span> <span class="nx">__iter__</span><span class="p">()</span> <span class="p">{</span>
       <span class="kd">var</span> <span class="nx">current</span> <span class="o">=</span> <span class="nx">coord</span><span class="p">.</span><span class="nx">slice</span><span class="p">();</span>
@@ -115,31 +121,33 @@
       <span class="p">};</span>
     <span class="p">});</span>
   <span class="p">},</span>
-  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>boards.Checkerboard.walks(coord, deltas):
-    Returns all walks from the given coord with each given delta.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">walks</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">walks</span><span class="p">(</span><span class="nx">coord</span><span class="p">,</span> <span class="nx">deltas</span><span class="p">)</span> <span class="p">{</span>
+  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Convenient method <code>walks(coord, deltas)</code> can be used to get many walks
+from the same origin.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">walks</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">walks</span><span class="p">(</span><span class="nx">coord</span><span class="p">,</span> <span class="nx">deltas</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">board</span> <span class="o">=</span> <span class="k">this</span><span class="p">;</span>
     <span class="k">return</span> <span class="nx">deltas</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">delta</span><span class="p">)</span> <span class="p">{</span>
       <span class="k">return</span> <span class="nx">board</span><span class="p">.</span><span class="nx">walk</span><span class="p">(</span><span class="nx">coord</span><span class="p">,</span> <span class="nx">delta</span><span class="p">);</span>
     <span class="p">});</span>
   <span class="p">},</span>
-  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Board modification. /////////////////////////////////////////////////////////</p></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>abstract boards.Checkerboard.place(coord, value):
-    Places value at coord, replacing whatever was there. Returns a new 
-    instance of Checkerboard.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">place</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">place</span><span class="p">(</span><span class="nx">coord</span><span class="p">,</span> <span class="nx">value</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">throw</span> <span class="k">new</span> <span class="nb">Error</span><span class="p">(</span><span class="s1">&#39;boards.Checkerboard.place() is not implemented. Please override.&#39;</span><span class="p">);</span>
-  <span class="p">},</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>boards.Checkerboard.move(coordFrom, coordTo, valueLeft=this.emptySquare):
-    Moves the contents at coordFrom to coordTo. Whatever coordTo is 
-    replaced, and at coordFrom valueLeft is placed. Returns a new instance 
-    of Checkerboard.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">move</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">move</span><span class="p">(</span><span class="nx">coordFrom</span><span class="p">,</span> <span class="nx">coordTo</span><span class="p">,</span> <span class="nx">valueLeft</span><span class="p">)</span> <span class="p">{</span>
+  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><h3 id="board-modification">Board modification</h3></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Game states must not be modifiable, else game search algorithms may fail
+or be extremely complicated. Then, all board altering method in 
+<code>Checkerboard</code> must return a new board instance and leave this instance 
+unspoiled.</p>
+
+<p>The first function to change the board is <code>place(coord, value)</code>. It places 
+the value at the given coordinate, replacing whatever was there. Not 
+implemented in the base class.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">place</span><span class="o">:</span> <span class="nx">unimplemented</span><span class="p">(</span><span class="s1">&#39;utils.Checkerboard&#39;</span><span class="p">,</span> <span class="s1">&#39;place&#39;</span><span class="p">),</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>Another usual operation is <code>move(coordFrom, coordTo, valueLeft)</code>.
+It moves the contents at <code>coordFrom</code> to <code>coordTo</code>. Whatever is at <code>coordTo</code>
+gets replaced, and <code>valueLeft</code> is placed at <code>coordFrom</code>. If <code>valueLeft</code> is 
+undefined, <code>emptySquare</code> is used.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">move</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">move</span><span class="p">(</span><span class="nx">coordFrom</span><span class="p">,</span> <span class="nx">coordTo</span><span class="p">,</span> <span class="nx">valueLeft</span><span class="p">)</span> <span class="p">{</span>
     <span class="k">return</span> <span class="k">this</span>
       <span class="p">.</span><span class="nx">place</span><span class="p">(</span><span class="nx">coordTo</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">square</span><span class="p">(</span><span class="nx">coordFrom</span><span class="p">))</span>
       <span class="p">.</span><span class="nx">place</span><span class="p">(</span><span class="nx">coordFrom</span><span class="p">,</span> <span class="k">typeof</span> <span class="nx">valueLeft</span> <span class="o">===</span> <span class="s1">&#39;undefined&#39;</span> <span class="o">?</span> <span class="k">this</span><span class="p">.</span><span class="nx">emptySquare</span> <span class="o">:</span> <span class="nx">valueLeft</span><span class="p">);</span>
   <span class="p">},</span>
-  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>boards.Checkerboard.swap(coordFrom, coordTo):
-    Moves the contents at coordFrom to coordTo, and viceversa. Returns a new
-    instance of Checkerboard.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">swap</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">swap</span><span class="p">(</span><span class="nx">coordFrom</span><span class="p">,</span> <span class="nx">coordTo</span><span class="p">)</span> <span class="p">{</span>
+  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>The next board operation is <code>swap(coordFrom, coordTo)</code>, which moves the 
+contents at <code>coordFrom</code> to <code>coordTo</code>, and viceversa.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">swap</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">swap</span><span class="p">(</span><span class="nx">coordFrom</span><span class="p">,</span> <span class="nx">coordTo</span><span class="p">)</span> <span class="p">{</span>
     <span class="kd">var</span> <span class="nx">valueTo</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">square</span><span class="p">(</span><span class="nx">coordTo</span><span class="p">);</span>
     <span class="k">return</span> <span class="k">this</span>
       <span class="p">.</span><span class="nx">place</span><span class="p">(</span><span class="nx">coordTo</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">square</span><span class="p">(</span><span class="nx">coordFrom</span><span class="p">))</span>
       <span class="p">.</span><span class="nx">place</span><span class="p">(</span><span class="nx">coordFrom</span><span class="p">,</span> <span class="nx">valueTo</span><span class="p">);</span>
   <span class="p">}</span>
-<span class="p">});</span> <span class="c1">// declare boards.Checkerboard.</span></div></div></div></div></body></html>
+<span class="p">});</span> <span class="c1">//// declare utils.Checkerboard.</span></div></div></div></div></body></html>

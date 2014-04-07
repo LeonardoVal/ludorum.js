@@ -4,15 +4,7 @@
     Number of columns in the ConnectFour board.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">width</span><span class="o">:</span> <span class="mi">7</span><span class="p">,</span>
   </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>games.ConnectFour.lineLength=4:
     Length of the line required to win.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">lineLength</span><span class="o">:</span> <span class="mi">4</span><span class="p">,</span>
-  </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>new games.ConnectFour(activePlayer=players[0], board=<empty board>):
-    Builds a new game state for Connect Four.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">constructor</span><span class="o">:</span> <span class="kd">function</span> <span class="nx">ConnectFour</span><span class="p">(</span><span class="nx">activePlayer</span><span class="p">,</span> <span class="nx">board</span><span class="p">)</span> <span class="p">{</span>
-    <span class="nx">Game</span><span class="p">.</span><span class="nx">call</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="nx">activePlayer</span><span class="p">);</span></div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>games.ConnectFour.board:
-    ConnectFour board as a string.</p></div></div><div class="code"><div class="wrapper">    <span class="k">this</span><span class="p">.</span><span class="nx">board</span> <span class="o">=</span> <span class="p">(</span><span class="nx">board</span> <span class="k">instanceof</span> <span class="nx">boards</span><span class="p">.</span><span class="nx">CheckerboardFromString</span><span class="p">)</span> <span class="o">?</span> <span class="nx">board</span> <span class="o">:</span>
-      <span class="k">new</span> <span class="nx">boards</span><span class="p">.</span><span class="nx">CheckerboardFromString</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">height</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">width</span><span class="p">,</span> 
-        <span class="p">(</span><span class="nx">board</span> <span class="o">||</span> <span class="s1">&#39;.&#39;</span><span class="p">.</span><span class="nx">repeat</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">height</span> <span class="o">*</span> <span class="k">this</span><span class="p">.</span><span class="nx">width</span><span class="p">))</span> <span class="o">+</span><span class="s1">&#39;&#39;</span>
-      <span class="p">);</span>
-  <span class="p">},</span>
-
+  
   <span class="nx">name</span><span class="o">:</span> <span class="s1">&#39;ConnectFour&#39;</span><span class="p">,</span>
   </div></div></div><div class="segment"><div class="comments "><div class="wrapper"><p>games.ConnectFour.players=['Yellow', 'Red']:
     Connect Four's players.</p></div></div><div class="code"><div class="wrapper">  <span class="nx">players</span><span class="o">:</span> <span class="p">[</span><span class="s1">&#39;Yellow&#39;</span><span class="p">,</span> <span class="s1">&#39;Red&#39;</span><span class="p">],</span>

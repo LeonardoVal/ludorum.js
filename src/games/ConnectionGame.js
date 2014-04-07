@@ -22,8 +22,8 @@
 		/** games.ConnectionGame.board:
 			Instance of boards.CheckerboardFromString.
 		*/
-		this.board = (board instanceof boards.CheckerboardFromString) ? board :
-			new boards.CheckerboardFromString(this.height, this.width, 
+		this.board = (board instanceof CheckerboardFromString) ? board :
+			new CheckerboardFromString(this.height, this.width, 
 				(board || '.'.repeat(this.height * this.width)) +''
 			);
 	},
@@ -41,7 +41,7 @@
 		function __lines__(height, width, lineLength) {
 			var key = height +'x'+ width +'/'+ lineLength;
 			if (!CACHE.hasOwnProperty(key)) {
-				var board = new boards.CheckerboardFromString(height, width, '.'.repeat(height * width));
+				var board = new CheckerboardFromString(height, width, '.'.repeat(height * width));
 				CACHE[key] = board.lines().map(function (line) {
 					return line.toArray();
 				}, function (line) {

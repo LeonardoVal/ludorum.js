@@ -126,7 +126,7 @@ games.TicTacToe = declare(Game, {
 	
 	'': function () { // Class initializer. ////////////////////////////////////
 		// Build the regular expressions used in the victory test.
-		var board3x3 = new boards.CheckerboardFromString(3, 3, '_'.repeat(9)),
+		var board3x3 = new CheckerboardFromString(3, 3, '_'.repeat(9)),
 			lines = board3x3.sublines(board3x3.lines(), 3);
 		this.prototype.WIN_X = new RegExp(board3x3.asRegExps(lines, 'X', '.'));
 		this.prototype.WIN_O = new RegExp(board3x3.asRegExps(lines, 'O', '.'));
