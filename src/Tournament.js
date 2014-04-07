@@ -20,28 +20,31 @@ var Tournament = exports.Tournament = declare({
 		});
 	},
 
-	/** A tournament is made from a sequence of matches, build by 
-	`Tournament.matches()`. It must return an iterable of [`Match`](Match.html) 
-	objects. There isn't a default implementation, so this method must be
-	overridden in all tournament implementations.
+	/** The next match to be played is determined by `__advance__`, which 
+	returns a match instance, or null if the tournament has finished. It is not 
+	implemented in this base class. 
 	*/
-	matches: unimplemented("Tournament", "matches"),
+	__advance__: unimplemented("Tournament", "__advance__"),
 	
-	/** `Tournament.run(matches=this.matches())` plays the given matches, or the
-	ones returned by `Tournament.matches()` by default. Since running a match is
-	asynchronous, running a tournament is too. Hence the result is always a 
-	future, which will be resolved when all matches have been played.
+	/** `Tournament.run()` plays all the tournament's matches. Since running a 
+	match is asynchronous, running a tournament is too. Hence the result is 
+	always a future, which will be resolved when all matches have been played.
 	*/
-	run: function run(matches) {
+	run: function run() {
 		this.onBegin();
 		var tournament = this;
-		matches = matches || this.matches();
-		return Future.sequence(matches, function (match) {
-			tournament.beforeMatch(match);
-			return match.run().then(function (match) {
-				tournament.account(match);
-				tournament.afterMatch(match);
-				return tournament;
+		return Future.doWhile(function () {
+			return Future.then(tournament.__advance__(), function (match) {
+				if (match) {
+					tournament.beforeMatch(match);
+					return match.run().then(function (match) {
+						tournament.account(match);
+						tournament.afterMatch(match);
+						return match;
+					});
+				} else {
+					return null;
+				}
 			});
 		}).then(this.onEnd.bind(this));
 	},

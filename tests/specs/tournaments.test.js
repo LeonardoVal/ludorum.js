@@ -25,7 +25,7 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 				expect(stats.sum({key:'results'})).toBe(0); // Choose2Win is a zero-sum game.
 			});
 		});
-	}); //// tournaments.RoundRobin.
+	}); //// tournaments.RoundRobin
 	
 	describe("tournaments.Measurement", function () { //////////////////////////
 		async_it("(games.Choose2Win, players.RandomPlayer)", function () {
@@ -55,6 +55,28 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 				expect(stats.sum({key:'results'})).toBe(0);
 			});
 		});
-	}); // tournaments.Measurement()
+	}); //// tournaments.Measurement
+	
+	describe("tournaments.Elimination", function () { //////////////////////////
+		async_it("(games.Choose2Win, players.RandomPlayer)", function () {
+			var game = new ludorum.games.Choose2Win(),
+				contest = new ludorum.tournaments.Elimination(game, [
+					new ludorum.players.RandomPlayer({name: 'RandomPlayer#1'}), 
+					new ludorum.players.RandomPlayer({name: 'RandomPlayer#2'}),
+					new ludorum.players.RandomPlayer({name: 'RandomPlayer#3'}), 
+					new ludorum.players.RandomPlayer({name: 'RandomPlayer#4'})
+				], 2),
+				matchCount = 0;
+			contest.events.on('beforeMatch', function (match) {
+				expect(match.state(), game);
+				matchCount++;
+			});
+			return contest.run().then(function () {
+				var stats = contest.statistics;
+				expect(matchCount).toBe(6);
+				expect(stats.sum({key:'results'})).toBe(0);
+			});
+		});
+	}); //// tournaments.Elimination
 
 }); //// define.

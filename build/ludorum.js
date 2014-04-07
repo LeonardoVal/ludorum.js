@@ -705,28 +705,31 @@ var Tournament = exports.Tournament = declare({
 		});
 	},
 
-	/** A tournament is made from a sequence of matches, build by 
-	`Tournament.matches()`. It must return an iterable of [`Match`](Match.html) 
-	objects. There isn't a default implementation, so this method must be
-	overridden in all tournament implementations.
+	/** The next match to be played is determined by `__advance__`, which 
+	returns a match instance, or null if the tournament has finished. It is not 
+	implemented in this base class. 
 	*/
-	matches: unimplemented("Tournament", "matches"),
+	__advance__: unimplemented("Tournament", "__advance__"),
 	
-	/** `Tournament.run(matches=this.matches())` plays the given matches, or the
-	ones returned by `Tournament.matches()` by default. Since running a match is
-	asynchronous, running a tournament is too. Hence the result is always a 
-	future, which will be resolved when all matches have been played.
+	/** `Tournament.run()` plays all the tournament's matches. Since running a 
+	match is asynchronous, running a tournament is too. Hence the result is 
+	always a future, which will be resolved when all matches have been played.
 	*/
-	run: function run(matches) {
+	run: function run() {
 		this.onBegin();
 		var tournament = this;
-		matches = matches || this.matches();
-		return Future.sequence(matches, function (match) {
-			tournament.beforeMatch(match);
-			return match.run().then(function (match) {
-				tournament.account(match);
-				tournament.afterMatch(match);
-				return tournament;
+		return Future.doWhile(function () {
+			return Future.then(tournament.__advance__(), function (match) {
+				if (match) {
+					tournament.beforeMatch(match);
+					return match.run().then(function (match) {
+						tournament.account(match);
+						tournament.afterMatch(match);
+						return match;
+					});
+				} else {
+					return null;
+				}
 			});
 		}).then(this.onEnd.bind(this));
 	},
@@ -3172,25 +3175,25 @@ games.Mutropas = declare(Game, {
 	}
 }); // declare Mutropas
 
-/** Tournament where all players play against each other a certain number of
-	times.
-	See <http://en.wikipedia.org/wiki/Round-robin_tournament>.
+/** # Class `RoundRobin`
+
+[Round-robins](http://en.wikipedia.org/wiki/Round-robin_tournament) are 
+tournaments where all players play against each other a certain number of times.
 */
 tournaments.RoundRobin = declare(Tournament, {
-	/** new tournaments.RoundRobin(game, players, matchCount=game.players.length):
-		A tournament that confronts all players against each other rotating 
-		their roles in the matches.
+	/** The constructor takes the `game` to be played, the `players` and the 
+	amount of matches each player should play (`matchCount`).
 	*/
 	constructor: function RoundRobin(game, players, matchCount) {
 		Tournament.call(this, game, players);
 		this.matchCount = isNaN(matchCount) ? game.players.length : +matchCount;
+		this.__advance__ = this.__matches__().chain(Iterable.repeat(null)).__iter__();
 	},
 
-	/** tournaments.RoundRobin.matches():
-		Every player plays matchCount matches for each role in the game against
-		all the other opponents.
+	/** Round-robin matches make every player plays `matchCount` matches for 
+	each role in the game against all the other opponents.
 	*/
-	matches: function matches() {
+	__matches__: function __matches__() {
 		var tournament = this,
 			game = this.game,
 			ms = iterable(this.players);
@@ -3208,29 +3211,33 @@ tournaments.RoundRobin = declare(Tournament, {
 			return new Match(game, tuple[0]);
 		});
 	}
-}); // declare RoundRobin.
+}); //// declare RoundRobin.
 
 
-/** Measurement tournament pit the player being measured against others in order
-	to assess that player's performance at a game.
+/** ## Class `Measurement`
+
+Measurement tournaments pit the player being measured against others in order
+to assess that player's performance at a game. They are used to evaluate how 
+well the players play by confronting them with the opponents, rotating their 
+roles in the matches.
 */
 tournaments.Measurement = declare(Tournament, {
-	/** new tournaments.Measurement(game, players, opponents, matchCount=game.players.length):
-		A tournament used to evaluate how well the players play by confronting
-		them with the opponents, rotating their roles in the matches.
+	/** The constructor takes the `game` used in the contest, the `players`
+	being evaluated, the `opponents` used to evaluate them, and the amount of
+	matches each player will play (`matchCount`).
 	*/
 	constructor: function Measurement(game, players, opponents, matchCount) {
 		Tournament.call(this, game, Array.isArray(players) ? players : [players]);
 		this.opponents = Array.isArray(opponents) ? opponents : [opponents];
 		raiseIf(this.opponents.length < game.players.length - 1, "Not enough opponents.");
 		this.matchCount = isNaN(matchCount) ? game.players.length : +matchCount;
+		this.__advance__ = this.__matches__().chain(Iterable.repeat(null)).__iter__();
 	},
 
-	/** tournaments.Measurement.matches():
-		Every player plays matchCount matches for each role in the game against
-		all possible combinations of opponents.
+	/** A measurement tournament makes every player play `matchCount` matches 
+	for each role in the game against all possible combinations of opponents.
 	*/
-	matches: function matches() {
+	__matches__: function __matches__() {
 		var game = this.game,
 			playerCount = game.players.length,
 			opponentCombinations = iterable(this.opponents);
@@ -3251,7 +3258,94 @@ tournaments.Measurement = declare(Tournament, {
 				return new Match(game, players);
 			});
 	}
-}); // declare Measurement.
+}); //// declare Measurement.
+
+
+/** # Class `Elimination`
+
+Playoffs or sudden death kind of contests, also known as 
+[elimination tournaments](http://en.wikipedia.org/wiki/Single-elimination_tournament).
+In this tournaments players get randomly matched in successive brackets, each 
+match's winner passing to the next round until the final match. Games are 
+assumed to have only one winner per match.
+*/
+tournaments.Elimination = declare(Tournament, {
+	/** The constructor takes the `game` to be played, the `players` and the 
+	amount of matches that make each playoff (`matchCount`, 1 by default).
+	*/
+	constructor: function Elimination(game, players, matchCount) {
+		Tournament.call(this, game, players);
+		this.matchCount = isNaN(matchCount) ? 1 : +matchCount >> 0;
+	},
+
+	/** Each bracket is defined by partitioning the `players` in groups of the
+	size required by the game (usually two). If there are not enough players,
+	some players get reassigned. The bracket includes `matchCount` matches 
+	between these participants, rotating roles if possible.
+	*/
+	__bracket__: function __bracket__(players) {
+		var game = this.game,
+			matchCount = this.matchCount,
+			roleCount = this.game.players.length;
+		players = players || this.players;
+		if (players.length < roleCount) {
+			return [];
+		} else {
+			return Iterable.range(0, players.length, roleCount).map(function (i) {
+				var participants = Iterable.range(i, i + roleCount).map(function (j) {
+					return players[j % players.length]; // Fill by repeating players if necessary.
+				}).toArray();
+				return Iterable.range(matchCount).map(function (i) {
+					participants.unshift(participants.pop()); // Rotate partipants roles.
+					return new Match(game, participants);
+				}).toArray();
+			}).toArray();
+		}
+	},
+	
+	/** A playoff is resolved by aggregating the results of all its matches. The
+	winner of the playoff is the one with the greater result sum.
+	*/
+	__playoff__: function __playoff__(matches) {
+		var playoffResult = {},
+			players = {};
+		matches.forEach(function (match) {
+			var matchResult = match.result();
+			if (!matchResult) {
+				throw new Error('Unfinished match in playoff!');
+			}
+			iterable(match.players).forEach(function (tuple) {
+				var role = tuple[0],
+					playerName = tuple[1].name;
+				playoffResult[playerName] = (+playoffResult[playerName] || 0) + matchResult[role];
+				players[playerName] = tuple[1];
+			})
+		});
+		var winnerName = iterable(playoffResult).greater(function (pair) {
+			return pair[1];
+		})[0][0];
+		return players[winnerName];
+	},
+	
+	/** The elimination tournament runs until there is less players in the next
+	bracket than the amount required to play the game. Since this amount is 
+	usually two, the contest ends with one player at the top.
+	*/
+	__advance__: function __advance__() {
+		if (!this.__matches__ || this.__matches__.length < 1) {
+			if (!this.__currentBracket__) { // First bracket.
+				this.__currentBracket__ = this.__bracket__(this.players);
+			} else if (this.__currentBracket__.length < 1) { // Tournament is finished.
+				return null;
+			} else { // Second and on brackets.
+				var players = this.__currentBracket__.map(this.__playoff__);
+				this.__currentBracket__ = this.__bracket__(players);
+			}
+			this.__matches__ = iterable(this.__currentBracket__).flatten().toArray();
+		}	
+		return this.__matches__.shift();
+	}
+}); //// declare Elimination.
 
 
 // See __prologue__.js

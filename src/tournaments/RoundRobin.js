@@ -1,22 +1,22 @@
-/** Tournament where all players play against each other a certain number of
-	times.
-	See <http://en.wikipedia.org/wiki/Round-robin_tournament>.
+/** # Class `RoundRobin`
+
+[Round-robins](http://en.wikipedia.org/wiki/Round-robin_tournament) are 
+tournaments where all players play against each other a certain number of times.
 */
 tournaments.RoundRobin = declare(Tournament, {
-	/** new tournaments.RoundRobin(game, players, matchCount=game.players.length):
-		A tournament that confronts all players against each other rotating 
-		their roles in the matches.
+	/** The constructor takes the `game` to be played, the `players` and the 
+	amount of matches each player should play (`matchCount`).
 	*/
 	constructor: function RoundRobin(game, players, matchCount) {
 		Tournament.call(this, game, players);
 		this.matchCount = isNaN(matchCount) ? game.players.length : +matchCount;
+		this.__advance__ = this.__matches__().chain(Iterable.repeat(null)).__iter__();
 	},
 
-	/** tournaments.RoundRobin.matches():
-		Every player plays matchCount matches for each role in the game against
-		all the other opponents.
+	/** Round-robin matches make every player plays `matchCount` matches for 
+	each role in the game against all the other opponents.
 	*/
-	matches: function matches() {
+	__matches__: function __matches__() {
 		var tournament = this,
 			game = this.game,
 			ms = iterable(this.players);
@@ -34,4 +34,4 @@ tournaments.RoundRobin = declare(Tournament, {
 			return new Match(game, tuple[0]);
 		});
 	}
-}); // declare RoundRobin.
+}); //// declare RoundRobin.

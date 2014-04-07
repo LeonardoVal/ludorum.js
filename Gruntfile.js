@@ -26,6 +26,7 @@ var sourceFiles = [ 'src/__prologue__.js',
 		'src/games/Mutropas.js',
 	// tournaments.
 	'src/tournaments/RoundRobin.js', 'src/tournaments/Measurement.js',
+		'src/tournaments/Elimination.js',
 // end
 	'src/__epilogue__.js'];
 
