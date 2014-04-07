@@ -13,9 +13,9 @@ var sourceFiles = [ 'src/__prologue__.js',
 		'src/players/WebWorkerPlayer.js',
 	// aleatories.
 		'src/aleatories/Dice.js',
-	// boards.
-		'src/boards/Checkerboard.js', 'src/boards/CheckerboardFromString.js',
 	// utils.
+		'src/utils/Checkerboard.js', 
+			'src/utils/CheckerboardFromString.js',
 		'src/utils/Scanner.js',
 	// games.
 	'src/games/__Predefined__.js',  'src/games/Choose2Win.js',
@@ -29,8 +29,8 @@ var sourceFiles = [ 'src/__prologue__.js',
 // end
 	'src/__epilogue__.js'];
 
-module.exports = function(grunt) {
 // Init config. ////////////////////////////////////////////////////////////////
+module.exports = function(grunt) {
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
 		concat_sourcemap: { ////////////////////////////////////////////////////
@@ -70,7 +70,8 @@ module.exports = function(grunt) {
 			options: {
 				"out": "docs/",
 				"style": "Default",
-				"silent": true
+				"silent": true,
+				"repository-url": "<%= pkg.repository.url %>"
 			}
 		}
 	});

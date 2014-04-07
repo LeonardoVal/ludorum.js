@@ -31,40 +31,13 @@
 	};
 	exports.__init__.dependencies = [basis];
 
-	/** games:
-		Bundle of game implementations (as Game subclasses) and utility definitions.
-	*/
-	var games = exports.games = {};
-
-	/** players:
-		Bundle of different kinds of players: artificial intelligences, user 
-		interface proxies and others.
-	*/
-	var players = exports.players = {};
-
-	/** tournaments:
-		Several contest types implementated as Tournament subtypes.
-	*/
-	var tournaments = exports.tournaments = {};
-
-	/** aleatories:
-		Bundle of random game states (i.e. Aleatory subclasses) and related 
-		definitions.
-	*/
-	var aleatories = exports.aleatories = {};
-
-	/** boards:
-		Helpers for handling game boards.
-	*/
-	var boards = exports.boards = {};
-
-	/** utils:
-		Miscellaneous classes, functions and definitions. 
+	/** The namespace `ludorum.utils` contains miscellaneous classes, functions 
+	and definitions.
 	*/
 	var utils = exports.utils = {};
 
 
-/** ## Class `ludorum.Game`
+/** ## Class `Game`
 
 The class `ludorum.Game` is the base type for all games.
 */
@@ -346,6 +319,11 @@ var Game = exports.Game = declare({
 	}
 }); // declare Game.
 	
+/** The namespace `ludorum.games` contains all game implementations (as Game 
+subclasses) provided by this library.
+*/
+var games = exports.games = {};
+	
 // Serialized simultaneous games. //////////////////////////////////////////////
 	
 /** static Game.serialized():
@@ -441,7 +419,7 @@ Game.cached = function cached() {
 }; // Game.cached
 
 
-/** ## Class `ludorum.Player`
+/** ## Class `Player`
 
 Player is the base type for all playing agents. Basically, playing a game means
 choosing a move from all available ones, each time the game enables the player 
@@ -507,8 +485,12 @@ var Player = exports.Player = declare({
 	}
 }); // declare Player.
 
+/** The namespace `ludorum.players` contains all kinds of players provided by
+this library: artificial intelligences, user interface proxies and others.
+*/
+var players = exports.players = {};
 
-/** ## Class `ludorum.Match`
+/** ## Class `Match`
 
 A match is a controller for a game, managing player decisions, handling the flow
 of the turns between the players by following the game's logic.
@@ -701,7 +683,7 @@ var Match = exports.Match = declare({
 }); // declare Match.
 
 
-/** ## Class `ludorum.Tournament`
+/** ## Class `Tournament`
 
 A tournament is a set of matches played between many players. The whole contest 
 ranks the participants according to the result of the matches. This is an 
@@ -830,8 +812,12 @@ var Tournament = exports.Tournament = declare({
 	}
 }); // declare Tournament
 
+/** The namespace `ludorum.tournaments` holds several contest types implemented 
+as Tournament subtypes.
+*/
+var tournaments = exports.tournaments = {};
 
-/** ## Class `ludorum.Aleatory`
+/** ## Class `Aleatory`
 
 Aleatories are representations of intermediate game states that depend on some 
 form of randomness. `Aleatory` is an abstract class from which different means
@@ -883,6 +869,10 @@ var Aleatory = exports.Aleatory = declare({
 	distribution: unimplemented("Aleatory", "distribution")
 }); // declare Aleatory.
 
+/** The namespace `ludorum.aleatories` is a bundle of random game states (i.e. 
+Aleatory subclasses) and related definitions.
+*/
+var aleatories = exports.aleatories = {};
 
 /** Automatic players that moves fully randomly.
 */	
@@ -1578,29 +1568,31 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 	}
 }); // declare WebWorkerPlayer
 
-/** Dice random variables.
+/** ## Class `Dice`
+
+[Aleatory](../Aleatory.html) representation of dice random variables. These are
+uniformly distributed values in the range `[1, base]`.
 */
 aleatories.Dice = declare(Aleatory, {
-	/** new aleatories.Dice(name, base=6, random=basis.Randomness.DEFAULT):
-		Simple uniform random variable with values in [1, base]. 
+	/** The constructor takes the next function, the dice base, and	a 
+	pseudorandom number generator (`basis.Randomness.DEFAULT` by default).
 	*/
 	constructor: function Dice(next, base, random) {
 		Aleatory.call(this, next, random);
-		/** aleatories.Dice.base=6:
-			Amount of different values this dice can take.
+		/** A dice's `base` is the maximum value it can have. By default is 6, 
+		since most frequently six sided dice are used.
 		*/
 		this.base = isNaN(base) ? 6 : Math.max(2, +base);
 	},
 	
-	/** aleatories.Dice.value():
-		Returns a random value between 1 and base.
+	/** `Dice.value()` returns a random value between 1 and `base`.
 	*/
 	value: function value() {
 		return this.random.randomInt(1, this.base + 1);
 	},
 	
-	/** aleatories.Dice.distribution():
-		Values from 1 to this.base, with uniform probabilities.
+	/** A Dice distribution has all values from 1 to `base`, with equal
+	probabilities for all.
 	*/
 	distribution: function distribution() {
 		return this.__distribution__ || (this.__distribution__ = (function (base) {
@@ -1609,14 +1601,17 @@ aleatories.Dice = declare(Aleatory, {
 			}).toArray();
 		})(this.base));
 	}		
-}); // declare Dice.
+}); //// declare Dice.
 
 
-/** Base class for checkerboards based on several different data structures.
+/** ## Class `Checkerboard`
+
+Base class for checkerboards representations based on several different data 
+structures.
 */
-boards.Checkerboard = declare({
-	/** new boards.Checkerboard(height, width):
-		The base constructor only sets the board dimensions.
+var Checkerboard = utils.Checkerboard = declare({
+	/** The base constructor only sets the board dimensions: `height` and 
+	`width`.
 	*/
 	constructor: function Checkerboard(height, width) {
 		if (!isNaN(height)) {
@@ -1627,16 +1622,15 @@ boards.Checkerboard = declare({
 		}
 	},
 	
-	/** boards.Checkerboard.emptySquare=null:
-		The value of empty squares.
+	/** The value for empty squares is `emptySquare`. This will be used in 
+	functions walking and traversing the board. 
 	*/
 	emptySquare: null,
 	
-// Board information. //////////////////////////////////////////////////////////
+	// ### Board information ###################################################
 	
-	/** boards.Checkerboard.isValidCoord(coord):
-		Returns true if coord is an array with two numbers between this board's
-		dimensions.
+	/** All coordinates are represented by `[row, column]` arrays. To check if
+	a coordinate is inside the board, use `isValidCoord(coord)`.
 	*/
 	isValidCoord: function isValidCoord(coord) {
 		return Array.isArray(coord) && !isNaN(coord[0]) && !isNaN(coord[1])
@@ -1644,9 +1638,16 @@ boards.Checkerboard = declare({
 			&& coord[1] >= 0 && coord[1] < this.width;
 	},
 	
-	/** boards.Checkerboard.horizontals():
-		Returns an iterable of all the horizontal lines (rows) in the board, as
-		a list of coordinates.
+	/** Method `square(coord, outside)` should get the contents at a given 
+	coordinate. If the coordinate is off the board, `outside` must be returned.
+	This method is abstract so it must be overriden in subclasses.
+	*/
+	square: unimplemented('utils.Checkerboard', 'square'),
+	
+	/** Many games must deal with line configurations of pieces. The following
+	methods help with this kind of logic. Each line is a sequence of coordinates
+	in the board.
+	+ `horizontals()`: All the horizontal lines (rows).
 	*/
 	horizontals: function horizontals() {
 		var width = this.width;
@@ -1657,9 +1658,8 @@ boards.Checkerboard = declare({
 		});
 	},
 	
-	/** boards.Checkerboard.verticals():
-		Returns an iterable of all the vertical lines (columns) in the board, as
-		a list of coordinates.
+	/** 
+	+ `verticals()`: All the vertical lines (columns).
 	*/
 	verticals: function verticals() {
 		var height = this.height;
@@ -1670,17 +1670,17 @@ boards.Checkerboard = declare({
 		});
 	},
 	
-	/** boards.Checkerboard.orthogonals():
-		Returns an iterable of all the horizontal (rows) and vertical lines 
-		(columns) in the board, as a list of coordinates.
+	/** 
+	+ `orthogonals()`: All the horizontal (rows) and vertical lines (columns) in 
+		the board.
 	*/
 	orthogonals: function orthogonals() {
 		return this.horizontals().chain(this.verticals());
 	},
 	
-	/** boards.Checkerboard.positiveDiagonals():
-		Returns an iterable of all the positive diagonals lines (those where 
-		row = k + column), as a list of coordinates.
+	/**
+	+ `positiveDiagonals()`: All the positive diagonals lines (those where 
+		row = k + column).
 	*/
 	positiveDiagonals: function positiveDiagonals() {
 		var width = this.width, 
@@ -1695,9 +1695,9 @@ boards.Checkerboard = declare({
 		});
 	},
 	
-	/** boards.Checkerboard.negativeDiagonals():
-		Returns an iterable of all the negative diagonals lines (those where 
-		row = k - column), as a list of coordinates.
+	/** 
+	+ `negativeDiagonals()`: All the negative diagonals lines (those where 
+		row = k - column).
 	*/
 	negativeDiagonals: function negativeDiagonals() {
 		var width = this.width, 
@@ -1712,25 +1712,24 @@ boards.Checkerboard = declare({
 		});
 	},
 	
-	/** boards.Checkerboard.diagonals():
-		Returns an iterable of all the diagonal lines in the board, as a list 
-		of coordinates.
+	/**
+	+ `diagonals()`: All the diagonal lines in the board.
 	*/
 	diagonals: function diagonals() {
 		return this.positiveDiagonals().chain(this.negativeDiagonals());
 	},
 	
-	/** boards.Checkerboard.lines():
-		Returns an iterable of all the horizontal, vertical and diagonal lines 
-		in the board, as a list of coordinates.
+	/**
+	+ `lines()`: All the horizontal, vertical and diagonal lines in the board.
 	*/
 	lines: function lines() {
 		return this.orthogonals().chain(this.diagonals());
 	},
 	
-	/** boards.Checkerboard.sublines(lines, length):
-		Returns an iterable of all sublines of the given lines with the given 
-		length.
+	/** The previous methods return the whole lines. Some times the game logic 
+	demands checking lines of a certain length. These are sublines, and can be
+	calculated by `sublines(lines, length)`. It obviously filters lines which
+	are shorter than length.
 	*/
 	sublines: function sublines(lines, length) {
 		return iterable(lines).map(function (line) {
@@ -1744,17 +1743,10 @@ boards.Checkerboard = declare({
 		}).flatten();
 	},
 	
-	/** abstract boards.Checkerboard.square(coord, outside):
-		Returns the content of the square at the given coordinate ([row, 
-		column]), or outside if the coordinate is not inside the board.
-	*/
-	square: function square(coord, outside) {
-		throw new Error('boards.Checkerboard.square() is not implemented. Please override.');
-	},
-	
-	/** boards.Checkerboard.walk(coord, delta):
-		Returns an iterable with coordinates ([row, column]) from the given 
-		coord and on, adding delta's row and column until going off the board.
+	/** A walk is a sequence of coordinates in the board that start at a given
+	point and advances in a certain direction. The `walk(coord, delta)` method
+	returns an iterable with coordinates from `coord` and on, adding `delta`'s 
+	row and column until going off the board.
 	*/
 	walk: function walk(coord, delta) {
 		var board = this;
@@ -1773,8 +1765,8 @@ boards.Checkerboard = declare({
 		});
 	},
 	
-	/** boards.Checkerboard.walks(coord, deltas):
-		Returns all walks from the given coord with each given delta.
+	/** Convenient method `walks(coord, deltas)` can be used to get many walks
+	from the same origin.
 	*/
 	walks: function walks(coord, deltas) {
 		var board = this;
@@ -1783,20 +1775,23 @@ boards.Checkerboard = declare({
 		});
 	},
 	
-// Board modification. /////////////////////////////////////////////////////////
+	// ### Board modification ##################################################
 
-	/** abstract boards.Checkerboard.place(coord, value):
-		Places value at coord, replacing whatever was there. Returns a new 
-		instance of Checkerboard.
+	/** Game states must not be modifiable, else game search algorithms may fail
+	or be extremely complicated. Then, all board altering method in 
+	`Checkerboard` must return a new board instance and leave this instance 
+	unspoiled.
+	
+	The first function to change the board is `place(coord, value)`. It places 
+	the value at the given coordinate, replacing whatever was there. Not 
+	implemented in the base class.
 	*/
-	place: function place(coord, value) {
-		throw new Error('boards.Checkerboard.place() is not implemented. Please override.');
-	},
+	place: unimplemented('utils.Checkerboard', 'place'),
 
-	/** boards.Checkerboard.move(coordFrom, coordTo, valueLeft=this.emptySquare):
-		Moves the contents at coordFrom to coordTo. Whatever coordTo is 
-		replaced, and at coordFrom valueLeft is placed. Returns a new instance 
-		of Checkerboard.
+	/** Another usual operation is `move(coordFrom, coordTo, valueLeft)`.
+	It moves the contents at `coordFrom` to `coordTo`. Whatever is at `coordTo`
+	gets replaced, and `valueLeft` is placed at `coordFrom`. If `valueLeft` is 
+	undefined, `emptySquare` is used.
 	*/
 	move: function move(coordFrom, coordTo, valueLeft) {
 		return this
@@ -1804,9 +1799,8 @@ boards.Checkerboard = declare({
 			.place(coordFrom, typeof valueLeft === 'undefined' ? this.emptySquare : valueLeft);
 	},
 	
-	/** boards.Checkerboard.swap(coordFrom, coordTo):
-		Moves the contents at coordFrom to coordTo, and viceversa. Returns a new
-		instance of Checkerboard.
+	/** The next board operation is `swap(coordFrom, coordTo)`, which moves the 
+	contents at `coordFrom` to `coordTo`, and viceversa.
 	*/
 	swap: function swap(coordFrom, coordTo) {
 		var valueTo = this.square(coordTo);
@@ -1814,39 +1808,47 @@ boards.Checkerboard = declare({
 			.place(coordTo, this.square(coordFrom))
 			.place(coordFrom, valueTo);
 	}
-}); // declare boards.Checkerboard.
+}); //// declare utils.Checkerboard.
 
 
-/** Checkerboards represented by simple strings.
+/** ## Class `CheckerboardFromString`
+
+[`Checkerboard`](Checkerboard.html) implementation represented by a simple 
+string (one character per square).
 */
-boards.CheckerboardFromString = declare(boards.Checkerboard, {
-	/** new boards.CheckerboardFromString(height, width, string, emptySquare='.'):
-		A checkerboard represented by a string, each character being a square.
+var CheckerboardFromString = utils.CheckerboardFromString = declare(Checkerboard, {
+	/** The constructor takes `height`, `width`, the whole board content in a 
+	`string`, and optionally the empty square character.
 	*/
 	constructor: function CheckerboardFromString(height, width, string, emptySquare) {
-		boards.Checkerboard.call(this, height, width);
+		Checkerboard.call(this, height, width);
 		if (emptySquare) {
 			this.emptySquare = (emptySquare + this.emptySquare).charAt(0);
 		}
-		/** boards.CheckerboardFromString.string:
-			The string representation of the board.
-		*/
 		if (string && string.length !== height * width) {
 			throw new Error('Given string '+ JSON.stringify(string) +' does not match board dimensions.');
 		}
 		this.string = string || this.emptySquare.repeat(height * width);
 	},
 	
-// Board information. //////////////////////////////////////////////////////////
-	
-	/** boards.CheckerboardFromString.emptySquare='.':
-		The character used to represent empty squares.
+	/** The `emptySquare` in `CheckerboardFromString` is `'.'` by default.
 	*/
 	emptySquare: '.',	
 	
-	/** boards.CheckerboardFromString.square(coord, outside=undefined):
-		Return the character at (row * width + column) if the coordinate is 
-		inside the board. Else returns the value of the outside argument.
+	/** The default string conversion of `CheckerboardFromString` prints the 
+	board one line by row, last row on top.
+	*/
+	toString: function toString() {
+		var string = this.string, height = this.height, width = this.width;
+		return Iterable.range(height).map(function (i) {
+			return string.substr((height - i - 1) * width, width);
+		}).join('\n');
+	},
+	
+	// ### Board modification ##################################################
+	
+	/** The `square(coord, outside)` return the character at `(row * width + 
+	column)` if the coordinate is inside the board. Else returns `outside`.
 	*/
 	square: function square(coord, outside) {
 		var row = coord[0], 
@@ -1859,9 +1861,9 @@ boards.CheckerboardFromString = declare(boards.Checkerboard, {
 		}
 	},
 	
-	/** boards.CheckerboardFromString.place(coord, value):
-		Returns a new board with the character at the given coord changed to
-		value.
+	/** A `place(coord, value)` means only changing one character in the
+	underlying string. The `value` must be a character, and `coord` a point
+	inside the board.
 	*/
 	place: function place(coord, value) {
 		raiseIf(!this.isValidCoord(coord), "Invalid coordinate ", coord, ".");
@@ -1871,19 +1873,12 @@ boards.CheckerboardFromString = declare(boards.Checkerboard, {
 		return new this.constructor(this.height, this.width, newString, this.emptySquare);
 	},
 	
-	/** boards.CheckerboardFromString.toString():
-		Prints the board one line by row, last row on top.
-	*/
-	toString: function toString() {
-		var string = this.string, height = this.height, width = this.width;
-		return Iterable.range(height).map(function (i) {
-			return string.substr((height - i - 1) * width, width);
-		}).join('\n');
-	},
+	// ### Board information ###################################################
 	
-	/** boards.CheckerboardFromString.asString(line):
-		Takes a line (iterable of coordinates) and returns a string with a
-		character for each square.
+	/** Since square contents in `CheckerboardFromString` are just characters,
+	lines can be thought as strings. The method `asString(line)` takes an
+	iterable of coordinates and returns a string of the characters found at each
+	point in the sequence.
 	*/
 	asString: function asString(line) {
 		var board = this;
@@ -1892,9 +1887,8 @@ boards.CheckerboardFromString = declare(boards.Checkerboard, {
 		}).join('');
 	},
 	
-	/** boards.CheckerboardFromString.asStrings(lines):
-		Takes an iterable of lines (each being an iterable of coordinates) and 
-		returns an iterable of strings for each line.
+	/** The method `asStrings(lines)` can be used to easily map `asString(line)`
+	to a sequence of lines, like the one calculated by `lines()`.
 	*/
 	asStrings: function asStrings(lines) {
 		var board = this;
@@ -1903,13 +1897,15 @@ boards.CheckerboardFromString = declare(boards.Checkerboard, {
 		});
 	},
 	
-	/** boards.CheckerboardFromString.asRegExp(line, insideLine, outsideLine='.'):
-		Takes a line (iterable of coordinates) and returns a string with a 
-		regular expression. This may be used to tests the whole board string for
-		the line.
-		Warning! Both insideLine and outsideLine must be simple regular 
-		expressions (e.g. a character or atom). If more complex expressions are
-		required they must be provided between parenthesis.
+	/** Many games based on board configurations (like connection games) have 
+	patterns that can be expressed with regular expressions. The method 
+	`asRegExp(line, insideLine, outsideLine)` takes a line (iterable of 
+	coordinates) and returns a string with a regular expression. This may be 
+	used to tests the whole board string for the line.
+	
+	_Warning!_ Both `insideLine` and `outsideLine` must be simple regular 
+	expressions (e.g. a character or atom). If more complex expressions are
+	required they must be provided between parenthesis.
 	*/
 	asRegExp: function asRegExp(line, insideLine, outsideLine) {
 		outsideLine = outsideLine || '.';
@@ -1933,10 +1929,10 @@ boards.CheckerboardFromString = declare(boards.Checkerboard, {
 		return result;
 	},
 	
-	/** boards.CheckerboardFromString.asRegExps(lines, insideLine, outsideLine='.'):
-		Takes a sequence of lines (each a sequence of coordinates) and returns a
-		string with a regular expression, as the union of the regular expression
-		for each line.
+	/** The method `asRegExps(lines)` can be used to easily map `asRegExp(line)`
+	to a sequence of lines. All regular expressions are joined as a union (`|`).
+	Use with caution, because the whole regular expression can get very big even
+	with small boards.
 	*/
 	asRegExps: function asRegExps(lines, insideLine, outsideLine) {
 		var board = this;
@@ -1944,7 +1940,7 @@ boards.CheckerboardFromString = declare(boards.Checkerboard, {
 			return board.asRegExp(line, insideLine, outsideLine);
 		}).join('|');
 	}
-}); // declare boards.CheckerboardFromString
+}); // declare utils.CheckerboardFromString
 
 
 /** Component for scanning a game's tree.
@@ -2232,8 +2228,8 @@ games.ConnectionGame = declare(Game, {
 		/** games.ConnectionGame.board:
 			Instance of boards.CheckerboardFromString.
 		*/
-		this.board = (board instanceof boards.CheckerboardFromString) ? board :
-			new boards.CheckerboardFromString(this.height, this.width, 
+		this.board = (board instanceof CheckerboardFromString) ? board :
+			new CheckerboardFromString(this.height, this.width, 
 				(board || '.'.repeat(this.height * this.width)) +''
 			);
 	},
@@ -2251,7 +2247,7 @@ games.ConnectionGame = declare(Game, {
 		function __lines__(height, width, lineLength) {
 			var key = height +'x'+ width +'/'+ lineLength;
 			if (!CACHE.hasOwnProperty(key)) {
-				var board = new boards.CheckerboardFromString(height, width, '.'.repeat(height * width));
+				var board = new CheckerboardFromString(height, width, '.'.repeat(height * width));
 				CACHE[key] = board.lines().map(function (line) {
 					return line.toArray();
 				}, function (line) {
@@ -2531,7 +2527,7 @@ games.TicTacToe = declare(Game, {
 	
 	'': function () { // Class initializer. ////////////////////////////////////
 		// Build the regular expressions used in the victory test.
-		var board3x3 = new boards.CheckerboardFromString(3, 3, '_'.repeat(9)),
+		var board3x3 = new CheckerboardFromString(3, 3, '_'.repeat(9)),
 			lines = board3x3.sublines(board3x3.lines(), 3);
 		this.prototype.WIN_X = new RegExp(board3x3.asRegExps(lines, 'X', '.'));
 		this.prototype.WIN_O = new RegExp(board3x3.asRegExps(lines, 'O', '.'));
@@ -3012,20 +3008,6 @@ games.ConnectFour = declare(games.ConnectionGame, {
 	*/
 	lineLength: 4,
 	
-	/** new games.ConnectFour(activePlayer=players[0], board=<empty board>):
-		Builds a new game state for Connect Four.
-	*/
-	constructor: function ConnectFour(activePlayer, board) {
-		Game.call(this, activePlayer);
-		/** games.ConnectFour.board:
-			ConnectFour board as a string.
-		*/
-		this.board = (board instanceof boards.CheckerboardFromString) ? board :
-			new boards.CheckerboardFromString(this.height, this.width, 
-				(board || '.'.repeat(this.height * this.width)) +''
-			);
-	},
-
 	name: 'ConnectFour',
 	
 	/** games.ConnectFour.players=['Yellow', 'Red']:
