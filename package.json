@@ -31,6 +31,7 @@
 		"karma-chrome-launcher": "~0.1.3",
 		"karma-firefox-launcher": "~0.1.3",
 		"karma-ie-launcher": "~0.1.4",
-		"karma-opera-launcher": "~0.1.0"
+		"karma-opera-launcher": "~0.1.0",
+		"karma-sourcemap-loader": "~0.1"
 	}	
 }
