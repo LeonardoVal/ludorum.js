@@ -1,4 +1,4 @@
-﻿/** ## Class `ludorum.Match`
+﻿/** ## Class `Match`
 
 A match is a controller for a game, managing player decisions, handling the flow
 of the turns between the players by following the game's logic.

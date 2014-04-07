@@ -17,7 +17,44 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
         "projectPath": "README.md",
         "targetPath": "index",
         "pageTitle": "index",
-        "title": "index"
+        "firstHeader": {
+          "type": "heading",
+          "data": {
+            "level": 1,
+            "title": "﻿Ludorum.js",
+            "slug": "-ludorumjs",
+            "isFileHeader": true
+          },
+          "depth": 1,
+          "children": [
+            {
+              "type": "heading",
+              "data": {
+                "level": 2,
+                "title": "License",
+                "slug": "license"
+              },
+              "depth": 2
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 2,
+                "title": "Development",
+                "slug": "development"
+              },
+              "depth": 2
+            }, {
+              "type": "heading",
+              "data": {
+                "level": 2,
+                "title": "Contact",
+                "slug": "contact"
+              },
+              "depth": 2
+            }
+          ]
+        },
+        "title": "﻿Ludorum.js"
       },
       "depth": 1,
       "outline": [
@@ -292,56 +329,6 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
                 "targetPath": "src\\aleatories\\Dice",
                 "pageTitle": "src\\aleatories\\Dice",
                 "title": "Dice"
-              },
-              "depth": 3,
-              "outline": []
-            }
-          ]
-        }, {
-          "type": "folder",
-          "data": {
-            "path": "src/boards",
-            "title": "boards"
-          },
-          "depth": 2,
-          "children": [
-            {
-              "type": "file",
-              "data": {
-                "language": {
-                  "nameMatchers": [".js"],
-                  "pygmentsLexer": "javascript",
-                  "multiLineComment": ["/*", "*", "*/"],
-                  "singleLineComment": ["//"],
-                  "ignorePrefix": "}",
-                  "foldPrefix": "^",
-                  "name": "JavaScript"
-                },
-                "sourcePath": "C:\\Prog\\creatartis\\svn.creatartis.com\\javascript\\ludorum\\src\\boards\\Checkerboard.js",
-                "projectPath": "src\\boards\\Checkerboard.js",
-                "targetPath": "src\\boards\\Checkerboard",
-                "pageTitle": "src\\boards\\Checkerboard",
-                "title": "Checkerboard"
-              },
-              "depth": 3,
-              "outline": []
-            }, {
-              "type": "file",
-              "data": {
-                "language": {
-                  "nameMatchers": [".js"],
-                  "pygmentsLexer": "javascript",
-                  "multiLineComment": ["/*", "*", "*/"],
-                  "singleLineComment": ["//"],
-                  "ignorePrefix": "}",
-                  "foldPrefix": "^",
-                  "name": "JavaScript"
-                },
-                "sourcePath": "C:\\Prog\\creatartis\\svn.creatartis.com\\javascript\\ludorum\\src\\boards\\CheckerboardFromString.js",
-                "projectPath": "src\\boards\\CheckerboardFromString.js",
-                "targetPath": "src\\boards\\CheckerboardFromString",
-                "pageTitle": "src\\boards\\CheckerboardFromString",
-                "title": "CheckerboardFromString"
               },
               "depth": 3,
               "outline": []
@@ -846,6 +833,82 @@ f.event={add:function(a,c,d,e,g){var h,i,j,k,l,m,n,o,p,q,r,s;if(!(a.nodeType===3
           "depth": 2,
           "children": [
             {
+              "type": "file",
+              "data": {
+                "language": {
+                  "nameMatchers": [".js"],
+                  "pygmentsLexer": "javascript",
+                  "multiLineComment": ["/*", "*", "*/"],
+                  "singleLineComment": ["//"],
+                  "ignorePrefix": "}",
+                  "foldPrefix": "^",
+                  "name": "JavaScript"
+                },
+                "sourcePath": "C:\\Prog\\creatartis\\svn.creatartis.com\\javascript\\ludorum\\src\\utils\\Checkerboard.js",
+                "projectPath": "src\\utils\\Checkerboard.js",
+                "targetPath": "src\\utils\\Checkerboard",
+                "pageTitle": "src\\utils\\Checkerboard",
+                "title": "Checkerboard"
+              },
+              "depth": 3,
+              "outline": [
+                {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Board information",
+                    "slug": "board-information"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Board modification",
+                    "slug": "board-modification"
+                  },
+                  "depth": 3
+                }
+              ]
+            }, {
+              "type": "file",
+              "data": {
+                "language": {
+                  "nameMatchers": [".js"],
+                  "pygmentsLexer": "javascript",
+                  "multiLineComment": ["/*", "*", "*/"],
+                  "singleLineComment": ["//"],
+                  "ignorePrefix": "}",
+                  "foldPrefix": "^",
+                  "name": "JavaScript"
+                },
+                "sourcePath": "C:\\Prog\\creatartis\\svn.creatartis.com\\javascript\\ludorum\\src\\utils\\CheckerboardFromString.js",
+                "projectPath": "src\\utils\\CheckerboardFromString.js",
+                "targetPath": "src\\utils\\CheckerboardFromString",
+                "pageTitle": "src\\utils\\CheckerboardFromString",
+                "title": "CheckerboardFromString"
+              },
+              "depth": 3,
+              "outline": [
+                {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Board modification",
+                    "slug": "board-modification"
+                  },
+                  "depth": 3
+                }, {
+                  "type": "heading",
+                  "data": {
+                    "level": 3,
+                    "title": "Board information",
+                    "slug": "board-information"
+                  },
+                  "depth": 3
+                }
+              ]
+            }, {
               "type": "file",
               "data": {
                 "language": {

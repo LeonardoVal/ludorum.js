@@ -1,4 +1,4 @@
-﻿/** ## Class `ludorum.Tournament`
+﻿/** ## Class `Tournament`
 
 A tournament is a set of matches played between many players. The whole contest 
 ranks the participants according to the result of the matches. This is an 
@@ -126,3 +126,8 @@ var Tournament = exports.Tournament = declare({
 		this.logger && this.logger.info('Tournament ends for game ', game.name, ':\n', this.statistics, '\n');
 	}
 }); // declare Tournament
+
+/** The namespace `ludorum.tournaments` holds several contest types implemented 
+as Tournament subtypes.
+*/
+var tournaments = exports.tournaments = {};

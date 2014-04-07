@@ -31,34 +31,7 @@
 	};
 	exports.__init__.dependencies = [basis];
 
-	/** games:
-		Bundle of game implementations (as Game subclasses) and utility definitions.
-	*/
-	var games = exports.games = {};
-
-	/** players:
-		Bundle of different kinds of players: artificial intelligences, user 
-		interface proxies and others.
-	*/
-	var players = exports.players = {};
-
-	/** tournaments:
-		Several contest types implementated as Tournament subtypes.
-	*/
-	var tournaments = exports.tournaments = {};
-
-	/** aleatories:
-		Bundle of random game states (i.e. Aleatory subclasses) and related 
-		definitions.
-	*/
-	var aleatories = exports.aleatories = {};
-
-	/** boards:
-		Helpers for handling game boards.
-	*/
-	var boards = exports.boards = {};
-
-	/** utils:
-		Miscellaneous classes, functions and definitions. 
+	/** The namespace `ludorum.utils` contains miscellaneous classes, functions 
+	and definitions.
 	*/
 	var utils = exports.utils = {};

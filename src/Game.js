@@ -1,4 +1,4 @@
-﻿/** ## Class `ludorum.Game`
+﻿/** ## Class `Game`
 
 The class `ludorum.Game` is the base type for all games.
 */
@@ -279,6 +279,11 @@ var Game = exports.Game = declare({
 		}
 	}
 }); // declare Game.
+	
+/** The namespace `ludorum.games` contains all game implementations (as Game 
+subclasses) provided by this library.
+*/
+var games = exports.games = {};
 	
 // Serialized simultaneous games. //////////////////////////////////////////////
 	

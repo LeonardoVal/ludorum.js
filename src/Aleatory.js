@@ -1,4 +1,4 @@
-﻿/** ## Class `ludorum.Aleatory`
+﻿/** ## Class `Aleatory`
 
 Aleatories are representations of intermediate game states that depend on some 
 form of randomness. `Aleatory` is an abstract class from which different means
@@ -49,3 +49,8 @@ var Aleatory = exports.Aleatory = declare({
 	*/
 	distribution: unimplemented("Aleatory", "distribution")
 }); // declare Aleatory.
+
+/** The namespace `ludorum.aleatories` is a bundle of random game states (i.e. 
+Aleatory subclasses) and related definitions.
+*/
+var aleatories = exports.aleatories = {};
