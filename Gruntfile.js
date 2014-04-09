@@ -66,13 +66,14 @@ module.exports = function(grunt) {
 				}
 			}
 		},
-		groc: { ////////////////////////////////////////////////////////////////
-			build: ["src/**/*.js", "README.md"],
-			options: {
-				"out": "docs/",
-				"style": "Default",
-				"silent": true,
-				"repository-url": "<%= pkg.repository.url %>"
+		docker: { ////////////////////////////////////////////////////////////////
+			build: {
+				src: ["src/**/*.js", "README.md"],
+				dest: "docs/docker",
+				options: {
+					colourScheme: 'borland',
+					ignoreHidden: true
+				}
 			}
 		}
 	});
@@ -81,11 +82,11 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-concat-sourcemap');
 	grunt.loadNpmTasks('grunt-karma');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
-	grunt.loadNpmTasks('grunt-groc');
+	grunt.loadNpmTasks('grunt-docker');
 
 // Register tasks. /////////////////////////////////////////////////////////////
 	grunt.registerTask('build', 
-		['concat_sourcemap:build', 'karma:build', 'uglify:build', 'groc:build']);
+		['concat_sourcemap:build', 'karma:build', 'uglify:build', 'docker:build']);
 	grunt.registerTask('default', 
 		['build']);
 	grunt.registerTask('test', 
