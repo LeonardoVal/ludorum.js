@@ -32,6 +32,8 @@ var sourceFiles = [ 'src/__prologue__.js',
 
 // Init config. ////////////////////////////////////////////////////////////////
 module.exports = function(grunt) {
+	grunt.file.defaultEncoding = 'utf8';
+// Init config. ////////////////////////////////////////////////////////////////
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
 		concat_sourcemap: { ////////////////////////////////////////////////////
@@ -72,24 +74,20 @@ module.exports = function(grunt) {
 				dest: "docs/docker",
 				options: {
 					colourScheme: 'borland',
-					ignoreHidden: true
+					ignoreHidden: true,
+					exclude: 'src/__prologue__.js,src/__epilogue__.js'
 				}
 			}
 		}
 	});
-
 // Load tasks. /////////////////////////////////////////////////////////////////
 	grunt.loadNpmTasks('grunt-concat-sourcemap');
 	grunt.loadNpmTasks('grunt-karma');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-docker');
-
 // Register tasks. /////////////////////////////////////////////////////////////
-	grunt.registerTask('build', 
-		['concat_sourcemap:build', 'karma:build', 'uglify:build', 'docker:build']);
-	grunt.registerTask('default', 
-		['build']);
-	grunt.registerTask('test', 
-		['concat_sourcemap:build', 'karma:build', 'karma:chrome', 'karma:firefox', 
-		'karma:opera', 'karma:iexplore']);
+	grunt.registerTask('compile', ['concat_sourcemap:build', 'uglify:build']); 
+	grunt.registerTask('build', ['concat_sourcemap:build', 'karma:build', 'uglify:build', 'docker:build']);
+	grunt.registerTask('test', ['concat_sourcemap:build', 'karma:build', 'karma:chrome', 'karma:firefox', 'karma:opera', 'karma:iexplore']);
+	grunt.registerTask('default', ['build']);
 };

@@ -722,7 +722,7 @@ var Tournament = exports.Tournament = declare({
 			return Future.then(tournament.__advance__(), function (match) {
 				if (match) {
 					tournament.beforeMatch(match);
-					return match.run().then(function (match) {
+					return tournament.__runMatch__(match).then(function (match) {
 						tournament.account(match);
 						tournament.afterMatch(match);
 						return match;
@@ -732,6 +732,11 @@ var Tournament = exports.Tournament = declare({
 				}
 			});
 		}).then(this.onEnd.bind(this));
+	},
+	
+	/**TODO */
+	__runMatch__: function __runMatch__(match) {
+		return match.run();
 	},
 	
 	/** Tournaments gather information from the played matches using their
@@ -753,13 +758,13 @@ var Tournament = exports.Tournament = declare({
 		iterable(match.players).forEach(function (p) { // Player statistics.
 			var role = p[0],
 				player = p[1],
-				playerResult = results[p[0]],
-				keys = ['game:'+ game.name, 'role:'+ role, 'player:'+ player.name];
-			stats.add({key:'results', game:game.name, role:role, player:player.name}, playerResult);
+				playerResult = results[p[0]];
+			stats.add({key:'results', game:game.name, role:role, player:player.name}, 
+				playerResult);
 			stats.add({key:(playerResult > 0 ? 'victories' : playerResult < 0 ? 'defeats' : 'draws'),
 				game:game.name, role:role, player:player.name}, playerResult);
-			//FIXME This may not be accurate if the game has random variables.
-			stats.add({key:'length', game:game.name, role:role, player:player.name}, match.ply()); 
+			stats.add({key:'length', game:game.name, role:role, player:player.name}, 
+				match.ply()); //FIXME This may not be accurate if the game has random variables.
 			match.history.forEach(function (entry) {
 				if (typeof entry.moves === 'function') {
 					var moves = entry.moves();	
@@ -1641,11 +1646,27 @@ var Checkerboard = utils.Checkerboard = declare({
 			&& coord[1] >= 0 && coord[1] < this.width;
 	},
 	
+	/** Method `coordinates()` returns the sequence of the board's valid 
+	positions.
+	*/
+	coordinates: function coordinates() {
+		return Iterable.range(this.height).product(Iterable.range(this.width));
+	},
+	
 	/** Method `square(coord, outside)` should get the contents at a given 
 	coordinate. If the coordinate is off the board, `outside` must be returned.
 	This method is abstract so it must be overriden in subclasses.
 	*/
 	square: unimplemented('utils.Checkerboard', 'square'),
+	
+	/** A square is assumed to be empty when its value is equal to 
+	`emptySquare`.
+	*/
+	isEmptySquare: function isEmptySquare(coord) {
+		return this.square(coord) === this.emptySquare;
+	},
+	
+	// #### Lines ##############################################################
 	
 	/** Many games must deal with line configurations of pieces. The following
 	methods help with this kind of logic. Each line is a sequence of coordinates
@@ -1746,6 +1767,8 @@ var Checkerboard = utils.Checkerboard = declare({
 		}).flatten();
 	},
 	
+	// #### Walks ##############################################################
+	
 	/** A walk is a sequence of coordinates in the board that start at a given
 	point and advances in a certain direction. The `walk(coord, delta)` method
 	returns an iterable with coordinates from `coord` and on, adding `delta`'s 
@@ -1778,8 +1801,17 @@ var Checkerboard = utils.Checkerboard = declare({
 		});
 	},
 	
+	/** Frequently used deltas for walks are available at `DIRECTIONS`.
+	*/
+	DIRECTIONS: {
+		HORIZONTAL: [[0,-1], [0,+1]],
+		VERTICAL:   [[-1,0], [+1,0]], 
+		ORTHOGONAL: [[0,-1], [0,+1], [-1,0], [+1,0]],
+		DIAGONAL:   [[-1,-1], [-1,+1], [+1,-1], [+1,+1]],
+		EVERY:      [[0,-1], [0,+1], [-1,0], [+1,0], [-1,-1], [-1,+1], [+1,-1], [+1,+1]]
+	},
+	
 	// ### Board modification ##################################################
-
 	/** Game states must not be modifiable, else game search algorithms may fail
 	or be extremely complicated. Then, all board altering method in 
 	`Checkerboard` must return a new board instance and leave this instance 
@@ -1848,8 +1880,7 @@ var CheckerboardFromString = utils.CheckerboardFromString = declare(Checkerboard
 		}).join('\n');
 	},
 	
-	// ### Board modification ##################################################
-	
+	// ### Board information ###################################################
 	/** The `square(coord, outside)` return the character at `(row * width + 
 	column)` if the coordinate is inside the board. Else returns `outside`.
 	*/
@@ -1864,20 +1895,7 @@ var CheckerboardFromString = utils.CheckerboardFromString = declare(Checkerboard
 		}
 	},
 	
-	/** A `place(coord, value)` means only changing one character in the
-	underlying string. The `value` must be a character, and `coord` a point
-	inside the board.
-	*/
-	place: function place(coord, value) {
-		raiseIf(!this.isValidCoord(coord), "Invalid coordinate ", coord, ".");
-		value = (value + this.emptySquare).charAt(0);
-		var i = coord[0] * this.width + coord[1],
-			newString = this.string.substr(0, i) + value + this.string.substr(i + 1);
-		return new this.constructor(this.height, this.width, newString, this.emptySquare);
-	},
-	
-	// ### Board information ###################################################
-	
+	// #### Lines ##############################################################
 	/** Since square contents in `CheckerboardFromString` are just characters,
 	lines can be thought as strings. The method `asString(line)` takes an
 	iterable of coordinates and returns a string of the characters found at each
@@ -1942,6 +1960,20 @@ var CheckerboardFromString = utils.CheckerboardFromString = declare(Checkerboard
 		return lines.map(function (line) {
 			return board.asRegExp(line, insideLine, outsideLine);
 		}).join('|');
+	},
+	
+	// ### Board modification ##################################################
+	
+	/** A `place(coord, value)` means only changing one character in the
+	underlying string. The `value` must be a character, and `coord` a point
+	inside the board.
+	*/
+	place: function place(coord, value) {
+		raiseIf(!this.isValidCoord(coord), "Invalid coordinate ", coord, ".");
+		value = (value + this.emptySquare).charAt(0);
+		var i = coord[0] * this.width + coord[1],
+			newString = this.string.substr(0, i) + value + this.string.substr(i + 1);
+		return new this.constructor(this.height, this.width, newString, this.emptySquare);
 	}
 }); // declare utils.CheckerboardFromString
 
