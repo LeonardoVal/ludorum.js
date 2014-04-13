@@ -89,6 +89,20 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 			expect(board3x3.swap.bind(board3x3, [0,0], [-1, 0])).toThrow();
 			expect(board3x3.swap.bind(board3x3, [0,0], [0, 9])).toThrow();
 		}); // swaps pieces properly
+		
+		it("walks properly", function () {
+			var board3x3 = new CheckerboardFromString(3, 3, '123456789');
+			expect(board3x3.asString(board3x3.walk([0,0], [+1,+1]))).toBe('159');
+			expect(board3x3.asString(board3x3.walk([1,1], [-1,+1]))).toBe('53');
+			expect(board3x3.asString(board3x3.walk([2,2], [-1,-1]))).toBe('951');
+			expect(board3x3.asString(board3x3.walk([2,2], [+1,+1]))).toBe('9');
+			expect(board3x3.asString(board3x3.walk([3,3], [+1,+1]))).toBe('');
+			
+			var walks = board3x3.asStrings(board3x3.walks([1,1], [[+1,+1],[-1,-1]]));
+			expect(Array.isArray(walks)).toBe(true);
+			expect(walks[0]).toBe('59');
+			expect(walks[1]).toBe('51');
+		}); // walks properly
 	}); //// describe CheckerboardFromString.
 
 }); //// define.
