@@ -32,8 +32,7 @@ var CheckerboardFromString = utils.CheckerboardFromString = declare(Checkerboard
 		}).join('\n');
 	},
 	
-	// ### Board modification ##################################################
-	
+	// ### Board information ###################################################
 	/** The `square(coord, outside)` return the character at `(row * width + 
 	column)` if the coordinate is inside the board. Else returns `outside`.
 	*/
@@ -48,20 +47,7 @@ var CheckerboardFromString = utils.CheckerboardFromString = declare(Checkerboard
 		}
 	},
 	
-	/** A `place(coord, value)` means only changing one character in the
-	underlying string. The `value` must be a character, and `coord` a point
-	inside the board.
-	*/
-	place: function place(coord, value) {
-		raiseIf(!this.isValidCoord(coord), "Invalid coordinate ", coord, ".");
-		value = (value + this.emptySquare).charAt(0);
-		var i = coord[0] * this.width + coord[1],
-			newString = this.string.substr(0, i) + value + this.string.substr(i + 1);
-		return new this.constructor(this.height, this.width, newString, this.emptySquare);
-	},
-	
-	// ### Board information ###################################################
-	
+	// #### Lines ##############################################################
 	/** Since square contents in `CheckerboardFromString` are just characters,
 	lines can be thought as strings. The method `asString(line)` takes an
 	iterable of coordinates and returns a string of the characters found at each
@@ -126,5 +112,19 @@ var CheckerboardFromString = utils.CheckerboardFromString = declare(Checkerboard
 		return lines.map(function (line) {
 			return board.asRegExp(line, insideLine, outsideLine);
 		}).join('|');
+	},
+	
+	// ### Board modification ##################################################
+	
+	/** A `place(coord, value)` means only changing one character in the
+	underlying string. The `value` must be a character, and `coord` a point
+	inside the board.
+	*/
+	place: function place(coord, value) {
+		raiseIf(!this.isValidCoord(coord), "Invalid coordinate ", coord, ".");
+		value = (value + this.emptySquare).charAt(0);
+		var i = coord[0] * this.width + coord[1],
+			newString = this.string.substr(0, i) + value + this.string.substr(i + 1);
+		return new this.constructor(this.height, this.width, newString, this.emptySquare);
 	}
 }); // declare utils.CheckerboardFromString

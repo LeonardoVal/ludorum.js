@@ -32,11 +32,27 @@ var Checkerboard = utils.Checkerboard = declare({
 			&& coord[1] >= 0 && coord[1] < this.width;
 	},
 	
+	/** Method `coordinates()` returns the sequence of the board's valid 
+	positions.
+	*/
+	coordinates: function coordinates() {
+		return Iterable.range(this.height).product(Iterable.range(this.width));
+	},
+	
 	/** Method `square(coord, outside)` should get the contents at a given 
 	coordinate. If the coordinate is off the board, `outside` must be returned.
 	This method is abstract so it must be overriden in subclasses.
 	*/
 	square: unimplemented('utils.Checkerboard', 'square'),
+	
+	/** A square is assumed to be empty when its value is equal to 
+	`emptySquare`.
+	*/
+	isEmptySquare: function isEmptySquare(coord) {
+		return this.square(coord) === this.emptySquare;
+	},
+	
+	// #### Lines ##############################################################
 	
 	/** Many games must deal with line configurations of pieces. The following
 	methods help with this kind of logic. Each line is a sequence of coordinates
@@ -137,6 +153,8 @@ var Checkerboard = utils.Checkerboard = declare({
 		}).flatten();
 	},
 	
+	// #### Walks ##############################################################
+	
 	/** A walk is a sequence of coordinates in the board that start at a given
 	point and advances in a certain direction. The `walk(coord, delta)` method
 	returns an iterable with coordinates from `coord` and on, adding `delta`'s 
@@ -169,8 +187,17 @@ var Checkerboard = utils.Checkerboard = declare({
 		});
 	},
 	
+	/** Frequently used deltas for walks are available at `DIRECTIONS`.
+	*/
+	DIRECTIONS: {
+		HORIZONTAL: [[0,-1], [0,+1]],
+		VERTICAL:   [[-1,0], [+1,0]], 
+		ORTHOGONAL: [[0,-1], [0,+1], [-1,0], [+1,0]],
+		DIAGONAL:   [[-1,-1], [-1,+1], [+1,-1], [+1,+1]],
+		EVERY:      [[0,-1], [0,+1], [-1,0], [+1,0], [-1,-1], [-1,+1], [+1,-1], [+1,+1]]
+	},
+	
 	// ### Board modification ##################################################
-
 	/** Game states must not be modifiable, else game search algorithms may fail
 	or be extremely complicated. Then, all board altering method in 
 	`Checkerboard` must return a new board instance and leave this instance 
