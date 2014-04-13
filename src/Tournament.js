@@ -37,7 +37,7 @@ var Tournament = exports.Tournament = declare({
 			return Future.then(tournament.__advance__(), function (match) {
 				if (match) {
 					tournament.beforeMatch(match);
-					return match.run().then(function (match) {
+					return tournament.__runMatch__(match).then(function (match) {
 						tournament.account(match);
 						tournament.afterMatch(match);
 						return match;
@@ -47,6 +47,13 @@ var Tournament = exports.Tournament = declare({
 				}
 			});
 		}).then(this.onEnd.bind(this));
+	},
+	
+	/** The method `__runMatch__` runs a match. It is present so it can be 
+	overridden, to implement some specific behaviour of the contest.
+	*/
+	__runMatch__: function __runMatch__(match) {
+		return match.run();
 	},
 	
 	/** Tournaments gather information from the played matches using their
@@ -68,13 +75,13 @@ var Tournament = exports.Tournament = declare({
 		iterable(match.players).forEach(function (p) { // Player statistics.
 			var role = p[0],
 				player = p[1],
-				playerResult = results[p[0]],
-				keys = ['game:'+ game.name, 'role:'+ role, 'player:'+ player.name];
-			stats.add({key:'results', game:game.name, role:role, player:player.name}, playerResult);
+				playerResult = results[p[0]];
+			stats.add({key:'results', game:game.name, role:role, player:player.name}, 
+				playerResult);
 			stats.add({key:(playerResult > 0 ? 'victories' : playerResult < 0 ? 'defeats' : 'draws'),
 				game:game.name, role:role, player:player.name}, playerResult);
-			//FIXME This may not be accurate if the game has random variables.
-			stats.add({key:'length', game:game.name, role:role, player:player.name}, match.ply()); 
+			stats.add({key:'length', game:game.name, role:role, player:player.name}, 
+				match.ply()); //FIXME This may not be accurate if the game has random variables.
 			match.history.forEach(function (entry) {
 				if (typeof entry.moves === 'function') {
 					var moves = entry.moves();	
