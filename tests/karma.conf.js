@@ -1,6 +1,4 @@
 // Karma configuration
-// Generated on Fri Apr 04 2014 17:58:52 GMT-0300 (Hora estándar de Montevideo)
-
 module.exports = function(config) {
   config.set({
 
@@ -16,7 +14,7 @@ module.exports = function(config) {
       'tests/karma-tester.js',
       {pattern: 'tests/specs/*.test.js', included: false},
       {pattern: 'build/ludorum.js', included: false},
-      {pattern: 'lib/**/*.js', included: false},
+      {pattern: 'bower_components/basis/build/basis.js', included: false},
     ],
 
     // list of files to exclude

@@ -734,7 +734,9 @@ var Tournament = exports.Tournament = declare({
 		}).then(this.onEnd.bind(this));
 	},
 	
-	/**TODO */
+	/** The method `__runMatch__` runs a match. It is present so it can be 
+	overridden, to implement some specific behaviour of the contest.
+	*/
 	__runMatch__: function __runMatch__(match) {
 		return match.run();
 	},

@@ -1,0 +1,30 @@
+{
+	"name": "ludorum",
+	"version": "0.1.1",
+	"authors": [
+		"Leonardo Val <leonardo.val@creatartis.com>"
+	],
+	"description": "A board game implementation library, focusing on artificial intelligence.",
+	"moduleType": [
+		"amd", "globals", "node"
+	],
+	"keywords": [
+		"board game", "game", "minimax", "artificial intelligence", "game ai"
+	],
+	"license": "MIT",
+	"homepage": "http://creatartis.com",
+	"private": true,
+	"main": "build/ludorum.js",
+	"ignore": [
+		"**/.*", 
+		"node_modules", "bower_components", "src", "tests", "docs",
+		"bower.json", "package.json", "Gruntfile.js", "LICENSE.md", "README.md"
+	],
+	"dependencies": {
+		"requirejs": "2.1.9",
+		"basis": "git://github.com/LeonardoVal/basis.js.git"
+	},
+	"devDependencies": {
+		"jquery": "~2.0.3"
+	}
+}

@@ -2,7 +2,7 @@ var APP = {};
 
 require.config({
 	paths: {
-		basis: "../../lib/basis", 
+		basis: "../../bower_components/basis/build/basis", 
 		ludorum: "../../build/ludorum"
 	}
 });
