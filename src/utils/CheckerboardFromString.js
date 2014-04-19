@@ -116,15 +116,23 @@ var CheckerboardFromString = utils.CheckerboardFromString = declare(Checkerboard
 	
 	// ### Board modification ##################################################
 	
+	/** Cloning a CheckerboardFromString simply calls the constructor again
+	with the proper arguments to replicate this instance.
+	*/
+	clone: function clone() {
+		return new this.constructor(this.height, this.width, this.string, 
+			this.hasOwnProperty('emptySquare') ? this.emptySquare : undefined);
+	},
+	
 	/** A `place(coord, value)` means only changing one character in the
 	underlying string. The `value` must be a character, and `coord` a point
 	inside the board.
 	*/
-	place: function place(coord, value) {
+	__place__: function __place__(coord, value) {
 		raiseIf(!this.isValidCoord(coord), "Invalid coordinate ", coord, ".");
 		value = (value + this.emptySquare).charAt(0);
-		var i = coord[0] * this.width + coord[1],
-			newString = this.string.substr(0, i) + value + this.string.substr(i + 1);
-		return new this.constructor(this.height, this.width, newString, this.emptySquare);
-	}
+		var i = coord[0] * this.width + coord[1];
+		this.string = this.string.substr(0, i) + value + this.string.substr(i + 1);
+		return this;
+	}	
 }); // declare utils.CheckerboardFromString

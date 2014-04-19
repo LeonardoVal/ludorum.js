@@ -203,30 +203,49 @@ var Checkerboard = utils.Checkerboard = declare({
 	`Checkerboard` must return a new board instance and leave this instance 
 	unspoiled.
 	
-	The first function to change the board is `place(coord, value)`. It places 
-	the value at the given coordinate, replacing whatever was there. Not 
-	implemented in the base class.
+	Most board modification functions have two versions: one which actually
+	modifies the board state and another which returns a modified copy. This is
+	meant to optimize chains of board alterations. To get a copy of this board, 
+	the `clone` method can be used.
 	*/
-	place: unimplemented('utils.Checkerboard', 'place'),
+	clone: unimplemented('utils.Checkerboard', 'clone'),
+	
+	/** The first function to change the board is `place(coord, value)`. It 
+	places the value at the given coordinate, replacing whatever was there.
+	
+	The `__place__` version modifies this board, and is not implemented in the 
+	base class. It should return this instance, to enable chaining.
+	*/
+	__place__: unimplemented('utils.Checkerboard', 'place'),
+	
+	place: function place(coord, value) {
+		return this.clone().__place__(coord, value);
+	},
 
 	/** Another usual operation is `move(coordFrom, coordTo, valueLeft)`.
 	It moves the contents at `coordFrom` to `coordTo`. Whatever is at `coordTo`
 	gets replaced, and `valueLeft` is placed at `coordFrom`. If `valueLeft` is 
 	undefined, `emptySquare` is used.
 	*/
+	__move__: function __move__(coordFrom, coordTo, valueLeft) {
+		return this.__place__(coordTo, this.square(coordFrom))
+			.__place__(coordFrom, typeof valueLeft === 'undefined' ? this.emptySquare : valueLeft);
+	},
+	
 	move: function move(coordFrom, coordTo, valueLeft) {
-		return this
-			.place(coordTo, this.square(coordFrom))
-			.place(coordFrom, typeof valueLeft === 'undefined' ? this.emptySquare : valueLeft);
+		return this.clone().__move__(coordFrom, coordTo, valueLeft);
 	},
 	
 	/** The next board operation is `swap(coordFrom, coordTo)`, which moves the 
 	contents at `coordFrom` to `coordTo`, and viceversa.
 	*/
-	swap: function swap(coordFrom, coordTo) {
+	__swap__: function __swap__(coordFrom, coordTo) {
 		var valueTo = this.square(coordTo);
-		return this
-			.place(coordTo, this.square(coordFrom))
-			.place(coordFrom, valueTo);
+		return this.__place__(coordTo, this.square(coordFrom))
+			.__place__(coordFrom, valueTo);
+	},
+	
+	swap: function swap(coordFrom, coordTo) {
+		return this.clone().__swap__(coordFrom, coordTo);
 	}
 }); //// declare utils.Checkerboard.
