@@ -23,7 +23,7 @@ var sourceFiles = [ 'src/__prologue__.js',
 		'src/games/OddsAndEvens.js', 'src/games/TicTacToe.js',
 		'src/games/ToadsAndFrogs.js', 'src/games/Mancala.js',
 		'src/games/Pig.js', 'src/games/ConnectFour.js',
-		'src/games/Mutropas.js',
+		'src/games/Mutropas.js', 'src/games/Othello.js',
 	// tournaments.
 	'src/tournaments/RoundRobin.js', 'src/tournaments/Measurement.js',
 		'src/tournaments/Elimination.js',

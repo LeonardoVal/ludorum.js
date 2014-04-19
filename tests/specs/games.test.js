@@ -41,7 +41,7 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 	
 	function itWorksLikeGame(game, options) {
 		it("works like a game", function () {
-			var MAX_PLIES = 1000, moves, decisions;
+			var MAX_PLIES = 500, moves, decisions;
 			for (var i = 0; i < MAX_PLIES; i++) {
 				while (game && game instanceof ludorum.Aleatory) {
 					game = game.next();
@@ -65,7 +65,7 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 	}
 	
 	["__Predefined__", "Choose2Win", "TicTacToe", "ToadsAndFrogs", "Mancala", 
-		"ConnectFour", "Pig", "ConnectionGame"]
+		"ConnectFour", "Pig", "ConnectionGame", "Othello"]
 	.forEach(function (name) { // Zerosum games for 2 players with one active player per turn.
 		describe("games."+ name, function () {
 			var game = new ludorum.games[name](),
