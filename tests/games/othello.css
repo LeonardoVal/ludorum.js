@@ -55,27 +55,23 @@ footer {
 	user-select: none;
 /*END user-select: none */
 }
-#board table col {
-	border-left: 2px solid black;
-	border-right: 2px solid black;
-}
 #board table td {
-	font-size: 2em;
-	width: 1em;
-	height: 1em;
-	text-align: center;
-	border: 2px solid #000000 !important;
+	width: 2em;
+	height: 2em;
+	border: 1px solid rgb(0,80,40) !important;
 }
-#board table tr:last-child {
-	border-bottom: 2px solid black;
+#board table .ludorum-square-Black {
+	background: rgb(20,170,70) url('othello-black.svg') no-repeat;
+	background-size: 100%;
 }
-#board table .ludorum-player0 {
-	color: rgb(250,230,0);
-	font-weight: bolder;
-	text-shadow: 1px 1px black, -1px -1px black, -1px 1px black, 1px -1px black;
+#board table .ludorum-square-White { 
+	background: rgb(20,170,70) url('othello-white.svg') no-repeat;
+	background-size: 100%;
 }
-#board table .ludorum-player1 {
-	color: red;
-	font-weight: bolder;
-	text-shadow: 1px 1px black, -1px -1px black, -1px 1px black, 1px -1px black;
+#board table .ludorum-square-move { 
+	background: rgb(20,170,70) url('othello-move.svg') no-repeat;
+	background-size: 100%;
+}
+#board table .ludorum-square-empty { 
+	background-color: rgb(20,170,70);
 }

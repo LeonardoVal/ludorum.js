@@ -13,30 +13,34 @@ require(['basis', 'ludorum'], function (basis, ludorum) {
 	var PLAYER_OPTIONS = APP.PLAYER_OPTIONS = [
 		{title: "You", builder: function () { 
 			return new ludorum.players.UserInterfacePlayer(); 
-		}},
+		}, runOnWorker: false },
 		{title: "Random", builder: function () { 
 			return new ludorum.players.RandomPlayer();
-		}},
-		{title: "MonteCarlo (20 sims)", builder: function () {
-			return new ludorum.players.MonteCarloPlayer({ simulationCount: 20, timeCap: 1500 });
-		}},
-		{title: "MonteCarlo (50 sims)", builder: function () {
-			return new ludorum.players.MonteCarloPlayer({ simulationCount: 50, timeCap: 1500 });
-		}}
+		}, runOnWorker: false },
+		{title: "MonteCarlo (500ms)", builder: function () {
+			return new ludorum.players.MonteCarloPlayer({ timeCap: 500 });
+		}, runOnWorker: true },
+		{title: "MonteCarlo (1s)", builder: function () {
+			return new ludorum.players.MonteCarloPlayer({ timeCap: 1000 });
+		}, runOnWorker: true }
 	];
 	APP.players = [PLAYER_OPTIONS[0].builder(), PLAYER_OPTIONS[0].builder()];
-	$('#player0').html(PLAYER_OPTIONS.map(function (option, i) {
+	$('#player0, #player1').html(PLAYER_OPTIONS.map(function (option, i) {
 		return '<option value="'+ i +'">'+ option.title +'</option>';
 	}).join(''));
-	$('#player1').html($('#player0').html());
-	$('#player0').change(function () {
-		APP.players[0] = PLAYER_OPTIONS[+this.value].builder();
-		APP.reset();
-	});
-	$('#player1').change(function () {
-		APP.players[1] = PLAYER_OPTIONS[+this.value].builder();
-		APP.reset();
-	});
+	
+	function selectPlayer(roleNumber, playerNumber) {
+		var option = PLAYER_OPTIONS[+playerNumber];
+		(option.runOnWorker
+			? ludorum.players.WebWorkerPlayer.create({ playerBuilder: option.builder })
+			: basis.Future.when(option.builder())
+		).then(function (player) {
+			APP.players[+roleNumber] = player;
+			APP.reset();
+		});
+	}
+	$('#player0').change(function () { selectPlayer(0, this.value); });
+	$('#player1').change(function () { selectPlayer(1, this.value); });
 	
 // Buttons. ////////////////////////////////////////////////////////////////////
 	$('#reset').click(APP.reset = function reset() {
