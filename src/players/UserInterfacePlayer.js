@@ -23,7 +23,7 @@ var UserInterfacePlayer = players.UserInterfacePlayer = declare(Player, {
 	*/
 	decision: function decision(game, player) {
 		if (this.__future__ && this.__future__.isPending()) {
-			this.__future__.resolve(Match.commandQuit);
+			this.__future__.resolve(new Match.CommandQuit());
 		}
 		return this.__future__ = new Future();
 	},
