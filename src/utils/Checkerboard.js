@@ -189,7 +189,7 @@ var Checkerboard = utils.Checkerboard = declare({
 	
 	/** Frequently used deltas for walks are available at `DIRECTIONS`.
 	*/
-	DIRECTIONS: {
+	"static DIRECTIONS": {
 		HORIZONTAL: [[0,-1], [0,+1]],
 		VERTICAL:   [[-1,0], [+1,0]], 
 		ORTHOGONAL: [[0,-1], [0,+1], [-1,0], [+1,0]],
