@@ -2,18 +2,18 @@
 <html><head>
 	<title>Ludorum console.</title>
 	<meta charset="UTF-8"/>
-	<script src="../bower_components/requirejs/require.js"></script>
+	<script src="../lib/require.js"></script>
 </head><body onload="main();">
 	<script type="text/javascript"> "use strict";
 function main() {
 	require.config({ 
 		paths: {
-			"basis": "../bower_components/basis/build/basis",
+			"creatartis-base": "../lib/creatartis-base",
 			"ludorum": "../build/ludorum"
 		},
 	});
-	require(['basis', 'ludorum'], function (basis, ludorum) {
-		window.basis = basis;
+	require(['creatartis-base', 'ludorum'], function (base, ludorum) {
+		window.base = base;
 		window.ludorum = ludorum;
 		(function (s){ // See: <http://jsconsole.com>.
 			s.src = 'jsconsole/inject.js';

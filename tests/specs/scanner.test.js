@@ -1,4 +1,4 @@
-define(['basis', 'ludorum'], function (basis, ludorum) {
+define(['creatartis-base', 'ludorum'], function (base, ludorum) {
 	
 	describe("Scanner", function () {
 		async_it("scans games.__Predefined__", function () {

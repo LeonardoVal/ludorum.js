@@ -6,7 +6,7 @@ of non determinism can be build, like: dice, card decks, roulettes, etcetera.
 */
 var Aleatory = exports.Aleatory = declare({
 	/** The constructor may take a next function and a random generator (an
-	instance of `basis.Randomness`).
+	instance of `creatartis-base.Randomness`).
 	*/
 	constructor: function Aleatory(next, random) {
 		this.random = random || Randomness.DEFAULT;

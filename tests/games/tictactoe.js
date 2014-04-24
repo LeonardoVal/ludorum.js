@@ -2,12 +2,12 @@ var APP = {};
 
 require.config({
 	paths: {
-		basis: "../../bower_components/basis/build/basis", 
+		'creatartis-base': "../../lib/creatartis-base", 
 		ludorum: "../../build/ludorum"
 	}
 });
-require(['basis', 'ludorum'], function (basis, ludorum) {
-	APP.imports = {basis: basis, ludorum: ludorum};
+require(['creatartis-base', 'ludorum'], function (base, ludorum) {
+	APP.imports = {base: base, ludorum: ludorum};
 	APP.elements = {
 		selectXs: document.getElementById('playerXs'),
 		selectOs: document.getElementById('playerOs'),
@@ -51,7 +51,7 @@ require(['basis', 'ludorum'], function (basis, ludorum) {
 			option = PLAYER_OPTIONS[+this.value];
 		(option.runOnWorker
 			? ludorum.players.WebWorkerPlayer.create({ playerBuilder: option.builder })
-			: basis.Future.when(option.builder())
+			: base.Future.when(option.builder())
 		).then(function (player) {
 			APP.players[i] = player;
 			APP.reset();
@@ -63,13 +63,13 @@ require(['basis', 'ludorum'], function (basis, ludorum) {
 		var match = new ludorum.Match(new ludorum.games.TicTacToe(), APP.players);
 		APP.ui = new ludorum.players.UserInterface.BasicHTMLInterface({ match: match, container: 'board' });
 		match.events.on('begin', function (game) {
-			APP.elements.footer.innerHTML = basis.Text.escapeXML("Turn "+ game.activePlayer() +".");
+			APP.elements.footer.innerHTML = base.Text.escapeXML("Turn "+ game.activePlayer() +".");
 		});
 		match.events.on('next', function (game, next) {
-			APP.elements.footer.innerHTML = basis.Text.escapeXML("Turn "+ next.activePlayer() +".");
+			APP.elements.footer.innerHTML = base.Text.escapeXML("Turn "+ next.activePlayer() +".");
 		});
 		match.events.on('end', function (game, results) {
-			APP.elements.footer.innerHTML = basis.Text.escapeXML(results['Xs'] === 0 ? 'Drawed game.'
+			APP.elements.footer.innerHTML = base.Text.escapeXML(results['Xs'] === 0 ? 'Drawed game.'
 				: (results['Xs'] > 0 ? 'Xs' : 'Os') +' wins.');
 		});
 		match.run();

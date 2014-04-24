@@ -32,7 +32,7 @@ function async_it(desc, func) { // Future friendly version of it().
 require.config({ // Configure RequireJS.
 	baseUrl: '/base', // Karma serves files under /base, which is the basePath from your config file
 	paths: {
-		basis: '/base/bower_components/basis/build/basis',
+		'creatartis-base': '/base/lib/creatartis-base',
 		ludorum: '/base/build/ludorum'
 	}
 });

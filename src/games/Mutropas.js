@@ -2,7 +2,7 @@ games.Mutropas = declare(Game, {
 	/** games.Mutropas.allPieces=[0, .., 8]:
 		TODO.
 	*/
-	allPieces: basis.Iterable.range(9).toArray(),
+	allPieces: Iterable.range(9).toArray(),
 	
 	name: 'Mutropas',
 	
@@ -15,13 +15,13 @@ games.Mutropas = declare(Game, {
 		Game.call(this, this.players);
 		args = args || {};
 		this._pieces = args.pieces || this.dealtPieces(args.random);
-		this._scores = args.scores || basis.obj(this.players[0], 0, this.players[1], 0);
+		this._scores = args.scores || obj(this.players[0], 0, this.players[1], 0);
 	},
 	
 	result: function result() {
 		var player0 = this.players[0];
 		if (this._pieces[player0].length < 1) {
-			return basis.copy({}, this._scores);
+			return copy({}, this._scores);
 		} else {
 			return null;
 		}
@@ -31,7 +31,7 @@ games.Mutropas = declare(Game, {
 		var player0 = this.players[0],
 			player1 = this.players[1];
 		if (!this.result()) {
-			return basis.obj(
+			return obj(
 				player0, this._pieces[player0].slice(), 
 				player1, this._pieces[player1].slice()
 			);
@@ -55,8 +55,8 @@ games.Mutropas = declare(Game, {
 		newPieces0.splice(newPieces0.indexOf(move0), 1);
 		newPieces1.splice(newPieces1.indexOf(move1), 1);
 		return new this.constructor({ 
-			pieces: basis.obj(player0, newPieces0, player1, newPieces1),
-			scores: basis.obj(
+			pieces: obj(player0, newPieces0, player1, newPieces1),
+			scores: obj(
 				player0, this._scores[player0] + moveResult,
 				player1, this._scores[player1] - moveResult
 			)
@@ -68,15 +68,15 @@ games.Mutropas = declare(Game, {
 	},
 	
 	dealtPieces: function dealtPieces(random) {
-		var random = random || basis.Randomness.DEFAULT,
+		var random = random || Randomness.DEFAULT,
 			piecesPerPlayer = this.allPieces.length >> 1,
 			split1 = random.split(piecesPerPlayer, this.allPieces),
 			split2 = random.split(piecesPerPlayer, split1[1]);
-		return basis.obj(this.players[0], split1[0], this.players[1], split2[0]);
+		return obj(this.players[0], split1[0], this.players[1], split2[0]);
 	},
 	
 	moveResult: function moveResult(piece1, piece2) {
-		var upperBound = basis.iterable(this.allPieces).max(0) + 1;
+		var upperBound = iterable(this.allPieces).max(0) + 1;
 		if (piece1 < piece2) {
 			return piece2 - piece1 <= (upperBound >> 1) ? 1 : -1;
 		} else if (piece1 > piece2) {

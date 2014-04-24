@@ -1,35 +1,34 @@
 /** Package wrapper and layout.
 */
 "use strict";
-(function (init) { // Universal Module Definition.
+(function (global, init) { // Universal Module Definition.
 	if (typeof define === 'function' && define.amd) {
-		define(['basis'], init); // AMD module.
+		define(['creatartis-base'], init); // AMD module.
 	} else if (typeof module === 'object' && module.exports) {
-		module.exports = init(require('basis')); // CommonJS module.
+		module.exports = init(require('creatartis-base')); // CommonJS module.
 	} else { // Browser or web worker (probably).
-		var global = (0, eval)('this');
-		global.ludorum = init(global.basis); // Assumes basis is loaded.
+		global.ludorum = init(global.base); // Assumes base is loaded.
 	}
-})(function __init__(basis){
+})(this, function __init__(base) {
 // Import synonyms. ////////////////////////////////////////////////////////////
-	var declare = basis.declare,
-		unimplemented = basis.objects.unimplemented,
-		obj = basis.obj,
-		copy = basis.copy,
-		raiseIf = basis.raiseIf,
-		Iterable = basis.Iterable,
-		iterable = basis.iterable,
-		Future = basis.Future,
-		Randomness = basis.Randomness,
-		initialize = basis.initialize,
-		Statistics = basis.Statistics,
-		Events = basis.Events;
+	var declare = base.declare,
+		unimplemented = base.objects.unimplemented,
+		obj = base.obj,
+		copy = base.copy,
+		raiseIf = base.raiseIf,
+		Iterable = base.Iterable,
+		iterable = base.iterable,
+		Future = base.Future,
+		Randomness = base.Randomness,
+		initialize = base.initialize,
+		Statistics = base.Statistics,
+		Events = base.Events;
 
 // Library layout. /////////////////////////////////////////////////////////////
 	var exports = {
-		__init__: __init__
+		__name__: 'ludorum',
+		__init__: (__init__.dependencies = ['creatartis-base'], __init__)
 	};
-	exports.__init__.dependencies = [basis];
 
 	/** The namespace `ludorum.utils` contains miscellaneous classes, functions 
 	and definitions.

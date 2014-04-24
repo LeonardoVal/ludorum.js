@@ -21,8 +21,8 @@
 		"bower.json", "package.json", "Gruntfile.js", "LICENSE.md", "README.md"
 	],
 	"dependencies": {
-		"requirejs": "2.1.9",
-		"basis": "git://github.com/LeonardoVal/basis.js.git"
+		"requirejs": "~2.1.9",
+		"creatartis-base": "git://github.com/LeonardoVal/creatartis-base.git"
 	},
 	"devDependencies": {
 		"jquery": "~2.0.3"

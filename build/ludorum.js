@@ -1,35 +1,34 @@
 /** Package wrapper and layout.
 */
 "use strict";
-(function (init) { // Universal Module Definition.
+(function (global, init) { // Universal Module Definition.
 	if (typeof define === 'function' && define.amd) {
-		define(['basis'], init); // AMD module.
+		define(['creatartis-base'], init); // AMD module.
 	} else if (typeof module === 'object' && module.exports) {
-		module.exports = init(require('basis')); // CommonJS module.
+		module.exports = init(require('creatartis-base')); // CommonJS module.
 	} else { // Browser or web worker (probably).
-		var global = (0, eval)('this');
-		global.ludorum = init(global.basis); // Assumes basis is loaded.
+		global.ludorum = init(global.base); // Assumes base is loaded.
 	}
-})(function __init__(basis){
+})(this, function __init__(base) {
 // Import synonyms. ////////////////////////////////////////////////////////////
-	var declare = basis.declare,
-		unimplemented = basis.objects.unimplemented,
-		obj = basis.obj,
-		copy = basis.copy,
-		raiseIf = basis.raiseIf,
-		Iterable = basis.Iterable,
-		iterable = basis.iterable,
-		Future = basis.Future,
-		Randomness = basis.Randomness,
-		initialize = basis.initialize,
-		Statistics = basis.Statistics,
-		Events = basis.Events;
+	var declare = base.declare,
+		unimplemented = base.objects.unimplemented,
+		obj = base.obj,
+		copy = base.copy,
+		raiseIf = base.raiseIf,
+		Iterable = base.Iterable,
+		iterable = base.iterable,
+		Future = base.Future,
+		Randomness = base.Randomness,
+		initialize = base.initialize,
+		Statistics = base.Statistics,
+		Events = base.Events;
 
 // Library layout. /////////////////////////////////////////////////////////////
 	var exports = {
-		__init__: __init__
+		__name__: 'ludorum',
+		__init__: (__init__.dependencies = ['creatartis-base'], __init__)
 	};
-	exports.__init__.dependencies = [basis];
 
 	/** The namespace `ludorum.utils` contains miscellaneous classes, functions 
 	and definitions.
@@ -306,14 +305,17 @@ var Game = exports.Game = declare({
 	"static fromJSON": function fromJSON(data) {
 		if (typeof data === 'string') {
 			data = JSON.parse(data);
+			raiseIf(!Array.isArray(data) || data.length < 1, "Invalid JSON data: "+ data +"!");
+		} else {
+			raiseIf(!Array.isArray(data) || data.length < 1, "Invalid JSON data: "+ data +"!");
+			data = data.slice(); // Shallow copy.
 		}
-		raiseIf(!Array.isArray(data) || data.length < 1, "Invalid JSON data: "+ data +"!");
 		var cons = games[data[0]];
 		raiseIf(typeof cons !== 'function', "Unknown game '", data[0], "'!");
 		if (typeof cons.fromJSON === 'function') {
 			return cons.fromJSON(data); // Call game's fromJSON.
-		} else {
-			data[0] = basis.global; // Call game's constructor.
+		} else { // Call game's constructor.
+			data[0] = this; 
 			return new (cons.bind.apply(cons, data))();
 		}
 	}
@@ -742,7 +744,7 @@ var Tournament = exports.Tournament = declare({
 	},
 	
 	/** Tournaments gather information from the played matches using their
-	`statistics` property (instance of `basis.Statistics`). The method 
+	`statistics` property (instance of `creatartis-base.Statistics`). The method 
 	`Tournament.account(match)` is called to accounts the results of each 
 	finished match for the players' score.
 	
@@ -835,7 +837,7 @@ of non determinism can be build, like: dice, card decks, roulettes, etcetera.
 */
 var Aleatory = exports.Aleatory = declare({
 	/** The constructor may take a next function and a random generator (an
-	instance of `basis.Randomness`).
+	instance of `creatartis-base.Randomness`).
 	*/
 	constructor: function Aleatory(next, random) {
 		this.random = random || Randomness.DEFAULT;
@@ -949,7 +951,7 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 	constructor: function HeuristicPlayer(params) {
 		Player.call(this, params);
 		initialize(this, params)
-		/** players.HeuristicPlayer.random=basis.Randomness.DEFAULT:
+		/** players.HeuristicPlayer.random=creatartis-base.Randomness.DEFAULT:
 			Pseudorandom number generator used for random decisions.
 		*/
 			.object('random', { defaultValue: Randomness.DEFAULT })
@@ -1527,20 +1529,20 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 			The Worker instance where the actual player is executing.
 		*/
 			.object('worker');
-		this.worker.onmessage = basis.Parallel.prototype.__onmessage__.bind(this);
+		this.worker.onmessage = base.Parallel.prototype.__onmessage__.bind(this);
 	},
 	
 	/** static WebWorkerPlayer.createWorker(playerBuilder):
-		Asynchronously creates and initializes a web worker. The modules basis
-		and	ludorum are loaded in the global namespace (self), before calling 
-		the given playerBuilder function. Its results will be stored in the 
-		global variable PLAYER.
+		Asynchronously creates and initializes a web worker. The modules 
+		creatartis-base and	ludorum are loaded in the global namespace (self), 
+		before calling the given playerBuilder function. Its results will be 
+		stored in the global variable PLAYER.
 	*/
 	"static createWorker": function createWorker(playerBuilder) {
 		raiseIf('string function'.indexOf(typeof playerBuilder) < 0, 
 			"Invalid player builder: "+ playerBuilder +"!");
-		var parallel = new basis.Parallel();
-		return parallel.run('self.ludorum = ('+ exports.__init__ +')(self.basis), "OK"'
+		var parallel = new base.Parallel();
+		return parallel.run('self.ludorum = ('+ exports.__init__ +')(self.base), "OK"'
 			).then(function () {
 				return parallel.run('self.PLAYER = ('+ playerBuilder +').call(self), "OK"');
 			}).then(function () {
@@ -1585,7 +1587,8 @@ uniformly distributed values in the range `[1, base]`.
 */
 aleatories.Dice = declare(Aleatory, {
 	/** The constructor takes the next function, the dice base, and	a 
-	pseudorandom number generator (`basis.Randomness.DEFAULT` by default).
+	pseudorandom number generator (`creatartis-base.Randomness.DEFAULT` by 
+	default).
 	*/
 	constructor: function Dice(next, base, random) {
 		Aleatory.call(this, next, random);
@@ -1625,10 +1628,10 @@ var Checkerboard = utils.Checkerboard = declare({
 	*/
 	constructor: function Checkerboard(height, width) {
 		if (!isNaN(height)) {
-			this.height = +height >> 0;
+			this.height = height|0;
 		}
 		if (!isNaN(width)) {
-			this.width = +width >> 0;
+			this.width = width|0;
 		}
 	},
 	
@@ -1863,7 +1866,31 @@ var Checkerboard = utils.Checkerboard = declare({
 	
 	swap: function swap(coordFrom, coordTo) {
 		return this.clone().__swap__(coordFrom, coordTo);
-	}
+	},
+	
+	// ## Board presentation. ##################################################
+	
+	/** Board games' user interfaces may be implemented using HTML & CSS. This
+	is the case of Ludorum's playtesters.
+	TODO.
+	*/
+	asHTMLTable: function (document, parent, callback) { //TODO
+		var table = document.createElement('table');
+		board.horizontals().reverse().foeEach(function (line) {
+			var tr = document.createElement('tr');
+			table.appendChild(tr);
+			line.forEach(function (coord) {
+				var square = board.square(coord),
+					data = callback(square, coord),
+					td = document.createElement('td');
+					td_content = document.createTextNode(data.hasOwnProperty('content') ? data.content : square);
+				tr.appendChild(td);
+				td.id = data.id || "ludorum-square-"+ coord.join('-');
+				td.className = data.className || "ludorum-square";
+				td.data_ludorum = data;
+			});
+		});
+	}	
 }); //// declare utils.Checkerboard.
 
 
@@ -2884,7 +2911,7 @@ games.Mancala = declare(Game, {
 	*/
 	toString: function toString() {
 		var game = this,
-			lpad = basis.Text.lpad,
+			lpad = base.Text.lpad,
 			north = this.players[0],
 			northHouses = this.houses(north).map(function (h) {
 				return lpad(''+ game.board[h], 2, '0');
@@ -3151,7 +3178,7 @@ games.Mutropas = declare(Game, {
 	/** games.Mutropas.allPieces=[0, .., 8]:
 		TODO.
 	*/
-	allPieces: basis.Iterable.range(9).toArray(),
+	allPieces: Iterable.range(9).toArray(),
 	
 	name: 'Mutropas',
 	
@@ -3164,13 +3191,13 @@ games.Mutropas = declare(Game, {
 		Game.call(this, this.players);
 		args = args || {};
 		this._pieces = args.pieces || this.dealtPieces(args.random);
-		this._scores = args.scores || basis.obj(this.players[0], 0, this.players[1], 0);
+		this._scores = args.scores || obj(this.players[0], 0, this.players[1], 0);
 	},
 	
 	result: function result() {
 		var player0 = this.players[0];
 		if (this._pieces[player0].length < 1) {
-			return basis.copy({}, this._scores);
+			return copy({}, this._scores);
 		} else {
 			return null;
 		}
@@ -3180,7 +3207,7 @@ games.Mutropas = declare(Game, {
 		var player0 = this.players[0],
 			player1 = this.players[1];
 		if (!this.result()) {
-			return basis.obj(
+			return obj(
 				player0, this._pieces[player0].slice(), 
 				player1, this._pieces[player1].slice()
 			);
@@ -3204,8 +3231,8 @@ games.Mutropas = declare(Game, {
 		newPieces0.splice(newPieces0.indexOf(move0), 1);
 		newPieces1.splice(newPieces1.indexOf(move1), 1);
 		return new this.constructor({ 
-			pieces: basis.obj(player0, newPieces0, player1, newPieces1),
-			scores: basis.obj(
+			pieces: obj(player0, newPieces0, player1, newPieces1),
+			scores: obj(
 				player0, this._scores[player0] + moveResult,
 				player1, this._scores[player1] - moveResult
 			)
@@ -3217,15 +3244,15 @@ games.Mutropas = declare(Game, {
 	},
 	
 	dealtPieces: function dealtPieces(random) {
-		var random = random || basis.Randomness.DEFAULT,
+		var random = random || Randomness.DEFAULT,
 			piecesPerPlayer = this.allPieces.length >> 1,
 			split1 = random.split(piecesPerPlayer, this.allPieces),
 			split2 = random.split(piecesPerPlayer, split1[1]);
-		return basis.obj(this.players[0], split1[0], this.players[1], split2[0]);
+		return obj(this.players[0], split1[0], this.players[1], split2[0]);
 	},
 	
 	moveResult: function moveResult(piece1, piece2) {
-		var upperBound = basis.iterable(this.allPieces).max(0) + 1;
+		var upperBound = iterable(this.allPieces).max(0) + 1;
 		if (piece1 < piece2) {
 			return piece2 - piece1 <= (upperBound >> 1) ? 1 : -1;
 		} else if (piece1 > piece2) {
@@ -3319,7 +3346,7 @@ games.Othello = declare(Game, {
 		for (var id in coords) {
 			_moves.push(coords[id]);
 		}
-		return this.__moves__ = (_moves.length > 0 ? basis.obj(player, _moves) : null);
+		return this.__moves__ = (_moves.length > 0 ? obj(player, _moves) : null);
 	},
 	
 	/** games.Othello.result():
@@ -3377,8 +3404,7 @@ games.Othello = declare(Game, {
 	toHTML: function toHTML() {
 		var moves = this.moves(),
 			activePlayer = this.activePlayer(),
-			board = this.board,
-			width = this.width;
+			board = this.board;
 		moves = moves && moves[activePlayer].map(JSON.stringify);
 		return '<table>'+
 			board.horizontals().reverse().map(function (line) {
@@ -3410,6 +3436,104 @@ games.Othello.makeBoard = games.Othello.prototype.makeBoard;
 */
 games.Othello.heuristics = {};
 
+
+/** Bahab is a chess-like board game originally designed for Ludorum.
+*/
+games.Bahab = declare(Game, {
+	initialBoard: ['BBABB', 'BBBBB', '.....', 'bbbbb', 'bbabb'].join(''),
+
+	name: 'Bahab',
+	
+	players: ['Uppercase', 'Lowercase'],
+	
+	constructor: function Bahab(activePlayer, board) {
+		Game.call(this, activePlayer);
+		this.board = board instanceof CheckerboardFromString ? board
+			: new CheckerboardFromString(5, 5, board || this.initialBoard);
+	},
+	
+	__PLAYER_PIECES_RE__: { Uppercase: /[AB]/g, Lowercase: /[ab]/g },
+	
+	result: function result() {
+		var board = this.board.string;
+		if (board.match(/^[.bAB]+$|[A].{0,4}$/)) { 
+			//// Lowercase has no piece 'a' or Uppercase has a piece in Lowercase's rank.
+			return this.defeat(this.players[1]);
+		} else if (board.match(/^[.Bab]+$|^.{0,4}[a]/)) {
+			//// Uppercase has no piece 'A' or Lowercase has a piece in Uppercase's rank.
+			return this.defeat(this.players[0]);
+		} else {
+			return null;
+		}
+	},
+	
+	moves: function moves() {
+		var activePlayer = this.activePlayer(),
+			pieceRegExp = this.__PLAYER_PIECES_RE__[activePlayer],
+			board = this.board,
+			_moves = [];
+		board.string.replace(pieceRegExp, function (piece, i) {
+			var coord = [(i / 5)|0, i % 5], pieceMoves;
+			switch (piece) {
+				case 'A': pieceMoves = [[+1,-1], [+1, 0], [+1,+1]]; break;
+				case 'B': pieceMoves = [[+1,-1], [+1,+1]]; break;
+				case 'a': pieceMoves = [[-1,-1], [-1, 0], [-1,+1]]; break;
+				case 'b': pieceMoves = [[-1,-1], [-1,+1]]; break;
+			}
+			iterable(pieceMoves).forEachApply(function (dx, dy) {
+				var coordTo = [coord[0] + dx, coord[1] + dy],
+					squareTo = board.square(coordTo);
+				if (board.isValidCoord(coordTo) 
+						&& !squareTo.match(pieceRegExp)
+						&& (piece.toLowerCase() != 'b' || squareTo.toLowerCase() != 'a')) {
+					//// Valid coordinate and not occupied by a friendly piece.
+					_moves.push([coord, coordTo]);
+				}
+			});
+			return piece;
+		});
+		return _moves.length > 0 ? obj(activePlayer, _moves) : null;
+	},
+	
+	next: function next(moves) {
+		if (!moves) {
+			throw new Error("Invalid moves "+ moves +"!");
+		}
+		var activePlayer = this.activePlayer(),
+			move = moves[activePlayer];
+		if (!Array.isArray(moves[activePlayer])) {
+			throw new Error("Invalid moves "+ JSON.stringify(moves) +"!");
+		}
+		return new this.constructor(this.opponent(), this.board.move(move[0], move[1]));
+	},
+	
+	__serialize__: function __serialize__() {
+		return [this.name, this.activePlayer(), this.board.string];
+	},
+	
+	toHTML: function toHTML() {
+		var moves = this.moves(),
+			activePlayer = this.activePlayer(),
+			board = this.board;
+		return '<table>'+
+			board.horizontals().reverse().map(function (line) {
+				return '<tr>'+ line.map(function (coord) {
+					var square = board.square(coord);
+					switch (square) {
+						case 'A':
+						case 'B':
+							return '<td class="ludorum-square-Uppercase">'+ square +'</td>';
+						case 'a':
+						case 'b':
+							return '<td class="ludorum-square-Lowercase">'+ square +'</td>';
+						default: { //TODO Agregar movimientos.
+							return '<td class="ludorum-square-empty">&nbsp;</td>';
+						}
+					}
+				}).join('') +'</tr>';
+			}).join('') + '</table>';
+	}
+}); //// declare Bahab.
 
 /** # Class `RoundRobin`
 

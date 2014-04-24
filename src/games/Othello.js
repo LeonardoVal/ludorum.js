@@ -81,7 +81,7 @@ games.Othello = declare(Game, {
 		for (var id in coords) {
 			_moves.push(coords[id]);
 		}
-		return this.__moves__ = (_moves.length > 0 ? basis.obj(player, _moves) : null);
+		return this.__moves__ = (_moves.length > 0 ? obj(player, _moves) : null);
 	},
 	
 	/** games.Othello.result():
@@ -139,8 +139,7 @@ games.Othello = declare(Game, {
 	toHTML: function toHTML() {
 		var moves = this.moves(),
 			activePlayer = this.activePlayer(),
-			board = this.board,
-			width = this.width;
+			board = this.board;
 		moves = moves && moves[activePlayer].map(JSON.stringify);
 		return '<table>'+
 			board.horizontals().reverse().map(function (line) {

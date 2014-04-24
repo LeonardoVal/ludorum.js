@@ -12,20 +12,20 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 			The Worker instance where the actual player is executing.
 		*/
 			.object('worker');
-		this.worker.onmessage = basis.Parallel.prototype.__onmessage__.bind(this);
+		this.worker.onmessage = base.Parallel.prototype.__onmessage__.bind(this);
 	},
 	
 	/** static WebWorkerPlayer.createWorker(playerBuilder):
-		Asynchronously creates and initializes a web worker. The modules basis
-		and	ludorum are loaded in the global namespace (self), before calling 
-		the given playerBuilder function. Its results will be stored in the 
-		global variable PLAYER.
+		Asynchronously creates and initializes a web worker. The modules 
+		creatartis-base and	ludorum are loaded in the global namespace (self), 
+		before calling the given playerBuilder function. Its results will be 
+		stored in the global variable PLAYER.
 	*/
 	"static createWorker": function createWorker(playerBuilder) {
 		raiseIf('string function'.indexOf(typeof playerBuilder) < 0, 
 			"Invalid player builder: "+ playerBuilder +"!");
-		var parallel = new basis.Parallel();
-		return parallel.run('self.ludorum = ('+ exports.__init__ +')(self.basis), "OK"'
+		var parallel = new base.Parallel();
+		return parallel.run('self.ludorum = ('+ exports.__init__ +')(self.base), "OK"'
 			).then(function () {
 				return parallel.run('self.PLAYER = ('+ playerBuilder +').call(self), "OK"');
 			}).then(function () {

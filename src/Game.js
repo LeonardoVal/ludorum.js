@@ -267,14 +267,17 @@ var Game = exports.Game = declare({
 	"static fromJSON": function fromJSON(data) {
 		if (typeof data === 'string') {
 			data = JSON.parse(data);
+			raiseIf(!Array.isArray(data) || data.length < 1, "Invalid JSON data: "+ data +"!");
+		} else {
+			raiseIf(!Array.isArray(data) || data.length < 1, "Invalid JSON data: "+ data +"!");
+			data = data.slice(); // Shallow copy.
 		}
-		raiseIf(!Array.isArray(data) || data.length < 1, "Invalid JSON data: "+ data +"!");
 		var cons = games[data[0]];
 		raiseIf(typeof cons !== 'function', "Unknown game '", data[0], "'!");
 		if (typeof cons.fromJSON === 'function') {
 			return cons.fromJSON(data); // Call game's fromJSON.
-		} else {
-			data[0] = basis.global; // Call game's constructor.
+		} else { // Call game's constructor.
+			data[0] = this; 
 			return new (cons.bind.apply(cons, data))();
 		}
 	}

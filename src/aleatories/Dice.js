@@ -5,7 +5,8 @@ uniformly distributed values in the range `[1, base]`.
 */
 aleatories.Dice = declare(Aleatory, {
 	/** The constructor takes the next function, the dice base, and	a 
-	pseudorandom number generator (`basis.Randomness.DEFAULT` by default).
+	pseudorandom number generator (`creatartis-base.Randomness.DEFAULT` by 
+	default).
 	*/
 	constructor: function Dice(next, base, random) {
 		Aleatory.call(this, next, random);

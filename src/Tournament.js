@@ -57,7 +57,7 @@ var Tournament = exports.Tournament = declare({
 	},
 	
 	/** Tournaments gather information from the played matches using their
-	`statistics` property (instance of `basis.Statistics`). The method 
+	`statistics` property (instance of `creatartis-base.Statistics`). The method 
 	`Tournament.account(match)` is called to accounts the results of each 
 	finished match for the players' score.
 	

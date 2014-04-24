@@ -9,7 +9,7 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 	constructor: function HeuristicPlayer(params) {
 		Player.call(this, params);
 		initialize(this, params)
-		/** players.HeuristicPlayer.random=basis.Randomness.DEFAULT:
+		/** players.HeuristicPlayer.random=creatartis-base.Randomness.DEFAULT:
 			Pseudorandom number generator used for random decisions.
 		*/
 			.object('random', { defaultValue: Randomness.DEFAULT })

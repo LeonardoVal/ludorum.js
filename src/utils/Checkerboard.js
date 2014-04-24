@@ -9,10 +9,10 @@ var Checkerboard = utils.Checkerboard = declare({
 	*/
 	constructor: function Checkerboard(height, width) {
 		if (!isNaN(height)) {
-			this.height = +height >> 0;
+			this.height = height|0;
 		}
 		if (!isNaN(width)) {
-			this.width = +width >> 0;
+			this.width = width|0;
 		}
 	},
 	
@@ -247,5 +247,29 @@ var Checkerboard = utils.Checkerboard = declare({
 	
 	swap: function swap(coordFrom, coordTo) {
 		return this.clone().__swap__(coordFrom, coordTo);
-	}
+	},
+	
+	// ## Board presentation. ##################################################
+	
+	/** Board games' user interfaces may be implemented using HTML & CSS. This
+	is the case of Ludorum's playtesters.
+	TODO.
+	*/
+	asHTMLTable: function (document, parent, callback) { //TODO
+		var table = document.createElement('table');
+		board.horizontals().reverse().foeEach(function (line) {
+			var tr = document.createElement('tr');
+			table.appendChild(tr);
+			line.forEach(function (coord) {
+				var square = board.square(coord),
+					data = callback(square, coord),
+					td = document.createElement('td');
+					td_content = document.createTextNode(data.hasOwnProperty('content') ? data.content : square);
+				tr.appendChild(td);
+				td.id = data.id || "ludorum-square-"+ coord.join('-');
+				td.className = data.className || "ludorum-square";
+				td.data_ludorum = data;
+			});
+		});
+	}	
 }); //// declare utils.Checkerboard.

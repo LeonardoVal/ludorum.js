@@ -1,5 +1,5 @@
-define(['basis', 'ludorum'], function (basis, ludorum) {
-	var RANDOM = basis.Randomness.DEFAULT,
+define(['creatartis-base', 'ludorum'], function (base, ludorum) {
+	var RANDOM = base.Randomness.DEFAULT,
 		autonomousPlayers = ["RandomPlayer", "HeuristicPlayer", "MiniMaxPlayer", 
 			"AlphaBetaPlayer", "MaxNPlayer", "MonteCarloPlayer"];
 		
@@ -24,7 +24,7 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 			async_it('can be played by '+ playerName, function () {
 				var Player = ludorum.players[playerName],
 					done = false;
-				return basis.Future.all(basis.Iterable.range(MATCH_COUNT).map(function (i) {
+				return base.Future.all(base.Iterable.range(MATCH_COUNT).map(function (i) {
 					var resultA = (i % 3) - 1,
 						resultB = -resultA,
 						game = new ludorum.games.__Predefined__(i % 2 ? 'A' : 'B', {
@@ -50,7 +50,7 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 		autonomousPlayers.forEach(function (playerName) {
 			var Player = ludorum.players[playerName];
 			async_it('can be played by '+ playerName, function () {
-				return basis.Future.all(basis.Iterable.range(MATCH_COUNT).map(function (i) {
+				return base.Future.all(base.Iterable.range(MATCH_COUNT).map(function (i) {
 					var match = new ludorum.Match(game, [new Player(), new Player()]);
 					return match.run().then(function (match) {
 						var result = match.result();
@@ -61,7 +61,7 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 			});
 			if (Player !== ludorum.players.RandomPlayer) { // RandomPlayer does not try to win. The others must.
 				async_it('can be won by '+ playerName, function () {
-					return basis.Future.all(basis.Iterable.range(MATCH_COUNT).map(function (i) {
+					return base.Future.all(base.Iterable.range(MATCH_COUNT).map(function (i) {
 						var match = new ludorum.Match(game, i % 2 ? [passer, new Player()] : [new Player(), passer]),
 							role = game.players[i % 2];
 						return match.run().then(function (match) {
@@ -82,7 +82,7 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 				game = new ludorum.games.Pig('One', 15),
 				Player = ludorum.players[playerName];
 			async_it("can be played by "+ playerName, function () {
-				return basis.Future.all(basis.Iterable.range(MATCH_COUNT).map(function (i) {
+				return base.Future.all(base.Iterable.range(MATCH_COUNT).map(function (i) {
 					var match = new ludorum.Match(game, [new Player(), new Player()]);
 					return match.run().then(function (match) {
 						var result = match.result();
@@ -100,7 +100,7 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 				game = new ludorum.games.OddsAndEvens(),
 				Player = ludorum.players[playerName];
 			async_it("can be played by "+ playerName, function () {
-				return basis.Future.all(basis.Iterable.range(MATCH_COUNT).map(function (i) {
+				return base.Future.all(base.Iterable.range(MATCH_COUNT).map(function (i) {
 					var match = new ludorum.Match(game, [new Player(), new Player()]);
 					return match.run().then(function (match) {
 						var result = match.result();

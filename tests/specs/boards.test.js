@@ -1,4 +1,4 @@
-define(['basis', 'ludorum'], function (basis, ludorum) {
+define(['creatartis-base', 'ludorum'], function (base, ludorum) {
 
 	function __testLines__(board, horizontals, verticals, positiveDiagonals, negativeDiagonals) {
 		var orthogonals = horizontals.concat(verticals),

@@ -201,7 +201,7 @@ games.Mancala = declare(Game, {
 	*/
 	toString: function toString() {
 		var game = this,
-			lpad = basis.Text.lpad,
+			lpad = base.Text.lpad,
 			north = this.players[0],
 			northHouses = this.houses(north).map(function (h) {
 				return lpad(''+ game.board[h], 2, '0');

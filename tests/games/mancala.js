@@ -2,12 +2,12 @@ var APP = {};
 
 require.config({ 
 	paths: { 
-		basis: "../../bower_components/basis/build/basis", 
+		'creatartis-base': "../../lib/creatartis-base", 
 		ludorum: "../../build/ludorum"
 	}
 });
-require(['basis', 'ludorum'], function (basis, ludorum) {
-	APP.imports = { basis: basis, ludorum: ludorum };
+require(['creatartis-base', 'ludorum'], function (base, ludorum) {
+	APP.imports = { base: base, ludorum: ludorum };
 
 // Player options. /////////////////////////////////////////////////////////////
 	var PLAYER_OPTIONS = APP.PLAYER_OPTIONS = [
@@ -59,22 +59,22 @@ require(['basis', 'ludorum'], function (basis, ludorum) {
 		var board = ludorum.games.Mancala.prototype.makeBoard(4),
 			game = new ludorum.games.Mancala(undefined, board),
 			match = new ludorum.Match(game, APP.players);
-		$('#player0-name').html(basis.Text.escapeXML(game.players[0]));
-		$('#player1-name').html(basis.Text.escapeXML(game.players[1]));
+		$('#player0-name').html(base.Text.escapeXML(game.players[0]));
+		$('#player1-name').html(base.Text.escapeXML(game.players[1]));
 		APP.ui = new ludorum.players.UserInterface.BasicHTMLInterface({ match: match, container: 'board' });
 		match.events.on('begin', function (game) {
-			$('footer').html(basis.Text.escapeXML(
+			$('footer').html(base.Text.escapeXML(
 				"Turn "+ game.activePlayer() +"."
 			));
 		});
 		match.events.on('next', function (game, next) {
-			$('footer').html(basis.Text.escapeXML(
+			$('footer').html(base.Text.escapeXML(
 				"Turn "+ next.activePlayer() +"."
 			));
 		});
 		match.events.on('end', function (game, results) {
 			var player0 = game.players[0];
-			$('footer').html(basis.Text.escapeXML(
+			$('footer').html(base.Text.escapeXML(
 				results[player0] === 0 ? 'Drawed game.' : (results[player0] > 0 ? player0 : game.players[1]) +' wins.'
 			));
 		});

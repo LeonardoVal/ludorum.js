@@ -1,5 +1,5 @@
-define(['basis', 'ludorum'], function (basis, ludorum) {
-	var RANDOM = basis.Randomness.DEFAULT;	
+define(['creatartis-base', 'ludorum'], function (base, ludorum) {
+	var RANDOM = base.Randomness.DEFAULT;	
 	
 	function itIsGameInstance(game) {
 		it("is a valid instance of ludorum.Game", function () {
@@ -65,7 +65,7 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 	}
 	
 	["__Predefined__", "Choose2Win", "TicTacToe", "ToadsAndFrogs", "Mancala", 
-		"ConnectFour", "Pig", "ConnectionGame", "Othello"]
+		"ConnectFour", "Pig", "ConnectionGame", "Othello", "Bahab"]
 	.forEach(function (name) { // Zerosum games for 2 players with one active player per turn.
 		describe("games."+ name, function () {
 			var game = new ludorum.games[name](),
@@ -103,7 +103,7 @@ define(['basis', 'ludorum'], function (basis, ludorum) {
 						moves = moves[game.activePlayer()]
 						expect(moves).toBeTruthy();
 						expect(moves.length).toEqual(w);
-						game = game.next(basis.obj(game.activePlayer(), moves[i % w]))
+						game = game.next(base.obj(game.activePlayer(), moves[i % w]))
 					}
 					expect(game.moves()).toBeFalsy();
 					results = game.result();
