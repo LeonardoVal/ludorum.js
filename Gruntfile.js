@@ -104,11 +104,39 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-docker');
 	grunt.loadNpmTasks('grunt-bowercopy');
+
+// Custom tasks. ///////////////////////////////////////////////////////////////
+	grunt.registerTask('bower-json', 'Writes <bower.json> based on <package.json>.', function() {
+		var pkg = grunt.config.get('pkg'),
+			bowerJSON = { // bower.json own members.
+				"moduleType": ["amd", "globals", "node"],
+				"authors": [pkg.author],
+				"ignore": ["**/.*", "node_modules", "bower_components", "src", 
+					"tests", "docs", "bower.json", "package.json", "Gruntfile.js", 
+					"LICENSE.md", "README.md"],
+				"dependencies": {
+					"requirejs": "2.1.9",
+					"creatartis-base": "git://github.com/LeonardoVal/creatartis-base.git"
+				},
+				"devDependencies": {
+					"jquery": "~2.0.3"
+				}
+			};
+		// Copy package.json members to bower.json.
+		['name', 'description', 'version', 'keywords', 'licence', 'homepage',
+		 'contributors', 'private', 'main', 'dependencies', 'devDependencies',
+		 'optionalDependencies'].forEach(function (id) {
+			if (pkg.hasOwnProperty(id) && !bowerJSON.hasOwnProperty(id)) {
+				bowerJSON[id] = pkg[id];
+			}
+		});
+		grunt.file.write('bower.json', JSON.stringify(bowerJSON, null, '\t'), { encoding: 'utf8' });
+	}); // bower-json.
 	
 // Register tasks. /////////////////////////////////////////////////////////////
 	grunt.registerTask('compile', ['concat_sourcemap:build', 'uglify:build']); 
-	grunt.registerTask('build', ['concat_sourcemap:build', 'karma:build', 
-		'uglify:build', 'docker:build']);
+	grunt.registerTask('build', ['concat_sourcemap:build',
+		'karma:build', 'uglify:build', 'docker:build']);
 	grunt.registerTask('default', ['build']);
 	grunt.registerTask('test', ['concat_sourcemap:build', 'karma:build', 
 		'karma:chrome', 'karma:firefox', 'karma:opera', 'karma:iexplore']);

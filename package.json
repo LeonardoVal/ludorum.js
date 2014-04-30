@@ -4,7 +4,7 @@
 	"keywords": [
 		"board game", "game", "minimax", "artificial intelligence", "game ai"
 	],
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"author": {
 		"name": "Leonardo Val",
 		"email": "leonardo.val@creatartis.com"
@@ -16,7 +16,10 @@
 		"type": "git",
 		"url": "http://github.com/LeonardoVal/ludorum.js"
 	},
-	"dependencies": { 
+	"main": "build/ludorum.min.js",
+	"files": [ "build" ],
+	"dependencies": {
+		"creatartis-base": "git://github.com/LeonardoVal/creatartis-base.git"
 	},
 	"devDependencies": {
 		"requirejs": "~2.1.9",
