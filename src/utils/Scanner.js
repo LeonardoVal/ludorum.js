@@ -62,6 +62,10 @@ exports.utils.Scanner = declare({
 		});
 	},
 	
+	scans: function scans() {
+		return Future.sequence(Array.prototype.slice.call(arguments), this.scan.bind(this));
+	},
+	
 	/** utils.Scanner.__advance__(players, game, ply):
 		Advances the given game by one ply. This may mean for non final game 
 		states either instantiate random variables, ask the available player 
@@ -79,17 +83,19 @@ exports.utils.Scanner = declare({
 			return Iterable.EMPTY;
 		} else {
 			var scanner = this,
-				moves = game.moves();
-			return Future.all(game.activePlayers.map(function (activePlayer) {
-				if (players && players[activePlayer]) {
-					var decisionTime = stats.stat({key:'decision.time', game: game.name, role: role, player: p});
+				moves = game.moves(),
+				stats = this.statistics;
+			return Future.all(game.activePlayers.map(function (role) {
+				if (players && players[role]) {
+					var p = players[role],
+						decisionTime = stats.stat({key:'decision.time', game: game.name, role: role, player: p});
 					decisionTime.startTime();
-					return Future.when(players[activePlayer].decision(game, activePlayer)).then(function (move) {
+					return Future.when(p.decision(game, role)).then(function (move) {
 						decisionTime.addTime();
 						return [move];
 					});
 				} else {
-					return moves[activePlayer];
+					return moves[role];
 				}
 			})).then(function (decisions) {
 				return Iterable.product.apply(this, decisions).map(function (moves) {
