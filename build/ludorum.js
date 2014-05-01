@@ -36,7 +36,7 @@
 	var utils = exports.utils = {};
 
 
-/** ## Class `Game`
+/** ## Class Game
 
 The class `ludorum.Game` is the base type for all games.
 */
@@ -421,7 +421,7 @@ Game.cached = function cached() {
 }; // Game.cached
 
 
-/** ## Class `Player`
+/** ## Class Player
 
 Player is the base type for all playing agents. Basically, playing a game means
 choosing a move from all available ones, each time the game enables the player 
@@ -492,7 +492,7 @@ this library: artificial intelligences, user interface proxies and others.
 */
 var players = exports.players = {};
 
-/** ## Class `Match`
+/** ## Class Match
 
 A match is a controller for a game, managing player decisions, handling the flow
 of the turns between the players by following the game's logic.
@@ -685,7 +685,7 @@ var Match = exports.Match = declare({
 }); // declare Match.
 
 
-/** ## Class `Tournament`
+/** ## Class Tournament
 
 A tournament is a set of matches played between many players. The whole contest 
 ranks the participants according to the result of the matches. This is an 
@@ -829,7 +829,7 @@ as Tournament subtypes.
 */
 var tournaments = exports.tournaments = {};
 
-/** ## Class `Aleatory`
+/** ## Class Aleatory
 
 Aleatories are representations of intermediate game states that depend on some 
 form of randomness. `Aleatory` is an abstract class from which different means
@@ -886,11 +886,13 @@ Aleatory subclasses) and related definitions.
 */
 var aleatories = exports.aleatories = {};
 
-/** Automatic players that moves fully randomly.
+/** ## Class RandomPlayer
+
+Automatic players that moves fully randomly.
 */	
 players.RandomPlayer = declare(Player, {
-	/** new players.RandomPlayer(params):
-		Builds a player that chooses its moves randomly.
+	/** The constructor takes the player's `name` and a `random` number 
+	generator (`Randomness.DEFAULT` by default).
 	*/
 	constructor: function RandomPlayer(params) {
 		Player.call(this, params);
@@ -898,8 +900,7 @@ players.RandomPlayer = declare(Player, {
 			.object('random', { defaultValue: Randomness.DEFAULT });
 	},
 
-	/** players.RandomPlayer.decision(game, player):
-		Makes the decision completely at random.
+	/** The `decision(game, player)` is made completely at random.
 	*/
 	decision: function(game, player) {
 		return this.random.choice(this.__moves__(game, player));
@@ -907,12 +908,13 @@ players.RandomPlayer = declare(Player, {
 }); // declare RandomPlayer.
 
 
-/** Automatic player that is scripted previously.
+/** ## Class TracePlayer
+
+Automatic player that is scripted previously.
 */
 players.TracePlayer = declare(Player, {
-	/** new players.TracePlayer(params):
-		Builds a player that makes his decisions based on a trace, a list of 
-		moves to follow.
+	/** The constructor takes the player's `name` and the `trace` as an 
+	sequence of moves to make.
 	*/
 	constructor: function TracePlayer(params) {
 		Player.call(this, params);
@@ -921,9 +923,8 @@ players.TracePlayer = declare(Player, {
 		this.__decision__ = this.__iterator__();
 	},
 
-	/** players.TracePlayer.decision(game, player):
-		Returns the next move in the trace, or the last one if the trace has
-		ended.
+	/** The `decision(game, player)` returns the next move in the trace, or the 
+	last one if the trace has ended.
 	*/
 	decision: function(game, player) {
 		try {
@@ -935,61 +936,60 @@ players.TracePlayer = declare(Player, {
 	},
 	
 	__serialize__: function __serialize__() {
-		return ['TracePlayer', {name: this.name, trace: this.trace.toArray() }];
+		return ['TracePlayer', { name: this.name, trace: this.trace.toArray() }];
 	}
 }); // declare TracePlayer.
 
 
-/** Base type for automatic players based on heuristic evaluations of game
-	states or moves.
+/** ## Class HeuristicPlayer
+
+This is the base type of automatic players based on heuristic evaluations of 
+game states or moves.
 */
 var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
-	/** new players.HeuristicPlayer(params):
-		Builds a player that evaluates its moves and chooses one of the best
-		evaluated.
+	/** The constructor takes the player's `name` and a `random` number 
+	generator (`base.Randomness.DEFAULT` by default). Many heuristic can be 
+	based on randomness, but this is also necessary to chose between moves with
+	the same evaluation without any bias.
 	*/
 	constructor: function HeuristicPlayer(params) {
 		Player.call(this, params);
 		initialize(this, params)
-		/** players.HeuristicPlayer.random=creatartis-base.Randomness.DEFAULT:
-			Pseudorandom number generator used for random decisions.
-		*/
 			.object('random', { defaultValue: Randomness.DEFAULT })
 			.func('heuristic', { ignore: true });
 	},
 
-	/** players.HeuristicPlayer.moveEvaluation(move, game, player):
-		Calculates a number as the assessment of the given move. The base
-		implementation calculates the resulting game state and returns the 
-		stateEvaluation of it.
+	/** An `HeuristicPlayer` choses the best moves at any given game state. For
+	this purpose it evaluates every move with 
+	`moveEvaluation(move, game, player)`. By default this function evaluates
+	the states resulting from making each move, which is the most common thing
+	to do.
 	*/
 	moveEvaluation: function moveEvaluation(move, game, player) {
 		return this.stateEvaluation(game.next(obj(player, move)), player);
 	},
 
-	/** players.HeuristicPlayer.stateEvaluation(game, player):
-		Calculates a number as the assessment of the given game state. The 
-		base implementation returns the result for the player is the game 
-		has results. Else it returns the heuristic value for the state.
+	/** The `stateEvaluation(game, player)` calculates a number as the 
+	assessment of the given game state for the given player. The base 
+	implementation returns the result for the player is the game has results, 
+	else it returns the heuristic value for the state.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
 		var gameResult = game.result();
 		return gameResult ? gameResult[player] : this.heuristic(game, player);
 	},
 
-	/** players.HeuristicPlayer.heuristic(game, player):
-		Game state evaluation used at states that are not finished games. The
-		default implementation returns a random number in [-0.5, 0.5). This is
-		only useful in testing this framework. Any serious use should redefine 
-		it.
+	/** The `heuristic(game, player)` is an evaluation used at states that are 
+	not finished games. The default implementation returns a random number in 
+	[-0.5, 0.5). This is only useful in testing. Any serious use should redefine 
+	this.
 	*/
 	heuristic: function heuristic(game, player) {
 		return this.random.random(-0.5, 0.5);
 	},
 	
-	/** players.HeuristicPlayer.bestMoves(evaluatedMoves):
-		Given a sequence of tuples [move, evaluation], returns the moves that
-		are best evaluated.
+	/** The `bestMoves(evaluatedMoves)` are all the best evaluated in the given
+	sequence of tuples [move, evaluation].
 	*/
 	bestMoves: function bestMoves(evaluatedMoves) {
 		return iterable(evaluatedMoves).greater(function (pair) {
@@ -999,10 +999,9 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 		});
 	},
 	
-	/** players.HeuristicPlayer.selectMoves(moves, game, player):
-		Return an array with the best evaluated moves. The evaluation is done by
-		the moveEvaluation method. The default implementation always returns a
-		Future.
+	/** `selectMoves(moves, game, player)` return an array with the best 
+	evaluated moves. The evaluation is done with the `moveEvaluation` method. 
+	The default implementation always returns a `Future`.
 	*/
 	selectMoves: function selectMoves(moves, game, player) {
 		var heuristicPlayer = this,
@@ -1025,8 +1024,8 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 		}
 	},
 	
-	/** players.HeuristicPlayer.decision(game, player):
-		Selects randomly from the best evaluated moves.
+	/** The `decision(game, player)` selects randomly from the best evaluated 
+	moves.
 	*/
 	decision: function decision(game, player) {
 		var heuristicPlayer = this,
@@ -1124,36 +1123,35 @@ var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
 }); // declare MiniMaxPlayer.
 
 
-/** Automatic players based on pure MiniMax.
+/** ## Class MiniMaxPlayer
+
+Automatic players based on pure MiniMax.
 */
 var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
-	/** new players.MiniMaxPlayer(params):
-		Builds a player that chooses its moves using the MiniMax algorithm.
+	/** The constructor takes the player's `name` and the MiniMax search's 
+	`horizon` (`4` by default).
 	*/
 	constructor: function MiniMaxPlayer(params) {
 		HeuristicPlayer.call(this, params);
 		initialize(this, params)
-		/** players.MiniMaxPlayer.horizon=4:
-			Maximum depth for the MiniMax search.
-		*/
 			.integer('horizon', { defaultValue: 4, coerce: true });
 	},
 
-	/** players.MiniMaxPlayer.stateEvaluation(game, player):
-		Returns the minimax value for the given game and player.
+	/** Every state's evaluation is the minimax value for the given game and 
+	player.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
 		return this.minimax(game, player, 0);
 	},
 
-	/** players.MiniMaxPlayer.quiescence(game, player, depth):
-		An stability test for the given game state. If the game is quiescent, 
-		this function must return an evaluation. Else it must return NaN or an
-		equivalente value. 
-		Final game states are always quiescent, and their evaluation is the 
-		game's result for the given player. This default implementation also 
-		return an heuristic evaluation for every game state at a deeper depth 
-		than the player's horizon.
+	/** The `quiescence(game, player, depth)` method is a stability test for the 
+	given game state. If the game is quiescent, this function must return an 
+	evaluation. Else it must return NaN or an equivalent value. 
+	
+	Final game states are always quiescent, and their evaluation is the game's
+	result for the given player. This default implementation also return an 
+	heuristic evaluation for every game state at a deeper depth than the 
+	player's horizon.
 	*/
 	quiescence: function quiescence(game, player, depth) {
 		var results = game.result();
@@ -1166,10 +1164,9 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 		}
 	},
 	
-	/** players.MiniMaxPlayer.minimax(game, player, depth):
-		Minimax evaluation of the given game for the given player. If the game
-		is not finished and the depth is greater than the horizon, the heuristic
-		is used.
+	/** The `minimax(game, player, depth)` method calculates the Minimax 
+	evaluation of the given game for the given player. If the game is not 
+	finished and the depth is greater than the horizon, `heuristic` is used.
 	*/
 	minimax: function minimax(game, player, depth) {
 		var value = this.quiescence(game, player, depth);
@@ -1203,28 +1200,30 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 }); // declare MiniMaxPlayer.
 
 
-/** Automatic players based on MiniMax with alfa-beta pruning.
+/** ## Class AlphaBetaPlayer
+
+Automatic players based on MiniMax with alfa-beta pruning.
 */
 players.AlphaBetaPlayer = declare(MiniMaxPlayer, {
-	/** new players.AlphaBetaPlayer(params):
-		Builds a player that chooses its moves using the MiniMax algorithm with
-		alfa-beta pruning.
+	/** The constructor does not add anything to the parent
+	[`MiniMaxPlayer`](MiniMaxPlayer.js.html) constructor.
 	*/
 	constructor: function AlphaBetaPlayer(params) {
 		MiniMaxPlayer.call(this, params);
 	},
 
-	/** players.AlphaBetaPlayer.stateEvaluation(game, player):
-		Returns the minimax value for the given game and player.
+	/** Every state's evaluation is the minimax value for the given game and 
+	player. The alfa an beta arguments are initialized with `-Infinity` and
+	`Infinity`.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
 		return this.minimax(game, player, 0, -Infinity, Infinity);
 	},
 
-	/** players.AlphaBetaPlayer.minimax(game, player, depth, alfa, beta):
-		Minimax evaluation of the given game for the given player. If the game
-		is not finished and the depth is greater than the horizon, the heuristic
-		is used.
+	/** The `minimax(game, player, depth, alfa, beta)` method calculates the 
+	Minimax evaluation of the given game for the given player. If the game is 
+	not finished and the depth is greater than the horizon, the heuristic is
+	used.
 	*/
 	minimax: function minimax(game, player, depth, alpha, beta) {
 		var value = this.quiescence(game, player, depth);
@@ -1580,10 +1579,10 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 	}
 }); // declare WebWorkerPlayer
 
-/** ## Class `Dice`
+/** ## Class Dice
 
-[Aleatory](../Aleatory.html) representation of dice random variables. These are
-uniformly distributed values in the range `[1, base]`.
+[Aleatory](../Aleatory.js.html) representation of dice random variables. These
+are uniformly distributed values in the range `[1, base]`.
 */
 aleatories.Dice = declare(Aleatory, {
 	/** The constructor takes the next function, the dice base, and	a 
@@ -1617,7 +1616,7 @@ aleatories.Dice = declare(Aleatory, {
 }); //// declare Dice.
 
 
-/** ## Class `Checkerboard`
+/** ## Class Checkerboard
 
 Base class for checkerboards representations based on several different data 
 structures.
@@ -1894,7 +1893,7 @@ var Checkerboard = utils.Checkerboard = declare({
 }); //// declare utils.Checkerboard.
 
 
-/** ## Class `CheckerboardFromString`
+/** ## Class CheckerboardFromString
 
 [`Checkerboard`](Checkerboard.html) implementation represented by a simple 
 string (one character per square).
@@ -2098,6 +2097,10 @@ exports.utils.Scanner = declare({
 		});
 	},
 	
+	scans: function scans() {
+		return Future.sequence(Array.prototype.slice.call(arguments), this.scan.bind(this));
+	},
+	
 	/** utils.Scanner.__advance__(players, game, ply):
 		Advances the given game by one ply. This may mean for non final game 
 		states either instantiate random variables, ask the available player 
@@ -2115,17 +2118,19 @@ exports.utils.Scanner = declare({
 			return Iterable.EMPTY;
 		} else {
 			var scanner = this,
-				moves = game.moves();
-			return Future.all(game.activePlayers.map(function (activePlayer) {
-				if (players && players[activePlayer]) {
-					var decisionTime = stats.stat({key:'decision.time', game: game.name, role: role, player: p});
+				moves = game.moves(),
+				stats = this.statistics;
+			return Future.all(game.activePlayers.map(function (role) {
+				if (players && players[role]) {
+					var p = players[role],
+						decisionTime = stats.stat({key:'decision.time', game: game.name, role: role, player: p});
 					decisionTime.startTime();
-					return Future.when(players[activePlayer].decision(game, activePlayer)).then(function (move) {
+					return Future.when(p.decision(game, role)).then(function (move) {
 						decisionTime.addTime();
 						return [move];
 					});
 				} else {
-					return moves[activePlayer];
+					return moves[role];
 				}
 			})).then(function (decisions) {
 				return Iterable.product.apply(this, decisions).map(function (moves) {
@@ -2174,13 +2179,13 @@ exports.utils.Scanner = declare({
 /** Simple reference games with a predefined outcome, mostly for testing 
 	purposes.
 */
-games.__Predefined__ = declare(Game, {
-	/** new games.__Predefined__(activePlayer, results, height=5, width=5):
+games.Predefined = declare(Game, {
+	/** new games.Predefined(activePlayer, results, height=5, width=5):
 		A pseudogame used for testing purposes. It will give width amount of 
 		moves for each player until height moves pass. Then the match is 
 		finished with the given results, or a tie as default.
 	*/
-	constructor: function __Predefined__(activePlayer, results, height, width) {
+	constructor: function Predefined(activePlayer, results, height, width) {
 		if (results) {
 			this.__results__ = results;
 			this.players = Object.keys(results);
@@ -2190,20 +2195,20 @@ games.__Predefined__ = declare(Game, {
 		this.width = isNaN(width) ? 5 : +width;
 	},
 
-	name: '__Predefined__',
+	name: 'Predefined',
 	
-	/** games.__Predefined__.players:
-		Default players for __Predefined__: A and B.
+	/** games.Predefined.players:
+		Default players for Predefined: A and B.
 	*/
 	players: ['A', 'B'],
 
-	/** games.__Predefined__.__results__:
-		Default results for __Predefined__: a tie between A and B.
+	/** games.Predefined.__results__:
+		Default results for Predefined: a tie between A and B.
 	*/
 	__results__: {'A': 0, 'B': 0},
 
-	/** games.__Predefined__.moves():
-		Moves for a __Predefined__ are numbers from 1 to this.width. 
+	/** games.Predefined.moves():
+		Moves for a Predefined are numbers from 1 to this.width. 
 	*/
 	moves: function moves() {
 		if (this.height > 0) {
@@ -2213,14 +2218,14 @@ games.__Predefined__ = declare(Game, {
 		}
 	},
 
-	/** games.__Predefined__.result():
+	/** games.Predefined.result():
 		Returned the predefined results if height is zero or less.
 	*/
 	result: function result() {
 		return this.height > 0 ? null : this.__results__;
 	},
 
-	/** games.__Predefined__.next(moves):
+	/** games.Predefined.next(moves):
 		Moves are completely irrelevant. They only advance in the match.
 	*/
 	next: function next() {
@@ -2230,7 +2235,7 @@ games.__Predefined__ = declare(Game, {
 	__serialize__: function __serialize__() {
 		return [this.name, this.activePlayer(), this.results, this.height, this.width];
 	}
-}); // declare __Predefined__.
+}); // declare Predefined.
 
 
 /** Simple silly game where players can instantly choose to win, loose, draw or
