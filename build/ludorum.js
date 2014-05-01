@@ -2162,7 +2162,7 @@ exports.utils.Scanner = declare({
 					stats.add({key:'defeat.length', game:game.name, role:role, player:p}, ply, game);
 				} else if (r > 0) {
 					stats.add({key:'victory.result', game:game.name, role:role, player:p}, r, game);
-					stats.add({key:'victory.result', game:game.name, role:role, player:p}, ply, game);
+					stats.add({key:'victory.length', game:game.name, role:role, player:p}, ply, game);
 				} else {
 					stats.add({key:'draw.length', game:game.name, role:role, player:p}, ply, game);
 				}
@@ -2727,11 +2727,11 @@ games.Mancala = declare(Game, {
 		this.board = board || this.makeBoard();
 	},
 	
-	/** games.Mancala.makeBoard(seeds=3, houses=6):
+	/** games.Mancala.makeBoard(seeds=4, houses=6):
 		Builds a board array to use as the game state.
 	*/
 	makeBoard: function makeBoard(seeds, houses){
-		seeds = isNaN(seeds) ? 3 : +seeds;
+		seeds = isNaN(seeds) ? 4 : +seeds;
 		houses = isNaN(houses) ? 6 : +houses;
 		var result = [];
 		for(var j = 0; j < 2; j++){

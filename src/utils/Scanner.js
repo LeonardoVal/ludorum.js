@@ -126,7 +126,7 @@ exports.utils.Scanner = declare({
 					stats.add({key:'defeat.length', game:game.name, role:role, player:p}, ply, game);
 				} else if (r > 0) {
 					stats.add({key:'victory.result', game:game.name, role:role, player:p}, r, game);
-					stats.add({key:'victory.result', game:game.name, role:role, player:p}, ply, game);
+					stats.add({key:'victory.length', game:game.name, role:role, player:p}, ply, game);
 				} else {
 					stats.add({key:'draw.length', game:game.name, role:role, player:p}, ply, game);
 				}
