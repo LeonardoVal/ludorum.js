@@ -1,9 +1,10 @@
-﻿/** Automatic player that is scripted previously.
+﻿/** ## Class TracePlayer
+
+Automatic player that is scripted previously.
 */
 players.TracePlayer = declare(Player, {
-	/** new players.TracePlayer(params):
-		Builds a player that makes his decisions based on a trace, a list of 
-		moves to follow.
+	/** The constructor takes the player's `name` and the `trace` as an 
+	sequence of moves to make.
 	*/
 	constructor: function TracePlayer(params) {
 		Player.call(this, params);
@@ -12,9 +13,8 @@ players.TracePlayer = declare(Player, {
 		this.__decision__ = this.__iterator__();
 	},
 
-	/** players.TracePlayer.decision(game, player):
-		Returns the next move in the trace, or the last one if the trace has
-		ended.
+	/** The `decision(game, player)` returns the next move in the trace, or the 
+	last one if the trace has ended.
 	*/
 	decision: function(game, player) {
 		try {
@@ -26,6 +26,6 @@ players.TracePlayer = declare(Player, {
 	},
 	
 	__serialize__: function __serialize__() {
-		return ['TracePlayer', {name: this.name, trace: this.trace.toArray() }];
+		return ['TracePlayer', { name: this.name, trace: this.trace.toArray() }];
 	}
 }); // declare TracePlayer.

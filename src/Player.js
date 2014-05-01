@@ -1,4 +1,4 @@
-﻿/** ## Class `Player`
+﻿/** ## Class Player
 
 Player is the base type for all playing agents. Basically, playing a game means
 choosing a move from all available ones, each time the game enables the player 

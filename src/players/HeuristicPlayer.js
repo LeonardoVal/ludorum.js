@@ -1,53 +1,52 @@
-﻿/** Base type for automatic players based on heuristic evaluations of game
-	states or moves.
+﻿/** ## Class HeuristicPlayer
+
+This is the base type of automatic players based on heuristic evaluations of 
+game states or moves.
 */
 var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
-	/** new players.HeuristicPlayer(params):
-		Builds a player that evaluates its moves and chooses one of the best
-		evaluated.
+	/** The constructor takes the player's `name` and a `random` number 
+	generator (`base.Randomness.DEFAULT` by default). Many heuristic can be 
+	based on randomness, but this is also necessary to chose between moves with
+	the same evaluation without any bias.
 	*/
 	constructor: function HeuristicPlayer(params) {
 		Player.call(this, params);
 		initialize(this, params)
-		/** players.HeuristicPlayer.random=creatartis-base.Randomness.DEFAULT:
-			Pseudorandom number generator used for random decisions.
-		*/
 			.object('random', { defaultValue: Randomness.DEFAULT })
 			.func('heuristic', { ignore: true });
 	},
 
-	/** players.HeuristicPlayer.moveEvaluation(move, game, player):
-		Calculates a number as the assessment of the given move. The base
-		implementation calculates the resulting game state and returns the 
-		stateEvaluation of it.
+	/** An `HeuristicPlayer` choses the best moves at any given game state. For
+	this purpose it evaluates every move with 
+	`moveEvaluation(move, game, player)`. By default this function evaluates
+	the states resulting from making each move, which is the most common thing
+	to do.
 	*/
 	moveEvaluation: function moveEvaluation(move, game, player) {
 		return this.stateEvaluation(game.next(obj(player, move)), player);
 	},
 
-	/** players.HeuristicPlayer.stateEvaluation(game, player):
-		Calculates a number as the assessment of the given game state. The 
-		base implementation returns the result for the player is the game 
-		has results. Else it returns the heuristic value for the state.
+	/** The `stateEvaluation(game, player)` calculates a number as the 
+	assessment of the given game state for the given player. The base 
+	implementation returns the result for the player is the game has results, 
+	else it returns the heuristic value for the state.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
 		var gameResult = game.result();
 		return gameResult ? gameResult[player] : this.heuristic(game, player);
 	},
 
-	/** players.HeuristicPlayer.heuristic(game, player):
-		Game state evaluation used at states that are not finished games. The
-		default implementation returns a random number in [-0.5, 0.5). This is
-		only useful in testing this framework. Any serious use should redefine 
-		it.
+	/** The `heuristic(game, player)` is an evaluation used at states that are 
+	not finished games. The default implementation returns a random number in 
+	[-0.5, 0.5). This is only useful in testing. Any serious use should redefine 
+	this.
 	*/
 	heuristic: function heuristic(game, player) {
 		return this.random.random(-0.5, 0.5);
 	},
 	
-	/** players.HeuristicPlayer.bestMoves(evaluatedMoves):
-		Given a sequence of tuples [move, evaluation], returns the moves that
-		are best evaluated.
+	/** The `bestMoves(evaluatedMoves)` are all the best evaluated in the given
+	sequence of tuples [move, evaluation].
 	*/
 	bestMoves: function bestMoves(evaluatedMoves) {
 		return iterable(evaluatedMoves).greater(function (pair) {
@@ -57,10 +56,9 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 		});
 	},
 	
-	/** players.HeuristicPlayer.selectMoves(moves, game, player):
-		Return an array with the best evaluated moves. The evaluation is done by
-		the moveEvaluation method. The default implementation always returns a
-		Future.
+	/** `selectMoves(moves, game, player)` return an array with the best 
+	evaluated moves. The evaluation is done with the `moveEvaluation` method. 
+	The default implementation always returns a `Future`.
 	*/
 	selectMoves: function selectMoves(moves, game, player) {
 		var heuristicPlayer = this,
@@ -83,8 +81,8 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 		}
 	},
 	
-	/** players.HeuristicPlayer.decision(game, player):
-		Selects randomly from the best evaluated moves.
+	/** The `decision(game, player)` selects randomly from the best evaluated 
+	moves.
 	*/
 	decision: function decision(game, player) {
 		var heuristicPlayer = this,

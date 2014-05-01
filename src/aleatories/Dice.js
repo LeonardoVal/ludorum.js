@@ -1,7 +1,7 @@
-﻿/** ## Class `Dice`
+﻿/** ## Class Dice
 
-[Aleatory](../Aleatory.html) representation of dice random variables. These are
-uniformly distributed values in the range `[1, base]`.
+[Aleatory](../Aleatory.js.html) representation of dice random variables. These
+are uniformly distributed values in the range `[1, base]`.
 */
 aleatories.Dice = declare(Aleatory, {
 	/** The constructor takes the next function, the dice base, and	a 

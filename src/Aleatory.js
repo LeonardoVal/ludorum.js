@@ -1,4 +1,4 @@
-﻿/** ## Class `Aleatory`
+﻿/** ## Class Aleatory
 
 Aleatories are representations of intermediate game states that depend on some 
 form of randomness. `Aleatory` is an abstract class from which different means

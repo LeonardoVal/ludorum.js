@@ -1,25 +1,27 @@
-﻿/** Automatic players based on MiniMax with alfa-beta pruning.
+﻿/** ## Class AlphaBetaPlayer
+
+Automatic players based on MiniMax with alfa-beta pruning.
 */
 players.AlphaBetaPlayer = declare(MiniMaxPlayer, {
-	/** new players.AlphaBetaPlayer(params):
-		Builds a player that chooses its moves using the MiniMax algorithm with
-		alfa-beta pruning.
+	/** The constructor does not add anything to the parent
+	[`MiniMaxPlayer`](MiniMaxPlayer.js.html) constructor.
 	*/
 	constructor: function AlphaBetaPlayer(params) {
 		MiniMaxPlayer.call(this, params);
 	},
 
-	/** players.AlphaBetaPlayer.stateEvaluation(game, player):
-		Returns the minimax value for the given game and player.
+	/** Every state's evaluation is the minimax value for the given game and 
+	player. The alfa an beta arguments are initialized with `-Infinity` and
+	`Infinity`.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
 		return this.minimax(game, player, 0, -Infinity, Infinity);
 	},
 
-	/** players.AlphaBetaPlayer.minimax(game, player, depth, alfa, beta):
-		Minimax evaluation of the given game for the given player. If the game
-		is not finished and the depth is greater than the horizon, the heuristic
-		is used.
+	/** The `minimax(game, player, depth, alfa, beta)` method calculates the 
+	Minimax evaluation of the given game for the given player. If the game is 
+	not finished and the depth is greater than the horizon, the heuristic is
+	used.
 	*/
 	minimax: function minimax(game, player, depth, alpha, beta) {
 		var value = this.quiescence(game, player, depth);

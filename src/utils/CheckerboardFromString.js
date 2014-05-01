@@ -1,4 +1,4 @@
-/** ## Class `CheckerboardFromString`
+/** ## Class CheckerboardFromString
 
 [`Checkerboard`](Checkerboard.html) implementation represented by a simple 
 string (one character per square).

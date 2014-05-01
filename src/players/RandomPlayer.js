@@ -1,8 +1,10 @@
-﻿/** Automatic players that moves fully randomly.
+﻿/** ## Class RandomPlayer
+
+Automatic players that moves fully randomly.
 */	
 players.RandomPlayer = declare(Player, {
-	/** new players.RandomPlayer(params):
-		Builds a player that chooses its moves randomly.
+	/** The constructor takes the player's `name` and a `random` number 
+	generator (`Randomness.DEFAULT` by default).
 	*/
 	constructor: function RandomPlayer(params) {
 		Player.call(this, params);
@@ -10,8 +12,7 @@ players.RandomPlayer = declare(Player, {
 			.object('random', { defaultValue: Randomness.DEFAULT });
 	},
 
-	/** players.RandomPlayer.decision(game, player):
-		Makes the decision completely at random.
+	/** The `decision(game, player)` is made completely at random.
 	*/
 	decision: function(game, player) {
 		return this.random.choice(this.__moves__(game, player));

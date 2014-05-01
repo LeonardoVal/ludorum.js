@@ -1,4 +1,4 @@
-﻿/** ## Class `Game`
+﻿/** ## Class Game
 
 The class `ludorum.Game` is the base type for all games.
 */

@@ -1,4 +1,4 @@
-﻿/** ## Class `Tournament`
+﻿/** ## Class Tournament
 
 A tournament is a set of matches played between many players. The whole contest 
 ranks the participants according to the result of the matches. This is an 

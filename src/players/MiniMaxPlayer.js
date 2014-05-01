@@ -1,33 +1,32 @@
-﻿/** Automatic players based on pure MiniMax.
+﻿/** ## Class MiniMaxPlayer
+
+Automatic players based on pure MiniMax.
 */
 var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
-	/** new players.MiniMaxPlayer(params):
-		Builds a player that chooses its moves using the MiniMax algorithm.
+	/** The constructor takes the player's `name` and the MiniMax search's 
+	`horizon` (`4` by default).
 	*/
 	constructor: function MiniMaxPlayer(params) {
 		HeuristicPlayer.call(this, params);
 		initialize(this, params)
-		/** players.MiniMaxPlayer.horizon=4:
-			Maximum depth for the MiniMax search.
-		*/
 			.integer('horizon', { defaultValue: 4, coerce: true });
 	},
 
-	/** players.MiniMaxPlayer.stateEvaluation(game, player):
-		Returns the minimax value for the given game and player.
+	/** Every state's evaluation is the minimax value for the given game and 
+	player.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
 		return this.minimax(game, player, 0);
 	},
 
-	/** players.MiniMaxPlayer.quiescence(game, player, depth):
-		An stability test for the given game state. If the game is quiescent, 
-		this function must return an evaluation. Else it must return NaN or an
-		equivalente value. 
-		Final game states are always quiescent, and their evaluation is the 
-		game's result for the given player. This default implementation also 
-		return an heuristic evaluation for every game state at a deeper depth 
-		than the player's horizon.
+	/** The `quiescence(game, player, depth)` method is a stability test for the 
+	given game state. If the game is quiescent, this function must return an 
+	evaluation. Else it must return NaN or an equivalent value. 
+	
+	Final game states are always quiescent, and their evaluation is the game's
+	result for the given player. This default implementation also return an 
+	heuristic evaluation for every game state at a deeper depth than the 
+	player's horizon.
 	*/
 	quiescence: function quiescence(game, player, depth) {
 		var results = game.result();
@@ -40,10 +39,9 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 		}
 	},
 	
-	/** players.MiniMaxPlayer.minimax(game, player, depth):
-		Minimax evaluation of the given game for the given player. If the game
-		is not finished and the depth is greater than the horizon, the heuristic
-		is used.
+	/** The `minimax(game, player, depth)` method calculates the Minimax 
+	evaluation of the given game for the given player. If the game is not 
+	finished and the depth is greater than the horizon, `heuristic` is used.
 	*/
 	minimax: function minimax(game, player, depth) {
 		var value = this.quiescence(game, player, depth);
