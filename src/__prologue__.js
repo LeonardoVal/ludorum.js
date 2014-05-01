@@ -27,8 +27,9 @@
 // Library layout. /////////////////////////////////////////////////////////////
 	var exports = {
 		__name__: 'ludorum',
-		__init__: (__init__.dependencies = ['creatartis-base'], __init__)
+		__init__: __init__
 	};
+	__init__.dependencies = {'creatartis-base': base};
 
 	/** The namespace `ludorum.utils` contains miscellaneous classes, functions 
 	and definitions.
