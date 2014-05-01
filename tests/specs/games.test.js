@@ -64,7 +64,7 @@ define(['creatartis-base', 'ludorum'], function (base, ludorum) {
 		});
 	}
 	
-	["__Predefined__", "Choose2Win", "TicTacToe", "ToadsAndFrogs", "Mancala", 
+	["Predefined", "Choose2Win", "TicTacToe", "ToadsAndFrogs", "Mancala", 
 		"ConnectFour", "Pig", "ConnectionGame", "Othello", "Bahab"]
 	.forEach(function (name) { // Zerosum games for 2 players with one active player per turn.
 		describe("games."+ name, function () {
@@ -87,14 +87,14 @@ define(['creatartis-base', 'ludorum'], function (base, ludorum) {
 	
 //// Specific tests. ///////////////////////////////////////////////////////////
 
-	describe("games.__Predefined__()", function () {
+	describe("games.Predefined()", function () {
 		it("works like a game", function () {
 			var game, moves, results, resultA, resultB;
 			for (var h = 0; h < 15; h++) {
 				for (var w = 1; w < 10; w++) {
 					resultA = (h % 3) - 1;
 					resultB = -resultA;
-					game = new ludorum.games.__Predefined__('A', {'A': resultA, 'B': resultB}, h, w);
+					game = new ludorum.games.Predefined('A', {'A': resultA, 'B': resultB}, h, w);
 					expect(game.players.join(' ')).toBe('A B');
 					for (var i = 0; i < h; i++) {
 						moves = game.moves();
@@ -113,7 +113,7 @@ define(['creatartis-base', 'ludorum'], function (base, ludorum) {
 				}
 			}
 		});
-	}); // games.__Predefined__()
+	}); // games.Predefined()
 	
 	describe("games.Choose2Win()", function () { //////////////////////////
 		var game = new ludorum.games.Choose2Win();

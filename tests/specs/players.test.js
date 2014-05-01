@@ -16,7 +16,7 @@ define(['creatartis-base', 'ludorum'], function (base, ludorum) {
 		});
 	})
 
-	describe("games.__Predefined__", function () { /////////////////////
+	describe("games.Predefined", function () { /////////////////////
 		var MATCH_COUNT = 10,
 			MATCH_LENGTH = 5,
 			MATCH_WIDTH = 6;
@@ -27,7 +27,7 @@ define(['creatartis-base', 'ludorum'], function (base, ludorum) {
 				return base.Future.all(base.Iterable.range(MATCH_COUNT).map(function (i) {
 					var resultA = (i % 3) - 1,
 						resultB = -resultA,
-						game = new ludorum.games.__Predefined__(i % 2 ? 'A' : 'B', {
+						game = new ludorum.games.Predefined(i % 2 ? 'A' : 'B', {
 							A: resultA, B: resultB
 						}, MATCH_LENGTH, MATCH_WIDTH),
 						match = new ludorum.Match(game, [new Player(), new Player()]);
@@ -41,7 +41,7 @@ define(['creatartis-base', 'ludorum'], function (base, ludorum) {
 				}));
 			});
 		}); 
-	}); //// games.__Predefined__ can be played by autonomousPlayers.
+	}); //// games.Predefined can be played by autonomousPlayers.
 	
 	describe("games.Choose2Win", function () { /////////////////////////
 		var MATCH_COUNT = 10,
