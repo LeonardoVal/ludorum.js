@@ -54,10 +54,10 @@ exports.utils.Scanner = declare({
 				return scanner.__advance__(players, game, ply);
 			})).then(function (level) {
 				window = iterable(level).flatten().sample(scanner.maxWidth, scanner.random).toArray();
-				ply++;
+				return ++ply;
 			});
 		}).then(function () {
-			scanner.statistics.add({key:'aborted'}, window.length);
+			scanner.statistics.add({ key:'aborted' }, window.length);
 			return scanner.statistics;
 		});
 	},
@@ -76,8 +76,8 @@ exports.utils.Scanner = declare({
 	*/
 	__advance__: function __advance__(players, game, ply) {
 		if (game instanceof Aleatory) {
-			return iterable(game.distribution()).map(function (value) {
-				return game.next(value[0]);
+			return iterable(game.distribution()).mapApply(function (value, prob) {
+				return game.next(value);
 			});
 		} else if (this.account(players, game, ply)) {
 			return Iterable.EMPTY;
@@ -88,18 +88,20 @@ exports.utils.Scanner = declare({
 			return Future.all(game.activePlayers.map(function (role) {
 				if (players && players[role]) {
 					var p = players[role],
-						decisionTime = stats.stat({key:'decision.time', game: game.name, role: role, player: p});
+						decisionTime = stats.stat({key:'decision.time', game: game.name, role: role, player: p.name});
 					decisionTime.startTime();
 					return Future.when(p.decision(game, role)).then(function (move) {
 						decisionTime.addTime();
-						return [move];
+						return [[role, move]];
 					});
 				} else {
-					return moves[role];
+					return moves[role].map(function (move) {
+						return [role, move];
+					});
 				}
 			})).then(function (decisions) {
 				return Iterable.product.apply(this, decisions).map(function (moves) {
-					return game.next(iterable(game.activePlayers).zip(moves).toObject());
+					return game.next(iterable(moves).toObject());
 				});
 			});
 		}
@@ -115,7 +117,7 @@ exports.utils.Scanner = declare({
 		if (result) {
 			iterable(game.players).forEach(function (role) {
 				var r = result[role],
-					p = players && players[role] ? players[role].name : '',
+					p = (players && players[role]) ? players[role].name : '',
 					keys = ['game:'+ game.name, 'role:'+ role, 'player:'+ p];
 				stats.add({key:'game.result', game:game.name, role:role, player:p}, r, game);
 				stats.add({key:'game.length', game:game.name, role:role, player:p}, ply, game);
