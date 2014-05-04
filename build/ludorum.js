@@ -179,28 +179,80 @@ var Game = exports.Game = declare({
 	game mechanics. It performs the given moves for the given players 
 	(activePlayer by default) and returns the next game state.
 	*/
-	perform: function perform(move, player) {
-		player = player || this.activePlayer();
-		var moves = {};
-		moves[player] = move;
-		for (var i = 2; i < arguments.length; ++i) {
-			player = arguments[i+1] || this.activePlayer();
+	perform: function perform() {
+		var moves = {}, move, player;
+		for (var i = 0; i < arguments.length; i += 2) {
+			player = arguments[i + 1];
+			if (typeof player === 'undefined') {
+				player = this.activePlayer();
+			}
 			moves[player] = arguments[i];
 		}
 		return this.next(moves);
 	},
 
+	/** The method `moves()` returns the available moves for each player. Yet 
+	this is not the same as the `moves` objects that can be used with `next()` 
+	to obtain a next game state. Furthermore, if there are more than one active
+	player per turn, the possible decisions can be build with all combinations
+	for all active players.
+	
+	The method `possibleMoves(moves=this.moves())` calculates all possible 
+	`moves` objects based on the result of `moves()`. For example, if `moves()`
+	returns `{A: [1,2], B: [3,4]}`, `possibleMoves()` would return 
+	`[{A:1,B:3}, {A:1,B:4}, {A:2,B:3}, {A:2,B:4}]`.
+	*/
+	possibleMoves: function possibleMoves(moves) {
+		moves = arguments.length < 1 ? this.moves() : moves;
+		if (!moves || typeof moves !== 'object') {
+			return [];
+		}
+		var activePlayers = Object.keys(moves);
+		if (activePlayers.length == 1) { // Most common case.
+			var activePlayer = activePlayers[0];
+			return moves[activePlayer].map(function (move) {
+				return obj(activePlayer, move);
+			});
+		} else { // Simultaneous games.
+			return Iterable.product.apply(this, 
+				iterable(moves).mapApply(function (player, moves) {
+					return moves.map(function (move) {
+						return [player, move];
+					});
+				}).toArray()
+			).map(function (playerMoves) {
+				return iterable(playerMoves).toObject();
+			}).toArray();
+		}
+	},
+	
 	// ### Result functions ####################################################
 
 	/** The maximum and minimum results may be useful and even required by some 
 	game search algorithm. To expose these values, `Game.resultBounds()` returns
 	an array with first the minimum and then the maximum. Most game have one type 
-	of victory (+1) and one type of defeat (-1). Thats why `Game.resultBounds()`
+	of victory (+1) and one type of defeat (-1). That's why `resultBounds()` 
 	returns [-1,+1] by default. Yet some games can define different bounds by 
 	overriding it.
 	*/
 	resultBounds: function resultBounds() {
 		return [-1,+1];
+	},
+	
+	/** The `normalizedResult(result=this.result())` is the `result()` 
+	expressed so the minimum defeat is equal to -1 and the maximum victory is 
+	equal to +1.
+	*/
+	normalizedResult: function normalizedResult(result) {
+		result = result || this.result();
+		if (result) {
+			var bounds = this.resultBounds();
+			return iterable(result).mapApply(function (player, value) {
+				return [player, (value - bounds[0]) / (bounds[1] - bounds[0]) * 2 - 1];
+			}).toObject();
+		} else {
+			return null;
+		}
 	},
 	
 	/** Most games have victory and defeat results that cancel each other. It is
