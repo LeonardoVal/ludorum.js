@@ -26,6 +26,7 @@
 			"grunt-contrib-uglify": "~0.4.0",
 			"grunt-docker": "~0.0.8",
 			"grunt-bowercopy": "~1.0.0",
+			"grunt-contrib-jshint": "~0.10.0",
 		"grunt-karma": "~0.8.0",
 			"karma-jasmine": "~0.1.5",
 			"karma-requirejs": "~0.2.1",
@@ -36,5 +37,8 @@
 			"karma-opera-launcher": "~0.1.0",
 			"karma-sourcemap-loader": "~0.1",
 		"creatartis-base": "git://github.com/LeonardoVal/creatartis-base.git"
-	}	
+	},
+	"scripts": {
+		"postinstall": "npm dedupe"
+	}
 }
