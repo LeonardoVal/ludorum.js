@@ -94,7 +94,7 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 				game = game.next(move);
 			}
 		}
-		//return { game: game, result: game.result(), plies: plies };
+		return { game: game, result: game.result(), plies: plies };
 	},
 	
 	toString: function toString() {
