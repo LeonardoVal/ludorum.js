@@ -17,11 +17,14 @@ require(['creatartis-base', 'ludorum'], function (base, ludorum) {
 		{title: "Random", builder: function () { 
 			return new ludorum.players.RandomPlayer();
 		}, runOnWorker: false },
-		{title: "MonteCarlo (500ms)", builder: function () {
-			return new ludorum.players.MonteCarloPlayer({ timeCap: 500 });
+		{title: "MonteCarlo (0.5seg)", builder: function () {
+			return new ludorum.players.MonteCarloPlayer({ simulationCount: 100, timeCap: 500 });
 		}, runOnWorker: true },
-		{title: "MonteCarlo (1s)", builder: function () {
-			return new ludorum.players.MonteCarloPlayer({ timeCap: 1000 });
+		{title: "MonteCarlo (1.0seg)", builder: function () {
+			return new ludorum.players.MonteCarloPlayer({ simulationCount: 100, timeCap: 1000 });
+		}, runOnWorker: true },
+		{title: "MonteCarlo (50sim)", builder: function () {
+			return new ludorum.players.MonteCarloPlayer({ simulationCount: 50, timeCap: 10000 });
 		}, runOnWorker: true }
 	];
 	APP.players = [PLAYER_OPTIONS[0].builder(), PLAYER_OPTIONS[0].builder()];
