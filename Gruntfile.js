@@ -17,6 +17,7 @@ var sourceFiles = [ 'src/__prologue__.js',
 		'src/utils/Checkerboard.js', 
 			'src/utils/CheckerboardFromString.js',
 		'src/utils/Scanner.js',
+		'src/utils/Cache.js',
 	// games.
 	'src/games/Predefined.js',  'src/games/Choose2Win.js',
 		'src/games/ConnectionGame.js',
@@ -46,15 +47,11 @@ module.exports = function(grunt) {
 				}
 			},
 		},
-		karma: { ///////////////////////////////////////////////////////////////
-			options: {
-				configFile: 'tests/karma.conf.js'
+		jshint: { //////////////////////////////////////////////////////////////
+			build: {
+				options: { },
+				src: ['build/<%= pkg.name %>.js'],
 			},
-			build: { browsers: ['PhantomJS'] },
-			chrome: { browsers: ['Chrome'] },
-			firefox: { browsers: ['Firefox'] },
-			opera: { browsers: ['Opera'] },
-			iexplore: { browsers: ['IE'] }
 		},
 		uglify: { //////////////////////////////////////////////////////////////
 			build: {
@@ -69,7 +66,17 @@ module.exports = function(grunt) {
 				}
 			}
 		},
-		docker: { ////////////////////////////////////////////////////////////////
+		karma: { ///////////////////////////////////////////////////////////////
+			options: {
+				configFile: 'tests/karma.conf.js'
+			},
+			build: { browsers: ['PhantomJS'] },
+			chrome: { browsers: ['Chrome'] },
+			firefox: { browsers: ['Firefox'] },
+			opera: { browsers: ['Opera'] },
+			iexplore: { browsers: ['IE'] }
+		},
+		docker: { //////////////////////////////////////////////////////////////
 			build: {
 				src: ["src/**/*.js", "README.md"],
 				dest: "docs/docker",
@@ -104,6 +111,7 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-docker');
 	grunt.loadNpmTasks('grunt-bowercopy');
+	grunt.loadNpmTasks('grunt-contrib-jshint');
 
 // Custom tasks. ///////////////////////////////////////////////////////////////
 	grunt.registerTask('bower-json', 'Writes <bower.json> based on <package.json>.', function() {
@@ -135,8 +143,8 @@ module.exports = function(grunt) {
 	
 // Register tasks. /////////////////////////////////////////////////////////////
 	grunt.registerTask('compile', ['concat_sourcemap:build', 'uglify:build']); 
-	grunt.registerTask('build', ['concat_sourcemap:build',
-		'karma:build', 'uglify:build', 'docker:build']);
+	grunt.registerTask('build', ['concat_sourcemap:build', 'uglify:build',
+		'karma:build', 'docker:build']);
 	grunt.registerTask('default', ['build']);
 	grunt.registerTask('test', ['concat_sourcemap:build', 'karma:build', 
 		'karma:chrome', 'karma:firefox', 'karma:opera', 'karma:iexplore']);

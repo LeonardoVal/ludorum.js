@@ -52,35 +52,33 @@ var Game = exports.Game = declare({
 			(!Array.isArray(activePlayers) ? [activePlayers] : activePlayers);
 	},
 
-	/** The game's name at `Game.name` is used mainly for displaying purposes.
+	/** The game's `name` is used mainly for displaying purposes.
 	*/
 	name: '?',
 	
-	/** The game players are specified in the class property `Game.players`, an 
-	array of role names (strings), that the players can assume in a match of 
-	this game. For example: `"Xs"` and `"Os"` in TicTacToe, or `"Whites"` and 
-	`"Blacks"` in Chess.
+	/** The game `players` are specified in an array of role names (strings), 
+	that the players can assume in a match of this game. For example: `"Xs"` 
+	and `"Os"` in TicTacToe, or `"Whites"` and `"Blacks"` in Chess.
 	*/
 	players: [],
 
-	/** The moves of each active player are calculated by `Game.moves()`. This 
-	method returns an object with every active player related to the moves each
-	can make in this turn. For example: 
+	/** The moves of each active player are calculated by `moves()`. This method
+	returns an object with every active player related to the moves each can 
+	make in this turn. For example: 
 	
-		{ Player1: ['Rock', 'Paper', 'Scissors'], 
-		Player2: ['Rock', 'Paper', 'Scissors'] }
+	+ `{ Player1: ['Rock', 'Paper', 'Scissors'], Player2: ['Rock', 'Paper', 'Scissors'] }`
 		
-	If the game has finished then a falsy value must be returned (`null` is 
+	If the game has finished then a _falsy_ value must be returned (`null` is 
 	recommended).
 	*/
 	moves: unimplemented("Game", "moves"),
 
-	/** Once the players have chosen their moves, the method `Game.next(moves)`
-	is used to perform the given moves. It returns a new game instance with the
+	/** Once the players have chosen their moves, the method `next(moves)` is 
+	used to perform the given moves. It returns a new game instance with the
 	resulting state. The moves object should have a move for each active player.
 	For example:
 
-		{ Player1: 'Rock', Player2: 'Paper' }
+	+ `{ Player1: 'Rock', Player2: 'Paper' }`
 	
 	There isn't a default implementation, so it must be overriden. It is 
 	strongly advised to check if the moves argument has valid moves.
@@ -88,14 +86,14 @@ var Game = exports.Game = declare({
 	next: unimplemented("Game", "next"),
 
 	/** If the game is finished the result of the game is calculated with 
-	`Game.result()`. It returns an object with every player in the game related 
-	to a number. This number must be positive if the player wins, negative if 
-	the player loses or zero if the game is a tie. For example:
+	`result()`. It returns an object with every player in the game related to a
+	number. This number must be positive if the player wins, negative if the 
+	player loses or zero if the game is a tie. For example:
 	
-		{ Player1: -1, Player2: +1 }
+	+ `{ Player1: -1, Player2: +1 }`
 	
-	If the game is not finished, this function must return a falsy value (`null`
-	is recommended).
+	If the game is not finished, this function must return a _falsy_ value 
+	(`null` is recommended).
 	*/
 	result: unimplemented("Game", "result"),
 
@@ -103,18 +101,18 @@ var Game = exports.Game = declare({
 	differ from the result, since the score sign doesn't have to indicate 
 	victory or defeat. For example:
 	
-		result: { Player1: -1, Player2: +1 }
-		scores: { Player1: 4, Player2: 15 }
+	+ result: `{ Player1: -1, Player2: +1 }`
+	+ scores: `{ Player1: 4, Player2: 15 }`
 	
-	The method `Game.scores()` returns the scores if such is the case. By 
-	default, it return the same that `Game.result()` does.
+	The method `scores()` returns the scores if such is the case. By default, it
+	return the same that `result()` does.
 	*/
 	scores: function scores() {
 		return this.results();
 	},
 	
 	/** In incomplete or imperfect information games all players have different
-	access to the game state data. `Game.view(player)` returns a modified 
+	access to the game state data. The method `view(player)` returns a modified 
 	version of this game, that shows only the information from the perspective 
 	of the given player. The other information is modelled as aleatory 
 	variables.
@@ -129,7 +127,7 @@ var Game = exports.Game = declare({
 	
 	// ### Player information ##################################################
 
-	/** `Game.isActive(player...)` checks if the given players are all active.
+	/** Method `isActive(player...)` checks if the given players are all active.
 	*/
 	isActive: function isActive() {
 		for (var i = 0; i < arguments.length; i++) {
@@ -141,8 +139,8 @@ var Game = exports.Game = declare({
 	},
 
 	/** In most games there is only one active player per turn. The method
-	`Game.activePlayer()` returns that active player's role if there is one and 
-	only one, else it raises an error.
+	`activePlayer()` returns that active player's role if there is one and only
+	one, else it raises an error.
 	*/
 	activePlayer: function activePlayer() {
 		var len = this.activePlayers.length;
@@ -152,8 +150,8 @@ var Game = exports.Game = declare({
 	},
 
 	/** All players in a game are assumed to be opponents. The method 
-	`Game.opponents(players=activePlayers)` returns an array with the opponent 
-	roles of the given players, or of the active players by default. If not all
+	`opponents(players=activePlayers)` returns an array with the opponent roles
+	of the given players, or of the active players by default. If not all
 	players are opponents this method can be overriden.
 	*/
 	opponents: function opponents(players) {
@@ -164,8 +162,8 @@ var Game = exports.Game = declare({
 	},
 
 	/** Since most games have only two players, the method 
-	`Game.opponent(player=activePlayer)` conveniently returns the opponent of 
-	the given player, or the active player by default.
+	`opponent(player=activePlayer)` conveniently returns the opponent of the 
+	given player, or the active player by default.
 	*/
 	opponent: function opponent(player) {
 		var playerIndex = this.players.indexOf(player || this.activePlayer());
@@ -174,10 +172,10 @@ var Game = exports.Game = declare({
 
 	// ### Game flow ###########################################################
 	
-	/** Since `Game.next()` expects a moves object, the method 
-	`Game.perform(move, player=activePlayer, ...)` pretends to simplify simpler
-	game mechanics. It performs the given moves for the given players 
-	(activePlayer by default) and returns the next game state.
+	/** Since `next()` expects a moves object, the method 
+	`perform(move, player=activePlayer, ...)` pretends to simplify simpler game
+	mechanics. It performs the given moves for the given players (activePlayer
+	by default) and returns the next game state.
 	*/
 	perform: function perform() {
 		var moves = {}, move, player;
@@ -199,7 +197,7 @@ var Game = exports.Game = declare({
 	
 	The method `possibleMoves(moves=this.moves())` calculates all possible 
 	`moves` objects based on the result of `moves()`. For example, if `moves()`
-	returns `{A: [1,2], B: [3,4]}`, `possibleMoves()` would return 
+	returns `{A: [1,2], B: [3,4]}`, then `possibleMoves()` would return 
 	`[{A:1,B:3}, {A:1,B:4}, {A:2,B:3}, {A:2,B:4}]`.
 	*/
 	possibleMoves: function possibleMoves(moves) {
@@ -229,8 +227,8 @@ var Game = exports.Game = declare({
 	// ### Result functions ####################################################
 
 	/** The maximum and minimum results may be useful and even required by some 
-	game search algorithm. To expose these values, `Game.resultBounds()` returns
-	an array with first the minimum and then the maximum. Most game have one type 
+	game search algorithm. To expose these values, `resultBounds()` returns an
+	array with first the minimum and then the maximum. Most game have one type 
 	of victory (+1) and one type of defeat (-1). That's why `resultBounds()` 
 	returns [-1,+1] by default. Yet some games can define different bounds by 
 	overriding it.
@@ -257,11 +255,10 @@ var Game = exports.Game = declare({
 	
 	/** Most games have victory and defeat results that cancel each other. It is
 	said that all the victors wins the defeated player loses. Those games are
-	called _zerosum games_. The method 
-	`Game.zerosumResult(score, players=activePlayers)` builds a game result 
-	object for a zerosum game. The given score is split between the given 
-	players (the active players by default), and (-score) is split between their 
-	opponents.
+	called _zerosum games_. The method
+	`zerosumResult(score, players=activePlayers)` builds a game result object
+	for a zerosum game. The given score is split between the given players (the
+	active players by default), and (-score) is split between their opponents.
 	*/
 	zerosumResult: function zerosumResult(score, players) {
 		players = !players ? this.activePlayers : (!Array.isArray(players) ? [players] : players);
@@ -275,27 +272,27 @@ var Game = exports.Game = declare({
 		return result;
 	},
 
-	/** `Game.zerosumResult()` has two shorcuts. 
-	`Game.victory(players=activePlayers, score=1)` returns the zerosum game 
-	result with the given players (or the active players by default) as winners,
-	and their opponents as losers.
+	/** There are two shortcuts for `zerosumResult()`. First 
+	`victory(players=activePlayers, score=1)` returns the zero-sum game result
+	with the given players (or the active players by default) as winners, and
+	their opponents as losers.
 	*/
 	victory: function victory(players, score) {
 		return this.zerosumResult(score || 1, players);
 	},
 
-	/** `Game.defeat(players=activePlayers, score=-1)` returns the zerosum game 
-	result with the given players (or the active players by default) as losers, 
-	and their opponents as winners.
+	/** Second `defeat(players=activePlayers, score=-1)` returns the zero-sum
+	game result with the given players (or the active players by default) as
+	losers, and their opponents as winners.
 	*/
 	defeat: function defeat(players, score) {
 		return this.zerosumResult(score || -1, players);
 	},
 
-	/** A tied game must always have the same result for all players. 
-	`Game.draw(players=this.players, score=0)` returns the game result of a tied 
-	game with the given players (or the active players by default) all with the 
-	same score (zero by default).
+	/** Finally `draw(players=this.players, score=0)` returns the game result of
+	a tied game with the given players (or the active players by default) all 
+	with the same score (zero by default). A tied game must always have the same
+	result for all players.
 	*/
 	draw: function draw(players, score) {
 		score = +(score || 0);
@@ -310,14 +307,14 @@ var Game = exports.Game = declare({
 	// ### Conversions & presentations #########################################
 
 	/** Many methods are based in the serialization of the game instances. The
-	abstract method `Game.__serialize__()` should returns an array, where the 
-	first element should be the name of the game, and the rest are the arguments
-	to call the game's constructor in order to rebuild this game's state.
+	abstract method `__serialize__()` should returns an array, where the first
+	element should be the name of the game, and the rest are the arguments to
+	call the game's constructor in order to rebuild this game's state.
 	*/
 	__serialize__: unimplemented("Game", "__serialize__"),
 	
-	/** Based on the game's serialization, `Game.clone()` creates a copy of this 
-	game state.
+	/** Based on the game's serialization, `clone()` creates a copy of this game
+	state.
 	*/
 	clone: function clone() {
 		var args = this.__serialize__();
@@ -325,8 +322,8 @@ var Game = exports.Game = declare({
 		return new (this.constructor.bind.apply(this.constructor, args))();
 	},
 
-	/** Some algorithms require an identifier for each game state, in order to 
-	store them in caches or hashes. `Game.identifier()` calculates a string that 
+	/** Some algorithms require an `identifier()` for each game state, in order
+	to store them in caches or hashes. This method calculates a string that 
 	uniquely identifies this game state, based on the game's serialization.
 	*/
 	identifier: function identifier() {
@@ -334,26 +331,25 @@ var Game = exports.Game = declare({
 		return args.shift() + args.map(JSON.stringify).join('');
 	},
 
-	/** The default string representation of a Game (i.e. `Game.toString()`) is
-	also based on the serialization. Changing this is not recommended.
+	/** The default string representation of a game is also based on the 
+	serialization. Changing this is not recommended.
 	*/
 	toString: function toString() {
 		var args = this.__serialize__();
 		return args.shift() +'('+ args.map(JSON.stringify).join(',') +')';
 	},
 	
-	/** The default JSON representation (i.e. `Game.toJSON()`) is a straight 
-	JSON stringification of the serialization. It may be used to transfer the 
-	game state between server and client, frames or workers.
+	/** The default JSON representation (i.e. `toJSON()`) is a straight JSON
+	stringification of the serialization. It may be used to transfer the game
+	state between server and client, frames or workers.
 	*/
 	toJSON: function toJSON() {
 		return JSON.stringify(this.__serialize__());
 	},
 	
-	/** The static counterpart of `Game.toJSON` is `Game.fromJSON(data)`, which
-	creates a new instance of this game from the given JSON. The function in the 
-	Game abstract class finds the proper constructor with the game name and 
-	calls it.
+	/** The static counterpart of `toJSON()` is `fromJSON()`, which creates a
+	new instance of this game from the given JSON. The function in `Game` 
+	abstract class finds the proper constructor with the game name and calls it.
 	*/
 	"static fromJSON": function fromJSON(data) {
 		if (typeof data === 'string') {
@@ -374,7 +370,7 @@ var Game = exports.Game = declare({
 	}
 }); // declare Game.
 	
-/** The namespace `ludorum.games` contains all game implementations (as Game 
+/** The namespace `ludorum.games` contains all game implementations (as `Game`
 subclasses) provided by this library.
 */
 var games = exports.games = {};
@@ -1406,7 +1402,7 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 				game = game.next(move);
 			}
 		}
-		//return { game: game, result: game.result(), plies: plies };
+		return { game: game, result: game.result(), plies: plies };
 	},
 	
 	toString: function toString() {
@@ -2229,6 +2225,139 @@ exports.utils.Scanner = declare({
 		}
 	}
 }); // declare utils.Scanner.
+
+
+/** ## Class Cache.
+
+A game cache contains a part of a game tree, avoiding redundancies. It can be
+used to implement a [transposition table](http://en.wikipedia.org/wiki/Transposition_table) 
+or similar data structures.
+*/
+utils.Cache = declare({
+	/** The Cache constructor may take a game to define as `root`.
+	*/
+	constructor: function Cache(game) {
+		this.clear();
+		game && this.root(game);
+	},
+	
+	/** The `stateIdentifier(state)` of every game state is used as the key in 
+	the cache's entries. By default is calculated with the `Game.identifier()`
+	method.
+	*/
+	stateIdentifier: function stateIdentifier(state) {
+		return state.identifier();
+	},
+	
+	/**
+	*/
+	moveIdentifier: function moveIdentifier(move) {
+		return JSON.stringify(move);
+	},
+	
+	/** The `has(state|id)` returns if the given state or state identifier has 
+	an entry in this cache.
+	*/
+	has: function has(state) {
+		var stateId = typeof state === 'string' ? state : this.stateIdentifier(state);
+		return this.__entries__.hasOwnProperty(stateId);
+	},
+	
+	/** If the given state or state identifier has en entry in this cache, 
+	`get(state)` returns that entry. Else it returns `undefined`.
+	*/
+	get: function get(state) {
+		var stateId = typeof state === 'string' ? state : this.stateIdentifier(state);
+		return this.__entries__[stateId];
+	},
+	
+	/** If the given state has no entry in this cache, `entry(state, id)` builds
+	a new entry, adds it to this cache and returns it. If the state is already
+	cached, its entry is returned.
+	Every entry has the game `state`, its `id`, the states that may come before
+	(the `precursors`) and the states that may follow (the `descendants`).
+	*/
+	entry: function entry(state, id) {
+		id = id || this.stateIdentifier(state);
+		if (this.has(id)) {
+			return this.get(id);
+		} else {
+			var _entry = { id: id, state: state, precursors: [], descendants: {} };
+			this.__entries__[id] = _entry;
+			return _entry;
+		}
+	},
+	
+	/** An entry's `descendant(entry, moves)` is the entry of the game state 
+	following the given entry's game state with the given moves. The method not
+	only returns the entry is this state, it creates and caches that entry if 
+	not present.
+	*/
+	descendant: function descendant(entry, moves) {
+		var movesId = this.moveIdentifier(moves),
+			descendants = entry.descendants;
+		if (descendants.hasOwnProperty(movesId)) { // Already expanded.
+			return descendants[movesId][1];
+		} else {
+			var nextState = entry.state.next(moves),
+				nextStateId = this.stateIdentifier(nextState),
+				nextEntry = this.get(nextStateId) // Reuse entry in cache if it exists.
+					|| this.entry(nextState, nextStateId); // Else add new entry.
+			descendants[movesId] = [moves, nextEntry];
+			nextEntry.precursors.push([moves, entry]);
+			return nextEntry;
+		}
+	},
+	
+	/** An entry `descendants(entry)`
+	*/
+	descendants: function descendants(entry) {
+		var descendant = this.descendant.bind(this, entry);
+		if (arguments.length > 1) {
+			return Array.prototype.slice.call(arguments, 1).map(descendant);
+		} else { // if (arguments.length == 0)
+			return entry.state.possibleMoves().map(descendant);
+		}
+	},
+	
+	/** A clear cache has no entries and of course no root.
+	*/
+	clear: function clear() {
+		this.__entries__ = {};
+		this.__root__ = null;
+	},
+	
+	/** If `root()` is called without arguments, it returns the current root.
+	If a state is given, that state is assigned as the new root, and the whole
+	cache is pruned.
+	*/
+	root: function root(state) {
+		if (arguments.length > 0) { // Called with argument means setter.
+			var stateId = this.stateIdentifier(state);
+			this.__root__ = this.get(stateId) || this.entry(state, stateId);
+			this.prune(stateId);
+		}
+		return this.__root__;
+	},
+	
+	/** Deletes all nodes except the one with the given id and its descendants.
+	*/
+	prune: function prune(id) {
+		var pending = [id || this.__root__.id], 
+			pruned = {},
+			entry;
+		while (id = pending.shift()) {
+			if (!pruned.hasOwnProperty(id)) {
+				entry = this.get(id);
+				pruned[id] = entry;
+				pending.push.apply(pending, iterable(entry.descendants).mapApply(function (id, pair) {
+					return pair[1].id;
+				}).toArray());
+			}
+		}
+		return this.__entries__ = pruned;
+	}	
+}); // declare Cache
 
 
 /** Simple reference games with a predefined outcome, mostly for testing 

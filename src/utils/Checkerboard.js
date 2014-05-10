@@ -257,18 +257,24 @@ var Checkerboard = utils.Checkerboard = declare({
 	*/
 	asHTMLTable: function (document, parent, callback) { //TODO
 		var table = document.createElement('table');
-		board.horizontals().reverse().foeEach(function (line) {
+		board.horizontals().reverse().forEach(function (line) {
 			var tr = document.createElement('tr');
 			table.appendChild(tr);
 			line.forEach(function (coord) {
 				var square = board.square(coord),
-					data = callback(square, coord),
-					td = document.createElement('td');
-					td_content = document.createTextNode(data.hasOwnProperty('content') ? data.content : square);
+					td = document.createElement('td'),
+					data = callback(square, coord);
 				tr.appendChild(td);
-				td.id = data.id || "ludorum-square-"+ coord.join('-');
-				td.className = data.className || "ludorum-square";
-				td.data_ludorum = data;
+				td.ludorum_data = base.copy({}, data, {
+					id: "ludorum-square-"+ coord.join('-'),
+					className: || "ludorum-square",
+					innerHTML: base.Text.escapeXML(square),
+					game: this,
+					coord: coord					
+				});
+				td.id = data.id;
+				td.className = data.className;
+				td.innerHTML = data.innerHTML;
 			});
 		});
 	}	
