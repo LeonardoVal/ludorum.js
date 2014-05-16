@@ -99,6 +99,11 @@ games.Othello = declare(Game, {
 		}
 	},
 	
+	resultBounds: function resultBounds() {
+		var squareCount = this.board.width * this.board.height;
+		return [-squareCount, +squareCount];
+	},
+	
 	/** games.Othello.next(moves):
 		TODO.
 	*/
