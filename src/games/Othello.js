@@ -1,8 +1,16 @@
-/** Implementation of Othello.
+/** # Othello
+
+Implementation of [Othello (aka Reversi)](http://en.wikipedia.org/wiki/Reversi)
+for Ludorum.
 */
 games.Othello = declare(Game, {
-	/** new games.Othello(activePlayer="Black", board):
-		TODO.
+	/** The constructor takes the `activePlayer` (`"Black"` by default) and a
+	board (initial board by default). The board is represented by an array of
+	two integers and a string: `[rows, columns, string]`. The string must have:
+	
+	+ `'W'` for every square occupied by a white piece.
+	+ `'B'` for every square occupied by a black piece.
+	+ `'.'` for every empty square.
 	*/
 	constructor: function Othello(activePlayer, board){
 		Game.call(this, activePlayer);
@@ -15,8 +23,8 @@ games.Othello = declare(Game, {
 		}
 	},
 	
-	/** games.Othello.makeBoard(rows, columns, string):
-		Builds a board array to use as the game state.
+	/** `makeBoard(rows=8, columns=8, string)` is used to build the initial 
+	board.
 	*/
 	makeBoard: function makeBoard(rows, columns, string){
 		rows = isNaN(rows) ? 8 : +rows;
@@ -34,31 +42,43 @@ games.Othello = declare(Game, {
 		}
 	},
 	
+	/** The game's name is `'Othello'`.
+	*/
 	name: 'Othello',
 	
-	/** games.Othello.players:
-		Players of Othello are Black and White.
+	/** The game is played by two players: Black and White. Black moves first.
 	*/
 	players: ["Black", "White"],
 	
-	/** games.Othello.lines:
-		Lines of Othello.
-		//TODO: comentario en serio
-		//???
-	 */
-	lines: new utils.Checkerboard(8, 8).lines().map(function(line){ //Deberia ser board.w y board.h en vez de 8, 8?
-		return line.toArray();
-	}, function(line){
-		return line.length > 2;
-	}).toArray(),
+	/** Much of the move calculations are based on the possible lines in the 
+	board. These are calculated and cached by the `lines(rows, cols)` function.
+	*/
+	lines: (function (cache) {
+		return function lines(rows, cols) {
+			var key = rows +'x'+ cols,
+				result = cache[key];
+			if (typeof result === 'undefined') {
+				result = cache[key] = new utils.Checkerboard(rows, cols).lines().map(function(line) { 
+					return line.toArray();
+				}, function(line){
+					return line.length > 2;
+				}).toArray();
+			}
+			return result;
+		};
+	})({}),
 	
+	/** Another optimization in the move logic uses regular expressions to match
+	patterns in the board. These are predefined as a _class_ member.
+	*/
 	__MOVE_REGEXPS__: {
 		"Black": [/\.W+B/g, /BW+\./g],
 		"White": [/\.B+W/g, /WB+\./g]
 	},
 	
-	/** games.Othello.moves():
-		A move for this game is an index of the square in the board.
+	/** A move always places a piece in an empty square, if and only if by doing
+	so one or more lines of the opponent's pieces get enclosed between pieces of
+	the active player.
 	*/
 	moves: function moves(player){
 		if (!player && this.__moves__) {
@@ -68,7 +88,7 @@ games.Othello = declare(Game, {
 		var board = this.board,
 			coords = {},
 			regexps = this.__MOVE_REGEXPS__[player];
-		this.lines.forEach(function(line){
+		this.lines(board.height, board.width).forEach(function(line){
 			regexps.forEach(function (regexp) {
 				board.asString(line).replace(regexp, function(m, i){
 					var coord = m.charAt(0) === "." ? line[i] : line[m.length - 1 + i];
@@ -84,28 +104,8 @@ games.Othello = declare(Game, {
 		return this.__moves__ = (_moves.length > 0 ? obj(player, _moves) : null);
 	},
 	
-	/** games.Othello.result():
-		TODO comment
-	*/
-	result: function result() {
-		if (this.moves()) {
-			return null;
-		} else {
-			var weight = {"W": -1, "B": 1},
-				res_b = iterable(this.board.string).map(function(m){
-					return weight[m] || 0;
-				}).sum();
-			return this.zerosumResult(res_b, "Black");
-		}
-	},
-	
-	resultBounds: function resultBounds() {
-		var squareCount = this.board.width * this.board.height;
-		return [-squareCount, +squareCount];
-	},
-	
-	/** games.Othello.next(moves):
-		TODO.
+	/** When the active player encloses one or more lines of opponent's pieces 
+	between two of its own, all those are turned into active player's pieces.
 	*/
 	next: function next(moves) {
 		var board = this.board.clone(),
@@ -131,15 +131,41 @@ games.Othello = declare(Game, {
 		return new this.constructor(this.opponent(), [board.height, board.width, board.string]);
 	},
 	
-	// Utility methods. ////////////////////////////////////////////////////
+	/** A match ends when the active player cannot move. The winner is the one
+	with more pieces of its color in the board at the end.
+	*/
+	result: function result() {
+		if (this.moves()) {
+			return null;
+		} else {
+			var weight = {"W": -1, "B": 1},
+				res_b = iterable(this.board.string).map(function(m){
+					return weight[m] || 0;
+				}).sum();
+			return this.zerosumResult(res_b, "Black");
+		}
+	},
 	
+	/** The actual score is calculated as the difference in piece count. This
+	means that the maximum victory (maybe impossible) is to fill the board with
+	pieces of only one colour.
+	*/
+	resultBounds: function resultBounds() {
+		var squareCount = this.board.width * this.board.height;
+		return [-squareCount, +squareCount];
+	},
+	
+	// ## Utility methods ######################################################
+	
+	/** The game state serialization simply contains the constructor arguments.
+	*/
 	__serialize__: function __serialize__() {
 		var board = this.board;
 		return [this.name, this.activePlayer(), [board.height, board.width, board.string]];
 	},
 	
-	/** games.ConnectionGame.toHTML():
-		Renders the board as a HTML table.
+	/** `toHTML()` renders the board as a HTML table. CSS classes are added so
+	the look of the board can be configured.
 	*/
 	toHTML: function toHTML() {
 		var moves = this.moves(),
@@ -164,14 +190,56 @@ games.Othello = declare(Game, {
 					}
 				}).join('') +'</tr>';
 			}).join('') + '</table>';
-	}
+	},
+	
+	// ## Heuristics ###########################################################
+	
+	/** `Othello.heuristics` is a bundle of helper functions to build heuristic 
+	evaluation functions for this game.
+	*/
+	'static heuristics': {
+		/** `heuristicFromWeights(weights)` returns an heuristic function that
+		may be used with any [heuristic based player](../players/HeuristicPlayer.js.html).
+		Weights are normalized, so the result is in (-1,+1) (exclusively).
+		*/
+		heuristicFromWeights: function heuristicFromWeights(weights) {
+			var weightCount = weights.length,
+				weightSum = iterable(weights).map(Math.abs).sum(); // Normalize weights.
+			weights = iterable(weights).map(function (weight) { 
+				return weight / (weightSum + 1);
+			});
+			var heuristic = function __heuristic__(game, player) {
+				var board = game.board;
+				raiseIf(board.height * board.width !== weightCount, "Wrong amount of weights!");
+				return board.weightedSum(weights, {
+					'W': player.charAt(0) === 'W' ? 1 : -1,
+					'B': player.charAt(0) === 'B' ? 1 : -1
+				});
+			}
+			heuristic.weights = weights.toArray();
+			return heuristic;
+		},
+		
+		/** `heuristicFromSymmetricWeights(weights)` is similar to 
+		`heuristicFromWeights()` but instead of demanding a weight for every 
+		square in the board, it uses only the upper left quadrant and builds
+		the rest by symmetry. Hence only a quarter of the weights is required.
+		*/
+		heuristicFromSymmetricWeights: function heuristicFromSymmetricWeights(weights, rows, columns) {
+			rows = isNaN(rows) ? 8 : rows | 0;
+			columns = isNaN(columns) ? 8 : columns | 0;
+			var width = Math.ceil(rows / 2);
+			raiseIf(width * Math.ceil(columns / 2) > weights.length, "Not enough weights!");
+			weights = Iterable.range(columns).map(function (column) {
+				var i = column < columns / 2 ? column : columns - column - 1,
+					left = i * width,
+					right = (i + 1) * width;
+				return weights.slice(left, right)
+					.concat(weights.slice(left, right - rows % 2).reverse());
+			}).flatten().toArray();
+			return this.heuristicFromWeights(weights);
+		}
+	}	
 }); // declare Othello.
 	
 games.Othello.makeBoard = games.Othello.prototype.makeBoard;
-
-// Heuristics //////////////////////////////////////////////////////////////////
-
-/** static games.Othello.heuristics:
-	Bundle of heuristic evaluation functions for Gomoku.
-*/
-games.Othello.heuristics = {};

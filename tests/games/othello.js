@@ -11,22 +11,29 @@ require(['creatartis-base', 'ludorum'], function (base, ludorum) {
 
 // Player options. /////////////////////////////////////////////////////////////
 	var PLAYER_OPTIONS = APP.PLAYER_OPTIONS = [
-		{title: "You", builder: function () { 
-			return new ludorum.players.UserInterfacePlayer(); 
-		}, runOnWorker: false },
-		{title: "Random", builder: function () { 
-			return new ludorum.players.RandomPlayer();
-		}, runOnWorker: false },
-		{title: "MonteCarlo (0.5seg)", builder: function () {
-			return new ludorum.players.MonteCarloPlayer({ simulationCount: 100, timeCap: 500 });
-		}, runOnWorker: true },
-		{title: "MonteCarlo (1.0seg)", builder: function () {
-			return new ludorum.players.MonteCarloPlayer({ simulationCount: 100, timeCap: 1000 });
-		}, runOnWorker: true },
-		{title: "MonteCarlo (50sim)", builder: function () {
-			return new ludorum.players.MonteCarloPlayer({ simulationCount: 50, timeCap: 10000 });
-		}, runOnWorker: true }
-	];
+			{title: "You", builder: function () { 
+				return new ludorum.players.UserInterfacePlayer(); 
+			}, runOnWorker: false },
+			{title: "Random", builder: function () { 
+				return new ludorum.players.RandomPlayer();
+			}, runOnWorker: false },
+			{title: "MonteCarlo (0.5seg)", builder: function () {
+				return new ludorum.players.MonteCarloPlayer({ simulationCount: 100, timeCap: 500 });
+			}, runOnWorker: true },
+			{title: "MonteCarlo (1.0seg)", builder: function () {
+				return new ludorum.players.MonteCarloPlayer({ simulationCount: 100, timeCap: 1000 });
+			}, runOnWorker: true },
+			{title: "MonteCarlo (50sim)", builder: function () {
+				return new ludorum.players.MonteCarloPlayer({ simulationCount: 50, timeCap: 10000 });
+			}, runOnWorker: true },
+			{title: "AlphaBeta (h=4)", builder: function () {
+				return new ludorum.players.AlphaBetaPlayer({ horizon: 4, 
+					heuristic: ludorum.games.Othello.heuristics.heuristicFromSymmetricWeights(
+						[+9,-3,+3,+3, -3,-3,-1,-1, +3,-1,+1,+1, +3,-1,+1,+1]
+					)
+				});
+			}, runOnWorker: true },
+		];
 	APP.players = [PLAYER_OPTIONS[0].builder(), PLAYER_OPTIONS[0].builder()];
 	$('#player0, #player1').html(PLAYER_OPTIONS.map(function (option, i) {
 		return '<option value="'+ i +'">'+ option.title +'</option>';
