@@ -37,7 +37,7 @@
 	var utils = exports.utils = {};
 
 
-/** ## Class Game
+/** # Game
 
 The class `ludorum.Game` is the base type for all games.
 */
@@ -125,7 +125,7 @@ var Game = exports.Game = declare({
 		return this;
 	},
 	
-	// ### Player information ##################################################
+	// ## Player information ##################################################
 
 	/** Method `isActive(player...)` checks if the given players are all active.
 	*/
@@ -170,7 +170,7 @@ var Game = exports.Game = declare({
 		return this.players[(playerIndex + 1) % this.players.length];
 	},
 
-	// ### Game flow ###########################################################
+	// ## Game flow ###########################################################
 	
 	/** Since `next()` expects a moves object, the method 
 	`perform(move, player=activePlayer, ...)` pretends to simplify simpler game
@@ -197,8 +197,8 @@ var Game = exports.Game = declare({
 	
 	The method `possibleMoves(moves=this.moves())` calculates all possible 
 	`moves` objects based on the result of `moves()`. For example, if `moves()`
-	returns `{A: [1,2], B: [3,4]}`, then `possibleMoves()` would return 
-	`[{A:1,B:3}, {A:1,B:4}, {A:2,B:3}, {A:2,B:4}]`.
+	returns `{A:[1,2], B:[3,4]}`, then `possibleMoves()` would return 
+	`[{A:1, B:3}, {A:1, B:4}, {A:2, B:3}, {A:2, B:4}]`.
 	*/
 	possibleMoves: function possibleMoves(moves) {
 		moves = arguments.length < 1 ? this.moves() : moves;
@@ -206,7 +206,7 @@ var Game = exports.Game = declare({
 			return [];
 		}
 		var activePlayers = Object.keys(moves);
-		if (activePlayers.length == 1) { // Most common case.
+		if (activePlayers.length === 1) { // Most common case.
 			var activePlayer = activePlayers[0];
 			return moves[activePlayer].map(function (move) {
 				return obj(activePlayer, move);
@@ -224,7 +224,7 @@ var Game = exports.Game = declare({
 		}
 	},
 	
-	// ### Result functions ####################################################
+	// ## Result functions ####################################################
 
 	/** The maximum and minimum results may be useful and even required by some 
 	game search algorithm. To expose these values, `resultBounds()` returns an
@@ -245,9 +245,11 @@ var Game = exports.Game = declare({
 		result = result || this.result();
 		if (result) {
 			var bounds = this.resultBounds();
-			return iterable(result).mapApply(function (player, value) {
-				return [player, (value - bounds[0]) / (bounds[1] - bounds[0]) * 2 - 1];
-			}).toObject();
+			result = base.copy(result);
+			for (var player in result) {
+				result[player] = (result[player] - bounds[0]) / (bounds[1] - bounds[0]) * 2 - 1;
+			}
+			return result;
 		} else {
 			return null;
 		}
@@ -304,7 +306,7 @@ var Game = exports.Game = declare({
 		return result;
 	},
 
-	// ### Conversions & presentations #########################################
+	// ## Conversions & presentations #########################################
 
 	/** Many methods are based in the serialization of the game instances. The
 	abstract method `__serialize__()` should returns an array, where the first
@@ -367,110 +369,109 @@ var Game = exports.Game = declare({
 			data[0] = this; 
 			return new (cons.bind.apply(cons, data))();
 		}
-	}
+	},
+	
+	/** ## Cached games #######################################################
+
+	A `cached(game)` has modified `moves()` and `result()` methods that cache 
+	the calls of the base game. The `next()` method is not cached because it may
+	lead to memory leaks or overload.
+	*/
+	'static cached': function cached(game) {
+		var baseMoves = game.prototype.moves,
+			baseResult = game.prototype.result;
+		return declare(game, {
+			/** The first time `moves()` is called, it is delegated to the base
+			game's `moves()`, and keeps the value for future calls.
+			*/
+			moves: function moves() {
+				var result = baseMoves.call(this);
+				this.moves = function cachedMoves() { // Replace moves() method with cached version.
+					return result;
+				};
+				return result;
+			},
+			
+			/** The first time `result()` is called, it is delegated to the base
+			game's `result(), and keeps the value for future calls.
+			*/
+			result: function result() {
+				var result = super_result.call(this);
+				this.result = function cachedResult() { // Replace result() method with cached version.
+					return result;
+				};
+				return result;
+			}
+		});
+	}, // static cached
+
+	
+	/** ## Serialized simultaneous games. ######################################
+	
+	`serialized(game)` builds a serialized version of a simultaneous game, i.e. 
+	one in which two or more players may be active in the same turn. It converts
+	a simultaneous game to an alternated turn based game. This may be useful for
+	using algorithms like MiniMax to build AIs for simultaneous games.
+	*/
+	'static serialized': function serialized(game) {
+		var super_moves = game.prototype.moves,
+			super_next = game.prototype.next;
+		return declare(game, {
+			/** The `moves()` of a serialized game returns the moves of the 
+			player deemed as the active player, if there are any moves.
+			*/
+			moves: function moves() {
+				var fixedMoves = this.__fixedMoves__ || (this.__fixedMoves__ = {}),
+					allMoves = super_moves.call(this),
+					moves = {},
+					activePlayer;
+				for (var i = 0; i < this.activePlayers.length; i++) {
+					if (fixedMoves.hasOwnProperty(this.activePlayers[i])) {
+						activePlayer = this.activePlayers[i];
+						break;
+					}
+				}
+				if (activePlayer && allMoves) {
+					moves[activePlayer] = allMoves[activePlayer];
+					return moves;
+				} else {
+					return null;
+				}
+			},
+		
+			/** The `next(moves)` of a serialized game advances the actual game
+			if with the given move all active players in the real game state 
+			have moved. Else the next player that has to move becomes active.
+			*/
+			next: function next(moves) {
+				var nextFixedMoves = copy({}, this.fixedMoves || {}, moves),
+					allMoved = iterable(this.players).all(function (p) {
+							return nextFixedMoves.hasOwnProperty(p);
+						}),
+					result;
+				if (allMoved) {
+					result = super_next.call(this, nextFixedMoves);
+					result.fixedMoves = {};
+				} else {
+					result = this.clone();
+					result.fixedMoves = nextFixedMoves;
+				}
+				return result;
+			}
+		});
+	} // static serialized
+	
 }); // declare Game.
 	
-/** The namespace `ludorum.games` contains all game implementations (as `Game`
+/** ## Games namespace #########################################################
+
+The namespace `ludorum.games` contains all game implementations (as `Game`
 subclasses) provided by this library.
 */
 var games = exports.games = {};
-	
-// Serialized simultaneous games. //////////////////////////////////////////////
-	
-/** static Game.serialized():
-	Builds a serialized version of this game, converting a simultaneous game to 
-	an alternated turn based game.
-*/
-Game.serialized = function serialized() {
-	var super_moves = this.prototype.moves,
-		super_next = this.prototype.next;
-	return declare(this, {
-		/** Game.serialized.moves():
-			Returns the moves of the player deemed as the active player, if 
-			there are any moves.
-		*/
-		moves: function moves() {
-			var fixedMoves = this.__fixedMoves__ || (this.__fixedMoves__ = {}),
-				allMoves = super_moves.call(this),
-				moves = {},
-				activePlayer;
-			for (var i = 0; i < this.activePlayers.length; i++) {
-				if (fixedMoves.hasOwnProperty(this.activePlayers[i])) {
-					activePlayer = this.activePlayers[i];
-					break;
-				}
-			}
-			if (activePlayer && allMoves) {
-				moves[activePlayer] = allMoves[activePlayer];
-				return moves;
-			} else {
-				return null;
-			}
-		},
-	
-		/** Game.serialized.next(moves):
-			If with the given move all active players in the real game state
-			have moves, then the actual game advances. Else the next player 
-			that has to move becomes active.
-		*/
-		next: function next(moves) {
-			var nextFixedMoves = copy({}, this.fixedMoves || {}, moves),
-				allMoved = iterable(this.players).all(function (p) {
-						return nextFixedMoves.hasOwnProperty(p);
-					}),
-				result;
-			if (allMoved) {
-				result = super_next.call(this, nextFixedMoves);
-				result.fixedMoves = {};
-			} else {
-				result = this.clone();
-				result.fixedMoves = nextFixedMoves;
-			}
-			return result;
-		}
-	});
-}; // Game.serialized
-
-// Cached games. ///////////////////////////////////////////////////////////////
-
-/** static Game.cached():
-	Returns a derived constructor is returned that caches the moves and result 
-	methods. The next() method is not cached because it may lead to memory
-	leaks or overload.
-*/
-Game.cached = function cached() {
-	var super_moves = this.prototype.moves,
-		super_result = this.prototype.result,
-		super_next = this.prototype.next;
-	return declare(this, {
-		/** Game.cached.moves():
-			The first time it is called, delegates to game.moves(), and 
-			keeps the result for future calls.
-		*/
-		moves: function moves() {
-			var result = super_moves.call(this);
-			this.moves = function cachedMoves() { // Replace moves() method with cached version.
-				return result;
-			};
-			return result;
-		},
-		
-		/** Game.cached.result():
-			The first time it is called, delegates to game.result(), and 
-			keeps the result for future calls.
-		*/
-		result: function result() {
-			var result = super_result.call(this);
-			this.result = function cachedResult() { // Replace result() method with cached version.
-				return result;
-			};
-			return result;
-		}
-	});
-}; // Game.cached
 
 
-/** ## Class Player
+/** # Player
 
 Player is the base type for all playing agents. Basically, playing a game means
 choosing a move from all available ones, each time the game enables the player 
@@ -493,14 +494,14 @@ var Player = exports.Player = declare({
 	obtained synchronously, else a future is returned.
 	*/
 	decision: function decision(game, role) {
-		return this.__moves__(game, role)[0]; // Indeed not a very thoughtful base implementation. 
+		return this.movesFor(game, role)[0]; // Indeed not a very thoughtful base implementation. 
 	},
 
-	/** To help implement the decision, `Player.__moves__(game, player)` gets
+	/** To help implement the decision, `Player.movesFor(game, player)` gets
 	the moves in the game for the player. It also checks if there are any moves,
 	and if it not so an error is risen.
 	*/
-	__moves__: function __moves__(game, role) {
+	movesFor: function movesFor(game, role) {
 		var moves = game.moves();
 		raiseIf(!moves || !moves[role] || moves[role].length < 1, 
 			"Player ", role, " has no moves for game ", game, ".");
@@ -516,7 +517,7 @@ var Player = exports.Player = declare({
 		return this;
 	},
 	
-	// ### Conversions & presentations #########################################
+	// ## Conversions & presentations #########################################
 
 	/** Players can also be serialized, pretty much in the same way 
 	[games](Game.html) are. `Player.__serialize__()` returns an array, where the 
@@ -536,12 +537,14 @@ var Player = exports.Player = declare({
 	}
 }); // declare Player.
 
-/** The namespace `ludorum.players` contains all kinds of players provided by
+/** ## Players namespace
+
+The namespace `ludorum.players` contains all kinds of players provided by
 this library: artificial intelligences, user interface proxies and others.
 */
 var players = exports.players = {};
 
-/** ## Class Match
+/** # Match
 
 A match is a controller for a game, managing player decisions, handling the flow
 of the turns between the players by following the game's logic.
@@ -660,7 +663,7 @@ var Match = exports.Match = declare({
 		return true;
 	},
 	
-	/** ### Commands ###########################################################
+	/** ## Commands ###########################################################
 	
 	Commands are pseudo-moves, which can be returned by the players instead of
 	valid moves for the game being played. Their intent is to control the match
@@ -674,7 +677,7 @@ var Match = exports.Match = declare({
 	*/
 	"static CommandQuit": function CommandQuit() { },
 	
-	/** ### Events #############################################################
+	/** ## Events #############################################################
 	
 	Matches provide game events that players and spectators can be registered 
 	to. `Match.events` is the event handler. Emitted events are:
@@ -734,7 +737,7 @@ var Match = exports.Match = declare({
 }); // declare Match.
 
 
-/** ## Class Tournament
+/** # Tournament
 
 A tournament is a set of matches played between many players. The whole contest 
 ranks the participants according to the result of the matches. This is an 
@@ -830,7 +833,7 @@ var Tournament = exports.Tournament = declare({
 		});
 	},
 	
-	/** ### Events #############################################################
+	/** ## Events #############################################################
 	
 	Tournaments provide events to enable further analysis and control over it. 
 	`Tournament.events` is the event handler. The emitted events are:
@@ -873,12 +876,14 @@ var Tournament = exports.Tournament = declare({
 	}
 }); // declare Tournament
 
-/** The namespace `ludorum.tournaments` holds several contest types implemented 
+/** ## Tournament namespace
+
+The namespace `ludorum.tournaments` holds several contest types implemented 
 as Tournament subtypes.
 */
 var tournaments = exports.tournaments = {};
 
-/** ## Class Aleatory
+/** # Aleatory
 
 Aleatories are representations of intermediate game states that depend on some 
 form of randomness. `Aleatory` is an abstract class from which different means
@@ -930,7 +935,9 @@ var Aleatory = exports.Aleatory = declare({
 	distribution: unimplemented("Aleatory", "distribution")
 }); // declare Aleatory.
 
-/** The namespace `ludorum.aleatories` is a bundle of random game states (i.e. 
+/** ## Aleatories namespace
+
+The namespace `ludorum.aleatories` is a bundle of random game states (i.e. 
 Aleatory subclasses) and related definitions.
 */
 var aleatories = exports.aleatories = {};
@@ -952,7 +959,7 @@ players.RandomPlayer = declare(Player, {
 	/** The `decision(game, player)` is made completely at random.
 	*/
 	decision: function(game, player) {
-		return this.random.choice(this.__moves__(game, player));
+		return this.random.choice(this.movesFor(game, player));
 	}
 }); // declare RandomPlayer.
 
@@ -1015,7 +1022,17 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 	to do.
 	*/
 	moveEvaluation: function moveEvaluation(move, game, player) {
-		return this.stateEvaluation(game.next(obj(player, move)), player);
+		if (Object.keys(move).length < 2) { // One active player.
+			return this.stateEvaluation(game.next(move), player);
+		} else { // Many active players.
+			var sum = 0, count = 0,
+				move = copy(obj(player, [move[player]]), move);
+			game.possibleMoves(move).forEach(function (ms) {
+				sum += this.stateEvaluation(game.next(ms), player);
+				++count;
+			});
+			return count > 0 ? sum / count : 0; // Average all evaluations.
+		}
 	},
 
 	/** The `stateEvaluation(game, player)` calculates a number as the 
@@ -1078,9 +1095,18 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 	*/
 	decision: function decision(game, player) {
 		var heuristicPlayer = this,
-			selectedMoves = heuristicPlayer.selectMoves(heuristicPlayer.__moves__(game, player), game, player);
+			moves = game.moves();
+		raiseIf(!moves || !moves.hasOwnProperty(player),
+			"Player "+ player +" is not active (moves= "+ JSON.stringify(moves) +"!");
+		var playerMoves = moves[player];
+		raiseIf(!Array.isArray(playerMoves) || playerMoves.length < 1,
+			"Player "+ player +" has no moves ("+ playerMoves +")!");
+		moves = playerMoves.map(function (move) {
+			return copy(obj(player, move), moves);
+		});
+		var selectedMoves = heuristicPlayer.selectMoves(moves, game, player);
 		return Future.then(selectedMoves, function (selectedMoves) {
-			return heuristicPlayer.random.choice(selectedMoves);
+			return heuristicPlayer.random.choice(selectedMoves)[player];
 		});
 	}
 }); // declare HeuristicPlayer.
@@ -1147,7 +1173,7 @@ var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
 		var values = this.quiescence(game, player, depth);
 		if (!values) { // game is not quiescent.
 			var activePlayer = game.activePlayer(),
-				moves = this.__moves__(game, activePlayer),
+				moves = this.movesFor(game, activePlayer),
 				values = {},
 				otherValues, next;
 			if (moves.length < 1) {
@@ -1221,7 +1247,7 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 		var value = this.quiescence(game, player, depth);
 		if (isNaN(value)) { // game is not quiescent.
 			var activePlayer = game.activePlayer(),
-				moves = this.__moves__(game, activePlayer), 
+				moves = this.movesFor(game, activePlayer), 
 				comparison, next;
 			if (moves.length < 1) {
 				throw new Error('No moves for unfinished game '+ game +'.');
@@ -1281,7 +1307,7 @@ players.AlphaBetaPlayer = declare(MiniMaxPlayer, {
 		}
 		var activePlayer = game.activePlayer(),
 			isActive = activePlayer == player,
-			moves = this.__moves__(game, activePlayer), next;
+			moves = this.movesFor(game, activePlayer), next;
 		if (moves.length < 1) {
 			throw new Error('No moves for unfinished game '+ game +'.');
 		}
@@ -1340,18 +1366,26 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 		var monteCarloPlayer = this,
 			endTime = Date.now() + this.timeCap,
 			options = moves.map(function (move) {
-				return { move: move, next: game.next(obj(player, move)), 
-					isFinal: false, sum: 0, count: 0 
+				return { 
+					move: move, 
+					nexts: (Object.keys(move).length < 2 
+						? [game.next(move)]
+						: game.possibleMoves(copy(obj(player, [move[player]]), move)).map(function (ms) {
+							return game.next(ms);
+						})
+					),
+					sum: 0, 
+					count: 0 
 				};
 			});
 		for (var i = 0; i < this.simulationCount && Date.now() < endTime; ++i) {
 			options.forEach(function (option) {
-				if (!option.isFinal) {
-					var sim = monteCarloPlayer.simulation(option.next, player);
-					option.isFinal = sim.plies < 1;
+				option.nexts = option.nexts.filter(function (next) {
+					var sim = monteCarloPlayer.simulation(next, player);
 					option.sum += sim.result[player];
 					++option.count;
-				}
+					return sim.plies > 0;
+				});
 			});
 		}
 		return iterable(options).greater(function (option) {
@@ -1665,7 +1699,7 @@ aleatories.Dice = declare(Aleatory, {
 }); //// declare Dice.
 
 
-/** ## Class Checkerboard
+/** # Checkerboard
 
 Base class for checkerboards representations based on several different data 
 structures.
@@ -1688,7 +1722,7 @@ var Checkerboard = utils.Checkerboard = declare({
 	*/
 	emptySquare: null,
 	
-	// ### Board information ###################################################
+	// ## Board information ####################################################
 	
 	/** All coordinates are represented by `[row, column]` arrays. To check if
 	a coordinate is inside the board, use `isValidCoord(coord)`.
@@ -1700,7 +1734,7 @@ var Checkerboard = utils.Checkerboard = declare({
 	},
 	
 	/** Method `coordinates()` returns the sequence of the board's valid 
-	positions.
+	positions; first by row then by column.
 	*/
 	coordinates: function coordinates() {
 		return Iterable.range(this.height).product(Iterable.range(this.width));
@@ -1719,7 +1753,7 @@ var Checkerboard = utils.Checkerboard = declare({
 		return this.square(coord) === this.emptySquare;
 	},
 	
-	// #### Lines ##############################################################
+	// ### Lines ###############################################################
 	
 	/** Many games must deal with line configurations of pieces. The following
 	methods help with this kind of logic. Each line is a sequence of coordinates
@@ -1820,7 +1854,7 @@ var Checkerboard = utils.Checkerboard = declare({
 		}).flatten();
 	},
 	
-	// #### Walks ##############################################################
+	// ### Walks ###############################################################
 	
 	/** A walk is a sequence of coordinates in the board that start at a given
 	point and advances in a certain direction. The `walk(coord, delta)` method
@@ -1864,7 +1898,8 @@ var Checkerboard = utils.Checkerboard = declare({
 		EVERY:      [[0,-1], [0,+1], [-1,0], [+1,0], [-1,-1], [-1,+1], [+1,-1], [+1,+1]]
 	},
 	
-	// ### Board modification ##################################################
+	// ## Board modification ###################################################
+	
 	/** Game states must not be modifiable, else game search algorithms may fail
 	or be extremely complicated. Then, all board altering method in 
 	`Checkerboard` must return a new board instance and leave this instance 
@@ -1924,25 +1959,48 @@ var Checkerboard = utils.Checkerboard = declare({
 	*/
 	asHTMLTable: function (document, parent, callback) { //TODO
 		var table = document.createElement('table');
-		board.horizontals().reverse().foeEach(function (line) {
+		board.horizontals().reverse().forEach(function (line) {
 			var tr = document.createElement('tr');
 			table.appendChild(tr);
 			line.forEach(function (coord) {
 				var square = board.square(coord),
-					data = callback(square, coord),
-					td = document.createElement('td');
-					td_content = document.createTextNode(data.hasOwnProperty('content') ? data.content : square);
+					td = document.createElement('td'),
+					data = callback(square, coord);
 				tr.appendChild(td);
-				td.id = data.id || "ludorum-square-"+ coord.join('-');
-				td.className = data.className || "ludorum-square";
-				td.data_ludorum = data;
+				td.ludorum_data = base.copy({}, data, {
+					id: "ludorum-square-"+ coord.join('-'),
+					className: "ludorum-square",
+					innerHTML: base.Text.escapeXML(square),
+					game: this,
+					coord: coord					
+				});
+				td.id = data.id;
+				td.className = data.className;
+				td.innerHTML = data.innerHTML;
 			});
 		});
-	}	
+	},
+	
+	// ## Heuristics ###########################################################
+	
+	/** A `weightedSum` is an simple way of defining an heuristic. Every 
+	position in the board is assigned a weight, and every possible value is 
+	assigned a coefficients (usually player is 1, opponent is -1, else is 0).
+	
+	Weights have to be in the same order that `coordinates()` enumerates the
+	board's positions. This function assumes the weights are normalized and 
+	sufficient to cover the whole board.
+	*/
+	weightedSum: function weightedSum(weights, coefficients) {
+		var board = this;
+		return this.coordinates().zip(weights).mapApply(function (coord, weight) {
+			return coefficients[board.square(coord)] * weight || 0;
+		}).sum();
+	}
 }); //// declare utils.Checkerboard.
 
 
-/** ## Class CheckerboardFromString
+/** # CheckerboardFromString
 
 [`Checkerboard`](Checkerboard.html) implementation represented by a simple 
 string (one character per square).
@@ -1976,7 +2034,8 @@ var CheckerboardFromString = utils.CheckerboardFromString = declare(Checkerboard
 		}).join('\n');
 	},
 	
-	// ### Board information ###################################################
+	// ## Board information ####################################################
+	
 	/** The `square(coord, outside)` return the character at `(row * width + 
 	column)` if the coordinate is inside the board. Else returns `outside`.
 	*/
@@ -1991,7 +2050,8 @@ var CheckerboardFromString = utils.CheckerboardFromString = declare(Checkerboard
 		}
 	},
 	
-	// #### Lines ##############################################################
+	// ### Lines ###############################################################
+	
 	/** Since square contents in `CheckerboardFromString` are just characters,
 	lines can be thought as strings. The method `asString(line)` takes an
 	iterable of coordinates and returns a string of the characters found at each
@@ -2058,7 +2118,7 @@ var CheckerboardFromString = utils.CheckerboardFromString = declare(Checkerboard
 		}).join('|');
 	},
 	
-	// ### Board modification ##################################################
+	// ## Board modification ###################################################
 	
 	/** Cloning a CheckerboardFromString simply calls the constructor again
 	with the proper arguments to replicate this instance.
@@ -2078,7 +2138,7 @@ var CheckerboardFromString = utils.CheckerboardFromString = declare(Checkerboard
 		var i = coord[0] * this.width + coord[1];
 		this.string = this.string.substr(0, i) + value + this.string.substr(i + 1);
 		return this;
-	}	
+	}
 }); // declare utils.CheckerboardFromString
 
 
@@ -2227,14 +2287,14 @@ exports.utils.Scanner = declare({
 }); // declare utils.Scanner.
 
 
-/** ## Class Cache.
+/** # Cache
 
 A game cache contains a part of a game tree, avoiding redundancies. It can be
 used to implement a [transposition table](http://en.wikipedia.org/wiki/Transposition_table) 
 or similar data structures.
 */
 utils.Cache = declare({
-	/** The Cache constructor may take a game to define as `root`.
+	/** The `Cache` constructor may take a game to define as `root`.
 	*/
 	constructor: function Cache(game) {
 		this.clear();
@@ -2249,7 +2309,8 @@ utils.Cache = declare({
 		return state.identifier();
 	},
 	
-	/**
+	/** The `moveIdentifier(move)` is used as the key in each entry's 
+	descendants. By default it uses the move JSON _stringification_.
 	*/
 	moveIdentifier: function moveIdentifier(move) {
 		return JSON.stringify(move);
@@ -2269,6 +2330,12 @@ utils.Cache = declare({
 	get: function get(state) {
 		var stateId = typeof state === 'string' ? state : this.stateIdentifier(state);
 		return this.__entries__[stateId];
+	},
+	
+	/** `size()` returns the amount of entries in this cache.
+	*/
+	size: function size() {
+		return Object.keys(this.__entries__).length;
 	},
 	
 	/** If the given state has no entry in this cache, `entry(state, id)` builds
@@ -2309,7 +2376,8 @@ utils.Cache = declare({
 		}
 	},
 	
-	/** An entry `descendants(entry)`
+	/** An entry `descendants(entry)` is an array of all the entry's 
+	descendants, for all the possible moves for the entry's state.
 	*/
 	descendants: function descendants(entry) {
 		var descendant = this.descendant.bind(this, entry);
@@ -2340,7 +2408,8 @@ utils.Cache = declare({
 		return this.__root__;
 	},
 	
-	/** Deletes all nodes except the one with the given id and its descendants.
+	/** `prune(id=root.id)` deletes all nodes except the one with the given id 
+	and its descendants.
 	*/
 	prune: function prune(id) {
 		var pending = [id || this.__root__.id], 
@@ -2666,6 +2735,8 @@ games.OddsAndEvens = declare(Game, {
 		The player matching the parity of the moves sum earns a point.
 	*/
 	next: function next(moves) {
+		raiseIf(typeof moves.Evens !== 'number' || typeof moves.Odds !== 'number',
+			'Invalid moves '+ (JSON.stringify(moves) || moves) +'!');
 		var parity = !((moves.Evens + moves.Odds) % 2);
 		return new this.constructor(this.turns - 1, {
 			Evens: this.points.Evens + (parity ? 1 : 0),
@@ -3452,11 +3523,19 @@ games.Mutropas = declare(Game, {
 	}
 }); // declare Mutropas
 
-/** Implementation of Othello.
+/** # Othello
+
+Implementation of [Othello (aka Reversi)](http://en.wikipedia.org/wiki/Reversi)
+for Ludorum.
 */
 games.Othello = declare(Game, {
-	/** new games.Othello(activePlayer="Black", board):
-		TODO.
+	/** The constructor takes the `activePlayer` (`"Black"` by default) and a
+	board (initial board by default). The board is represented by an array of
+	two integers and a string: `[rows, columns, string]`. The string must have:
+	
+	+ `'W'` for every square occupied by a white piece.
+	+ `'B'` for every square occupied by a black piece.
+	+ `'.'` for every empty square.
 	*/
 	constructor: function Othello(activePlayer, board){
 		Game.call(this, activePlayer);
@@ -3469,8 +3548,8 @@ games.Othello = declare(Game, {
 		}
 	},
 	
-	/** games.Othello.makeBoard(rows, columns, string):
-		Builds a board array to use as the game state.
+	/** `makeBoard(rows=8, columns=8, string)` is used to build the initial 
+	board.
 	*/
 	makeBoard: function makeBoard(rows, columns, string){
 		rows = isNaN(rows) ? 8 : +rows;
@@ -3488,31 +3567,43 @@ games.Othello = declare(Game, {
 		}
 	},
 	
+	/** The game's name is `'Othello'`.
+	*/
 	name: 'Othello',
 	
-	/** games.Othello.players:
-		Players of Othello are Black and White.
+	/** The game is played by two players: Black and White. Black moves first.
 	*/
 	players: ["Black", "White"],
 	
-	/** games.Othello.lines:
-		Lines of Othello.
-		//TODO: comentario en serio
-		//???
-	 */
-	lines: new utils.Checkerboard(8, 8).lines().map(function(line){ //Deberia ser board.w y board.h en vez de 8, 8?
-		return line.toArray();
-	}, function(line){
-		return line.length > 2;
-	}).toArray(),
+	/** Much of the move calculations are based on the possible lines in the 
+	board. These are calculated and cached by the `lines(rows, cols)` function.
+	*/
+	lines: (function (cache) {
+		return function lines(rows, cols) {
+			var key = rows +'x'+ cols,
+				result = cache[key];
+			if (typeof result === 'undefined') {
+				result = cache[key] = new utils.Checkerboard(rows, cols).lines().map(function(line) { 
+					return line.toArray();
+				}, function(line){
+					return line.length > 2;
+				}).toArray();
+			}
+			return result;
+		};
+	})({}),
 	
+	/** Another optimization in the move logic uses regular expressions to match
+	patterns in the board. These are predefined as a _class_ member.
+	*/
 	__MOVE_REGEXPS__: {
 		"Black": [/\.W+B/g, /BW+\./g],
 		"White": [/\.B+W/g, /WB+\./g]
 	},
 	
-	/** games.Othello.moves():
-		A move for this game is an index of the square in the board.
+	/** A move always places a piece in an empty square, if and only if by doing
+	so one or more lines of the opponent's pieces get enclosed between pieces of
+	the active player.
 	*/
 	moves: function moves(player){
 		if (!player && this.__moves__) {
@@ -3522,7 +3613,7 @@ games.Othello = declare(Game, {
 		var board = this.board,
 			coords = {},
 			regexps = this.__MOVE_REGEXPS__[player];
-		this.lines.forEach(function(line){
+		this.lines(board.height, board.width).forEach(function(line){
 			regexps.forEach(function (regexp) {
 				board.asString(line).replace(regexp, function(m, i){
 					var coord = m.charAt(0) === "." ? line[i] : line[m.length - 1 + i];
@@ -3538,23 +3629,8 @@ games.Othello = declare(Game, {
 		return this.__moves__ = (_moves.length > 0 ? obj(player, _moves) : null);
 	},
 	
-	/** games.Othello.result():
-		TODO comment
-	*/
-	result: function result() {
-		if (this.moves()) {
-			return null;
-		} else {
-			var weight = {"W": -1, "B": 1},
-				res_b = iterable(this.board.string).map(function(m){
-					return weight[m] || 0;
-				}).sum();
-			return this.zerosumResult(res_b, "Black");
-		}
-	},
-	
-	/** games.Othello.next(moves):
-		TODO.
+	/** When the active player encloses one or more lines of opponent's pieces 
+	between two of its own, all those are turned into active player's pieces.
 	*/
 	next: function next(moves) {
 		var board = this.board.clone(),
@@ -3580,15 +3656,41 @@ games.Othello = declare(Game, {
 		return new this.constructor(this.opponent(), [board.height, board.width, board.string]);
 	},
 	
-	// Utility methods. ////////////////////////////////////////////////////
+	/** A match ends when the active player cannot move. The winner is the one
+	with more pieces of its color in the board at the end.
+	*/
+	result: function result() {
+		if (this.moves()) {
+			return null;
+		} else {
+			var weight = {"W": -1, "B": 1},
+				res_b = iterable(this.board.string).map(function(m){
+					return weight[m] || 0;
+				}).sum();
+			return this.zerosumResult(res_b, "Black");
+		}
+	},
 	
+	/** The actual score is calculated as the difference in piece count. This
+	means that the maximum victory (maybe impossible) is to fill the board with
+	pieces of only one colour.
+	*/
+	resultBounds: function resultBounds() {
+		var squareCount = this.board.width * this.board.height;
+		return [-squareCount, +squareCount];
+	},
+	
+	// ## Utility methods ######################################################
+	
+	/** The game state serialization simply contains the constructor arguments.
+	*/
 	__serialize__: function __serialize__() {
 		var board = this.board;
 		return [this.name, this.activePlayer(), [board.height, board.width, board.string]];
 	},
 	
-	/** games.ConnectionGame.toHTML():
-		Renders the board as a HTML table.
+	/** `toHTML()` renders the board as a HTML table. CSS classes are added so
+	the look of the board can be configured.
 	*/
 	toHTML: function toHTML() {
 		var moves = this.moves(),
@@ -3613,17 +3715,59 @@ games.Othello = declare(Game, {
 					}
 				}).join('') +'</tr>';
 			}).join('') + '</table>';
-	}
+	},
+	
+	// ## Heuristics ###########################################################
+	
+	/** `Othello.heuristics` is a bundle of helper functions to build heuristic 
+	evaluation functions for this game.
+	*/
+	'static heuristics': {
+		/** `heuristicFromWeights(weights)` returns an heuristic function that
+		may be used with any [heuristic based player](../players/HeuristicPlayer.js.html).
+		Weights are normalized, so the result is in (-1,+1) (exclusively).
+		*/
+		heuristicFromWeights: function heuristicFromWeights(weights) {
+			var weightCount = weights.length,
+				weightSum = iterable(weights).map(Math.abs).sum(); // Normalize weights.
+			weights = iterable(weights).map(function (weight) { 
+				return weight / (weightSum + 1);
+			});
+			var heuristic = function __heuristic__(game, player) {
+				var board = game.board;
+				raiseIf(board.height * board.width !== weightCount, "Wrong amount of weights!");
+				return board.weightedSum(weights, {
+					'W': player.charAt(0) === 'W' ? 1 : -1,
+					'B': player.charAt(0) === 'B' ? 1 : -1
+				});
+			}
+			heuristic.weights = weights.toArray();
+			return heuristic;
+		},
+		
+		/** `heuristicFromSymmetricWeights(weights)` is similar to 
+		`heuristicFromWeights()` but instead of demanding a weight for every 
+		square in the board, it uses only the upper left quadrant and builds
+		the rest by symmetry. Hence only a quarter of the weights is required.
+		*/
+		heuristicFromSymmetricWeights: function heuristicFromSymmetricWeights(weights, rows, columns) {
+			rows = isNaN(rows) ? 8 : rows | 0;
+			columns = isNaN(columns) ? 8 : columns | 0;
+			var width = Math.ceil(rows / 2);
+			raiseIf(width * Math.ceil(columns / 2) > weights.length, "Not enough weights!");
+			weights = Iterable.range(columns).map(function (column) {
+				var i = column < columns / 2 ? column : columns - column - 1,
+					left = i * width,
+					right = (i + 1) * width;
+				return weights.slice(left, right)
+					.concat(weights.slice(left, right - rows % 2).reverse());
+			}).flatten().toArray();
+			return this.heuristicFromWeights(weights);
+		}
+	}	
 }); // declare Othello.
 	
 games.Othello.makeBoard = games.Othello.prototype.makeBoard;
-
-// Heuristics //////////////////////////////////////////////////////////////////
-
-/** static games.Othello.heuristics:
-	Bundle of heuristic evaluation functions for Gomoku.
-*/
-games.Othello.heuristics = {};
 
 
 /** Bahab is a chess-like board game originally designed for Ludorum.
@@ -3723,6 +3867,372 @@ games.Bahab = declare(Game, {
 			}).join('') + '</table>';
 	}
 }); //// declare Bahab.
+
+/** Implementation of the game Colograph, a competitive version of the graph
+	colouring problem.
+*/ 
+	
+/** new Colograph(args):
+	Builds a new Colograph game. The edges of the graph are represented by
+	an array of arrays of integers, acting as an adjacency list. 
+	The colours argument is an array of integers, each being the node's 
+	player index in the players array, or -1 for uncoloured nodes. By 
+	default all nodes are not coloured.
+	There is only one active player per turn, and it is the first player by
+	default.
+*/
+games.Colograph = declare(Game, {
+	constructor: function Colograph(args) {
+		Game.call(this, args ? args.activePlayer : undefined);
+		initialize(this, args)
+			.object('colours', { defaultValue: {} })
+		/** Colograph.edges:
+			Adjacencies array defining the game graph.
+		*/
+			.array('edges', { defaultValue: [[1,3],[2],[3],[]] })
+		/** Colograph.shapes:
+			Shape of each node.
+		*/
+			.array('shapes', { defaultValue: ['circle', 'triangle', 'square', 'star'] })
+		/** Colograph.scoreSameShape=-1:
+			Score added by each coloured edge that binds two nodes of the same
+			shape.
+		*/
+			.number('scoreSameShape', { defaultValue: -1, coerce: true })
+		/** Colograph.scoreDifferentShape=-1:
+			Score added by each coloured edge that binds two nodes of different
+			shapes.
+		*/
+			.number('scoreDifferentShape', { defaultValue: -1, coerce: true });
+	},
+	
+	name: 'Colograph',
+	
+	/** Colograph.players:
+		There are two roles in this game: "Red" and "Blue".
+	*/
+	players: ['Red', 'Blue'],
+	
+	__serialize__: function __serialize__() {
+		return [this.name, this.activePlayer(), {
+			colours: this.colours,
+			edges: this.edges,
+			shapes: this.shapes,
+			scoreSameShape: this.scoreSameShape,
+			scoreDifferentShape: this.scoreDifferentShape
+		}];
+	},
+	
+	/** Colograph.score():
+		Scores are calculated for each player with the edges of their 
+		colour.
+	*/
+	score: function score() {
+		var points = {},
+			shapes = this.shapes,
+			colours = this.colours,
+			scoreSameShape = this.scoreSameShape,
+			scoreDifferentShape = this.scoreDifferentShape,
+			startingPoints = this.edges.length;
+		this.players.forEach(function (player) {
+			points[player] = startingPoints;
+		});
+		iterable(this.edges).forEach(function (n1_edges, n1) {
+			n1_edges.forEach(function (n2) {
+				var k = n1 +','+ n2;
+				if (colours.hasOwnProperty(k)) {
+					points[colours[k]] += shapes[n1] === shapes[n2] ? scoreSameShape : scoreDifferentShape;
+				}
+			});
+		});
+		return points;
+	},
+	
+	/** Colograph.result():
+		The game ends when the active player has no moves, i.e. when all nodes
+		in the graph have been coloured. An edge connecting two nodes of the
+		same colour is considered to be of that colour. The match is won by the
+		player with less edges of its colour.
+	*/
+	result: function result() {
+		if (!this.moves()) { // If the active player cannot move, the game is over.
+			var points = this.score(), 
+				players = this.players;
+			return this.zerosumResult(points[players[0]] - points[players[1]], players[0]);
+		} else {
+			return null; // The game continues.
+		}
+	},
+
+	/** Colograph.moves():
+		Every non coloured node is a possible move for the active player.
+	*/
+	moves: function moves() {
+		var colours = this.colours, 
+			uncoloured = [];
+		for (var i = 0; i < this.edges.length; i++) {
+			if (!this.colours.hasOwnProperty(i)) {
+				uncoloured.push(i);
+			}
+		}
+		return uncoloured.length < 1 ? null : obj(this.activePlayer(), uncoloured);
+	},
+
+	/** colograph.Colograph.next(moves):
+		The result of any move is the colouring of one previously uncoloured 
+		node with the active players's colour.
+	*/
+	next: function next(moves) {
+		var activePlayer = this.activePlayer(), 
+			move = +moves[activePlayer] >> 0;
+		raiseIf(move < 0 || move >= this.colours.length, 
+			'Invalid move: node ', move, ' does not exist in ', this, '.');
+		raiseIf(this.colours[move] >= 0, 
+			'Invalid move: node ', move, ' has already been coloured in ', this, '.');
+		var newColours = copy(obj(move, activePlayer), this.colours);
+		this.edges[move].forEach(function (n2) { // Colour edges from the one coloured in this move.
+			if (newColours[n2] === activePlayer) {
+				newColours[move +','+ n2] = activePlayer;
+			}
+		});
+		this.edges.forEach(function (adjs, n1) { // Colour edges to the one coloured in this move.
+			if (n1 !== move && adjs.indexOf(move) >= 0 && newColours[n1] === activePlayer) {
+				newColours[n1 +','+ move] = activePlayer;
+			} 
+		});
+		return new this.constructor({
+			activePlayer: this.opponent(activePlayer),
+			colours: newColours,
+			edges: this.edges,
+			shapes: this.shapes,
+			scoreSameShape: this.scoreSameShape,
+			scoreDifferentShape: this.scoreDifferentShape
+		});
+	},
+
+	// ## Game properties. #####################################################
+
+	/** Colograph.edgeColour(node1, node2):
+		Returns a colour (player index) if the nodes are joined by an edge, and
+		both have that same colour.
+	*/
+	edgeColour: function edgeColour(node1, node2) {
+		var connected = this.edges[node1].indexOf(node2) >= 0 || this.edges[node2].indexOf(node1) >= 0,
+			colour1 = this.colours[node1],
+			colour2 = this.colours[node2];
+		return connected && colour1 >= 0 && colour1 === colour2 ? colour1 : -1;
+	},
+	
+	// ## Heuristics. ##########################################################
+	
+	/** colograph.heuristics:
+		A bundle of heuristic evaluation functions to be used with artificial
+		intelligence methods such as Minimax.
+	*/
+	'static heuristics': {
+		/** heuristics.scoreDifference(game, player):
+			Returns the count of edges coloured by the opponent minus the count of
+			edges coloured by the player.
+		*/
+		scoreDifference: function scoreDifference(game, player) {
+			var score = game.score(),
+				result = 0;
+			for (var p in score) {
+				result += p === player ? score[p] : -score[p];
+			}
+			return result / game.edges.length / 2;
+		}
+	},
+	
+	// ## Graph generation. ####################################################
+
+	'static randomGraph': function randomGraph(nodeCount, edgeCount, random) {
+		nodeCount = Math.max(2, +nodeCount >> 0);
+		edgeCount = Math.max(nodeCount - 1, +edgeCount >> 0);
+		var edges = basis.iterables.range(nodeCount - 1).map(function (i) {
+			return random.split(1, basis.iterables.range(i + 1, nodeCount).toArray());
+		}).toArray();
+		for (var n = edgeCount - (nodeCount - 1), pair, pair2; n > 0; n--) {
+			pair = random.choice(edges);
+			if (pair[1].length > 0) {
+				pair2 = random.split(1, pair[1]);
+				pair[0].push(pair2[0][0])
+				pair[1] = pair2[1];
+				n--;
+			}
+		}
+		edges = edges.map(function (pair) {
+			return pair[0];
+		});
+		edges.push([]); // Last node has no edges.
+		return edges;
+	},
+	
+	/** colograph.randomGame(params):
+		Generates a Colograph game with a random graph.
+	*/
+	'static randomGame': function randomGame(args) {
+		params = base.initialize({}, params)
+			.object('random', { defaultValue: randomness.DEFAULT })
+			.integer('nodeCount', { defaultValue: 8, coerce: true })
+			.integer('edgeCount', { defaultValue: 11, coerce: true })
+			.integer('shapeCount', { defaultValue: 4, coerce: true, minimum: 1, maximum: 4 })
+			.subject;
+		var SHAPES = ['circle', 'triangle', 'square', 'star'];
+		return new Colograph({ 
+			edges: this.randomGraph(params.nodeCount, params.edgeCount, params.random),
+			shapes: params.random.randoms(params.nodeCount, 0, params.shapeCount).map(function (r) {
+				return SHAPES[r|0];
+			}),
+			scoreSameShape: 1
+		});
+	},
+	
+	// ## Human interface based on KineticJS. ##################################
+	
+	/** colograph.KineticUI(match, config):
+		TODO.
+	*/
+	'static KineticUI': declare(UserInterface, {
+		constructor: function KineticUI(args) {
+			UserInterface.call(this, args);
+			initialize(this, args)
+				.string("container", { defaultValue: "colograph-container" })
+				.object("Kinetic", { defaultValue: window.Kinetic })
+				.integer('canvasRadius', { defaultValue: NaN, coerce: true })
+				.integer('nodeRadius', { defaultValue: 15, coerce: true })
+				.array('playerColours', { defaultValue: ['red', 'blue'] });
+			if (isNaN(this.canvasRadius)) {
+				this.canvasRadius = (Math.min(screen.width, screen.height) * 0.6) >> 1;
+			}
+			var stage = this.stage = new Kinetic.Stage({ 
+					container: this.container, 
+					width: this.canvasRadius * 2, 
+					height: this.canvasRadius * 2 
+				}),
+				layer = this.layer = new Kinetic.Layer({ 
+					clearBeforeDraw: true, 
+					offsetX: -this.canvasRadius, 
+					offsetY: -this.canvasRadius 
+				}),
+				game = this.match.state();
+			stage.add(layer);
+			setInterval(stage.draw.bind(stage), 1000 / 30);
+			layer.destroyChildren();
+			this.edges = {};
+			this.nodes = {};
+			this.drawEdges(game);
+			this.drawNodes(game);
+		},
+		
+		drawEdges: function drawEdges(game) {
+			var angle = 2 * Math.PI / game.edges.length,
+				radius = this.canvasRadius - this.nodeRadius * 2,
+				ui = this;
+			game.edges.forEach(function (n2s, n1) { // Create lines.
+				n2s.forEach(function (n2) {
+					var line = new ui.Kinetic.Line({
+						points: [radius * Math.cos(angle * n1), radius * Math.sin(angle * n1),
+								radius * Math.cos(angle * n2), radius * Math.sin(angle * n2)],
+						stroke: "black", strokeWidth: 2
+					});
+					ui.edges[n1+','+n2] = line;
+					ui.layer.add(line);
+				});
+			});
+		},
+		
+		drawNodes: function drawNodes(game) {
+			var angle = 2 * Math.PI / game.edges.length,
+				radius = this.canvasRadius - this.nodeRadius * 2,
+				ui = this;
+			game.edges.forEach(function (adjs, n) {
+				var shape,
+					x = radius * Math.cos(angle * n),
+					y = radius * Math.sin(angle * n);
+				switch (game.shapes[n]) {
+					case 'square': 
+						shape = ui.drawSquare(x, y, ui.nodeRadius, n); break;
+					case 'triangle': 
+						shape = ui.drawTriangle(x, y, ui.nodeRadius, n); break;
+					case 'star': 
+						shape = ui.drawStar(x, y, ui.nodeRadius, n); break;
+					default: 
+						shape = ui.drawCircle(x, y, ui.nodeRadius, n);
+				}
+				shape.on('mouseover', function () {
+					shape.setScale(1.2);
+				});
+				shape.on('mouseout', function () {
+					shape.setScale(1);
+				});
+				shape.on('click tap', function () {
+					ui.perform(n);
+				});
+				shape.setRotation(Math.random() * 2 * Math.PI);//FIXME
+				ui.nodes[n] = shape;
+				ui.layer.add(shape);
+			});
+		},
+		
+		drawCircle: function drawCircle(x, y, r, n) {
+			return new this.Kinetic.Circle({ 
+				x: x, y: y, radius: r,
+				fill: "white", stroke: "black", strokeWidth: 2
+			});
+		},
+		
+		drawSquare: function drawSquare(x, y, r, n) {
+			return new this.Kinetic.Rect({ 
+				x: x, y: y, width: r * 2, height: r * 2,
+				offsetX: r, offsetY: r,
+				fill: "white", stroke: "black", strokeWidth: 2
+			});
+		},
+		
+		drawStar: function drawStar(x, y, r, n) {
+			return new Kinetic.Star({ numPoints: 5,
+				x: x, y: y, innerRadius: r * 0.6, outerRadius: r * 1.5,
+				fill: 'white', stroke: 'black', strokeWidth: 2
+			});
+		},
+		
+		drawTriangle: function drawTriangle(x, y, r, n) {
+			return new Kinetic.RegularPolygon({ sides: 3,
+				x: x, y: y, radius: r * 1.25,
+				fill: 'white', stroke: 'black', strokeWidth: 2
+			});
+		},
+		
+		display: function display(game) {
+			this.updateEdges(game);
+			this.updateNodes(game);
+		},
+		
+		updateEdges: function updateEdges(game) {
+			var ui = this;
+			game.edges.forEach(function (n2s, n1) {
+				n2s.forEach(function (n2) {
+					var k = n1+','+n2;
+					ui.edges[k].setStroke(game.colours[k] || "black");
+				});
+			});
+		},
+		
+		updateNodes: function updateNodes(game) {
+			var ui = this;
+			game.edges.forEach(function (adjs, n) {
+				var colour = game.colours[n];
+				if (colour) {
+					ui.nodes[n].setFill(colour);
+					ui.nodes[n].off('mouseover mouseout click tap');
+				}
+			});
+		}
+	}) // KineticJSCircleUI.
+	
+}); // declare Colograph.	
+
 
 /** # Class `RoundRobin`
 
