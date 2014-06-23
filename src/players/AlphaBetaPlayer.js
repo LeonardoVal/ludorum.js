@@ -30,7 +30,7 @@ players.AlphaBetaPlayer = declare(MiniMaxPlayer, {
 		}
 		var activePlayer = game.activePlayer(),
 			isActive = activePlayer == player,
-			moves = this.__moves__(game, activePlayer), next;
+			moves = this.movesFor(game, activePlayer), next;
 		if (moves.length < 1) {
 			throw new Error('No moves for unfinished game '+ game +'.');
 		}

@@ -47,7 +47,7 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 		var value = this.quiescence(game, player, depth);
 		if (isNaN(value)) { // game is not quiescent.
 			var activePlayer = game.activePlayer(),
-				moves = this.__moves__(game, activePlayer), 
+				moves = this.movesFor(game, activePlayer), 
 				comparison, next;
 			if (moves.length < 1) {
 				throw new Error('No moves for unfinished game '+ game +'.');

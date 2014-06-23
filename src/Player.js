@@ -1,4 +1,4 @@
-﻿/** ## Class Player
+﻿/** # Player
 
 Player is the base type for all playing agents. Basically, playing a game means
 choosing a move from all available ones, each time the game enables the player 
@@ -21,14 +21,14 @@ var Player = exports.Player = declare({
 	obtained synchronously, else a future is returned.
 	*/
 	decision: function decision(game, role) {
-		return this.__moves__(game, role)[0]; // Indeed not a very thoughtful base implementation. 
+		return this.movesFor(game, role)[0]; // Indeed not a very thoughtful base implementation. 
 	},
 
-	/** To help implement the decision, `Player.__moves__(game, player)` gets
+	/** To help implement the decision, `Player.movesFor(game, player)` gets
 	the moves in the game for the player. It also checks if there are any moves,
 	and if it not so an error is risen.
 	*/
-	__moves__: function __moves__(game, role) {
+	movesFor: function movesFor(game, role) {
 		var moves = game.moves();
 		raiseIf(!moves || !moves[role] || moves[role].length < 1, 
 			"Player ", role, " has no moves for game ", game, ".");
@@ -44,7 +44,7 @@ var Player = exports.Player = declare({
 		return this;
 	},
 	
-	// ### Conversions & presentations #########################################
+	// ## Conversions & presentations #########################################
 
 	/** Players can also be serialized, pretty much in the same way 
 	[games](Game.html) are. `Player.__serialize__()` returns an array, where the 
@@ -64,7 +64,9 @@ var Player = exports.Player = declare({
 	}
 }); // declare Player.
 
-/** The namespace `ludorum.players` contains all kinds of players provided by
+/** ## Players namespace
+
+The namespace `ludorum.players` contains all kinds of players provided by
 this library: artificial intelligences, user interface proxies and others.
 */
 var players = exports.players = {};

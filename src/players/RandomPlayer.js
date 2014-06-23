@@ -15,6 +15,6 @@ players.RandomPlayer = declare(Player, {
 	/** The `decision(game, player)` is made completely at random.
 	*/
 	decision: function(game, player) {
-		return this.random.choice(this.__moves__(game, player));
+		return this.random.choice(this.movesFor(game, player));
 	}
 }); // declare RandomPlayer.
