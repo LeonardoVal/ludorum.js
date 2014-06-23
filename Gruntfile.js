@@ -25,7 +25,7 @@ var sourceFiles = [ 'src/__prologue__.js',
 		'src/games/ToadsAndFrogs.js', 'src/games/Mancala.js',
 		'src/games/Pig.js', 'src/games/ConnectFour.js',
 		'src/games/Mutropas.js', 'src/games/Othello.js',
-		'src/games/Bahab.js',
+		'src/games/Bahab.js', 'src/games/Colograph.js',
 	// tournaments.
 	'src/tournaments/RoundRobin.js', 'src/tournaments/Measurement.js',
 		'src/tournaments/Elimination.js',
