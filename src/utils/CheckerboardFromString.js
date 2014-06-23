@@ -1,4 +1,4 @@
-/** ## Class CheckerboardFromString
+/** # CheckerboardFromString
 
 [`Checkerboard`](Checkerboard.html) implementation represented by a simple 
 string (one character per square).
@@ -32,7 +32,8 @@ var CheckerboardFromString = utils.CheckerboardFromString = declare(Checkerboard
 		}).join('\n');
 	},
 	
-	// ### Board information ###################################################
+	// ## Board information ####################################################
+	
 	/** The `square(coord, outside)` return the character at `(row * width + 
 	column)` if the coordinate is inside the board. Else returns `outside`.
 	*/
@@ -47,7 +48,8 @@ var CheckerboardFromString = utils.CheckerboardFromString = declare(Checkerboard
 		}
 	},
 	
-	// #### Lines ##############################################################
+	// ### Lines ###############################################################
+	
 	/** Since square contents in `CheckerboardFromString` are just characters,
 	lines can be thought as strings. The method `asString(line)` takes an
 	iterable of coordinates and returns a string of the characters found at each
@@ -114,7 +116,7 @@ var CheckerboardFromString = utils.CheckerboardFromString = declare(Checkerboard
 		}).join('|');
 	},
 	
-	// ### Board modification ##################################################
+	// ## Board modification ###################################################
 	
 	/** Cloning a CheckerboardFromString simply calls the constructor again
 	with the proper arguments to replicate this instance.
@@ -134,5 +136,5 @@ var CheckerboardFromString = utils.CheckerboardFromString = declare(Checkerboard
 		var i = coord[0] * this.width + coord[1];
 		this.string = this.string.substr(0, i) + value + this.string.substr(i + 1);
 		return this;
-	}	
+	}
 }); // declare utils.CheckerboardFromString

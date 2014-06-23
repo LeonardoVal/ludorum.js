@@ -1,4 +1,4 @@
-/** ## Class Checkerboard
+/** # Checkerboard
 
 Base class for checkerboards representations based on several different data 
 structures.
@@ -21,7 +21,7 @@ var Checkerboard = utils.Checkerboard = declare({
 	*/
 	emptySquare: null,
 	
-	// ### Board information ###################################################
+	// ## Board information ####################################################
 	
 	/** All coordinates are represented by `[row, column]` arrays. To check if
 	a coordinate is inside the board, use `isValidCoord(coord)`.
@@ -33,7 +33,7 @@ var Checkerboard = utils.Checkerboard = declare({
 	},
 	
 	/** Method `coordinates()` returns the sequence of the board's valid 
-	positions.
+	positions; first by row then by column.
 	*/
 	coordinates: function coordinates() {
 		return Iterable.range(this.height).product(Iterable.range(this.width));
@@ -52,7 +52,7 @@ var Checkerboard = utils.Checkerboard = declare({
 		return this.square(coord) === this.emptySquare;
 	},
 	
-	// #### Lines ##############################################################
+	// ### Lines ###############################################################
 	
 	/** Many games must deal with line configurations of pieces. The following
 	methods help with this kind of logic. Each line is a sequence of coordinates
@@ -153,7 +153,7 @@ var Checkerboard = utils.Checkerboard = declare({
 		}).flatten();
 	},
 	
-	// #### Walks ##############################################################
+	// ### Walks ###############################################################
 	
 	/** A walk is a sequence of coordinates in the board that start at a given
 	point and advances in a certain direction. The `walk(coord, delta)` method
@@ -197,7 +197,8 @@ var Checkerboard = utils.Checkerboard = declare({
 		EVERY:      [[0,-1], [0,+1], [-1,0], [+1,0], [-1,-1], [-1,+1], [+1,-1], [+1,+1]]
 	},
 	
-	// ### Board modification ##################################################
+	// ## Board modification ###################################################
+	
 	/** Game states must not be modifiable, else game search algorithms may fail
 	or be extremely complicated. Then, all board altering method in 
 	`Checkerboard` must return a new board instance and leave this instance 
@@ -267,7 +268,7 @@ var Checkerboard = utils.Checkerboard = declare({
 				tr.appendChild(td);
 				td.ludorum_data = base.copy({}, data, {
 					id: "ludorum-square-"+ coord.join('-'),
-					className: || "ludorum-square",
+					className: "ludorum-square",
 					innerHTML: base.Text.escapeXML(square),
 					game: this,
 					coord: coord					
@@ -277,5 +278,22 @@ var Checkerboard = utils.Checkerboard = declare({
 				td.innerHTML = data.innerHTML;
 			});
 		});
-	}	
+	},
+	
+	// ## Heuristics ###########################################################
+	
+	/** A `weightedSum` is an simple way of defining an heuristic. Every 
+	position in the board is assigned a weight, and every possible value is 
+	assigned a coefficients (usually player is 1, opponent is -1, else is 0).
+	
+	Weights have to be in the same order that `coordinates()` enumerates the
+	board's positions. This function assumes the weights are normalized and 
+	sufficient to cover the whole board.
+	*/
+	weightedSum: function weightedSum(weights, coefficients) {
+		var board = this;
+		return this.coordinates().zip(weights).mapApply(function (coord, weight) {
+			return coefficients[board.square(coord)] * weight || 0;
+		}).sum();
+	}
 }); //// declare utils.Checkerboard.
