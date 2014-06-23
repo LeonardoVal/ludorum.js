@@ -60,12 +60,17 @@ define(['creatartis-base', 'ludorum'], function (base, ludorum) {
 					game = game.next(decisions);
 				}
 			}
-			expect(i).toBeLessThan(MAX_PLIES);
+			if (i >= MAX_PLIES) {
+				throw new Error('Match of game '+ game.name +' did not end after '+ 
+					MAX_PLIES +' plies (final state: '+ game +')!');
+			}
+			//expect(i).toBeLessThan(MAX_PLIES);
 		});
 	}
 	
 	["Predefined", "Choose2Win", "TicTacToe", "ToadsAndFrogs", "Mancala", 
-		"ConnectFour", "Pig", "ConnectionGame", "Othello", "Bahab"]
+		"ConnectFour", "Pig", "ConnectionGame", "Othello", "Bahab",
+		"Colograph"]
 	.forEach(function (name) { // Zerosum games for 2 players with one active player per turn.
 		describe("games."+ name, function () {
 			var game = new ludorum.games[name](),
