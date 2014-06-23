@@ -40,6 +40,8 @@ games.OddsAndEvens = declare(Game, {
 		The player matching the parity of the moves sum earns a point.
 	*/
 	next: function next(moves) {
+		raiseIf(typeof moves.Evens !== 'number' || typeof moves.Odds !== 'number',
+			'Invalid moves '+ (JSON.stringify(moves) || moves) +'!');
 		var parity = !((moves.Evens + moves.Odds) % 2);
 		return new this.constructor(this.turns - 1, {
 			Evens: this.points.Evens + (parity ? 1 : 0),
