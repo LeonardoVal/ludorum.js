@@ -1,4 +1,4 @@
-﻿/** ## Class Game
+﻿/** # Game
 
 The class `ludorum.Game` is the base type for all games.
 */
@@ -86,7 +86,7 @@ var Game = exports.Game = declare({
 		return this;
 	},
 	
-	// ### Player information ##################################################
+	// ## Player information ##################################################
 
 	/** Method `isActive(player...)` checks if the given players are all active.
 	*/
@@ -131,7 +131,7 @@ var Game = exports.Game = declare({
 		return this.players[(playerIndex + 1) % this.players.length];
 	},
 
-	// ### Game flow ###########################################################
+	// ## Game flow ###########################################################
 	
 	/** Since `next()` expects a moves object, the method 
 	`perform(move, player=activePlayer, ...)` pretends to simplify simpler game
@@ -158,8 +158,8 @@ var Game = exports.Game = declare({
 	
 	The method `possibleMoves(moves=this.moves())` calculates all possible 
 	`moves` objects based on the result of `moves()`. For example, if `moves()`
-	returns `{A: [1,2], B: [3,4]}`, then `possibleMoves()` would return 
-	`[{A:1,B:3}, {A:1,B:4}, {A:2,B:3}, {A:2,B:4}]`.
+	returns `{A:[1,2], B:[3,4]}`, then `possibleMoves()` would return 
+	`[{A:1, B:3}, {A:1, B:4}, {A:2, B:3}, {A:2, B:4}]`.
 	*/
 	possibleMoves: function possibleMoves(moves) {
 		moves = arguments.length < 1 ? this.moves() : moves;
@@ -167,7 +167,7 @@ var Game = exports.Game = declare({
 			return [];
 		}
 		var activePlayers = Object.keys(moves);
-		if (activePlayers.length == 1) { // Most common case.
+		if (activePlayers.length === 1) { // Most common case.
 			var activePlayer = activePlayers[0];
 			return moves[activePlayer].map(function (move) {
 				return obj(activePlayer, move);
@@ -185,7 +185,7 @@ var Game = exports.Game = declare({
 		}
 	},
 	
-	// ### Result functions ####################################################
+	// ## Result functions ####################################################
 
 	/** The maximum and minimum results may be useful and even required by some 
 	game search algorithm. To expose these values, `resultBounds()` returns an
@@ -206,9 +206,11 @@ var Game = exports.Game = declare({
 		result = result || this.result();
 		if (result) {
 			var bounds = this.resultBounds();
-			return iterable(result).mapApply(function (player, value) {
-				return [player, (value - bounds[0]) / (bounds[1] - bounds[0]) * 2 - 1];
-			}).toObject();
+			result = base.copy(result);
+			for (var player in result) {
+				result[player] = (result[player] - bounds[0]) / (bounds[1] - bounds[0]) * 2 - 1;
+			}
+			return result;
 		} else {
 			return null;
 		}
@@ -265,7 +267,7 @@ var Game = exports.Game = declare({
 		return result;
 	},
 
-	// ### Conversions & presentations #########################################
+	// ## Conversions & presentations #########################################
 
 	/** Many methods are based in the serialization of the game instances. The
 	abstract method `__serialize__()` should returns an array, where the first
@@ -328,104 +330,103 @@ var Game = exports.Game = declare({
 			data[0] = this; 
 			return new (cons.bind.apply(cons, data))();
 		}
-	}
+	},
+	
+	/** ## Cached games #######################################################
+
+	A `cached(game)` has modified `moves()` and `result()` methods that cache 
+	the calls of the base game. The `next()` method is not cached because it may
+	lead to memory leaks or overload.
+	*/
+	'static cached': function cached(game) {
+		var baseMoves = game.prototype.moves,
+			baseResult = game.prototype.result;
+		return declare(game, {
+			/** The first time `moves()` is called, it is delegated to the base
+			game's `moves()`, and keeps the value for future calls.
+			*/
+			moves: function moves() {
+				var result = baseMoves.call(this);
+				this.moves = function cachedMoves() { // Replace moves() method with cached version.
+					return result;
+				};
+				return result;
+			},
+			
+			/** The first time `result()` is called, it is delegated to the base
+			game's `result(), and keeps the value for future calls.
+			*/
+			result: function result() {
+				var result = super_result.call(this);
+				this.result = function cachedResult() { // Replace result() method with cached version.
+					return result;
+				};
+				return result;
+			}
+		});
+	}, // static cached
+
+	
+	/** ## Serialized simultaneous games. ######################################
+	
+	`serialized(game)` builds a serialized version of a simultaneous game, i.e. 
+	one in which two or more players may be active in the same turn. It converts
+	a simultaneous game to an alternated turn based game. This may be useful for
+	using algorithms like MiniMax to build AIs for simultaneous games.
+	*/
+	'static serialized': function serialized(game) {
+		var super_moves = game.prototype.moves,
+			super_next = game.prototype.next;
+		return declare(game, {
+			/** The `moves()` of a serialized game returns the moves of the 
+			player deemed as the active player, if there are any moves.
+			*/
+			moves: function moves() {
+				var fixedMoves = this.__fixedMoves__ || (this.__fixedMoves__ = {}),
+					allMoves = super_moves.call(this),
+					moves = {},
+					activePlayer;
+				for (var i = 0; i < this.activePlayers.length; i++) {
+					if (fixedMoves.hasOwnProperty(this.activePlayers[i])) {
+						activePlayer = this.activePlayers[i];
+						break;
+					}
+				}
+				if (activePlayer && allMoves) {
+					moves[activePlayer] = allMoves[activePlayer];
+					return moves;
+				} else {
+					return null;
+				}
+			},
+		
+			/** The `next(moves)` of a serialized game advances the actual game
+			if with the given move all active players in the real game state 
+			have moved. Else the next player that has to move becomes active.
+			*/
+			next: function next(moves) {
+				var nextFixedMoves = copy({}, this.fixedMoves || {}, moves),
+					allMoved = iterable(this.players).all(function (p) {
+							return nextFixedMoves.hasOwnProperty(p);
+						}),
+					result;
+				if (allMoved) {
+					result = super_next.call(this, nextFixedMoves);
+					result.fixedMoves = {};
+				} else {
+					result = this.clone();
+					result.fixedMoves = nextFixedMoves;
+				}
+				return result;
+			}
+		});
+	} // static serialized
+	
 }); // declare Game.
 	
-/** The namespace `ludorum.games` contains all game implementations (as `Game`
+/** ## Games namespace #########################################################
+
+The namespace `ludorum.games` contains all game implementations (as `Game`
 subclasses) provided by this library.
 */
 var games = exports.games = {};
-	
-// Serialized simultaneous games. //////////////////////////////////////////////
-	
-/** static Game.serialized():
-	Builds a serialized version of this game, converting a simultaneous game to 
-	an alternated turn based game.
-*/
-Game.serialized = function serialized() {
-	var super_moves = this.prototype.moves,
-		super_next = this.prototype.next;
-	return declare(this, {
-		/** Game.serialized.moves():
-			Returns the moves of the player deemed as the active player, if 
-			there are any moves.
-		*/
-		moves: function moves() {
-			var fixedMoves = this.__fixedMoves__ || (this.__fixedMoves__ = {}),
-				allMoves = super_moves.call(this),
-				moves = {},
-				activePlayer;
-			for (var i = 0; i < this.activePlayers.length; i++) {
-				if (fixedMoves.hasOwnProperty(this.activePlayers[i])) {
-					activePlayer = this.activePlayers[i];
-					break;
-				}
-			}
-			if (activePlayer && allMoves) {
-				moves[activePlayer] = allMoves[activePlayer];
-				return moves;
-			} else {
-				return null;
-			}
-		},
-	
-		/** Game.serialized.next(moves):
-			If with the given move all active players in the real game state
-			have moves, then the actual game advances. Else the next player 
-			that has to move becomes active.
-		*/
-		next: function next(moves) {
-			var nextFixedMoves = copy({}, this.fixedMoves || {}, moves),
-				allMoved = iterable(this.players).all(function (p) {
-						return nextFixedMoves.hasOwnProperty(p);
-					}),
-				result;
-			if (allMoved) {
-				result = super_next.call(this, nextFixedMoves);
-				result.fixedMoves = {};
-			} else {
-				result = this.clone();
-				result.fixedMoves = nextFixedMoves;
-			}
-			return result;
-		}
-	});
-}; // Game.serialized
-
-// Cached games. ///////////////////////////////////////////////////////////////
-
-/** static Game.cached():
-	Returns a derived constructor is returned that caches the moves and result 
-	methods. The next() method is not cached because it may lead to memory
-	leaks or overload.
-*/
-Game.cached = function cached() {
-	var super_moves = this.prototype.moves,
-		super_result = this.prototype.result,
-		super_next = this.prototype.next;
-	return declare(this, {
-		/** Game.cached.moves():
-			The first time it is called, delegates to game.moves(), and 
-			keeps the result for future calls.
-		*/
-		moves: function moves() {
-			var result = super_moves.call(this);
-			this.moves = function cachedMoves() { // Replace moves() method with cached version.
-				return result;
-			};
-			return result;
-		},
-		
-		/** Game.cached.result():
-			The first time it is called, delegates to game.result(), and 
-			keeps the result for future calls.
-		*/
-		result: function result() {
-			var result = super_result.call(this);
-			this.result = function cachedResult() { // Replace result() method with cached version.
-				return result;
-			};
-			return result;
-		}
-	});
-}; // Game.cached
