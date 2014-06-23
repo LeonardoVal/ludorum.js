@@ -23,7 +23,17 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 	to do.
 	*/
 	moveEvaluation: function moveEvaluation(move, game, player) {
-		return this.stateEvaluation(game.next(obj(player, move)), player);
+		if (Object.keys(move).length < 2) { // One active player.
+			return this.stateEvaluation(game.next(move), player);
+		} else { // Many active players.
+			var sum = 0, count = 0,
+				move = copy(obj(player, [move[player]]), move);
+			game.possibleMoves(move).forEach(function (ms) {
+				sum += this.stateEvaluation(game.next(ms), player);
+				++count;
+			});
+			return count > 0 ? sum / count : 0; // Average all evaluations.
+		}
 	},
 
 	/** The `stateEvaluation(game, player)` calculates a number as the 
@@ -86,9 +96,18 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 	*/
 	decision: function decision(game, player) {
 		var heuristicPlayer = this,
-			selectedMoves = heuristicPlayer.selectMoves(heuristicPlayer.__moves__(game, player), game, player);
+			moves = game.moves();
+		raiseIf(!moves || !moves.hasOwnProperty(player),
+			"Player "+ player +" is not active (moves= "+ JSON.stringify(moves) +"!");
+		var playerMoves = moves[player];
+		raiseIf(!Array.isArray(playerMoves) || playerMoves.length < 1,
+			"Player "+ player +" has no moves ("+ playerMoves +")!");
+		moves = playerMoves.map(function (move) {
+			return copy(obj(player, move), moves);
+		});
+		var selectedMoves = heuristicPlayer.selectMoves(moves, game, player);
 		return Future.then(selectedMoves, function (selectedMoves) {
-			return heuristicPlayer.random.choice(selectedMoves);
+			return heuristicPlayer.random.choice(selectedMoves)[player];
 		});
 	}
 }); // declare HeuristicPlayer.

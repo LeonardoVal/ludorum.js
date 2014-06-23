@@ -32,18 +32,26 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 		var monteCarloPlayer = this,
 			endTime = Date.now() + this.timeCap,
 			options = moves.map(function (move) {
-				return { move: move, next: game.next(obj(player, move)), 
-					isFinal: false, sum: 0, count: 0 
+				return { 
+					move: move, 
+					nexts: (Object.keys(move).length < 2 
+						? [game.next(move)]
+						: game.possibleMoves(copy(obj(player, [move[player]]), move)).map(function (ms) {
+							return game.next(ms);
+						})
+					),
+					sum: 0, 
+					count: 0 
 				};
 			});
 		for (var i = 0; i < this.simulationCount && Date.now() < endTime; ++i) {
 			options.forEach(function (option) {
-				if (!option.isFinal) {
-					var sim = monteCarloPlayer.simulation(option.next, player);
-					option.isFinal = sim.plies < 1;
+				option.nexts = option.nexts.filter(function (next) {
+					var sim = monteCarloPlayer.simulation(next, player);
 					option.sum += sim.result[player];
 					++option.count;
-				}
+					return sim.plies > 0;
+				});
 			});
 		}
 		return iterable(options).greater(function (option) {
