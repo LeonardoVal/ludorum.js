@@ -1,11 +1,11 @@
-/** ## Class Cache.
+/** # Cache
 
 A game cache contains a part of a game tree, avoiding redundancies. It can be
 used to implement a [transposition table](http://en.wikipedia.org/wiki/Transposition_table) 
 or similar data structures.
 */
 utils.Cache = declare({
-	/** The Cache constructor may take a game to define as `root`.
+	/** The `Cache` constructor may take a game to define as `root`.
 	*/
 	constructor: function Cache(game) {
 		this.clear();
@@ -20,7 +20,8 @@ utils.Cache = declare({
 		return state.identifier();
 	},
 	
-	/**
+	/** The `moveIdentifier(move)` is used as the key in each entry's 
+	descendants. By default it uses the move JSON _stringification_.
 	*/
 	moveIdentifier: function moveIdentifier(move) {
 		return JSON.stringify(move);
@@ -40,6 +41,12 @@ utils.Cache = declare({
 	get: function get(state) {
 		var stateId = typeof state === 'string' ? state : this.stateIdentifier(state);
 		return this.__entries__[stateId];
+	},
+	
+	/** `size()` returns the amount of entries in this cache.
+	*/
+	size: function size() {
+		return Object.keys(this.__entries__).length;
 	},
 	
 	/** If the given state has no entry in this cache, `entry(state, id)` builds
@@ -80,7 +87,8 @@ utils.Cache = declare({
 		}
 	},
 	
-	/** An entry `descendants(entry)`
+	/** An entry `descendants(entry)` is an array of all the entry's 
+	descendants, for all the possible moves for the entry's state.
 	*/
 	descendants: function descendants(entry) {
 		var descendant = this.descendant.bind(this, entry);
@@ -111,7 +119,8 @@ utils.Cache = declare({
 		return this.__root__;
 	},
 	
-	/** Deletes all nodes except the one with the given id and its descendants.
+	/** `prune(id=root.id)` deletes all nodes except the one with the given id 
+	and its descendants.
 	*/
 	prune: function prune(id) {
 		var pending = [id || this.__root__.id], 
