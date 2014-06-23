@@ -1,4 +1,4 @@
-﻿/** ## Class Match
+﻿/** # Match
 
 A match is a controller for a game, managing player decisions, handling the flow
 of the turns between the players by following the game's logic.
@@ -117,7 +117,7 @@ var Match = exports.Match = declare({
 		return true;
 	},
 	
-	/** ### Commands ###########################################################
+	/** ## Commands ###########################################################
 	
 	Commands are pseudo-moves, which can be returned by the players instead of
 	valid moves for the game being played. Their intent is to control the match
@@ -131,7 +131,7 @@ var Match = exports.Match = declare({
 	*/
 	"static CommandQuit": function CommandQuit() { },
 	
-	/** ### Events #############################################################
+	/** ## Events #############################################################
 	
 	Matches provide game events that players and spectators can be registered 
 	to. `Match.events` is the event handler. Emitted events are:
