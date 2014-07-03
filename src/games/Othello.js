@@ -155,6 +155,37 @@ games.Othello = declare(Game, {
 		return [-squareCount, +squareCount];
 	},
 	
+	// ## User intefaces #######################################################
+	
+	/** The `display(ui)` method is called by a `UserInterface` to render the
+	game state. The only supported user interface type is `BasicHTMLInterface`.
+	The look can be configured using CSS classes.
+	*/
+	display: function display(ui) {
+		raiseIf(!ui || !(ui instanceof UserInterface.BasicHTMLInterface), "Unsupported UI!");
+		var moves = this.moves(),
+			activePlayer = this.activePlayer(),
+			board = this.board,
+			classNames = {
+				'B': "ludorum-square-Black",
+				'W': "ludorum-square-White",
+				'.': "ludorum-square-empty"
+			};
+		moves = moves && moves[activePlayer].map(JSON.stringify);
+		board.renderAsHTMLTable(ui.document, ui.container, function (data) {
+			data.className = classNames[data.square];
+			data.innerHTML = '&nbsp;';
+			var move = JSON.stringify(data.coord);
+			if (moves && moves.indexOf(move) >= 0) {
+				data.move = data.coord;
+				data.activePlayer = activePlayer;
+				data.className = "ludorum-square-move";
+				data.onclick = ui.perform.bind(ui, data.move, activePlayer);
+			}
+		});
+		return ui;
+	},
+	
 	// ## Utility methods ######################################################
 	
 	/** The game state serialization simply contains the constructor arguments.
@@ -162,34 +193,6 @@ games.Othello = declare(Game, {
 	__serialize__: function __serialize__() {
 		var board = this.board;
 		return [this.name, this.activePlayer(), [board.height, board.width, board.string]];
-	},
-	
-	/** `toHTML()` renders the board as a HTML table. CSS classes are added so
-	the look of the board can be configured.
-	*/
-	toHTML: function toHTML() {
-		var moves = this.moves(),
-			activePlayer = this.activePlayer(),
-			board = this.board;
-		moves = moves && moves[activePlayer].map(JSON.stringify);
-		return '<table>'+
-			board.horizontals().reverse().map(function (line) {
-				return '<tr>'+ line.map(function (coord) {
-					switch (board.square(coord)) {
-						case 'B': return '<td class="ludorum-square-Black">&nbsp;</td>';
-						case 'W': return '<td class="ludorum-square-White">&nbsp;</td>'; // &#x25CF;
-						default: {
-							var move = JSON.stringify(coord);
-							if (moves && moves.indexOf(move) >= 0) {
-								return '<td class="ludorum-square-move" data-ludorum="move: '+ 
-									move +', activePlayer: \''+ activePlayer +'\'">&nbsp;</td>'; //&#x2022;
-							} else {
-								return '<td class="ludorum-square-empty">&nbsp;</td>';
-							}
-						}
-					}
-				}).join('') +'</tr>';
-			}).join('') + '</table>';
 	},
 	
 	// ## Heuristics ###########################################################
@@ -204,19 +207,16 @@ games.Othello = declare(Game, {
 		*/
 		heuristicFromWeights: function heuristicFromWeights(weights) {
 			var weightCount = weights.length,
-				weightSum = iterable(weights).map(Math.abs).sum(); // Normalize weights.
-			weights = iterable(weights).map(function (weight) { 
-				return weight / (weightSum + 1);
-			});
+				weightSum = iterable(weights).map(Math.abs).sum(); // Used to normalize the sum.
 			var heuristic = function __heuristic__(game, player) {
 				var board = game.board;
 				raiseIf(board.height * board.width !== weightCount, "Wrong amount of weights!");
 				return board.weightedSum(weights, {
 					'W': player.charAt(0) === 'W' ? 1 : -1,
 					'B': player.charAt(0) === 'B' ? 1 : -1
-				});
+				}) / weightSum;
 			}
-			heuristic.weights = weights.toArray();
+			heuristic.weights = weights;
 			return heuristic;
 		},
 		
@@ -238,6 +238,35 @@ games.Othello = declare(Game, {
 					.concat(weights.slice(left, right - rows % 2).reverse());
 			}).flatten().toArray();
 			return this.heuristicFromWeights(weights);
+		},
+		
+		/** `pieceRatio(game, player)` is an heuristic criteria based on the
+		difference of the piece counts of both players.
+		*/
+		pieceRatio: function pieceRatio(game, player) {
+			var playerPieceCount = 0, opponentPieceCount = 0;
+			iterable(game.board.string).forEach(function (sq) {
+				if (sq !== '.') {
+					if (sq === player.charAt(0)) {
+						++playerPieceCount;
+					} else {
+						++opponentPieceCount;
+					}
+				}
+			});
+			return (playerPieceCount - opponentPieceCount) / (playerPieceCount + opponentPieceCount);
+		},
+		
+		/** `mobilityRatio(game, player)` is an heuristic criteria based on the
+		difference of the move counts of both players.
+		*/
+		mobilityRatio: function mobilityRatio(game, player) {
+			var opponent = game.opponent(player),
+				playerMoves = game.moves(player),
+				opponentMoves = game.moves(opponent), 
+				playerMoveCount = playerMoves && playerMoves[player] && playerMoves[player].length || 0, 
+				opponentMoveCount = opponentMoves && opponentMoves[opponent] && opponentMoves[opponent].length || 0;
+			return (playerMoveCount - opponentMoveCount) / (playerMoveCount + opponentMoveCount);
 		}
 	}	
 }); // declare Othello.

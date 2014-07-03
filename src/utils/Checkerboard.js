@@ -256,28 +256,37 @@ var Checkerboard = utils.Checkerboard = declare({
 	is the case of Ludorum's playtesters.
 	TODO.
 	*/
-	asHTMLTable: function (document, parent, callback) { //TODO
-		var table = document.createElement('table');
+	renderAsHTMLTable: function (document, container, callback) {
+		var board = this, // for closures.
+			table = document.createElement('table');
+		container.appendChild(table);
 		board.horizontals().reverse().forEach(function (line) {
 			var tr = document.createElement('tr');
 			table.appendChild(tr);
 			line.forEach(function (coord) {
 				var square = board.square(coord),
 					td = document.createElement('td'),
-					data = callback(square, coord);
-				tr.appendChild(td);
-				td.ludorum_data = base.copy({}, data, {
-					id: "ludorum-square-"+ coord.join('-'),
-					className: "ludorum-square",
-					innerHTML: base.Text.escapeXML(square),
-					game: this,
-					coord: coord					
-				});
+					data = {
+						id: "ludorum-square-"+ coord.join('-'),
+						className: "ludorum-square",
+						square: square,
+						coord: coord,
+						innerHTML: base.Text.escapeXML(square)
+					};
+				if (callback) {
+					data = callback(data) || data;
+				}
+				td['ludorum-data'] = data;
 				td.id = data.id;
 				td.className = data.className;
 				td.innerHTML = data.innerHTML;
+				if (data.onclick) {
+					td.onclick = data.onclick
+				}
+				tr.appendChild(td);
 			});
 		});
+		return table;
 	},
 	
 	// ## Heuristics ###########################################################

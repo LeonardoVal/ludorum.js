@@ -1,28 +1,28 @@
-﻿games.ConnectFour = declare(games.ConnectionGame, {
-	/** games.ConnectFour.height=6:
-		Number of rows in the ConnectFour board.
+﻿/** # ConnectFour.
+
+Implementation of the [Connect Four game](http://en.wikipedia.org/wiki/Connect_Four).
+*/
+games.ConnectFour = declare(games.ConnectionGame, {
+	name: 'ConnectFour',
+
+	/** The default `height` of the board is 6.
 	*/
 	height: 6,
 	
-	/** games.ConnectFour.width=7:
-		Number of columns in the ConnectFour board.
+	/** The default `width` of the board is 7.
 	*/
 	width: 7,
 	
-	/** games.ConnectFour.lineLength=4:
-		Length of the line required to win.
+	/** The default `lineLength` to win the game is 4.
 	*/
 	lineLength: 4,
 	
-	name: 'ConnectFour',
-	
-	/** games.ConnectFour.players=['Yellow', 'Red']:
-		Connect Four's players.
+	/** The game's players are `'Yellow'` and `'Red'`.
 	*/
 	players: ['Yellow', 'Red'],
 	
-	/** games.ConnectFour.moves():
-		Return the index of every column that has not reached the top height.
+	/** The active players `moves()` are the indexes of every column that has 
+	not reached the top height.
 	*/
 	moves: function moves() {
 		var result = null;
@@ -43,8 +43,8 @@
 		return result;
 	},
 
-	/** games.ConnectFour.next(moves):
-		Each ConnectFour move is a column index.
+	/** The `next(moves)` game state drops a piece at the column with the index
+	of the active player's move.
 	*/
 	next: function next(moves) {
 		var activePlayer = this.activePlayer(),
@@ -61,29 +61,40 @@
 		throw new Error('Invalid move '+ JSON.stringify(moves) +'!');
 	},
 	
-	/** games.ConnectFour.toHTML():
-		Renders the ConnectFour board as a HTML table.
+	// ## User intefaces #######################################################
+	
+	/** The `display(ui)` method is called by a `UserInterface` to render the
+	game state. The only supported user interface type is `BasicHTMLInterface`.
+	The look can be configured using CSS classes.
 	*/
-	toHTML: function toHTML() {
+	display: function display(ui) {
+		raiseIf(!ui || !(ui instanceof UserInterface.BasicHTMLInterface), "Unsupported UI!");
 		var moves = this.moves(),
 			activePlayer = this.activePlayer(),
 			board = this.board;
 		moves = moves && moves[activePlayer];
-		return '<table>'+
-			'<colgroup>'+ '<col/>'.repeat(this.board.width) +'</colgroup>'+
-			board.horizontals().reverse().map(function (line) {
-				return '<tr>'+ line.map(function (coord) {
-					var data = '',
-						value = board.square(coord);
-					if (moves && moves.indexOf(coord[1]) >= 0) {
-						data = ' data-ludorum="move: '+ coord[1] +', activePlayer: \''+ activePlayer +'\'"';
-					}
-					return (value === '.') ? '<td '+ data +'>&nbsp;</td>'
-						: '<td class="ludorum-player'+ value +'" '+ data +'>&#x25CF;</td>';
-				}).join('') +'</tr>';
-			}).join('') + '</table>';
+		var table = this.board.renderAsHTMLTable(ui.document, ui.container, function (data) {
+				data.className = data.square === '.' ? 'ludorum-empty' : 'ludorum-player'+ data.square;
+				data.innerHTML = data.square === '.' ? "&nbsp;" : "&#x25CF;";
+				if (moves && moves.indexOf(data.coord[1]) >= 0) {
+					data.move = data.coord[1];
+					data.activePlayer = activePlayer;
+					data.onclick = ui.perform.bind(ui, data.move, activePlayer);
+				}
+			});
+		table.insertBefore(
+			ui.build.apply(ui, [ui.document.createElement('colgroup')]
+				.concat(Iterable.repeat(['col'], this.board.width).toArray())),
+			table.firstChild
+		);
+		return ui;
 	},
 	
+	// ## Utility methods ######################################################
+	
+	/** The serialization of the game is a representation of a call to its
+	constructor (inherited from [`ConnectionGame`](ConnectionGame.js.html).
+	*/
 	__serialize__: function __serialize__() {
 		return [this.name, this.activePlayer(), this.board.string];
 	}
