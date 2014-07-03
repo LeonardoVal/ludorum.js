@@ -1,32 +1,33 @@
-﻿/** Automatic player based on pure Monte Carlo tree search.
+﻿/** # MonteCarloPlayer
+
+Automatic player based on flat Monte Carlo tree search.
 */
 players.MonteCarloPlayer = declare(HeuristicPlayer, {
-	/** new players.MonteCarloPlayer(params):
-		Builds a player that chooses its moves using the [pure Monte Carlo game
-		tree search method](http://en.wikipedia.org/wiki/Monte-Carlo_tree_search).
+	/** The constructor builds a player that chooses its moves using the 
+	[flat Monte Carlo game tree search method](http://en.wikipedia.org/wiki/Monte-Carlo_tree_search). 
+	The parameters may include:
+	
+	+ `simulationCount=30`: Maximum amount of simulations performed for each 
+		available move at each decision.
+	+ `timeCap=1000ms`: Time limit for the player to decide.
+	+ `agent`: Player instance used in the simulations. If undefined moves are
+		chosen at random. Agents with asynchronous decisions are not supported.
 	*/
 	constructor: function MonteCarloPlayer(params) {
 		HeuristicPlayer.call(this, params);
 		initialize(this, params)
-		/** players.MonteCarloPlayer.simulationCount=30:
-			Maximum amount of simulations performed for each available move at
-			each decision.
-		*/
 			.number('simulationCount', { defaultValue: 30, coerce: true })
-		/** players.MonteCarloPlayer.timeCap=1000ms:
-			Time limit for the player to decide.
-		*/
 			.number('timeCap', { defaultValue: 1000, coerce: true })
-		/** players.MonteCarloPlayer.agent:
-			Player instance used in the simulations. If undefined moves are
-			chosen at random.
-			Warning! Agent with asynchronous decisions are not supported.
-		*/
-			.object('agent', { defaultValue: null });
+			.number('horizon', { defaultValue: Infinity, coerce: true });
+		if (params) switch (typeof params.agent) {
+			case 'function': this.agent = new HeuristicPlayer({ heuristic: params.agent }); break;
+			case 'object': this.agent = params.agent; break;
+			default: this.agent = null;
+		}
 	},
 	
-	/** players.MonteCarloPlayer.selectMoves(moves, game, player):
-		Return an array with the best evaluated moves.
+	/** `selectMoves(moves, game, player)` return an array with the best 
+	evaluated moves.
 	*/
 	selectMoves: function selectMoves(moves, game, player) {
 		var monteCarloPlayer = this,
@@ -61,8 +62,8 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 		});
 	},
 	
-	/** players.MonteCarloPlayer.stateEvaluation(game, player):
-		Runs this.simulationCount simulations and returns the average result.
+	/** This player's `stateEvaluation(game, player)` runs `simulationCount` 
+	simulations and returns the average result.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
 		var resultSum = 0, 
@@ -78,10 +79,9 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 		return simulationCount > 0 ? resultSum / simulationCount : 0;
 	},
 	
-	/** players.MonteCarloPlayer.simulation(game, player):
-		Simulates a random match from the given game and returns an object with
-		the final state (game), its result (result) and the number of plies 
-		simulated (plies).
+	/** A `simulation(game, player)` plays a random match from the given `game`
+	state and returns an object with the final state (`game`), its result 
+	(`result`) and the number of plies simulated (`plies`).
 	*/
 	simulation: function simulation(game, player) {
 		var mc = this,
@@ -90,6 +90,9 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 			if (game instanceof Aleatory) {
 				game = game.next();
 			} else {
+				if (plies > this.horizon) {
+					return { game: game, result: obj(player, this.heuristic(game, player)), plies: plies };
+				}
 				moves = game.moves();
 				if (!moves) {
 					return { game: game, result: game.result(), plies: plies };
@@ -102,12 +105,13 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 				game = game.next(move);
 			}
 		}
-		return { game: game, result: game.result(), plies: plies };
+		raise("Simulation ended unexpectedly!");
 	},
 	
-	toString: function toString() {
-		return (this.constructor.name || 'MonteCarloPlayer') +'('+ JSON.stringify({
-			name: this.name, simulationCount: this.simulationCount, timeCap: this.timeCap
-		}) +')';
+	__serialize__: function __serialize__() {
+		return [this.constructor.name, { name: this.name, 
+			simulationCount: this.simulationCount, timeCap: this.timeCap, 
+			agent: this.agent 
+		}];
 	}
 }); // declare MonteCarloPlayer
