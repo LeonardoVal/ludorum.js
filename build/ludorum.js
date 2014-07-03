@@ -508,7 +508,7 @@ var Player = exports.Player = declare({
 		return moves[role];
 	},
 	
-	/** Before starting a [match](Match.html), all players are asked to join
+	/** Before starting a [match](Match.js.html), all players are asked to join
 	by calling `Player.participate(match, role)`. This allows the player to
 	prepare properly. If this implies building another instance of the player 
 	object, it must be returned in order to participate in the match.
@@ -942,13 +942,13 @@ Aleatory subclasses) and related definitions.
 */
 var aleatories = exports.aleatories = {};
 
-/** ## Class RandomPlayer
+/** # RandomPlayer
 
 Automatic players that moves fully randomly.
 */	
 players.RandomPlayer = declare(Player, {
 	/** The constructor takes the player's `name` and a `random` number 
-	generator (`Randomness.DEFAULT` by default).
+	generator (`base.Randomness.DEFAULT` by default).
 	*/
 	constructor: function RandomPlayer(params) {
 		Player.call(this, params);
@@ -964,7 +964,7 @@ players.RandomPlayer = declare(Player, {
 }); // declare RandomPlayer.
 
 
-/** ## Class TracePlayer
+/** # TracePlayer
 
 Automatic player that is scripted previously.
 */
@@ -997,7 +997,7 @@ players.TracePlayer = declare(Player, {
 }); // declare TracePlayer.
 
 
-/** ## Class HeuristicPlayer
+/** # HeuristicPlayer
 
 This is the base type of automatic players based on heuristic evaluations of 
 game states or moves.
@@ -1106,37 +1106,64 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 		});
 		var selectedMoves = heuristicPlayer.selectMoves(moves, game, player);
 		return Future.then(selectedMoves, function (selectedMoves) {
+			raiseIf(!selectedMoves || !selectedMoves.length, 
+				"No moves where selected at ", game, " for player ", player, "!");
 			return heuristicPlayer.random.choice(selectedMoves)[player];
 		});
+	},
+	
+	// ## Utilities to build heuristics ########################################
+	
+	/** A `composite` heuristic function returns the weighted sum of other
+	functions. The arguments must be a sequence of heuristic functions and a
+	weight. All weights must be between 0 and 1 and add up to 1.
+	*/
+	'static composite': function composite() {
+		var components = Array.prototype.slice.call(arguments), weightSum = 0;
+		raiseIf(components.length < 1,
+			"HeuristicPlayer.composite() cannot take an odd number of arguments!");
+		for (var i = 0; i < components.length; i += 2) {
+			raiseIf(typeof components[i] !== 'function', 
+				"HeuristicPlayer.composite() argument ", i, " (", components[i], ") is not a function!");
+			components[i+1] = +components[i+1];
+			raiseIf(isNaN(components[i+1]) || components[i+1] < 0 || components[i+1] > 1, 
+				"HeuristicPlayer.composite() argument ", i+1, " (", components[i+1], ") is not a valid weight!");
+		}
+		return function compositeHeuristic(game, player) {
+			var sum = 0;
+			for (var i = 0; i+1 < components.length; i += 2) {
+				sum += components[i](game, player) * components[i+1];
+			}
+			return sum;
+		};
 	}
 }); // declare HeuristicPlayer.
 
 
-/** Automatic players based on the MaxN algorithm.
+/** # MaxNPlayer
+
+Automatic players based on the MaxN algorithm, a MiniMax variant for games of
+more than two players.
 */
 var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
-	/** new players.MaxNPlayer(params):
-		Builds a player that chooses its moves using the MiniMax algorithm with
-		alfa-beta pruning.
+	/** Besides the parameters of every [`HeuristicPlayer`](HeuristicPlayer.js.html),
+	an `horizon` for the search may be specified (3 plies by default).
 	*/
 	constructor: function MaxNPlayer(params) {
 		HeuristicPlayer.call(this, params);
 		initialize(this, params)
-		/** players.MaxNPlayer.horizon=3:
-			Maximum depth for the MiniMax search.
-		*/
 			.integer('horizon', { defaultValue: 3, coerce: true })
 	},
 
-	/** players.MaxNPlayer.stateEvaluation(game, player):
-		Returns the minimax value for the given game and player.
+	/** This player evaluates each state using the `maxn` method, taking the 
+	evaluation for the given `player`.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
 		return this.maxN(game, player, 0)[player];
 	},
 
-	/** players.MaxNPlayer.heuristics(game):
-		Returns the heuristics value for each players in the game, as an object.
+	/** `heuristics(game)` returns an heuristic value for each players in the 
+	game, as an object.
 	*/
 	heuristics: function heuristic(game) {
 		var result = {}, maxN = this;
@@ -1146,13 +1173,14 @@ var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
 		return result;
 	},
 
-	/** players.MaxNPlayer.quiescence(game, player, depth):
-		An stability test for the given game state. If the game is quiescent, 
-		this function must return evaluations. Else it must return null. 
-		Final game states are always quiescent, and their evaluations are the 
-		game's result for each player. This default implementation also return 
-		heuristic evaluations for every game state at a deeper depth than the 
-		player's horizon.
+	/** `quiescence(game, player, depth)` is a stability test for the given 
+	`game` state and the given `player`. If the game is quiescent, this function
+	must return evaluations. Else it must return null. 
+	
+	Final game states are always quiescent, and their evaluations are the game's 
+	result for each player. This default implementation also returns heuristic 
+	evaluations for every game state at a deeper depth than the player's 
+	horizon, calculated via the `heuristics()` method. 
 	*/
 	quiescence: function quiescence(game, player, depth) {
 		var results = game.result();
@@ -1165,9 +1193,9 @@ var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
 		}
 	},
 	
-	/** players.MaxNPlayer.maxN(game, player, depth):
-		Return the evaluations for each player of the given game, assuming each
-		player tries to maximize its own evaluation regardless of the others'.
+	/** The core `maxN(game, player, depth)` algorithm return the evaluations 
+	for each player of the given game, assuming each player tries to maximize 
+	its own evaluation regardless of the others'.
 	*/
 	maxN: function maxN(game, player, depth) {
 		var values = this.quiescence(game, player, depth);
@@ -1198,7 +1226,7 @@ var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
 }); // declare MiniMaxPlayer.
 
 
-/** ## Class MiniMaxPlayer
+/** # MiniMaxPlayer
 
 Automatic players based on pure MiniMax.
 */
@@ -1275,7 +1303,7 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 }); // declare MiniMaxPlayer.
 
 
-/** ## Class AlphaBetaPlayer
+/** # AlphaBetaPlayer
 
 Automatic players based on MiniMax with alfa-beta pruning.
 */
@@ -1332,35 +1360,36 @@ players.AlphaBetaPlayer = declare(MiniMaxPlayer, {
 }); // declare AlphaBetaPlayer.
 
 
-/** Automatic player based on pure Monte Carlo tree search.
+/** # MonteCarloPlayer
+
+Automatic player based on flat Monte Carlo tree search.
 */
 players.MonteCarloPlayer = declare(HeuristicPlayer, {
-	/** new players.MonteCarloPlayer(params):
-		Builds a player that chooses its moves using the [pure Monte Carlo game
-		tree search method](http://en.wikipedia.org/wiki/Monte-Carlo_tree_search).
+	/** The constructor builds a player that chooses its moves using the 
+	[flat Monte Carlo game tree search method](http://en.wikipedia.org/wiki/Monte-Carlo_tree_search). 
+	The parameters may include:
+	
+	+ `simulationCount=30`: Maximum amount of simulations performed for each 
+		available move at each decision.
+	+ `timeCap=1000ms`: Time limit for the player to decide.
+	+ `agent`: Player instance used in the simulations. If undefined moves are
+		chosen at random. Agents with asynchronous decisions are not supported.
 	*/
 	constructor: function MonteCarloPlayer(params) {
 		HeuristicPlayer.call(this, params);
 		initialize(this, params)
-		/** players.MonteCarloPlayer.simulationCount=30:
-			Maximum amount of simulations performed for each available move at
-			each decision.
-		*/
 			.number('simulationCount', { defaultValue: 30, coerce: true })
-		/** players.MonteCarloPlayer.timeCap=1000ms:
-			Time limit for the player to decide.
-		*/
 			.number('timeCap', { defaultValue: 1000, coerce: true })
-		/** players.MonteCarloPlayer.agent:
-			Player instance used in the simulations. If undefined moves are
-			chosen at random.
-			Warning! Agent with asynchronous decisions are not supported.
-		*/
-			.object('agent', { defaultValue: null });
+			.number('horizon', { defaultValue: Infinity, coerce: true });
+		if (params) switch (typeof params.agent) {
+			case 'function': this.agent = new HeuristicPlayer({ heuristic: params.agent }); break;
+			case 'object': this.agent = params.agent; break;
+			default: this.agent = null;
+		}
 	},
 	
-	/** players.MonteCarloPlayer.selectMoves(moves, game, player):
-		Return an array with the best evaluated moves.
+	/** `selectMoves(moves, game, player)` return an array with the best 
+	evaluated moves.
 	*/
 	selectMoves: function selectMoves(moves, game, player) {
 		var monteCarloPlayer = this,
@@ -1395,8 +1424,8 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 		});
 	},
 	
-	/** players.MonteCarloPlayer.stateEvaluation(game, player):
-		Runs this.simulationCount simulations and returns the average result.
+	/** This player's `stateEvaluation(game, player)` runs `simulationCount` 
+	simulations and returns the average result.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
 		var resultSum = 0, 
@@ -1412,10 +1441,9 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 		return simulationCount > 0 ? resultSum / simulationCount : 0;
 	},
 	
-	/** players.MonteCarloPlayer.simulation(game, player):
-		Simulates a random match from the given game and returns an object with
-		the final state (game), its result (result) and the number of plies 
-		simulated (plies).
+	/** A `simulation(game, player)` plays a random match from the given `game`
+	state and returns an object with the final state (`game`), its result 
+	(`result`) and the number of plies simulated (`plies`).
 	*/
 	simulation: function simulation(game, player) {
 		var mc = this,
@@ -1424,6 +1452,9 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 			if (game instanceof Aleatory) {
 				game = game.next();
 			} else {
+				if (plies > this.horizon) {
+					return { game: game, result: obj(player, this.heuristic(game, player)), plies: plies };
+				}
 				moves = game.moves();
 				if (!moves) {
 					return { game: game, result: game.result(), plies: plies };
@@ -1436,39 +1467,39 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 				game = game.next(move);
 			}
 		}
-		return { game: game, result: game.result(), plies: plies };
+		raise("Simulation ended unexpectedly!");
 	},
 	
-	toString: function toString() {
-		return (this.constructor.name || 'MonteCarloPlayer') +'('+ JSON.stringify({
-			name: this.name, simulationCount: this.simulationCount, timeCap: this.timeCap
-		}) +')';
+	__serialize__: function __serialize__() {
+		return [this.constructor.name, { name: this.name, 
+			simulationCount: this.simulationCount, timeCap: this.timeCap, 
+			agent: this.agent 
+		}];
 	}
 }); // declare MonteCarloPlayer
 
 
-/** Implementation of player user interfaces and proxies in the Ludorum 
-	library.
+/** # UserInterfacePlayer
+
+Implementation of player user interfaces and proxies.
 */
 var UserInterfacePlayer = players.UserInterfacePlayer = declare(Player, {
-	/** new players.UserInterfacePlayer(params):
-		Base class of all players that are proxies of user interfaces.
+	/** `UserInterfacePlayer` is a generic type for all players that are proxies 
+	of user interfaces.
 	*/
 	constructor: function UserInterfacePlayer(params) {
 		Player.call(this, params);
 	},
 
-	/** players.UserInterfacePlayer.participate(match, role):
-		Assigns this players role to the given role.
+	/** The `participate` method assigns this players role to the given role.
 	*/
 	participate: function participate(match, role) {
 		this.role = role;
 		return this;
 	},
 	
-	/** players.UserInterfacePlayer.decision(game, player):
-		Returns a future that will be resolved when the perform() method is 
-		called.
+	/** The `decision(game, player)` of this players returns a future that will 
+	be resolved when the `perform()` method is called.
 	*/
 	decision: function decision(game, player) {
 		if (this.__future__ && this.__future__.isPending()) {
@@ -1477,9 +1508,9 @@ var UserInterfacePlayer = players.UserInterfacePlayer = declare(Player, {
 		return this.__future__ = new Future();
 	},
 	
-	/** players.UserInterfacePlayer.perform(action):
-		Resolves the decision future. This method is meant to be called by 
-		the user interface.
+	/**  User interfaces have to be configured to call `perform(action)` upon 
+	each significant user action.players. It resolves the future returned by the
+	`decision()` method.
 	*/
 	perform: function perform(action) {
 		var future = this.__future__;
@@ -1491,10 +1522,12 @@ var UserInterfacePlayer = players.UserInterfacePlayer = declare(Player, {
 	}
 }); // declare UserInterfacePlayer.
 
-var UserInterface = players.UserInterface = declare({ ////////////////////
-	/** new players.UserInterface(match, config):
-		Base class for user interfaces that display a game and allow one
-		or more players to play.
+// ## User interfaces ##########################################################
+
+var UserInterface = players.UserInterface = declare({
+	/** `UserInterface` is the base abstract type for user interfaces that 
+	display a game and allow one or more players to play. The `config` argument 
+	may include the `match` being played.
 	*/
 	constructor: function UserInterface(config) {
 		this.onBegin = this.onBegin.bind(this);
@@ -1505,8 +1538,8 @@ var UserInterface = players.UserInterface = declare({ ////////////////////
 		}
 	},
 	
-	/** players.UserInterface.show(match):
-		Discards the current state and sets up to display the given match.
+	/** `show(match)` discards the current state and sets up to display the 
+	given `match`.
 	*/
 	show: function show(match) {
 		if (this.match) {
@@ -1520,39 +1553,36 @@ var UserInterface = players.UserInterface = declare({ ////////////////////
 		match.events.on('end', this.onEnd);
 	},
 	
-	/** players.UserInterface.onBegin(game):
-		Handler for the 'begin' event of the match.
+	/** When the player is participated of a match, callbacks are registered to 
+	the following match's events.
+	
+	+ `onBegin(game)` handles the `'begin'` event of the match.
 	*/
 	onBegin: function onBegin(game) {
 		this.display(game);
 	},
 	
-	/** players.UserInterface.onNext(game, next):
-		Handler for the 'move' event of the match.
+	/** + `onNext(game, next)` handles the `'move'` event of the match.
 	*/
 	onNext: function onNext(game, next) {
 		this.display(next);
 	},
 	
-	/** players.UserInterface.onEnd(game, results):
-		Handler for the 'end' event of the match.
+	/** + `onEnd(game, results)` handles the `'end'` event of the match.
 	*/
 	onEnd: function onEnd(game, results) {
 		this.results = results;
 		this.display(game);
 	},
 	
-	/** players.UserInterface.display(game):
-		Renders the game in this user interface. Not implemented, so please
-		override.
+	/** `display(game)` renders the game in this user interface. Not 
+	implemented, so please override.
 	*/
-	display: function display(game) {
-		throw new Error("UserInterface.display is not defined. Please override.");
-	},
+	display: unimplemented("UserInterface", "display"),
 	
-	/** players.UserInterface.perform(action, actionRole=undefined):
-		Makes the given player perform the action if the player has a 
-		perform method and is included in this UI's players.
+	/** `perform(action, actionRole=undefined)` makes the given player perform 
+	the action if the player has a `perform()` method and is included in this 
+	UI's players.
 	*/
 	perform: function perform(action, actionRole) {
 		iterable(this.match.players).forEach(function (pair) {
@@ -1564,61 +1594,89 @@ var UserInterface = players.UserInterface = declare({ ////////////////////
 		});
 	}
 }); // declare UserInterface.
+
+// ### HTML based user interfaces ##############################################
+
+UserInterface.BasicHTMLInterface = declare(UserInterface, {
+	/** `BasicHTMLInterface(config)` builds a simple HTML based UI, that renders 
+	the game on the DOM using its `display()` method. The `config` argument may
+	include:
 	
-UserInterface.BasicHTMLInterface = declare(UserInterface, { //////////////
-	/** new players.UserInterface.BasicHTMLInterface(match, players, domElement):
-		Simple HTML based UI, that renders the game to the given domElement
-		using its toHTML method.
+	+ `document=window.document`: the DOM root.
+	+ `container`: the DOM node to render the game in, or its name.
 	*/
 	constructor: function BasicHTMLInterface(config) {
 		UserInterface.call(this, config);
+		this.document = config.document || base.global.document;
 		this.container = config.container;
 		if (typeof this.container === 'string') {
-			this.container = document.getElementById(this.container);
+			this.container = this.document.getElementById(this.container);
 		}
 	},
 
-	/** players.UserInterface.BasicHTMLInterface.display(game):
-		When the player is participated of a match, a callback is registered
-		to the match's events. This method renders the game to HTML at each 
-		step in the match.
+	/** On `display(game)` the `container` is emptied and the game is rendered
+	using its `display(ui)` method.
 	*/
 	display: function display(game) {
-		var ui = this, 
-			container = this.container;
-		container.innerHTML = game.toHTML();
-		Array.prototype.slice.call(container.querySelectorAll('[data-ludorum]')).forEach(function (elem) {
-			var data = eval('({'+ elem.getAttribute('data-ludorum') +'})');
-			if (data.hasOwnProperty('move')) {
-				elem.onclick = ui.perform.bind(ui, data.move, data.activePlayer);
+		var container = this.container, child;
+		while (child = container.firstChild) { // It seems the DOM API does not provide a method for this. :-(
+			container.removeChild(child);
+		}
+		game.display(this);
+	},
+	
+	/** `build()` helps DOM creation. The `nodes` argument specifies DOM 
+	elements, each with an array of the shape: `[tag, attributes, elements]`.
+	*/
+	build: function build(parent, nodes) {
+		var ui = this;
+		nodes.forEach(function (node) {
+			var element;
+			if (Array.isArray(node)) {
+				element = ui.document.createElement(node[0]);
+				if (node.length > 2 && node[1]) { // There are attributes.
+					var attrs = node[1]
+					for (attrName in attrs) if (attr.hasOwnProperty(attrName)) {
+						element.setAttribute(attrName, attrs[attrName]);
+					}
+				}
+				if (node.length > 1 && node[node.length-1]) { // There are child elements.
+					ui.build(element, node[node.length-1]);
+				}
+			} else if (typeof node === 'string') {
+				element = ui.document.createTextNode("Hello World");
+			}
+			if (element && parent) {
+				parent.appendChild(element);
 			}
 		});
+		return parent;
 	}
 }); // declare HTMLInterface.
 
 
-/** A proxy for another player executing inside a webworker.
+/** # WebWorkerPlayer
+
+A proxy for another player executing inside a webworker.
 */
 var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
-	/** new players.WebWorkerPlayer(params):
-		Builds a player that is a proxy for another player executing in a web
-		worker.
+	/** The constructor builds a player that is a proxy for another player 
+	executing in a webworker. The parameters must include:
+	
+	+ `worker`: The `Worker` instance where the actual player is executing.
 	*/
 	constructor: function WebWorkerPlayer(params) {
 		Player.call(this, params);
 		initialize(this, params)
-		/** players.WebWorkerPlayer.worker:
-			The Worker instance where the actual player is executing.
-		*/
 			.object('worker');
 		this.worker.onmessage = base.Parallel.prototype.__onmessage__.bind(this);
 	},
 	
-	/** static WebWorkerPlayer.createWorker(playerBuilder):
-		Asynchronously creates and initializes a web worker. The modules 
-		creatartis-base and	ludorum are loaded in the global namespace (self), 
-		before calling the given playerBuilder function. Its results will be 
-		stored in the global variable PLAYER.
+	/** The static `createWorker(playerBuilder)` method creates (asynchronously)
+	and initializes a web worker. The modules `creatartis-base` and `ludorum` 
+	are loaded in the webworker's root namespace (`self`), before calling the 
+	given `playerBuilder` function. Its results will be stored in the global 
+	variable `PLAYER`.
 	*/
 	"static createWorker": function createWorker(playerBuilder) {
 		raiseIf('string function'.indexOf(typeof playerBuilder) < 0, 
@@ -1632,10 +1690,10 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 			});
 	},
 	
-	/** static WebWorkerPlayer.create(params):
-		Asynchronously creates and initializes a WebWorkerPlayer, with a web 
-		worker ready to play. The params must include the playerBuilder function
-		to execute on the web worker's environment.
+	/** The static `create(params)` method creates (asynchronously) and 
+	initializes a `WebWorkerPlayer`, with a web worker ready to play. The 
+	`params` must include the `playerBuilder` function to execute on the web 
+	worker's environment.
 	*/
 	"static create": function create(params) {
 		var WebWorkerPlayer = this;
@@ -1644,12 +1702,12 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 		});
 	},
 	
-	/** players.WebWorkerPlayer.decision(game, player):
-		The decision is delegated to this player's webworker, returning a future
-		that will be resolved when the parallel execution is over. 
-		Warning! If this method is called while another decision is pending, the 
-		player will assume the previous match was aborted, issuing a QUIT 
-		command.
+	/** This player's `decision(game, player)` is delegated to this player's 
+	webworker, returning a future that will be resolved when the parallel 
+	execution is over.
+	
+	Warning! If this method is called while another decision is pending, the 
+	player will assume the previous match was aborted, issuing a quit command.
 	*/
 	decision: function decision(game, player) {
 		if (this.__future__ && this.__future__.isPending()) {
@@ -1957,28 +2015,37 @@ var Checkerboard = utils.Checkerboard = declare({
 	is the case of Ludorum's playtesters.
 	TODO.
 	*/
-	asHTMLTable: function (document, parent, callback) { //TODO
-		var table = document.createElement('table');
+	renderAsHTMLTable: function (document, container, callback) {
+		var board = this, // for closures.
+			table = document.createElement('table');
+		container.appendChild(table);
 		board.horizontals().reverse().forEach(function (line) {
 			var tr = document.createElement('tr');
 			table.appendChild(tr);
 			line.forEach(function (coord) {
 				var square = board.square(coord),
 					td = document.createElement('td'),
-					data = callback(square, coord);
-				tr.appendChild(td);
-				td.ludorum_data = base.copy({}, data, {
-					id: "ludorum-square-"+ coord.join('-'),
-					className: "ludorum-square",
-					innerHTML: base.Text.escapeXML(square),
-					game: this,
-					coord: coord					
-				});
+					data = {
+						id: "ludorum-square-"+ coord.join('-'),
+						className: "ludorum-square",
+						square: square,
+						coord: coord,
+						innerHTML: base.Text.escapeXML(square)
+					};
+				if (callback) {
+					data = callback(data) || data;
+				}
+				td['ludorum-data'] = data;
 				td.id = data.id;
 				td.className = data.className;
 				td.innerHTML = data.innerHTML;
+				if (data.onclick) {
+					td.onclick = data.onclick
+				}
+				tr.appendChild(td);
 			});
 		});
+		return table;
 	},
 	
 	// ## Heuristics ###########################################################
@@ -2750,27 +2817,27 @@ games.OddsAndEvens = declare(Game, {
 }); // declare OddsAndEvens.
 
 
-/** Implementation of the traditional Tic-Tac-Toe game.
+/** # TicTacToe.
+
+Implementation of the traditional [Tic-Tac-Toe game](http://en.wikipedia.org/wiki/Tictactoe).
 */
 games.TicTacToe = declare(Game, {
-	/** new games.TicTacToe(activePlayer="Xs", board='_________'):
-		Constructor of TicTacToe games. The first player is always Xs.
+	name: 'TicTacToe',
+
+	/** The constructor takes the `activePlayer` (`"Xs"` by default) and the
+	`board` as a string (empty board as default).
 	*/
 	constructor: function TicTacToe(activePlayer, board) {
 		Game.call(this, activePlayer);
 		this.board = board || '_________';
 	},
 	
-	name: 'TicTacToe',
-	
-	/** games.TicTacToe.players:
-		There are two roles in this game: "Xs" and "Os".
+	/** This game's players are `"Xs"` and `"Os"`.
 	*/
 	players: ['Xs', 'Os'],
 	
-	/** games.TicTacToe.result():
-		Returns a victory if any player has three marks in line, a draw if the
-		board is full, or null otherwise.
+	/** A match ends with a victory for any player that has three marks in line, 
+	or a draw if the board is full.
 	*/
 	result: (function () {
 		return function result() {			
@@ -2786,8 +2853,8 @@ games.TicTacToe = declare(Game, {
 		};
 	})(),
 	
-	/** games.TicTacToe.moves():
-		Returns the indexes of empty squares in the board.
+	/** The active player's `moves()` are the indexes of empty squares in the 
+	board.
 	*/
 	moves: function moves() {
 		if (!this.result()) {
@@ -2803,13 +2870,13 @@ games.TicTacToe = declare(Game, {
 		}		
 	},
 	
-	/** games.TicTacToe.next(moves):
-		Puts the mark of the active player in the square indicated by the move. 
+	/** The `next(moves)` game state puts the mark of the active player in the
+	square indicated by the move. 
 	*/
 	next: function next(moves) {
 		var activePlayer = this.activePlayer(), 
 			move = +moves[activePlayer];
-		if (this.board.charAt(move) !== '_') {
+		if (isNaN(move) || this.board.charAt(move) !== '_') {
 			throw new Error('Invalid move '+ JSON.stringify(moves) +' for board '+ this.board
 					+' (moves= '+ JSON.stringify(moves) +').');
 		}
@@ -2817,10 +2884,20 @@ games.TicTacToe = declare(Game, {
 		return new this.constructor(this.opponent(activePlayer), newBoard);
 	},
 
-	/** games.TicTacToe.toString():
-		Text version of the TicTacToe board.
+	// ## Utility methods ######################################################
+	
+	/** The serialization of the game is a representation of a call to its
+	constructor.
 	*/
-	toString: function toString() {
+	__serialize__: function __serialize__() {
+		return [this.name, this.activePlayer(), this.board];
+	},
+	
+	// ## User intefaces #######################################################
+	
+	/** `printBoard()` creates a text (ASCII) version of the board.
+	*/
+	printBoard: function printBoard() {
 		var board = this.board;
 		return [
 			board.substr(0,3).split('').join('|'), '-+-+-',
@@ -2829,39 +2906,41 @@ games.TicTacToe = declare(Game, {
 		].join('\n');
 	},
 	
-	/** games.TicTacToe.toHTML():
-		Renders the TicTacToe board as a HTML table.
+	/** The `display(ui)` method is called by a `UserInterface` to render the
+	game state. The only supported user interface type is `BasicHTMLInterface`.
+	The look can be configured using CSS classes.
 	*/
-	toHTML: function toHTML() {
+	display: function display(ui) {
+		raiseIf(!ui || !(ui instanceof UserInterface.BasicHTMLInterface), "Unsupported UI!");
 		var activePlayer = this.activePlayer(),
-			board = this.board.split('').map(function (chr, i) {
-				if (chr === '_') {
-					return '<td data-ludorum="move: '+ i +', activePlayer: \''+ activePlayer +'\'">&nbsp;</td>';
-				} else {
-					return '<td>'+ chr +'</td>';
+			moves = this.moves(),
+			board = this.board,
+			classNames = { 'X': "ludorum-square-Xs", 'O': "ludorum-square-Os", '_': "ludorum-square-empty" },
+			squareHTML = { 'X': "X", 'O': "O", '_': "&nbsp;" };;
+		moves = moves && moves[activePlayer] && moves[activePlayer].length > 0;
+		(new CheckerboardFromString(3, 3, this.board, '_'))
+			.renderAsHTMLTable(ui.document, ui.container, function (data) {
+				data.className = classNames[data.square];
+				data.innerHTML = squareHTML[data.square];
+				if (moves && data.square === '_') {
+					data.move = data.coord[0] * 3 + data.coord[1];
+					data.activePlayer = activePlayer;
+					data.onclick = ui.perform.bind(ui, data.move, activePlayer);
 				}
 			});
-		return '<table><tr>'+ [
-				board.slice(0,3).join(''),
-				board.slice(3,6).join(''),
-				board.slice(6,9).join('')
-			].join('</tr><tr>') +'</tr></table>';
+		return ui;
 	},
 	
-	__serialize__: function __serialize__() {
-		return [this.name, this.activePlayer(), this.board];
-	},
+	// ## Heuristics and AI ####################################################
 	
-	// Heuristics and AI ///////////////////////////////////////////////////////
-	
-	/** static games.TicTacToe.heuristics:
-		Bundle of heuristic evaluation functions for TicTacToe.
+	/** `TicTacToe.heuristics` is a bundle of helper functions to build heuristic 
+	evaluation functions for this game.
 	*/
 	"static heuristics": {
-		/** games.TicTacToe.heuristics.heuristicFromWeights(weights):
-			Builds an heuristic evaluation function from weights for each square 
-			in the board. The result of the function is the weighted sum, empty 
-			squares being ignored, opponent squares considered negative.
+		/** `heuristicFromWeights(weights)` builds an heuristic evaluation 
+		function from weights for each square in the board. The result of the 
+		function is the weighted sum, empty squares being ignored, opponent 
+		squares considered negative.
 		*/
 		heuristicFromWeights: function heuristicFromWeights(weights) {
 			var weightSum = iterable(weights).map(Math.abs).sum();
@@ -2876,19 +2955,24 @@ games.TicTacToe = declare(Game, {
 		}
 	},
 	
-	'': function () { // Class initializer. ////////////////////////////////////
-		// Build the regular expressions used in the victory test.
+	// ## TicTacToe type initialization ########################################
+	
+	'': function () { 
+		/** The regular expressions `WIN_X` and `WIN_O` used in the victory test 
+		are calculated here.
+		*/
 		var board3x3 = new CheckerboardFromString(3, 3, '_'.repeat(9)),
 			lines = board3x3.sublines(board3x3.lines(), 3);
 		this.prototype.WIN_X = new RegExp(board3x3.asRegExps(lines, 'X', '.'));
 		this.prototype.WIN_O = new RegExp(board3x3.asRegExps(lines, 'O', '.'));
+		
+		/** The `defaultHeuristic `for TicTacToe is based on weights for each 
+		square. Center is worth 5, corners 2 and the other squares 1.
+		*/
+		this.heuristics.defaultHeuristic = this.heuristics
+			.heuristicFromWeights([2,1,2,1,5,1,2,1,2]);
 	}	
 }); // declare TicTacToe
-	
-/** games.TicTacToe.heuristics.defaultHeuristic(game, player):
-	Default heuristic for TicTacToe, based on weights for each square.
-*/
-games.TicTacToe.heuristics.defaultHeuristic = games.TicTacToe.heuristics.heuristicFromWeights([2,1,2,1,5,1,2,1,2]);
 
 
 /** Implementation of the [Toads & Frogs](http://en.wikipedia.org/wiki/Toads_and_Frogs_%28game%29) 
@@ -2968,19 +3052,25 @@ games.ToadsAndFrogs = declare(Game, {
 }); // declare ToadsAndFrogs
 
 
-/** Implementation of the Kalah member of the Mancala family of games.
+/** # Mancala
+
+Implementation of the [Kalah](http://en.wikipedia.org/wiki/Kalah) member of the 
+[Mancala family of games](http://en.wikipedia.org/wiki/Mancala).
 */
 games.Mancala = declare(Game, {
-	/** new games.Mancala(activePlayer="North", board=makeBoard()):
-		TODO.
+	name: 'Mancala',
+	
+	/** The constructor takes the `activePlayer` (`"North"` by default) and the
+	board as an array of integers (initial board by default).
 	*/
 	constructor: function Mancala(activePlayer, board){
 		Game.call(this, activePlayer);
 		this.board = board || this.makeBoard();
 	},
 	
-	/** games.Mancala.makeBoard(seeds=4, houses=6):
-		Builds a board array to use as the game state.
+	/** `makeBoard(seeds, houses)` builds an array for the given amounts of 
+	houses and seeds per house. By default 4 seeds and 6 houses per player are
+	assumed.
 	*/
 	makeBoard: function makeBoard(seeds, houses){
 		seeds = isNaN(seeds) ? 4 : +seeds;
@@ -2995,27 +3085,26 @@ games.Mancala = declare(Game, {
 		return result;
 	},
 	
-	name: 'Mancala',
-	
-	/** games.Mancala.players:
-		Players of Mancala are North and South.
+	/** The players' roles in a Mancala match are `"North"` and `"South"`.
 	*/
 	players: ["North", "South"],
 	
-	/** games.Mancala.emptyCapture=false:
-		If true, making a capture only moves the active player's seed to his
-		store. The opponents seeds are not captured.
+	/** If `emptyCapture` is true, making a capture only moves the active 
+	player's seed to his store, and the opponents seeds are not captured. By 
+	default this is false.
 	*/
 	emptyCapture: false,
 	
-	/** games.Mancala.countRemainingSeeds=true:
-		If true, at the end of the game if a player has seeds on his houses,
-		those seeds are included in his score.
+	/** If `countRemainingSeeds` is true, at the end of the game if a player has
+	seeds on his houses, those seeds are included in his score. This is the 
+	default behaviour.
 	*/
 	countRemainingSeeds: true,
 	
-	/** games.Mancala.store(player):
-		Returns the index in this game's board of the player's store.
+	// ## Game state information ###############################################
+	
+	/** `store(player)` returns the index in this game's board of the player's
+	store.
 	*/
 	store: function store(player){
 		switch (this.players.indexOf(player)) {
@@ -3025,9 +3114,8 @@ games.Mancala = declare(Game, {
 		}
 	},
 
-	/** games.Mancala.houses(player):
-		Returns an array with the indexes of the player's houses in this
-		game's board.
+	/** `houses(player)` returns an array with the indexes of the player's 
+	houses in this game's board.
 	*/
 	houses: function houses(player){
 		switch (this.players.indexOf(player)) {
@@ -3037,9 +3125,10 @@ games.Mancala = declare(Game, {
 		}
 	},
 	
-	/** games.Mancala.oppositeHouse(player, i):
-		Returns the index of the opposite house of i for the given player,
-		or a negative if i is not a house of the given player.
+	/** The house in front of a players house is calculated by 
+	`oppositeHouse(player, i)`. It returns the index of the opposite house of 
+	`i` for the given player, or a negative if `i` is not a house of the given
+	player. This is necessary for resolving captures.
 	*/
 	oppositeHouse: function oppositeHouse(player, i) {
 		var playerHouses = this.houses(player),
@@ -3048,8 +3137,8 @@ games.Mancala = declare(Game, {
 		return index < 0 ? index : opponentHouses.reverse()[index];
 	},
 	
-	/** games.Mancala.nextSquare(player, i):
-		Returns the index of the square following i for the given player.
+	/** The flow of seeds on the board is defined by `nextSquare(player, i)`. It
+	returns the index of the square following `i` for the given player.
 	*/
 	nextSquare: function nextSquare(player, i){
 		do {
@@ -3058,8 +3147,9 @@ games.Mancala = declare(Game, {
 		return i;
 	},
 	
-	/** games.Mancala.moves():
-		A move for this game is an index of the square in the board.
+	// ## Game logic ###########################################################
+	
+	/** A move for a Mancala player is an index of the square in the board.
 	*/
 	moves: function moves(){
 		if (this.result()) {
@@ -3075,10 +3165,9 @@ games.Mancala = declare(Game, {
 		}
 	},
 	
-	/** games.Mancala.scores():
-		The game ends when the active player cannot move. The score for
-		each player is the seed count of its store and (if countRemainingSeeds
-		is true) the houses on its side	of the board.
+	/** The game ends when the active player cannot move. The `score()` for each 
+	player is the seed count of its store and (if `countRemainingSeeds` is true)
+	the houses on its side of the board.
 	*/
 	scores: function scores() {
 		var game = this,
@@ -3099,10 +3188,8 @@ games.Mancala = declare(Game, {
 		}
 	},
 	
-	/** games.Mancala.result():
-		The game ends when the active player cannot move. The result for
-		each player is the difference between the seed count of the stores.
-		If a player has seeds in his side, those are added to his count.
+	/** The result for each player is the difference between its score and the
+	opponent's.
 	*/
 	result: function result() {
 		var scores = this.scores(),
@@ -3110,8 +3197,11 @@ games.Mancala = declare(Game, {
 		return scores && this.zerosumResult(scores[players[0]] - scores[players[1]], players[0]);
 	},
 	
-	/** games.Mancala.next(moves):
-		TODO.
+	/** The `next(moves)` game state implies taking all seeds from the selected
+	house and moving them across the board, placing one seed at each step. A 
+	player can pass through its store but not through the opponent's. If the 
+	move ends at the active player's store, then it has another move. If it ends
+	at an empty house, capture may occur.
 	*/
 	next: function next(moves) {
 		var activePlayer = this.activePlayer(), 
@@ -3145,17 +3235,21 @@ games.Mancala = declare(Game, {
 		return new this.constructor(freeTurn ? activePlayer : this.opponent(), newBoard);
 	},
 	
-	/** games.Mancala.resultBounds():
-		Result bounds are estimated with the total number of stones in the
-		board. It is very unlikely to get these result though.
+	/** The `resultBounds` for a Mancala game are estimated with the total 
+	number of seeds in the board. It is very unlikely to get these result 
+	though.
 	*/
 	resultBounds: function resultBounds() {
 		var stoneCount = iterable(this.board).sum();
 		return [-stoneCount,+stoneCount];
 	},
 	
-	// Utility methods. ////////////////////////////////////////////////////
+	// ## Utility methods ######################################################
 	
+	/** Serialization is used in the `toString()` method, but it is also vital
+	for sending the game state across a network or the marshalling between the
+	rendering thread and a webworker.
+	*/
 	__serialize__: function __serialize__() {
 		return [this.name, this.activePlayer(), this.board.slice()];
 	},
@@ -3166,10 +3260,11 @@ games.Mancala = declare(Game, {
 		}).join('');
 	},
 
-	/** games.Mancala.toString():
-		Text version of the Mancala board.
+	// ## User intefaces #######################################################
+	
+	/** `printBoard()` creates a text (ASCII) version of the board.
 	*/
-	toString: function toString() {
+	printBoard: function printBoard() {
 		var game = this,
 			lpad = base.Text.lpad,
 			north = this.players[0],
@@ -3190,10 +3285,7 @@ games.Mancala = declare(Game, {
 	/** games.Mancala.toHTML():
 		Renders the Mancala board as a HTML table.
 	*/
-	toHTML: function toHTML() {
-		var moves = this.moves(),
-			north = this.players[0],
-			south = this.players[1];
+	toHTML: function toHTML() {			
 		function renderHouse(player, h) {
 			if (!moves || !moves[player] || !moves[player].indexOf(h) < 0) { // Not a move.
 				return '<td>'+ this.board[h] +'</td>';
@@ -3210,10 +3302,10 @@ games.Mancala = declare(Game, {
 			+ '</tr></table>';
 	},
 	
-// Heuristics. /////////////////////////////////////////////////////////////////
+	// ## Heuristics and AI ####################################################
 
-	/** static games.Mancala.heuristics:
-		Bundle of heuristic evaluation functions for Mancala.
+	/** `Mancala.heuristics` is a bundle of helper functions to build heuristic 
+	evaluation functions for this game.
 	*/
 	'static heuristics': {
 		/** games.Mancala.heuristics.heuristicFromWeights(weights=default weights):
@@ -3240,12 +3332,16 @@ games.Mancala = declare(Game, {
 		}
 	},
 	
-// Static initializer. /////////////////////////////////////////////////////////
-	
+	// ## Mancala type initialization ##########################################
+
 	'': function () {
+		/** The `makeBoard` can also be used without an instance of Mancala.
+		*/
 		this.makeBoard = this.prototype.makeBoard;
-		/** games.Mancala.heuristics.defaultHeuristic(game, player):
-			Default heuristic for Mancala, based on weights for each square.
+		
+		/** The `defaultHeuristic `for Mancala is based on weights for each 
+		square. Stores are worth 5 and houses 1, own possitive and the 
+		opponent's negative.
 		*/
 		this.heuristics.defaultHeuristic = this.heuristics.heuristicFromWeights(
 			[+1,+1,+1,+1,+1,+1,+5, 
@@ -3343,31 +3439,31 @@ games.Pig = declare(Game, {
 }); // declare Pig.
 
 
+/** # ConnectFour.
+
+Implementation of the [Connect Four game](http://en.wikipedia.org/wiki/Connect_Four).
+*/
 games.ConnectFour = declare(games.ConnectionGame, {
-	/** games.ConnectFour.height=6:
-		Number of rows in the ConnectFour board.
+	name: 'ConnectFour',
+
+	/** The default `height` of the board is 6.
 	*/
 	height: 6,
 	
-	/** games.ConnectFour.width=7:
-		Number of columns in the ConnectFour board.
+	/** The default `width` of the board is 7.
 	*/
 	width: 7,
 	
-	/** games.ConnectFour.lineLength=4:
-		Length of the line required to win.
+	/** The default `lineLength` to win the game is 4.
 	*/
 	lineLength: 4,
 	
-	name: 'ConnectFour',
-	
-	/** games.ConnectFour.players=['Yellow', 'Red']:
-		Connect Four's players.
+	/** The game's players are `'Yellow'` and `'Red'`.
 	*/
 	players: ['Yellow', 'Red'],
 	
-	/** games.ConnectFour.moves():
-		Return the index of every column that has not reached the top height.
+	/** The active players `moves()` are the indexes of every column that has 
+	not reached the top height.
 	*/
 	moves: function moves() {
 		var result = null;
@@ -3388,8 +3484,8 @@ games.ConnectFour = declare(games.ConnectionGame, {
 		return result;
 	},
 
-	/** games.ConnectFour.next(moves):
-		Each ConnectFour move is a column index.
+	/** The `next(moves)` game state drops a piece at the column with the index
+	of the active player's move.
 	*/
 	next: function next(moves) {
 		var activePlayer = this.activePlayer(),
@@ -3406,29 +3502,40 @@ games.ConnectFour = declare(games.ConnectionGame, {
 		throw new Error('Invalid move '+ JSON.stringify(moves) +'!');
 	},
 	
-	/** games.ConnectFour.toHTML():
-		Renders the ConnectFour board as a HTML table.
+	// ## User intefaces #######################################################
+	
+	/** The `display(ui)` method is called by a `UserInterface` to render the
+	game state. The only supported user interface type is `BasicHTMLInterface`.
+	The look can be configured using CSS classes.
 	*/
-	toHTML: function toHTML() {
+	display: function display(ui) {
+		raiseIf(!ui || !(ui instanceof UserInterface.BasicHTMLInterface), "Unsupported UI!");
 		var moves = this.moves(),
 			activePlayer = this.activePlayer(),
 			board = this.board;
 		moves = moves && moves[activePlayer];
-		return '<table>'+
-			'<colgroup>'+ '<col/>'.repeat(this.board.width) +'</colgroup>'+
-			board.horizontals().reverse().map(function (line) {
-				return '<tr>'+ line.map(function (coord) {
-					var data = '',
-						value = board.square(coord);
-					if (moves && moves.indexOf(coord[1]) >= 0) {
-						data = ' data-ludorum="move: '+ coord[1] +', activePlayer: \''+ activePlayer +'\'"';
-					}
-					return (value === '.') ? '<td '+ data +'>&nbsp;</td>'
-						: '<td class="ludorum-player'+ value +'" '+ data +'>&#x25CF;</td>';
-				}).join('') +'</tr>';
-			}).join('') + '</table>';
+		var table = this.board.renderAsHTMLTable(ui.document, ui.container, function (data) {
+				data.className = data.square === '.' ? 'ludorum-empty' : 'ludorum-player'+ data.square;
+				data.innerHTML = data.square === '.' ? "&nbsp;" : "&#x25CF;";
+				if (moves && moves.indexOf(data.coord[1]) >= 0) {
+					data.move = data.coord[1];
+					data.activePlayer = activePlayer;
+					data.onclick = ui.perform.bind(ui, data.move, activePlayer);
+				}
+			});
+		table.insertBefore(
+			ui.build.apply(ui, [ui.document.createElement('colgroup')]
+				.concat(Iterable.repeat(['col'], this.board.width).toArray())),
+			table.firstChild
+		);
+		return ui;
 	},
 	
+	// ## Utility methods ######################################################
+	
+	/** The serialization of the game is a representation of a call to its
+	constructor (inherited from [`ConnectionGame`](ConnectionGame.js.html).
+	*/
 	__serialize__: function __serialize__() {
 		return [this.name, this.activePlayer(), this.board.string];
 	}
@@ -3680,6 +3787,37 @@ games.Othello = declare(Game, {
 		return [-squareCount, +squareCount];
 	},
 	
+	// ## User intefaces #######################################################
+	
+	/** The `display(ui)` method is called by a `UserInterface` to render the
+	game state. The only supported user interface type is `BasicHTMLInterface`.
+	The look can be configured using CSS classes.
+	*/
+	display: function display(ui) {
+		raiseIf(!ui || !(ui instanceof UserInterface.BasicHTMLInterface), "Unsupported UI!");
+		var moves = this.moves(),
+			activePlayer = this.activePlayer(),
+			board = this.board,
+			classNames = {
+				'B': "ludorum-square-Black",
+				'W': "ludorum-square-White",
+				'.': "ludorum-square-empty"
+			};
+		moves = moves && moves[activePlayer].map(JSON.stringify);
+		board.renderAsHTMLTable(ui.document, ui.container, function (data) {
+			data.className = classNames[data.square];
+			data.innerHTML = '&nbsp;';
+			var move = JSON.stringify(data.coord);
+			if (moves && moves.indexOf(move) >= 0) {
+				data.move = data.coord;
+				data.activePlayer = activePlayer;
+				data.className = "ludorum-square-move";
+				data.onclick = ui.perform.bind(ui, data.move, activePlayer);
+			}
+		});
+		return ui;
+	},
+	
 	// ## Utility methods ######################################################
 	
 	/** The game state serialization simply contains the constructor arguments.
@@ -3687,34 +3825,6 @@ games.Othello = declare(Game, {
 	__serialize__: function __serialize__() {
 		var board = this.board;
 		return [this.name, this.activePlayer(), [board.height, board.width, board.string]];
-	},
-	
-	/** `toHTML()` renders the board as a HTML table. CSS classes are added so
-	the look of the board can be configured.
-	*/
-	toHTML: function toHTML() {
-		var moves = this.moves(),
-			activePlayer = this.activePlayer(),
-			board = this.board;
-		moves = moves && moves[activePlayer].map(JSON.stringify);
-		return '<table>'+
-			board.horizontals().reverse().map(function (line) {
-				return '<tr>'+ line.map(function (coord) {
-					switch (board.square(coord)) {
-						case 'B': return '<td class="ludorum-square-Black">&nbsp;</td>';
-						case 'W': return '<td class="ludorum-square-White">&nbsp;</td>'; // &#x25CF;
-						default: {
-							var move = JSON.stringify(coord);
-							if (moves && moves.indexOf(move) >= 0) {
-								return '<td class="ludorum-square-move" data-ludorum="move: '+ 
-									move +', activePlayer: \''+ activePlayer +'\'">&nbsp;</td>'; //&#x2022;
-							} else {
-								return '<td class="ludorum-square-empty">&nbsp;</td>';
-							}
-						}
-					}
-				}).join('') +'</tr>';
-			}).join('') + '</table>';
 	},
 	
 	// ## Heuristics ###########################################################
@@ -3729,19 +3839,16 @@ games.Othello = declare(Game, {
 		*/
 		heuristicFromWeights: function heuristicFromWeights(weights) {
 			var weightCount = weights.length,
-				weightSum = iterable(weights).map(Math.abs).sum(); // Normalize weights.
-			weights = iterable(weights).map(function (weight) { 
-				return weight / (weightSum + 1);
-			});
+				weightSum = iterable(weights).map(Math.abs).sum(); // Used to normalize the sum.
 			var heuristic = function __heuristic__(game, player) {
 				var board = game.board;
 				raiseIf(board.height * board.width !== weightCount, "Wrong amount of weights!");
 				return board.weightedSum(weights, {
 					'W': player.charAt(0) === 'W' ? 1 : -1,
 					'B': player.charAt(0) === 'B' ? 1 : -1
-				});
+				}) / weightSum;
 			}
-			heuristic.weights = weights.toArray();
+			heuristic.weights = weights;
 			return heuristic;
 		},
 		
@@ -3763,6 +3870,35 @@ games.Othello = declare(Game, {
 					.concat(weights.slice(left, right - rows % 2).reverse());
 			}).flatten().toArray();
 			return this.heuristicFromWeights(weights);
+		},
+		
+		/** `pieceRatio(game, player)` is an heuristic criteria based on the
+		difference of the piece counts of both players.
+		*/
+		pieceRatio: function pieceRatio(game, player) {
+			var playerPieceCount = 0, opponentPieceCount = 0;
+			iterable(game.board.string).forEach(function (sq) {
+				if (sq !== '.') {
+					if (sq === player.charAt(0)) {
+						++playerPieceCount;
+					} else {
+						++opponentPieceCount;
+					}
+				}
+			});
+			return (playerPieceCount - opponentPieceCount) / (playerPieceCount + opponentPieceCount);
+		},
+		
+		/** `mobilityRatio(game, player)` is an heuristic criteria based on the
+		difference of the move counts of both players.
+		*/
+		mobilityRatio: function mobilityRatio(game, player) {
+			var opponent = game.opponent(player),
+				playerMoves = game.moves(player),
+				opponentMoves = game.moves(opponent), 
+				playerMoveCount = playerMoves && playerMoves[player] && playerMoves[player].length || 0, 
+				opponentMoveCount = opponentMoves && opponentMoves[opponent] && opponentMoves[opponent].length || 0;
+			return (playerMoveCount - opponentMoveCount) / (playerMoveCount + opponentMoveCount);
 		}
 	}	
 }); // declare Othello.
