@@ -1,9 +1,10 @@
-var APP = {};
+var APP = {},
+	JS_ROOT = '../../..';
 
 require.config({ 
 	paths: { 
-		'creatartis-base': "../../lib/creatartis-base", 
-		ludorum: "../../build/ludorum"
+		'creatartis-base': JS_ROOT +"/lib/creatartis-base", 
+		ludorum: JS_ROOT +"/build/ludorum"
 	}
 });
 require(['creatartis-base', 'ludorum'], function (base, ludorum) {

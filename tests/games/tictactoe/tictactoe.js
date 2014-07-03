@@ -1,9 +1,10 @@
-var APP = {};
+var APP = {},
+	JS_ROOT = '../../..';
 
 require.config({
 	paths: {
-		'creatartis-base': "../../lib/creatartis-base", 
-		ludorum: "../../build/ludorum"
+		'creatartis-base': JS_ROOT +"/lib/creatartis-base", 
+		ludorum: JS_ROOT +"/build/ludorum"
 	}
 });
 require(['creatartis-base', 'ludorum'], function (base, ludorum) {
@@ -30,13 +31,13 @@ require(['creatartis-base', 'ludorum'], function (base, ludorum) {
 			return new ludorum.players.MonteCarloPlayer({ simulationCount: 80 });
 		}, runOnWorker: true },
 		{title: "MiniMax AlfaBeta (4 plies)", builder: function () {
-			return new ludorum.players.AlphaBetaPlayer({ horizon: 4 });
+			return new ludorum.players.AlphaBetaPlayer({ horizon: 3 });
 		}, runOnWorker: true },
 		{title: "MiniMax AlfaBeta (6 plies)", builder: function () {
-			return new ludorum.players.AlphaBetaPlayer({ horizon: 6 });
+			return new ludorum.players.AlphaBetaPlayer({ horizon: 5 });
 		}, runOnWorker: true },
 		{title: "MaxN (6 plies)", builder: function () {
-			return new ludorum.players.MaxNPlayer({ horizon: 6 });
+			return new ludorum.players.MaxNPlayer({ horizon: 5 });
 		}, runOnWorker: true },
 	];
 	APP.players = [PLAYER_OPTIONS[0].builder(), PLAYER_OPTIONS[0].builder()];

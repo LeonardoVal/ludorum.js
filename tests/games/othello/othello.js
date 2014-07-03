@@ -1,9 +1,10 @@
-var APP = {};
+var APP = {},
+	JS_ROOT = '../../..';
 
 require.config({ 
 	paths: { 
-		'creatartis-base': "../../lib/creatartis-base", 
-		ludorum: "../../build/ludorum"
+		'creatartis-base': JS_ROOT +"/lib/creatartis-base", 
+		ludorum: JS_ROOT +"/build/ludorum"
 	}
 });
 require(['creatartis-base', 'ludorum'], function (base, ludorum) {
@@ -23,16 +24,29 @@ require(['creatartis-base', 'ludorum'], function (base, ludorum) {
 			{title: "MonteCarlo (1.0seg)", builder: function () {
 				return new ludorum.players.MonteCarloPlayer({ simulationCount: 100, timeCap: 1000 });
 			}, runOnWorker: true },
-			{title: "MonteCarlo (50sim)", builder: function () {
-				return new ludorum.players.MonteCarloPlayer({ simulationCount: 50, timeCap: 10000 });
-			}, runOnWorker: true },
-			{title: "AlphaBeta (h=4)", builder: function () {
-				return new ludorum.players.AlphaBetaPlayer({ horizon: 4, 
-					heuristic: ludorum.games.Othello.heuristics.heuristicFromSymmetricWeights(
-						[+9,-3,+3,+3, -3,-3,-1,-1, +3,-1,+1,+1, +3,-1,+1,+1]
+			{title: "AlphaBeta (h=3)", builder: function () {
+				return new ludorum.players.AlphaBetaPlayer({ horizon: 3, 
+					heuristic: ludorum.players.HeuristicPlayer.composite(
+						ludorum.games.Othello.heuristics.heuristicFromSymmetricWeights(
+							[+9,-3,+3,+3, -3,-3,-1,-1, +3,-1,+1,+1, +3,-1,+1,+1]
+						), 0.6,
+						ludorum.games.Othello.heuristics.pieceRatio, 0.2,
+						ludorum.games.Othello.heuristics.mobilityRatio, 0.2
 					)
 				});
 			}, runOnWorker: true },
+			{title: "MonteCarlo (1seg h=20)", builder: function () {
+				return new ludorum.players.MonteCarloPlayer({ 
+					simulationCount: 100, timeCap: 1000, horizon: 20, 
+					heuristic: ludorum.players.HeuristicPlayer.composite(
+						ludorum.games.Othello.heuristics.heuristicFromSymmetricWeights(
+							[+9,-3,+3,+3, -3,-3,-1,-1, +3,-1,+1,+1, +3,-1,+1,+1]
+						), 0.6,
+						ludorum.games.Othello.heuristics.pieceRatio, 0.2,
+						ludorum.games.Othello.heuristics.mobilityRatio, 0.2
+					)
+				});
+			}, runOnWorker: true }
 		];
 	APP.players = [PLAYER_OPTIONS[0].builder(), PLAYER_OPTIONS[0].builder()];
 	$('#player0, #player1').html(PLAYER_OPTIONS.map(function (option, i) {
@@ -71,9 +85,13 @@ require(['creatartis-base', 'ludorum'], function (base, ludorum) {
 		});
 		match.events.on('end', function (game, results) {
 			var player0 = game.players[0];
-			$('footer').html(base.Text.escapeXML(
-				results[player0] === 0 ? 'Drawed game.' : (results[player0] > 0 ? player0 : game.players[1]) +' wins.'
-			));
+			$('footer').html(
+				base.Text.escapeXML(
+					(results[player0] === 0 ? 'Drawed game.' : 
+						(results[player0] > 0 ? player0 : game.players[1]) +' wins.')) 
+				+'<br/>'+
+				base.Text.escapeXML(JSON.stringify(results))
+			);
 		});
 		match.run();
 	});
