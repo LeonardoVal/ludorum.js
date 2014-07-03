@@ -1,4 +1,4 @@
-﻿/** ## Class TracePlayer
+﻿/** # TracePlayer
 
 Automatic player that is scripted previously.
 */

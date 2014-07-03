@@ -1,28 +1,27 @@
-﻿/** Automatic players based on the MaxN algorithm.
+﻿/** # MaxNPlayer
+
+Automatic players based on the MaxN algorithm, a MiniMax variant for games of
+more than two players.
 */
 var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
-	/** new players.MaxNPlayer(params):
-		Builds a player that chooses its moves using the MiniMax algorithm with
-		alfa-beta pruning.
+	/** Besides the parameters of every [`HeuristicPlayer`](HeuristicPlayer.js.html),
+	an `horizon` for the search may be specified (3 plies by default).
 	*/
 	constructor: function MaxNPlayer(params) {
 		HeuristicPlayer.call(this, params);
 		initialize(this, params)
-		/** players.MaxNPlayer.horizon=3:
-			Maximum depth for the MiniMax search.
-		*/
 			.integer('horizon', { defaultValue: 3, coerce: true })
 	},
 
-	/** players.MaxNPlayer.stateEvaluation(game, player):
-		Returns the minimax value for the given game and player.
+	/** This player evaluates each state using the `maxn` method, taking the 
+	evaluation for the given `player`.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
 		return this.maxN(game, player, 0)[player];
 	},
 
-	/** players.MaxNPlayer.heuristics(game):
-		Returns the heuristics value for each players in the game, as an object.
+	/** `heuristics(game)` returns an heuristic value for each players in the 
+	game, as an object.
 	*/
 	heuristics: function heuristic(game) {
 		var result = {}, maxN = this;
@@ -32,13 +31,14 @@ var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
 		return result;
 	},
 
-	/** players.MaxNPlayer.quiescence(game, player, depth):
-		An stability test for the given game state. If the game is quiescent, 
-		this function must return evaluations. Else it must return null. 
-		Final game states are always quiescent, and their evaluations are the 
-		game's result for each player. This default implementation also return 
-		heuristic evaluations for every game state at a deeper depth than the 
-		player's horizon.
+	/** `quiescence(game, player, depth)` is a stability test for the given 
+	`game` state and the given `player`. If the game is quiescent, this function
+	must return evaluations. Else it must return null. 
+	
+	Final game states are always quiescent, and their evaluations are the game's 
+	result for each player. This default implementation also returns heuristic 
+	evaluations for every game state at a deeper depth than the player's 
+	horizon, calculated via the `heuristics()` method. 
 	*/
 	quiescence: function quiescence(game, player, depth) {
 		var results = game.result();
@@ -51,9 +51,9 @@ var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
 		}
 	},
 	
-	/** players.MaxNPlayer.maxN(game, player, depth):
-		Return the evaluations for each player of the given game, assuming each
-		player tries to maximize its own evaluation regardless of the others'.
+	/** The core `maxN(game, player, depth)` algorithm return the evaluations 
+	for each player of the given game, assuming each player tries to maximize 
+	its own evaluation regardless of the others'.
 	*/
 	maxN: function maxN(game, player, depth) {
 		var values = this.quiescence(game, player, depth);

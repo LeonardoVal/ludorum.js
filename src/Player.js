@@ -35,7 +35,7 @@ var Player = exports.Player = declare({
 		return moves[role];
 	},
 	
-	/** Before starting a [match](Match.html), all players are asked to join
+	/** Before starting a [match](Match.js.html), all players are asked to join
 	by calling `Player.participate(match, role)`. This allows the player to
 	prepare properly. If this implies building another instance of the player 
 	object, it must be returned in order to participate in the match.

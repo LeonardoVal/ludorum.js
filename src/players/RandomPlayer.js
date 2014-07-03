@@ -1,10 +1,10 @@
-﻿/** ## Class RandomPlayer
+﻿/** # RandomPlayer
 
 Automatic players that moves fully randomly.
 */	
 players.RandomPlayer = declare(Player, {
 	/** The constructor takes the player's `name` and a `random` number 
-	generator (`Randomness.DEFAULT` by default).
+	generator (`base.Randomness.DEFAULT` by default).
 	*/
 	constructor: function RandomPlayer(params) {
 		Player.call(this, params);

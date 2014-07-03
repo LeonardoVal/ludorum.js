@@ -1,4 +1,4 @@
-﻿/** ## Class MiniMaxPlayer
+﻿/** # MiniMaxPlayer
 
 Automatic players based on pure MiniMax.
 */

@@ -1,4 +1,4 @@
-﻿/** ## Class AlphaBetaPlayer
+﻿/** # AlphaBetaPlayer
 
 Automatic players based on MiniMax with alfa-beta pruning.
 */
