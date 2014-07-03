@@ -1,4 +1,4 @@
-﻿/** ## Class HeuristicPlayer
+﻿/** # HeuristicPlayer
 
 This is the base type of automatic players based on heuristic evaluations of 
 game states or moves.
@@ -107,7 +107,35 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 		});
 		var selectedMoves = heuristicPlayer.selectMoves(moves, game, player);
 		return Future.then(selectedMoves, function (selectedMoves) {
+			raiseIf(!selectedMoves || !selectedMoves.length, 
+				"No moves where selected at ", game, " for player ", player, "!");
 			return heuristicPlayer.random.choice(selectedMoves)[player];
 		});
+	},
+	
+	// ## Utilities to build heuristics ########################################
+	
+	/** A `composite` heuristic function returns the weighted sum of other
+	functions. The arguments must be a sequence of heuristic functions and a
+	weight. All weights must be between 0 and 1 and add up to 1.
+	*/
+	'static composite': function composite() {
+		var components = Array.prototype.slice.call(arguments), weightSum = 0;
+		raiseIf(components.length < 1,
+			"HeuristicPlayer.composite() cannot take an odd number of arguments!");
+		for (var i = 0; i < components.length; i += 2) {
+			raiseIf(typeof components[i] !== 'function', 
+				"HeuristicPlayer.composite() argument ", i, " (", components[i], ") is not a function!");
+			components[i+1] = +components[i+1];
+			raiseIf(isNaN(components[i+1]) || components[i+1] < 0 || components[i+1] > 1, 
+				"HeuristicPlayer.composite() argument ", i+1, " (", components[i+1], ") is not a valid weight!");
+		}
+		return function compositeHeuristic(game, player) {
+			var sum = 0;
+			for (var i = 0; i+1 < components.length; i += 2) {
+				sum += components[i](game, player) * components[i+1];
+			}
+			return sum;
+		};
 	}
 }); // declare HeuristicPlayer.
