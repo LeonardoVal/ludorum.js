@@ -254,7 +254,7 @@ games.Othello = declare(Game, {
 					}
 				}
 			});
-			return (playerPieceCount - opponentPieceCount) / (playerPieceCount + opponentPieceCount);
+			return (playerPieceCount - opponentPieceCount) / (playerPieceCount + opponentPieceCount) || 0;
 		},
 		
 		/** `mobilityRatio(game, player)` is an heuristic criteria based on the
@@ -266,7 +266,7 @@ games.Othello = declare(Game, {
 				opponentMoves = game.moves(opponent), 
 				playerMoveCount = playerMoves && playerMoves[player] && playerMoves[player].length || 0, 
 				opponentMoveCount = opponentMoves && opponentMoves[opponent] && opponentMoves[opponent].length || 0;
-			return (playerMoveCount - opponentMoveCount) / (playerMoveCount + opponentMoveCount);
+			return (playerMoveCount - opponentMoveCount) / (playerMoveCount + opponentMoveCount) || 0;
 		}
 	}	
 }); // declare Othello.
