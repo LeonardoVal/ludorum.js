@@ -102,15 +102,19 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 		var playerMoves = moves[player];
 		raiseIf(!Array.isArray(playerMoves) || playerMoves.length < 1,
 			"Player "+ player +" has no moves ("+ playerMoves +")!");
-		moves = playerMoves.map(function (move) {
-			return copy(obj(player, move), moves);
-		});
-		var selectedMoves = heuristicPlayer.selectMoves(moves, game, player);
-		return Future.then(selectedMoves, function (selectedMoves) {
-			raiseIf(!selectedMoves || !selectedMoves.length, 
-				"No moves where selected at ", game, " for player ", player, "!");
-			return heuristicPlayer.random.choice(selectedMoves)[player];
-		});
+		if (playerMoves.length == 1) { // Forced moves.
+			return playerMoves[0];
+		} else {
+			moves = playerMoves.map(function (move) {
+				return copy(obj(player, move), moves);
+			});
+			var selectedMoves = heuristicPlayer.selectMoves(moves, game, player);
+			return Future.then(selectedMoves, function (selectedMoves) {
+				raiseIf(!selectedMoves || !selectedMoves.length, 
+					"No moves where selected at ", game, " for player ", player, "!");
+				return heuristicPlayer.random.choice(selectedMoves)[player];
+			});
+		}
 	},
 	
 	// ## Utilities to build heuristics ########################################
