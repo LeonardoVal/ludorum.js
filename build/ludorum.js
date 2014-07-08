@@ -1101,15 +1101,19 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 		var playerMoves = moves[player];
 		raiseIf(!Array.isArray(playerMoves) || playerMoves.length < 1,
 			"Player "+ player +" has no moves ("+ playerMoves +")!");
-		moves = playerMoves.map(function (move) {
-			return copy(obj(player, move), moves);
-		});
-		var selectedMoves = heuristicPlayer.selectMoves(moves, game, player);
-		return Future.then(selectedMoves, function (selectedMoves) {
-			raiseIf(!selectedMoves || !selectedMoves.length, 
-				"No moves where selected at ", game, " for player ", player, "!");
-			return heuristicPlayer.random.choice(selectedMoves)[player];
-		});
+		if (playerMoves.length == 1) { // Forced moves.
+			return playerMoves[0];
+		} else {
+			moves = playerMoves.map(function (move) {
+				return copy(obj(player, move), moves);
+			});
+			var selectedMoves = heuristicPlayer.selectMoves(moves, game, player);
+			return Future.then(selectedMoves, function (selectedMoves) {
+				raiseIf(!selectedMoves || !selectedMoves.length, 
+					"No moves where selected at ", game, " for player ", player, "!");
+				return heuristicPlayer.random.choice(selectedMoves)[player];
+			});
+		}
 	},
 	
 	// ## Utilities to build heuristics ########################################
@@ -1397,8 +1401,7 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 			options = moves.map(function (move) {
 				return { 
 					move: move, 
-					nexts: (Object.keys(move).length < 2 
-						? [game.next(move)]
+					nexts: (Object.keys(move).length < 2 ? [game.next(move)]
 						: game.possibleMoves(copy(obj(player, [move[player]]), move)).map(function (ms) {
 							return game.next(ms);
 						})
@@ -1417,11 +1420,13 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 				});
 			});
 		}
-		return iterable(options).greater(function (option) {
+		options = iterable(options).greater(function (option) {
+			raiseIf(isNaN(option.sum), "State evaluation is NaN for move ", option.move, "!");
 			return option.count > 0 ? option.sum / option.count : 0;
 		}).map(function (option) {
 			return option.move;
 		});
+		return options;
 	},
 	
 	/** This player's `stateEvaluation(game, player)` runs `simulationCount` 
@@ -1452,22 +1457,22 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 			if (game instanceof Aleatory) {
 				game = game.next();
 			} else {
-				if (plies > this.horizon) {
-					return { game: game, result: obj(player, this.heuristic(game, player)), plies: plies };
-				}
 				moves = game.moves();
-				if (!moves) {
+				if (!moves) { // If game state is final ...
 					return { game: game, result: game.result(), plies: plies };
+				} else if (plies > this.horizon) { // If past horizon ...
+					return { game: game, result: obj(player, this.heuristic(game, player)), plies: plies };
+				} else { // ... else advance.
+					move = {};
+					game.activePlayers.forEach(function (activePlayer) {
+						move[activePlayer] = mc.agent ? mc.agent.decision(game, activePlayer) 
+							: mc.random.choice(moves[activePlayer]);
+					});
+					game = game.next(move);
 				}
-				move = {};
-				game.activePlayers.forEach(function (activePlayer) {
-					move[activePlayer] = mc.agent ? mc.agent.decision(game, activePlayer) 
-						: mc.random.choice(moves[activePlayer]);
-				});
-				game = game.next(move);
 			}
 		}
-		raise("Simulation ended unexpectedly!");
+		raise("Simulation ended unexpectedly for player ", player, " in game ", game, "!");
 	},
 	
 	__serialize__: function __serialize__() {
@@ -3886,7 +3891,7 @@ games.Othello = declare(Game, {
 					}
 				}
 			});
-			return (playerPieceCount - opponentPieceCount) / (playerPieceCount + opponentPieceCount);
+			return (playerPieceCount - opponentPieceCount) / (playerPieceCount + opponentPieceCount) || 0;
 		},
 		
 		/** `mobilityRatio(game, player)` is an heuristic criteria based on the
@@ -3898,7 +3903,7 @@ games.Othello = declare(Game, {
 				opponentMoves = game.moves(opponent), 
 				playerMoveCount = playerMoves && playerMoves[player] && playerMoves[player].length || 0, 
 				opponentMoveCount = opponentMoves && opponentMoves[opponent] && opponentMoves[opponent].length || 0;
-			return (playerMoveCount - opponentMoveCount) / (playerMoveCount + opponentMoveCount);
+			return (playerMoveCount - opponentMoveCount) / (playerMoveCount + opponentMoveCount) || 0;
 		}
 	}	
 }); // declare Othello.
