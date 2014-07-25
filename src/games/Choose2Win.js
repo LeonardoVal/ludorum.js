@@ -1,12 +1,12 @@
-﻿/** Simple silly game where players can instantly choose to win, loose, draw or
-	just continue. Mostly for testing purposes.
+﻿/** # Choose2Win
+
+Choose2Win is a simple silly game. Each turn one of the players can decide to 
+win, to lose or to pass the turn. It is meant to be used only for testing 
+Ludorum, since a game can hardly become less interesting than this.
 */
 games.Choose2Win = declare(Game, {
-	/** new games.Choose2Win(turns=Infinity, activePlayer=players[0], winner=none):
-		Choose2Win is a silly game indeed. Each turn one of the players can
-		decide to win, to lose or to pass the turn. It is meant to be used 
-		only for testing Ludorum, since a game can hardly become less 
-		interesting than this.
+	/** The constructor takes a number of turns for the game to last (`Infinity`
+	by default), the active player and the winner if the game has ended. 
 	*/
 	constructor: function Choose2Win(turns, activePlayer, winner) {
 		Game.call(this, activePlayer);
@@ -16,13 +16,11 @@ games.Choose2Win = declare(Game, {
 
 	name: 'Choose2Win',
 	
-	/** games.Choose2Win.players=['This', 'That']:
-		Players of the dummy game.
+	/** Players of this dummy game are labeled This and That.
 	*/
 	players: ['This', 'That'],
 
-	/** games.Choose2Win.moves():
-		Moves always are 'win', 'lose', 'pass'.
+	/** Every turn the active player's moves are: `'win'`, `'lose'` and `'pass'`.
 	*/
 	moves: function moves() {
 		if (!this.__winner__ && this.__turns__ > 0) {
@@ -30,17 +28,16 @@ games.Choose2Win = declare(Game, {
 		}
 	},
 
-	/** games.Choose2Win.result():
-		Victory for who chooses to win. Defeat for who chooses to lose. Draw 
-		only when a limit of turns (if given) is met.
+	/** Victory is for whom chooses to win first. Defeat is for whom chooses to 
+	lose first. A draw only results when the limit of turns (if any) is met.
 	*/
 	result: function result() {
 		return this.__winner__ ? this.victory(this.__winner__) :
 			this.__turns__ < 1 ? this.draw() : null;
 	},
 
-	/** games.Choose2Win.next(moves):
-		Moves must be always 'win', 'lose' or 'pass'.
+	/** If a player moves to win or lose, a final game state is returned. Else
+	the game goes on.
 	*/
 	next: function next(moves) {
 		var activePlayer = this.activePlayer(),

@@ -1,4 +1,6 @@
-/** Bahab is a chess-like board game originally designed for Ludorum.
+/** # Bahab
+
+Bahab is a chess-like board game originally designed for Ludorum.
 */
 games.Bahab = declare(Game, {
 	initialBoard: ['BBABB', 'BBBBB', '.....', 'bbbbb', 'bbabb'].join(''),
@@ -17,11 +19,9 @@ games.Bahab = declare(Game, {
 	
 	result: function result() {
 		var board = this.board.string;
-		if (board.match(/^[.bAB]+$|[A].{0,4}$/)) { 
-			//// Lowercase has no piece 'a' or Uppercase has a piece in Lowercase's rank.
+		if (board.match(/^[.bAB]+$|[A].{0,4}$/)) { // Lowercase has no piece 'a' or Uppercase has a piece in Lowercase's rank.
 			return this.defeat(this.players[1]);
-		} else if (board.match(/^[.Bab]+$|^.{0,4}[a]/)) {
-			//// Uppercase has no piece 'A' or Lowercase has a piece in Uppercase's rank.
+		} else if (board.match(/^[.Bab]+$|^.{0,4}[a]/)) { // Uppercase has no piece 'A' or Lowercase has a piece in Uppercase's rank.
 			return this.defeat(this.players[0]);
 		} else {
 			return null;
@@ -70,28 +70,5 @@ games.Bahab = declare(Game, {
 	
 	__serialize__: function __serialize__() {
 		return [this.name, this.activePlayer(), this.board.string];
-	},
-	
-	toHTML: function toHTML() {
-		var moves = this.moves(),
-			activePlayer = this.activePlayer(),
-			board = this.board;
-		return '<table>'+
-			board.horizontals().reverse().map(function (line) {
-				return '<tr>'+ line.map(function (coord) {
-					var square = board.square(coord);
-					switch (square) {
-						case 'A':
-						case 'B':
-							return '<td class="ludorum-square-Uppercase">'+ square +'</td>';
-						case 'a':
-						case 'b':
-							return '<td class="ludorum-square-Lowercase">'+ square +'</td>';
-						default: { //TODO Agregar movimientos.
-							return '<td class="ludorum-square-empty">&nbsp;</td>';
-						}
-					}
-				}).join('') +'</tr>';
-			}).join('') + '</table>';
 	}
 }); //// declare Bahab.

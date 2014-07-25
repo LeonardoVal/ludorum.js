@@ -354,7 +354,7 @@ var Game = exports.Game = declare({
 			},
 			
 			/** The first time `result()` is called, it is delegated to the base
-			game's `result(), and keeps the value for future calls.
+			game's `result()`, and keeps the value for future calls.
 			*/
 			result: function result() {
 				var result = super_result.call(this);

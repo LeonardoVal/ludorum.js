@@ -1,15 +1,16 @@
 ﻿/** # ConnectFour.
 
-Implementation of the [Connect Four game](http://en.wikipedia.org/wiki/Connect_Four).
+Implementation of the [Connect Four game](http://en.wikipedia.org/wiki/Connect_Four), 
+based on [`ConnectionGame`](ConnectionGame.js.html).
 */
 games.ConnectFour = declare(games.ConnectionGame, {
 	name: 'ConnectFour',
 
-	/** The default `height` of the board is 6.
+	/** The default `height` of the board is 6 ...
 	*/
 	height: 6,
 	
-	/** The default `width` of the board is 7.
+	/** ... and the default `width` of the board is 7.
 	*/
 	width: 7,
 	
@@ -17,7 +18,8 @@ games.ConnectFour = declare(games.ConnectionGame, {
 	*/
 	lineLength: 4,
 	
-	/** The game's players are `'Yellow'` and `'Red'`.
+	/** The game's players are Yellow and Red, since these are the classic 
+	colours of the pieces.
 	*/
 	players: ['Yellow', 'Red'],
 	
@@ -93,7 +95,7 @@ games.ConnectFour = declare(games.ConnectionGame, {
 	// ## Utility methods ######################################################
 	
 	/** The serialization of the game is a representation of a call to its
-	constructor (inherited from [`ConnectionGame`](ConnectionGame.js.html).
+	constructor (inherited from [`ConnectionGame`](ConnectionGame.js.html)).
 	*/
 	__serialize__: function __serialize__() {
 		return [this.name, this.activePlayer(), this.board.string];

@@ -393,7 +393,7 @@ var Game = exports.Game = declare({
 			},
 			
 			/** The first time `result()` is called, it is delegated to the base
-			game's `result(), and keeps the value for future calls.
+			game's `result()`, and keeps the value for future calls.
 			*/
 			result: function result() {
 				var result = super_result.call(this);
@@ -1725,15 +1725,14 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 	}
 }); // declare WebWorkerPlayer
 
-/** ## Class Dice
+/** # Dice
 
 [Aleatory](../Aleatory.js.html) representation of dice random variables. These
 are uniformly distributed values in the range `[1, base]`.
 */
 aleatories.Dice = declare(Aleatory, {
 	/** The constructor takes the next function, the dice base, and	a 
-	pseudorandom number generator (`creatartis-base.Randomness.DEFAULT` by 
-	default).
+	pseudorandom number generator (`base.Randomness.DEFAULT` by default).
 	*/
 	constructor: function Dice(next, base, random) {
 		Aleatory.call(this, next, random);
@@ -2563,15 +2562,15 @@ games.Predefined = declare(Game, {
 }); // declare Predefined.
 
 
-/** Simple silly game where players can instantly choose to win, loose, draw or
-	just continue. Mostly for testing purposes.
+/** # Choose2Win
+
+Choose2Win is a simple silly game. Each turn one of the players can decide to 
+win, to lose or to pass the turn. It is meant to be used only for testing 
+Ludorum, since a game can hardly become less interesting than this.
 */
 games.Choose2Win = declare(Game, {
-	/** new games.Choose2Win(turns=Infinity, activePlayer=players[0], winner=none):
-		Choose2Win is a silly game indeed. Each turn one of the players can
-		decide to win, to lose or to pass the turn. It is meant to be used 
-		only for testing Ludorum, since a game can hardly become less 
-		interesting than this.
+	/** The constructor takes a number of turns for the game to last (`Infinity`
+	by default), the active player and the winner if the game has ended. 
 	*/
 	constructor: function Choose2Win(turns, activePlayer, winner) {
 		Game.call(this, activePlayer);
@@ -2581,13 +2580,11 @@ games.Choose2Win = declare(Game, {
 
 	name: 'Choose2Win',
 	
-	/** games.Choose2Win.players=['This', 'That']:
-		Players of the dummy game.
+	/** Players of this dummy game are labeled This and That.
 	*/
 	players: ['This', 'That'],
 
-	/** games.Choose2Win.moves():
-		Moves always are 'win', 'lose', 'pass'.
+	/** Every turn the active player's moves are: `'win'`, `'lose'` and `'pass'`.
 	*/
 	moves: function moves() {
 		if (!this.__winner__ && this.__turns__ > 0) {
@@ -2595,17 +2592,16 @@ games.Choose2Win = declare(Game, {
 		}
 	},
 
-	/** games.Choose2Win.result():
-		Victory for who chooses to win. Defeat for who chooses to lose. Draw 
-		only when a limit of turns (if given) is met.
+	/** Victory is for whom chooses to win first. Defeat is for whom chooses to 
+	lose first. A draw only results when the limit of turns (if any) is met.
 	*/
 	result: function result() {
 		return this.__winner__ ? this.victory(this.__winner__) :
 			this.__turns__ < 1 ? this.draw() : null;
 	},
 
-	/** games.Choose2Win.next(moves):
-		Moves must be always 'win', 'lose' or 'pass'.
+	/** If a player moves to win or lose, a final game state is returned. Else
+	the game goes on.
 	*/
 	next: function next(moves) {
 		var activePlayer = this.activePlayer(),
@@ -2625,30 +2621,34 @@ games.Choose2Win = declare(Game, {
 }); // declare Choose2Win.
 
 
+/** # ConnectionGame
+
+Base class for a subset of the family of 
+[connection games](http://en.wikipedia.org/wiki/Connection_game), which includes 
+[TicTacToe](http://en.wikipedia.org/wiki/Tic-tac-toe), 
+[ConnectFour](http://en.wikipedia.org/wiki/Connect_Four) and
+[Gomoku](http://en.wikipedia.org/wiki/Gomoku). It implements a rectangular 
+board, the placing of the pieces and the checks for lines.
+*/
 games.ConnectionGame = declare(Game, {
-	/** games.ConnectionGame.height=9:
-		Number of rows in the board.
+	/** Boards by default have 9 rows ...
 	*/
 	height: 9,
 	
-	/** games.ConnectionGame.width=9:
-		Number of columns in the board.
+	/** ... and 9 columns.
 	*/
 	width: 9,
 	
-	/** games.ConnectionGame.lineLength=5:
-		Length of the line required to win.
+	/** A player has to make a line of 5 pieces to win, by default.
 	*/
 	lineLength: 5,
 
-	/** new games.ConnectionGame(activePlayer=players[0], board=<empty board>):
-		Builds a new connection game.
+	/** The constructor takes the active player and the board given as a string.
+	For the game's `board` this last string argument is used to build a 
+	[`CheckerboardFromString`](../utils/CheckerboardFromString.js.html).
 	*/
 	constructor: function ConnectionGame(activePlayer, board) {
 		Game.call(this, activePlayer);
-		/** games.ConnectionGame.board:
-			Instance of boards.CheckerboardFromString.
-		*/
 		this.board = (board instanceof CheckerboardFromString) ? board :
 			new CheckerboardFromString(this.height, this.width, 
 				(board || '.'.repeat(this.height * this.width)) +''
@@ -2657,12 +2657,11 @@ games.ConnectionGame = declare(Game, {
 
 	name: 'ConnectionGame',
 	
-	/** games.ConnectionGame.players=['First', 'Second']:
-		Connection game's default players.
+	/** This base implementations names its players First and Second.
 	*/
 	players: ['First', 'Second'],
 	
-	/* Cache of lines to accelerate the result calculation. */
+	/** Lines in the board are cached to accelerate the result calculation. */
 	__lines__: (function () {
 		var CACHE = {};
 		function __lines__(height, width, lineLength) {
@@ -2681,10 +2680,9 @@ games.ConnectionGame = declare(Game, {
 		return __lines__;
 	})(),
 	
-	/** games.ConnectionGame.result():
-		A connection game ends when whether player gets the required amount of
-		pieces aligned (either horizontally, vertically or diagonally), then 
-		winning the game. The match ends in a tie if the board gets full.
+	/** A connection game ends when either player gets the required amount of
+	pieces aligned (either horizontally, vertically or diagonally), hence 
+	winning the game. The match ends in a tie if the board gets full.
 	*/
 	result: function result() {
 		if (this.hasOwnProperty('__result__')) {
@@ -2703,8 +2701,8 @@ games.ConnectionGame = declare(Game, {
 		return this.__result__ = null; // The game continues.
 	},
 	
-	/** games.ConnectionGame.moves():
-		Return the index of every empty square.
+	/** The active player can place a piece in any empty square in the board.
+	The moves are indices in the board's string representation.
 	*/
 	moves: function moves() {
 		if (this.hasOwnProperty('__moves__')) {
@@ -2722,8 +2720,8 @@ games.ConnectionGame = declare(Game, {
 		}
 	},
 
-	/** games.ConnectionGame.next(moves):
-		Places a active player's piece in the given square.
+	/** To get from one game state to the next, an active player's piece in the 
+	square indicated by its move.
 	*/
 	next: function next(moves) {
 		var activePlayer = this.activePlayer(),
@@ -2736,30 +2734,31 @@ games.ConnectionGame = declare(Game, {
 		);
 	},
 	
-	/** games.ConnectionGame.toHTML():
-		Renders the board as a HTML table.
+	// ## User intefaces #######################################################
+	
+	/** The `display(ui)` method is called by a `UserInterface` to render the
+	game state. The only supported user interface type is `BasicHTMLInterface`.
+	The look can be configured using CSS classes.
 	*/
-	toHTML: function toHTML() {
+	display: function display(ui) {
+		raiseIf(!ui || !(ui instanceof UserInterface.BasicHTMLInterface), "Unsupported UI!");
 		var moves = this.moves(),
 			activePlayer = this.activePlayer(),
-			board = this.board,
-			width = this.width;
+			board = this.board;
 		moves = moves && moves[activePlayer];
-		return '<table>'+
-			board.horizontals().reverse().map(function (line) {
-				return '<tr>'+ line.map(function (coord) {
-					var data = '',
-						value = board.square(coord),
-						move = coord[0] * width + coord[1];
-					if (moves && moves.indexOf(move) >= 0) {
-						data = ' data-ludorum="move: '+ move +', activePlayer: \''+ activePlayer +'\'"';
-					}
-					return (value === '.') ? '<td '+ data +'>&nbsp;</td>'
-						: '<td class="ludorum-player'+ value +'" '+ data +'>&#x25CF;</td>';
-				}).join('') +'</tr>';
-			}).join('') + '</table>';
+		var table = this.board.renderAsHTMLTable(ui.document, ui.container, function (data) {
+				data.className = data.square === '.' ? 'ludorum-empty' : 'ludorum-player'+ data.square;
+				data.innerHTML = data.square === '.' ? "&nbsp;" : "&#x25CF;";
+				var i = data.coord[0] * board.height + data.coord[1];
+				if (moves && moves.indexOf(i) >= 0) {
+					data.move = i;
+					data.activePlayer = activePlayer;
+					data.onclick = ui.perform.bind(ui, data.move, activePlayer);
+				}
+			});
+		return ui;
 	},
-	
+
 	__serialize__: function __serialize__() {
 		return [this.name, this.activePlayer(), this.board.string];
 	}
@@ -3446,16 +3445,17 @@ games.Pig = declare(Game, {
 
 /** # ConnectFour.
 
-Implementation of the [Connect Four game](http://en.wikipedia.org/wiki/Connect_Four).
+Implementation of the [Connect Four game](http://en.wikipedia.org/wiki/Connect_Four), 
+based on [`ConnectionGame`](ConnectionGame.js.html).
 */
 games.ConnectFour = declare(games.ConnectionGame, {
 	name: 'ConnectFour',
 
-	/** The default `height` of the board is 6.
+	/** The default `height` of the board is 6 ...
 	*/
 	height: 6,
 	
-	/** The default `width` of the board is 7.
+	/** ... and the default `width` of the board is 7.
 	*/
 	width: 7,
 	
@@ -3463,7 +3463,8 @@ games.ConnectFour = declare(games.ConnectionGame, {
 	*/
 	lineLength: 4,
 	
-	/** The game's players are `'Yellow'` and `'Red'`.
+	/** The game's players are Yellow and Red, since these are the classic 
+	colours of the pieces.
 	*/
 	players: ['Yellow', 'Red'],
 	
@@ -3539,7 +3540,7 @@ games.ConnectFour = declare(games.ConnectionGame, {
 	// ## Utility methods ######################################################
 	
 	/** The serialization of the game is a representation of a call to its
-	constructor (inherited from [`ConnectionGame`](ConnectionGame.js.html).
+	constructor (inherited from [`ConnectionGame`](ConnectionGame.js.html)).
 	*/
 	__serialize__: function __serialize__() {
 		return [this.name, this.activePlayer(), this.board.string];
@@ -3911,7 +3912,9 @@ games.Othello = declare(Game, {
 games.Othello.makeBoard = games.Othello.prototype.makeBoard;
 
 
-/** Bahab is a chess-like board game originally designed for Ludorum.
+/** # Bahab
+
+Bahab is a chess-like board game originally designed for Ludorum.
 */
 games.Bahab = declare(Game, {
 	initialBoard: ['BBABB', 'BBBBB', '.....', 'bbbbb', 'bbabb'].join(''),
@@ -3930,11 +3933,9 @@ games.Bahab = declare(Game, {
 	
 	result: function result() {
 		var board = this.board.string;
-		if (board.match(/^[.bAB]+$|[A].{0,4}$/)) { 
-			//// Lowercase has no piece 'a' or Uppercase has a piece in Lowercase's rank.
+		if (board.match(/^[.bAB]+$|[A].{0,4}$/)) { // Lowercase has no piece 'a' or Uppercase has a piece in Lowercase's rank.
 			return this.defeat(this.players[1]);
-		} else if (board.match(/^[.Bab]+$|^.{0,4}[a]/)) {
-			//// Uppercase has no piece 'A' or Lowercase has a piece in Uppercase's rank.
+		} else if (board.match(/^[.Bab]+$|^.{0,4}[a]/)) { // Uppercase has no piece 'A' or Lowercase has a piece in Uppercase's rank.
 			return this.defeat(this.players[0]);
 		} else {
 			return null;
@@ -3983,90 +3984,56 @@ games.Bahab = declare(Game, {
 	
 	__serialize__: function __serialize__() {
 		return [this.name, this.activePlayer(), this.board.string];
-	},
-	
-	toHTML: function toHTML() {
-		var moves = this.moves(),
-			activePlayer = this.activePlayer(),
-			board = this.board;
-		return '<table>'+
-			board.horizontals().reverse().map(function (line) {
-				return '<tr>'+ line.map(function (coord) {
-					var square = board.square(coord);
-					switch (square) {
-						case 'A':
-						case 'B':
-							return '<td class="ludorum-square-Uppercase">'+ square +'</td>';
-						case 'a':
-						case 'b':
-							return '<td class="ludorum-square-Lowercase">'+ square +'</td>';
-						default: { //TODO Agregar movimientos.
-							return '<td class="ludorum-square-empty">&nbsp;</td>';
-						}
-					}
-				}).join('') +'</tr>';
-			}).join('') + '</table>';
 	}
 }); //// declare Bahab.
 
-/** Implementation of the game Colograph, a competitive version of the graph
-	colouring problem.
-*/ 
-	
-/** new Colograph(args):
-	Builds a new Colograph game. The edges of the graph are represented by
-	an array of arrays of integers, acting as an adjacency list. 
-	The colours argument is an array of integers, each being the node's 
-	player index in the players array, or -1 for uncoloured nodes. By 
-	default all nodes are not coloured.
-	There is only one active player per turn, and it is the first player by
-	default.
-*/
+/** # Colograph
+
+Implementation of the game Colograph, a competitive version of the classic 
+[graph colouring problem](http://en.wikipedia.org/wiki/Graph_coloring).
+*/ 	
 games.Colograph = declare(Game, {
+	/** The constructor takes the following arguments:
+	*/
 	constructor: function Colograph(args) {
+		/** + `activePlayer`: There is only one active player per turn, and it 
+			is the first player by default.
+		*/
 		Game.call(this, args ? args.activePlayer : undefined);
 		initialize(this, args)
+		/** + `colours`: The colour of each node in the graph is given by an
+			array of integers, each being the node's player index in the players 
+			array, or -1 for uncoloured nodes. By default all nodes are not 
+			coloured, which is the initial game state.
+		*/
 			.object('colours', { defaultValue: {} })
-		/** Colograph.edges:
-			Adjacencies array defining the game graph.
+		/** + `edges`: The edges of the graph are represented by an array of 
+			arrays of integers, acting as an adjacency list. 
 		*/
 			.array('edges', { defaultValue: [[1,3],[2],[3],[]] })
-		/** Colograph.shapes:
-			Shape of each node.
+		/** + `shapes`: Each of the graph's nodes can have a certain shape. This
+			is specified by an array of strings, one for each node.
 		*/
 			.array('shapes', { defaultValue: ['circle', 'triangle', 'square', 'star'] })
-		/** Colograph.scoreSameShape=-1:
-			Score added by each coloured edge that binds two nodes of the same
-			shape.
+		/** + `scoreSameShape=-1`: Score added by each coloured edge that binds 
+			two nodes of the same shape.
 		*/
 			.number('scoreSameShape', { defaultValue: -1, coerce: true })
-		/** Colograph.scoreDifferentShape=-1:
-			Score added by each coloured edge that binds two nodes of different
-			shapes.
+		/** + `scoreDifferentShape=-1`: Score added by each coloured edge that 
+			binds two nodes of different shapes.
 		*/
 			.number('scoreDifferentShape', { defaultValue: -1, coerce: true });
 	},
 	
 	name: 'Colograph',
 	
-	/** Colograph.players:
-		There are two roles in this game: "Red" and "Blue".
+	/** There are two roles in this game: Red and Blue.
 	*/
 	players: ['Red', 'Blue'],
 	
-	__serialize__: function __serialize__() {
-		return [this.name, this.activePlayer(), {
-			colours: this.colours,
-			edges: this.edges,
-			shapes: this.shapes,
-			scoreSameShape: this.scoreSameShape,
-			scoreDifferentShape: this.scoreDifferentShape
-		}];
-	},
-	
-	/** Colograph.score():
-		Scores are calculated for each player with the edges of their 
-		colour.
+	/** Scores are calculated for each player with the edges of their colour. An 
+	edge connecting two nodes of the same colour is considered to be of that 
+	colour.
 	*/
 	score: function score() {
 		var points = {},
@@ -4089,11 +4056,9 @@ games.Colograph = declare(Game, {
 		return points;
 	},
 	
-	/** Colograph.result():
-		The game ends when the active player has no moves, i.e. when all nodes
-		in the graph have been coloured. An edge connecting two nodes of the
-		same colour is considered to be of that colour. The match is won by the
-		player with less edges of its colour.
+	/** The game ends when the active player has no moves, i.e. when all nodes
+	in the graph have been coloured. The match is won by the player with the
+	greatest score.
 	*/
 	result: function result() {
 		if (!this.moves()) { // If the active player cannot move, the game is over.
@@ -4105,8 +4070,7 @@ games.Colograph = declare(Game, {
 		}
 	},
 
-	/** Colograph.moves():
-		Every non coloured node is a possible move for the active player.
+	/** Every non coloured node is a possible move for the active player.
 	*/
 	moves: function moves() {
 		var colours = this.colours, 
@@ -4119,9 +4083,8 @@ games.Colograph = declare(Game, {
 		return uncoloured.length < 1 ? null : obj(this.activePlayer(), uncoloured);
 	},
 
-	/** colograph.Colograph.next(moves):
-		The result of any move is the colouring of one previously uncoloured 
-		node with the active players's colour.
+	/** The result of any move is the colouring of one previously uncoloured 
+	node with the active players's colour.
 	*/
 	next: function next(moves) {
 		var activePlayer = this.activePlayer(), 
@@ -4151,11 +4114,20 @@ games.Colograph = declare(Game, {
 		});
 	},
 
+	__serialize__: function __serialize__() {
+		return [this.name, this.activePlayer(), {
+			colours: this.colours,
+			edges: this.edges,
+			shapes: this.shapes,
+			scoreSameShape: this.scoreSameShape,
+			scoreDifferentShape: this.scoreDifferentShape
+		}];
+	},
+	
 	// ## Game properties. #####################################################
 
-	/** Colograph.edgeColour(node1, node2):
-		Returns a colour (player index) if the nodes are joined by an edge, and
-		both have that same colour.
+	/** `edgeColour(node1, node2)` returns a colour (player index) if the nodes 
+	are joined by an edge, and both have that same colour.
 	*/
 	edgeColour: function edgeColour(node1, node2) {
 		var connected = this.edges[node1].indexOf(node2) >= 0 || this.edges[node2].indexOf(node1) >= 0,
@@ -4166,14 +4138,12 @@ games.Colograph = declare(Game, {
 	
 	// ## Heuristics. ##########################################################
 	
-	/** colograph.heuristics:
-		A bundle of heuristic evaluation functions to be used with artificial
-		intelligence methods such as Minimax.
+	/** `heuristics` is a namespace for heuristic evaluation functions to be 
+	used with artificial intelligence methods such as Minimax.
 	*/
 	'static heuristics': {
-		/** heuristics.scoreDifference(game, player):
-			Returns the count of edges coloured by the opponent minus the count of
-			edges coloured by the player.
+		/** + `scoreDifference(game, player)` is a simple heuristic that uses
+		the current score.
 		*/
 		scoreDifference: function scoreDifference(game, player) {
 			var score = game.score(),
@@ -4187,6 +4157,10 @@ games.Colograph = declare(Game, {
 	
 	// ## Graph generation. ####################################################
 
+	/** One of the nice features of this game is the variety that comes from
+	chaning the graph on which the game is played. `randomGraph` can be used to
+	generate graphs to experiment with.
+	*/
 	'static randomGraph': function randomGraph(nodeCount, edgeCount, random) {
 		nodeCount = Math.max(2, +nodeCount >> 0);
 		edgeCount = Math.max(nodeCount - 1, +edgeCount >> 0);
@@ -4209,8 +4183,8 @@ games.Colograph = declare(Game, {
 		return edges;
 	},
 	
-	/** colograph.randomGame(params):
-		Generates a Colograph game with a random graph.
+	/** `randomGame(params)` will generates a random Colograph game with a 
+	random graph.
 	*/
 	'static randomGame': function randomGame(args) {
 		params = base.initialize({}, params)
@@ -4231,8 +4205,8 @@ games.Colograph = declare(Game, {
 	
 	// ## Human interface based on KineticJS. ##################################
 	
-	/** colograph.KineticUI(match, config):
-		TODO.
+	/** This legacy code is an implementation of a UI for Colograph using 
+	[KineticJS](http://kineticjs.com/). Not entirely compatible yet.
 	*/
 	'static KineticUI': declare(UserInterface, {
 		constructor: function KineticUI(args) {
