@@ -1,27 +1,31 @@
-﻿games.ConnectionGame = declare(Game, {
-	/** games.ConnectionGame.height=9:
-		Number of rows in the board.
+﻿/** # ConnectionGame
+
+Base class for a subset of the family of 
+[connection games](http://en.wikipedia.org/wiki/Connection_game), which includes 
+[TicTacToe](http://en.wikipedia.org/wiki/Tic-tac-toe), 
+[ConnectFour](http://en.wikipedia.org/wiki/Connect_Four) and
+[Gomoku](http://en.wikipedia.org/wiki/Gomoku). It implements a rectangular 
+board, the placing of the pieces and the checks for lines.
+*/
+games.ConnectionGame = declare(Game, {
+	/** Boards by default have 9 rows ...
 	*/
 	height: 9,
 	
-	/** games.ConnectionGame.width=9:
-		Number of columns in the board.
+	/** ... and 9 columns.
 	*/
 	width: 9,
 	
-	/** games.ConnectionGame.lineLength=5:
-		Length of the line required to win.
+	/** A player has to make a line of 5 pieces to win, by default.
 	*/
 	lineLength: 5,
 
-	/** new games.ConnectionGame(activePlayer=players[0], board=<empty board>):
-		Builds a new connection game.
+	/** The constructor takes the active player and the board given as a string.
+	For the game's `board` this last string argument is used to build a 
+	[`CheckerboardFromString`](../utils/CheckerboardFromString.js.html).
 	*/
 	constructor: function ConnectionGame(activePlayer, board) {
 		Game.call(this, activePlayer);
-		/** games.ConnectionGame.board:
-			Instance of boards.CheckerboardFromString.
-		*/
 		this.board = (board instanceof CheckerboardFromString) ? board :
 			new CheckerboardFromString(this.height, this.width, 
 				(board || '.'.repeat(this.height * this.width)) +''
@@ -30,12 +34,11 @@
 
 	name: 'ConnectionGame',
 	
-	/** games.ConnectionGame.players=['First', 'Second']:
-		Connection game's default players.
+	/** This base implementations names its players First and Second.
 	*/
 	players: ['First', 'Second'],
 	
-	/* Cache of lines to accelerate the result calculation. */
+	/** Lines in the board are cached to accelerate the result calculation. */
 	__lines__: (function () {
 		var CACHE = {};
 		function __lines__(height, width, lineLength) {
@@ -54,10 +57,9 @@
 		return __lines__;
 	})(),
 	
-	/** games.ConnectionGame.result():
-		A connection game ends when whether player gets the required amount of
-		pieces aligned (either horizontally, vertically or diagonally), then 
-		winning the game. The match ends in a tie if the board gets full.
+	/** A connection game ends when either player gets the required amount of
+	pieces aligned (either horizontally, vertically or diagonally), hence 
+	winning the game. The match ends in a tie if the board gets full.
 	*/
 	result: function result() {
 		if (this.hasOwnProperty('__result__')) {
@@ -76,8 +78,8 @@
 		return this.__result__ = null; // The game continues.
 	},
 	
-	/** games.ConnectionGame.moves():
-		Return the index of every empty square.
+	/** The active player can place a piece in any empty square in the board.
+	The moves are indices in the board's string representation.
 	*/
 	moves: function moves() {
 		if (this.hasOwnProperty('__moves__')) {
@@ -95,8 +97,8 @@
 		}
 	},
 
-	/** games.ConnectionGame.next(moves):
-		Places a active player's piece in the given square.
+	/** To get from one game state to the next, an active player's piece in the 
+	square indicated by its move.
 	*/
 	next: function next(moves) {
 		var activePlayer = this.activePlayer(),
@@ -109,30 +111,31 @@
 		);
 	},
 	
-	/** games.ConnectionGame.toHTML():
-		Renders the board as a HTML table.
+	// ## User intefaces #######################################################
+	
+	/** The `display(ui)` method is called by a `UserInterface` to render the
+	game state. The only supported user interface type is `BasicHTMLInterface`.
+	The look can be configured using CSS classes.
 	*/
-	toHTML: function toHTML() {
+	display: function display(ui) {
+		raiseIf(!ui || !(ui instanceof UserInterface.BasicHTMLInterface), "Unsupported UI!");
 		var moves = this.moves(),
 			activePlayer = this.activePlayer(),
-			board = this.board,
-			width = this.width;
+			board = this.board;
 		moves = moves && moves[activePlayer];
-		return '<table>'+
-			board.horizontals().reverse().map(function (line) {
-				return '<tr>'+ line.map(function (coord) {
-					var data = '',
-						value = board.square(coord),
-						move = coord[0] * width + coord[1];
-					if (moves && moves.indexOf(move) >= 0) {
-						data = ' data-ludorum="move: '+ move +', activePlayer: \''+ activePlayer +'\'"';
-					}
-					return (value === '.') ? '<td '+ data +'>&nbsp;</td>'
-						: '<td class="ludorum-player'+ value +'" '+ data +'>&#x25CF;</td>';
-				}).join('') +'</tr>';
-			}).join('') + '</table>';
+		var table = this.board.renderAsHTMLTable(ui.document, ui.container, function (data) {
+				data.className = data.square === '.' ? 'ludorum-empty' : 'ludorum-player'+ data.square;
+				data.innerHTML = data.square === '.' ? "&nbsp;" : "&#x25CF;";
+				var i = data.coord[0] * board.height + data.coord[1];
+				if (moves && moves.indexOf(i) >= 0) {
+					data.move = i;
+					data.activePlayer = activePlayer;
+					data.onclick = ui.perform.bind(ui, data.move, activePlayer);
+				}
+			});
+		return ui;
 	},
-	
+
 	__serialize__: function __serialize__() {
 		return [this.name, this.activePlayer(), this.board.string];
 	}
