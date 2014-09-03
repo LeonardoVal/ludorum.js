@@ -163,7 +163,7 @@ UserInterface.BasicHTMLInterface = declare(UserInterface, {
 					ui.build(element, node[node.length-1]);
 				}
 			} else if (typeof node === 'string') {
-				element = ui.document.createTextNode("Hello World");
+				element = ui.document.createTextNode(node);
 			}
 			if (element && parent) {
 				parent.appendChild(element);

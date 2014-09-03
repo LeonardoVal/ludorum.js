@@ -228,24 +228,58 @@ games.Mancala = declare(Game, {
 			"   "+ southHouses.join(" | ") +"   ";
 	},
 	
-	/** games.Mancala.toHTML():
-		Renders the Mancala board as a HTML table.
+	/** The `display(ui)` method is called by a `UserInterface` to render the
+	game state. The only supported user interface type is `BasicHTMLInterface`.
+	The look can be configured using CSS classes.
 	*/
-	toHTML: function toHTML() {			
-		function renderHouse(player, h) {
-			if (!moves || !moves[player] || !moves[player].indexOf(h) < 0) { // Not a move.
-				return '<td>'+ this.board[h] +'</td>';
-			} else {
-				return '<td data-ludorum="move:'+ h +', activePlayer: \''+ player +'\'">'+ this.board[h] +'</td>';
-			}
-		}
-		return '<table><tr>'
-			+ '<td rowspan="2">'+ this.board[this.store(north)] +'</td>'
-			+ this.houses(north).map(renderHouse.bind(this, north)).reverse().join('') 
-			+ '<td rowspan="2">'+ this.board[this.store(south)] +'</td>'
-			+ '</tr><tr>'
-			+ this.houses(south).map(renderHouse.bind(this, south)).join('') 
-			+ '</tr></table>';
+	display: function display(ui) {
+		raiseIf(!ui || !(ui instanceof UserInterface.BasicHTMLInterface), "Unsupported UI!");
+		return this.__displayHTML__(ui);
+	},
+	
+	/** Board is displayed in HTML as a table with two rows: north and south. 
+	The north row has the two stores on each side, as `TD`s with `rowspan=2`. 
+	Each table cell (houses and stores) contains the number of seeds inside it. 
+	*/
+	__displayHTML__: function __displayHTML__(ui) {
+		var table, tr, td, data,
+			mancala = this,
+			north = this.players[0], 
+			south = this.players[1],
+			activePlayer = this.activePlayer(),
+			moves = this.moves(),
+			boardSquare = function boardSquare(td, i, isStore) {
+				var data = {
+					id: "ludorum-square-"+ i,
+					className: isStore ? "ludorum-square-store" : "ludorum-square-house",
+					square: mancala.board[i],
+					innerHTML: base.Text.escapeXML(mancala.board[i])
+				};
+				if (!isStore && moves && moves[activePlayer] && moves[activePlayer].indexOf(i) >= 0) {
+					data.move = i;
+					data.activePlayer = activePlayer;
+					data.className = "ludorum-square-move";
+					td.onclick = data.onclick = ui.perform.bind(ui, data.move, activePlayer);
+				}
+				td['ludorum-data'] = data;
+				td.id = data.id;
+				td.className = data.className;
+				td.innerHTML = data.innerHTML;
+				td.setAttribute("rowspan", isStore ? 2 : 1);
+				return td;
+			};
+		ui.container.appendChild(table = document.createElement('table'));
+		table.appendChild(tr = document.createElement('tr'));
+		tr.appendChild(boardSquare(document.createElement('td'), this.store(north), true));
+		this.houses(north).reverse().forEach(function (h) {
+			tr.appendChild(boardSquare(document.createElement('td'), h, false));
+		});
+		tr.appendChild(boardSquare(document.createElement('td'), this.store(south), true));
+		table.appendChild(tr = document.createElement('tr'));
+		this.houses(south).forEach(function (h) {
+			tr.appendChild(boardSquare(document.createElement('td'), h, false));
+		});
+		return ui;
 	},
 	
 	// ## Heuristics and AI ####################################################
