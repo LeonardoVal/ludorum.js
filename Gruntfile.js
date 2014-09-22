@@ -142,11 +142,11 @@ module.exports = function(grunt) {
 	}); // bower-json.
 	
 // Register tasks. /////////////////////////////////////////////////////////////
-	grunt.registerTask('compile', ['concat_sourcemap:build', 'uglify:build']); 
-	grunt.registerTask('build', ['concat_sourcemap:build', 'uglify:build',
-		'karma:build', 'docker:build']);
-	grunt.registerTask('default', ['build']);
-	grunt.registerTask('test', ['concat_sourcemap:build', 'karma:build', 
-		'karma:chrome', 'karma:firefox', 'karma:opera', 'karma:iexplore']);
 	grunt.registerTask('lib', ['bowercopy:lib']);
+	
+	grunt.registerTask('compile', ['concat_sourcemap:build', 'uglify:build']); 
+	grunt.registerTask('test', ['compile', 'karma:build']);
+	grunt.registerTask('test-all', ['test', 'karma:chrome', 'karma:firefox', 'karma:iexplore', /*'karma:opera'*/]);
+	grunt.registerTask('build', ['test', 'docker:build']);
+	grunt.registerTask('default', ['build']);
 };

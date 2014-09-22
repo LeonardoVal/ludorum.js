@@ -126,7 +126,8 @@ games.Colograph = declare(Game, {
 	},
 
 	__serialize__: function __serialize__() {
-		return [this.name, this.activePlayer(), {
+		return [this.name, {
+			activePlayer: this.activePlayer(), 
 			colours: this.colours,
 			edges: this.edges,
 			shapes: this.shapes,

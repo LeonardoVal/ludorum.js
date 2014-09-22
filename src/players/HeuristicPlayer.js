@@ -98,7 +98,7 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 		var heuristicPlayer = this,
 			moves = game.moves();
 		raiseIf(!moves || !moves.hasOwnProperty(player),
-			"Player "+ player +" is not active (moves= "+ JSON.stringify(moves) +"!");
+			"Player "+ player +" is not active (moves= "+ JSON.stringify(moves) +")!");
 		var playerMoves = moves[player];
 		raiseIf(!Array.isArray(playerMoves) || playerMoves.length < 1,
 			"Player "+ player +" has no moves ("+ playerMoves +")!");
