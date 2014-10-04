@@ -1,47 +1,34 @@
-/** Component for scanning a game's tree.
+/** # Scanner
+
+Component for scanning a game's tree.
 */
 exports.utils.Scanner = declare({
-	/** new utils.Scanner(config):
-		A Scanner builds a sample of a game tree, in order to get statistics 
-		from some of all possible matches.
+	/** A Scanner builds a sample of a game tree, in order to get statistics 
+	from some of all possible matches. The given `config` must have:
 	*/
 	constructor: function Scanner(config) {
 		initialize(this, config)
-		/** utils.Scanner.game:
-			Game to scan.
-		*/
+		// + `game`: Game to scan.
 			.object("game", { ignore: true })
-		/** utils.Scanner.maxWidth=1000:
-			Maximum amount of game states held at each step.
-		*/
+		// + `maxWidth=1000`: Maximum amount of game states held at each step.
 			.integer("maxWidth", { defaultValue: 1000, coerce: true })
-		/** utils.Scanner.maxLength=50:
-			Maximum length of simulated matches.
-		*/
+		// + `maxLength=50`: Maximum length of simulated matches.
 			.integer("maxLength", { defaultValue: 50, coerce: true })
-		/** utils.Scanner.random=randomness.DEFAULT:
-			Pseudorandom number generator to use in the simulations.
-		*/			
+		// + `random=randomness.DEFAULT`: Pseudorandom number generator to use in the simulations.
 			.object("random", { defaultValue: Randomness.DEFAULT })
-		/** utils.Scanner.statistics:
-			Component to gather relevant statistics. These include:
-			* `game.result`: Final game state results. Also available for victory and defeat.
-			* `game.length`: Match length in plies. Also available for victory and defeat.
-			* `game.width`: Number of available moves.
-			* `draw.length`: Drawn match length in plies.
-		*/
+		// + `statistics=<new>`: Component to gather relevant statistics.
 			.object("statistics", { defaultValue: new Statistics() });
 	},
 	
-	/** utils.Scanner.scan(players, games...=[this.game]):
-		Scans the trees of the given game (using this scanner's game by 
-		default). This means reproducing and sampling the set of all possible 
-		matches from the given game states. The simulation halts at maxLength
-		plies, and never holds more than maxWidth game states.
-		The players argument may provide a player for some or all of the games'
-		roles. If available, they will be used to decide which move is applied
-		to each game state. If missing, all next game states will be added. Ergo
-		no players means a simulation off all possible matches.		
+	/** A scan of a game's tree reproduces and samples the set of all possible 
+	matches from the given game states. The simulation halts at `maxLength` 
+	plies, and never holds more than `maxWidth` game states. Since this process
+	is asynchronous, this method returns a future.
+	
+	The `players` argument may provide a player for some or all of the games' 
+	roles. If available, they will be used to decide which move is applied to 
+	each game state. If missing, all next game states will be added. Ergo no 
+	players means a simulation off all possible matches.		
 	*/
 	scan: function scan(players) {
 		var scanner = this,
@@ -62,17 +49,19 @@ exports.utils.Scanner = declare({
 		});
 	},
 	
+	/** Performs scans for many different player setups.
+	*/
 	scans: function scans() {
 		return Future.sequence(Array.prototype.slice.call(arguments), this.scan.bind(this));
 	},
 	
-	/** utils.Scanner.__advance__(players, game, ply):
-		Advances the given game by one ply. This may mean for non final game 
-		states either instantiate random variables, ask the available player 
-		for a decision, or take all next game states. Final game states are 
-		removed. All game states are accounted in the scanner's statistics. The
-		result is an Iterable with the game states to add to the next scan
-		window.
+	/** The `__advance__` method advances the given game by one ply. This may 
+	mean for non final game states either instantiate random variables, ask the 
+	available player for a decision, or take all next game states. Final game 
+	states are removed. 
+	
+	All game states are accounted in the scanner's statistics. The result is an 
+	iterable with the game states to add to the next scan window.
 	*/
 	__advance__: function __advance__(players, game, ply) {
 		if (game instanceof Aleatory) {
@@ -107,9 +96,14 @@ exports.utils.Scanner = declare({
 		}
 	},
 			
-	/** utils.Scanner.account(players, game, ply):
-		Gathers statistics about the game. Returns whether the given game state
-		is final or not.
+	/** The `account` method gathers statistics about the game. These include:
+		
+	+ `game.result`: Final game state results. Also available for victory and defeat.
+	+ `game.length`: Match length in plies. Also available for victory and defeat.
+	+ `game.width`: Number of available moves.
+	+ `draw.length`: Drawn match length in plies.
+	
+	Returns whether the given game state is final or not.
 	*/
 	account: function account(players, game, ply) {
 		var result = game.result(),
@@ -140,4 +134,4 @@ exports.utils.Scanner = declare({
 			return false;
 		}
 	}
-}); // declare utils.Scanner.
+}); // Scanner.

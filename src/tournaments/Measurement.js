@@ -1,4 +1,4 @@
-﻿/** ## Class `Measurement`
+﻿/** # Measurement
 
 Measurement tournaments pit the player being measured against others in order
 to assess that player's performance at a game. They are used to evaluate how 

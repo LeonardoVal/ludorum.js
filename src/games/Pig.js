@@ -1,37 +1,30 @@
-﻿/* Pig is a simple dice game, used here as an example of a game with random 
-	variables.
+﻿/** # Pig.
+
+[Pig](http://en.wikipedia.org/wiki/Pig_%28dice_game%29) is a simple dice betting
+game, used as an example of a game with random variables.
 */
 games.Pig = declare(Game, {
-	/** new games.Pig(activePlayer='One', goal=100, scores, rolls):
-		[Pig](http://en.wikipedia.org/wiki/Pig_%28dice_game%29) is a dice 
-		betting game, where the active player rolls dice until it rolls one or 
-		passes its turn scoring the sum of previous rolls.
+	/** The constructor takes:
+	
+		+ `activePlayer='One'`: The active player.
+		+ `goal=100`: The amount of points a player has to reach to win the game.
+		+ `scores`: The scores so far in the match.
+		+ `rolls`: The rolls the active player has made in his turn.
 	*/
 	constructor: function Pig(activePlayer, goal, scores, rolls) {
 		Game.call(this, activePlayer);
-		/** games.Pig.goal=100:
-			Amount of points a player has to reach to win the game.
-		*/
 		this.goal = isNaN(goal) ? 100 : +goal;
-		/** games.Pig.__scores__:
-			Current players' scores.
-		*/
 		this.__scores__ = scores || iterable(this.players).zip([0, 0]).toObject();
-		/** games.Pig.__rolls__:
-			Active player's rolls.
-		*/
 		this.__rolls__ = rolls || [];
 	},
 	
 	name: 'Pig',
 	
-	/** games.Pig.players=['One', 'Two']:
-		Players for Pig.
+	/** Players for Pig are named `One`, `Two`.
 	*/
 	players: ['One', 'Two'],
 
-	/** games.Pig.moves():
-		The active player can either hold and pass the turn, or roll.
+	/** The active player can either hold and pass the turn, or roll.
 	*/
 	moves: function moves() {
 		if (!this.result()) {
@@ -41,10 +34,9 @@ games.Pig = declare(Game, {
 		}
 	},
 
-	/** games.Pig.result():
-		Game finishes when one player reaches or passes the goal score. The 
-		result for each player is the difference between its score and its
-		opponent's score.
+	/** A Pig match finishes when one player reaches or passes the goal score. 
+	The result for each player is the difference between its score and its 
+	opponent's score.
 	*/
 	result: function result() {
 		var score0 = this.__scores__[this.players[0]],
@@ -57,8 +49,15 @@ games.Pig = declare(Game, {
 		}
 	},
 
-	/** games.Pig.next(moves):
-		The player matching the parity of the moves sum earns a point.
+	/** If the active player holds, it earns the sum of the rolls made so in 
+	its turn. If the move is roll, a dice is rolled. A roll of 1 stops the 
+	this turn and the active player earns no points. A roll of 2 or up, makes
+	the turn continue.
+	
+	For this game mechanic, an [aleatory](../Aleatory.js.html) is used. If the 
+	move is `roll`, an instance of [`Dice`](../aleatories/Dice.js.html) is
+	build and returned. The function passed to the `Dice` constructor makes
+	the decision explained before, based on the value of the dice.
 	*/
 	next: function next(moves) {
 		var activePlayer = this.activePlayer(),
@@ -80,7 +79,13 @@ games.Pig = declare(Game, {
 		}
 	},
 	
+	// ## Utility methods ######################################################
+
+	/** Serialization is used in the `toString()` method, but it is also vital 
+	for sending the game state across a network or the marshalling between the 
+	rendering thread and a webworker.
+	*/	
 	__serialize__: function __serialize__() {
 		return [this.name, this.activePlayer(), this.goal, this.__scores__, this.__rolls__];
 	}
-}); // declare Pig.
+}); // Pig.
