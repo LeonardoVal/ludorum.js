@@ -2304,7 +2304,7 @@ exports.utils.Scanner = declare({
 					});
 				}
 			})).then(function (decisions) {
-				return Iterable.product.apply(this, decisions).map(function (moves) {
+				return Iterable.product.apply(Iterable, decisions).map(function (moves) {
 					return game.next(iterable(moves).toObject());
 				});
 			});
