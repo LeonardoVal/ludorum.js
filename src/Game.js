@@ -173,7 +173,7 @@ var Game = exports.Game = declare({
 				return obj(activePlayer, move);
 			});
 		} else { // Simultaneous games.
-			return Iterable.product.apply(this, 
+			return Iterable.product.apply(Iterable, 
 				iterable(moves).mapApply(function (player, moves) {
 					return moves.map(function (move) {
 						return [player, move];
