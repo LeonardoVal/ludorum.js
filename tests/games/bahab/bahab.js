@@ -2,8 +2,8 @@ var APP = {};
 
 require.config({
 	paths: {
-		'creatartis-base': "../../lib/creatartis-base", 
-		ludorum: "../../build/ludorum"
+		'creatartis-base': "../../../lib/creatartis-base", 
+		ludorum: "../../../build/ludorum"
 	}
 });
 require(['creatartis-base', 'ludorum'], function (base, ludorum) {
@@ -23,11 +23,11 @@ require(['creatartis-base', 'ludorum'], function (base, ludorum) {
 		{title: "Random", builder: function () { 
 			return new ludorum.players.RandomPlayer();
 		}, runOnWorker: false },
+		{title: "MonteCarlo (50 sims)", builder: function () {
+			return new ludorum.players.MonteCarloPlayer({ simulationCount: 50 });
+		}, runOnWorker: true },
 		{title: "MonteCarlo (100 sims)", builder: function () {
 			return new ludorum.players.MonteCarloPlayer({ simulationCount: 100 });
-		}, runOnWorker: true },
-		{title: "MonteCarlo (200 sims)", builder: function () {
-			return new ludorum.players.MonteCarloPlayer({ simulationCount: 200 });
 		}, runOnWorker: true },
 		{title: "MiniMax AlfaBeta (4 plies)", builder: function () {
 			return new ludorum.players.AlphaBetaPlayer({ horizon: 4 });
