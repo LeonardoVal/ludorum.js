@@ -36,13 +36,14 @@ games.Bahab = declare(Game, {
 	and loses when its A piece is captured by the opponent.
 	*/
 	result: function result() {
-		var board = this.board.string;
+		var board = this.board.string, player;
 		for (var i = 0; i < 2; ++i) {
-			if (board.match(this.__PLAYER_ENDGAME_RE__[this.players[i]])) {
-				return this.defeat(this.players[(i+1)%2]); 
+			player = this.players[i];
+			if (board.match(this.__PLAYER_ENDGAME_RE__[player])) {
+				return this.defeat(player); 
 			}
 		}
-		return null;
+		return this.moves() ? null : this.defeat(this.activePlayer());
 	},
 	
 	/** `__PLAYER_PIECES_RE__` regular expressions are used to optimize move 
@@ -116,45 +117,39 @@ games.Bahab = declare(Game, {
 	with CSS classes.
 	*/
 	__displayHTML__: function __displayHTML__(ui) {
-		var moves = this.moves(),
+		var game = this,
+			moves = this.moves(),
 			activePlayer = this.activePlayer(),
 			board = this.board,
 			classNames = {
-				'B': "ludorum-square-Uppercase-B",
-				'A': "ludorum-square-Uppercase-A",
-				'b': "ludorum-square-Lowercase-B",
-				'a': "ludorum-square-Lowercase-A",
+				'A': "ludorum-square-Uppercase-A", 'B': "ludorum-square-Uppercase-B",
+				'a': "ludorum-square-Lowercase-A", 'b': "ludorum-square-Lowercase-B",
 				'.': "ludorum-square-empty"
-			};
-		if (ui.selectedPiece) {
-			moves = moves && moves[activePlayer].filter(function (move) {
-				return move[0][0] == ui.selectedPiece[0] && move[0][1] == ui.selectedPiece[1];
-			}).map(function (move) {
-				return JSON.stringify(move[1]);
-			});
-		} else {
-			moves = moves && moves[activePlayer].map(function (move) {
-				return JSON.stringify(move[0]);
-			});
-		}
+			},
+			movesByFrom = moves ? iterable(moves[activePlayer]).groupAll(function (m) {
+				return JSON.stringify(m[0]);
+			}) : {},
+			selectedMoves = ui.selectedPiece && 
+				movesByFrom[JSON.stringify(ui.selectedPiece)].map(function (m) {
+					return JSON.stringify(m[1]);
+				});
 		board.renderAsHTMLTable(ui.document, ui.container, function (data) {
 			data.className = classNames[data.square];
 			data.innerHTML = data.square == '.' ? '&nbsp;' : data.square;
-			var move = JSON.stringify(data.coord);
-			if (moves && moves.indexOf(move) >= 0) {
-				data.move = data.coord;
-				data.activePlayer = activePlayer;
-				if (data.square == '.') {
+			if (ui.selectedPiece) {
+				if (selectedMoves && selectedMoves.indexOf(JSON.stringify(data.coord)) >= 0) {
 					data.className = "ludorum-square-move";
-					data.innerHTML = '.';
-				}
-				if (ui.selectedPiece) {
-					data.onclick = ui.perform.bind(ui, [ui.selectedPiece, data.move], activePlayer);
-				} else {
 					data.onclick = function () {
-						ui.selectedPiece = data.move;
-					};
+						var selectedPiece = ui.selectedPiece;
+						ui.selectedPiece = (void 0);
+						ui.perform([selectedPiece, data.coord], activePlayer);
+					};					
 				}
+			} else if (movesByFrom.hasOwnProperty(JSON.stringify(data.coord))) {
+				data.onclick = function () {
+					ui.selectedPiece = data.coord;
+					ui.display(game); // Redraw the game state.			
+				};
 			}
 		});
 		return ui;
