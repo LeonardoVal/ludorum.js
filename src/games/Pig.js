@@ -68,7 +68,7 @@ games.Pig = declare(Game, {
 			return new this.constructor(this.opponent(), this.goal, scores, []);
 		} else if (move === 'roll') {
 			var game = this;
-			return new aleatories.Dice(function (value) {
+			return new aleatories.dice.D6(function (value) {
 				value = isNaN(value) ? this.value() : +value;
 				return (value > 1) 
 					? new game.constructor(activePlayer,  game.goal, game.__scores__, game.__rolls__.concat(value))
