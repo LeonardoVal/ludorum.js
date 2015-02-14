@@ -1,4 +1,4 @@
-/** # Bahab
+﻿/** # Bahab
 
 Bahab is a chess-like board game originally designed for Ludorum.
 */

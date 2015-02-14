@@ -1,4 +1,4 @@
-var APP = {},
+﻿var APP = {},
 	JS_ROOT = '../../..';
 
 require.config({ 

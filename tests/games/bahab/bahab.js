@@ -1,4 +1,4 @@
-var APP = {};
+﻿var APP = {};
 
 require.config({
 	paths: {

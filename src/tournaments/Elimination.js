@@ -1,4 +1,4 @@
-/** # Elimination
+﻿/** # Elimination
 
 Playoffs or sudden death kind of contests, also known as 
 [elimination tournaments](http://en.wikipedia.org/wiki/Single-elimination_tournament).

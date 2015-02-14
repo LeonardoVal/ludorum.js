@@ -1,4 +1,4 @@
-/** # TicTacToe.
+﻿/** # TicTacToe.
 
 Implementation of the traditional [Tic-Tac-Toe game](http://en.wikipedia.org/wiki/Tictactoe).
 */

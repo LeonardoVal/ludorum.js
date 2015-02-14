@@ -1,4 +1,4 @@
-"use strict";
+﻿"use strict";
 //// Testing environment extensions and custom definitions. ////////////////////
 
 beforeEach(function() { // Add custom matchers.

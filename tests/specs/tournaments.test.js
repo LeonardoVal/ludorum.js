@@ -1,4 +1,4 @@
-define(['creatartis-base', 'ludorum'], function (base, ludorum) {
+﻿define(['creatartis-base', 'ludorum'], function (base, ludorum) {
 	
 	describe("tournaments.RoundRobin", function () { ///////////////////////////
 		async_it("(games.Choose2Win, players.RandomPlayer)", function () {

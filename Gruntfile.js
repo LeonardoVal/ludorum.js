@@ -12,7 +12,7 @@ var sourceFiles = [ 'src/__prologue__.js',
 		'src/players/UserInterfacePlayer.js',
 		'src/players/WebWorkerPlayer.js',
 	// aleatories.
-		'src/aleatories/Dice.js',
+		'src/aleatories/dice.js',
 	// utils.
 		'src/utils/Checkerboard.js', 
 			'src/utils/CheckerboardFromString.js',

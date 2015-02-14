@@ -1,4 +1,4 @@
-/** # WebWorkerPlayer
+﻿/** # WebWorkerPlayer
 
 A proxy for another player executing inside a webworker.
 */

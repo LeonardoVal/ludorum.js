@@ -1,4 +1,4 @@
-/** # RoundRobin
+﻿/** # RoundRobin
 
 [Round-robins](http://en.wikipedia.org/wiki/Round-robin_tournament) are 
 tournaments where all players play against each other a certain number of times.

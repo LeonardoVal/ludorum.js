@@ -1,4 +1,4 @@
-/** # Scanner
+﻿/** # Scanner
 
 Component for scanning a game's tree.
 */

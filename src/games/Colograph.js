@@ -1,4 +1,4 @@
-/** # Colograph
+﻿/** # Colograph
 
 Implementation of the game Colograph, a competitive version of the classic 
 [graph colouring problem](http://en.wikipedia.org/wiki/Graph_coloring).

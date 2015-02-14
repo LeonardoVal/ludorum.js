@@ -1,4 +1,4 @@
-/** # Checkerboard
+﻿/** # Checkerboard
 
 Base class for checkerboards representations based on several different data 
 structures.

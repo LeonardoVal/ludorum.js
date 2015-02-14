@@ -1,4 +1,4 @@
-define(['creatartis-base', 'ludorum'], function (base, ludorum) {
+﻿define(['creatartis-base', 'ludorum'], function (base, ludorum) {
 	var RANDOM = base.Randomness.DEFAULT,
 		autonomousPlayers = ["RandomPlayer", "HeuristicPlayer", "MiniMaxPlayer", 
 			"AlphaBetaPlayer", "MaxNPlayer", "MonteCarloPlayer"];

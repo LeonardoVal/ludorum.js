@@ -1,4 +1,4 @@
-/** # Othello
+﻿/** # Othello
 
 Implementation of [Othello (aka Reversi)](http://en.wikipedia.org/wiki/Reversi)
 for Ludorum.

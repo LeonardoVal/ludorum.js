@@ -1,4 +1,4 @@
-/** Package wrapper and layout.
+﻿/** Package wrapper and layout.
 */
 "use strict";
 (function (global, init) { // Universal Module Definition.

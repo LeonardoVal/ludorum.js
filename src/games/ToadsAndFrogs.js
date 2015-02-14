@@ -1,4 +1,4 @@
-/** Implementation of the [Toads & Frogs](http://en.wikipedia.org/wiki/Toads_and_Frogs_%28game%29) 
+﻿/** Implementation of the [Toads & Frogs](http://en.wikipedia.org/wiki/Toads_and_Frogs_%28game%29) 
 	game.
 */
 games.ToadsAndFrogs = declare(Game, {

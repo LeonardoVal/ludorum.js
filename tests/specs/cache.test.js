@@ -1,4 +1,4 @@
-define(['creatartis-base', 'ludorum'], function (base, ludorum) {
+﻿define(['creatartis-base', 'ludorum'], function (base, ludorum) {
 
 	describe("utils.Cache (basics)", function () { /////////////////////////////
 		it("with Mancala", function () {

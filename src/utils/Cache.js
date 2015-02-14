@@ -1,4 +1,4 @@
-/** # Cache
+﻿/** # Cache
 
 A game cache contains a part of a game tree, avoiding redundancies. It can be
 used to implement a [transposition table](http://en.wikipedia.org/wiki/Transposition_table) 

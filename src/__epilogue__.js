@@ -1,3 +1,3 @@
-// See __prologue__.js
+﻿// See __prologue__.js
 	return exports;
 });
