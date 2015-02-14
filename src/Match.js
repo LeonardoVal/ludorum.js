@@ -57,7 +57,7 @@ var Match = exports.Match = declare({
 			players = this.players,
 			activePlayers = game.activePlayers;
 		return Future.all(activePlayers.map(function (p) {
-			return players[p].decision(game, p);
+			return players[p].decision(game.view(p), p);
 		})).then(function (decisions) {
 			var moves = iterable(activePlayers).zip(decisions).toObject();
 			match.onMove(game, moves);
