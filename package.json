@@ -4,7 +4,7 @@
 	"keywords": [
 		"board game", "game", "minimax", "artificial intelligence", "game ai"
 	],
-	"version": "0.1.2",
+	"version": "0.1.3-alpha",
 	"author": {
 		"name": "Leonardo Val",
 		"email": "leonardo.val@creatartis.com"
@@ -17,8 +17,13 @@
 		"url": "http://github.com/LeonardoVal/ludorum.js"
 	},
 	"main": "build/ludorum.min.js",
-	"files": [ "build" ],
-	"dependencies": { },
+	"files": [
+		"build",
+		"LICENSE.md"
+	],
+	"dependencies": {
+		"creatartis-base": "~0.1.4"
+	},
 	"devDependencies": {
 		"requirejs": "~2.1.9",
 		"grunt": "~0.4.4",
@@ -34,11 +39,7 @@
 			"karma-chrome-launcher": "~0.1.3",
 			"karma-firefox-launcher": "~0.1.3",
 			"karma-ie-launcher": "~0.1.4",
-			"karma-opera-launcher": "~0.1.0",
-			"karma-sourcemap-loader": "~0.1",
-		"creatartis-base": "git://github.com/LeonardoVal/creatartis-base.git"
+			"karma-sourcemap-loader": "~0.1"
 	},
-	"scripts": {
-		"postinstall": "npm dedupe"
-	}
+	"scripts": {}
 }
