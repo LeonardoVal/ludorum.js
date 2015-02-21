@@ -29,8 +29,7 @@ games.Othello = declare(Game, {
 	makeBoard: function makeBoard(rows, columns, string){
 		rows = isNaN(rows) ? 8 : +rows;
 		columns = isNaN(columns) ? 8 : +columns;
-		raiseIf(rows < 4 || columns < 4 || rows % 2 || columns % 2,
-			"An Othello board must have even dimensions greater than 3.")
+		raiseIf(rows < 4 || columns < 4 || rows % 2 || columns % 2, "An Othello board must have even dimensions greater than 3.");
 		if (typeof string === 'string') {
 			return new CheckerboardFromString(rows, columns, string);
 		} else {
@@ -215,7 +214,7 @@ games.Othello = declare(Game, {
 					'W': player.charAt(0) === 'W' ? 1 : -1,
 					'B': player.charAt(0) === 'B' ? 1 : -1
 				}) / weightSum;
-			}
+			};
 			heuristic.weights = weights;
 			return heuristic;
 		},

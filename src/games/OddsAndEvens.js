@@ -42,7 +42,7 @@ games.OddsAndEvens = declare(Game, {
 	next: function next(moves) {
 		raiseIf(typeof moves.Evens !== 'number' || typeof moves.Odds !== 'number',
 			'Invalid moves '+ (JSON.stringify(moves) || moves) +'!');
-		var parity = !((moves.Evens + moves.Odds) % 2);
+		var parity = (moves.Evens + moves.Odds) % 2 === 0;
 		return new this.constructor(this.turns - 1, {
 			Evens: this.points.Evens + (parity ? 1 : 0),
 			Odds: this.points.Odds + (parity ? 0 : 1)

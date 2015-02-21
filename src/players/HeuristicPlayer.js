@@ -26,8 +26,8 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 		if (Object.keys(move).length < 2) { // One active player.
 			return this.stateEvaluation(game.next(move), player);
 		} else { // Many active players.
-			var sum = 0, count = 0,
-				move = copy(obj(player, [move[player]]), move);
+			var sum = 0, count = 0;
+			move = copy(obj(player, [move[player]]), move);
 			game.possibleMoves(move).forEach(function (ms) {
 				sum += this.stateEvaluation(game.next(ms), player);
 				++count;

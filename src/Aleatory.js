@@ -20,18 +20,18 @@ var Aleatory = exports.Aleatory = declare({
 	random variable.
 	*/
 	value: function value() {
-		var n = this.random.random(), value;
+		var n = this.random.random(), v;
 		iterable(this.distribution()).forEach(function (pair) {
 			n -= pair[1];
 			if (n <= 0) {
-				value = pair[0];
+				v = pair[0];
 				throw Iterable.STOP_ITERATION;
 			}
 		});
-		if (typeof value === 'undefined') {
+		if (typeof v === 'undefined') {
 			throw new Error("Random value could not be obtained.");
 		}
-		return value;
+		return v;
 	},
 	
 	/** The function `Aleatory.next(value)` returns the next game state given a specific value for 

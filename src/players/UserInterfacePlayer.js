@@ -24,7 +24,8 @@ var UserInterfacePlayer = players.UserInterfacePlayer = declare(Player, {
 		if (this.__future__ && this.__future__.isPending()) {
 			this.__future__.resolve(new Match.CommandQuit());
 		}
-		return this.__future__ = new Future();
+		this.__future__ = new Future();
+		return this.__future__;
 	},
 	
 	/**  User interfaces have to be configured to call `perform(action)` upon 
@@ -106,8 +107,7 @@ var UserInterface = players.UserInterface = declare({
 	perform: function perform(action, actionRole) {
 		iterable(this.match.players).forEach(function (pair) {
 			var role = pair[0], player = pair[1];
-			if (player instanceof UserInterfacePlayer 
-			&& (!actionRole || player.role === actionRole)) {
+			if (player instanceof UserInterfacePlayer && (!actionRole || player.role === actionRole)) {
 				player.perform(action);
 			}
 		});
@@ -154,8 +154,8 @@ UserInterface.BasicHTMLInterface = declare(UserInterface, {
 			if (Array.isArray(node)) {
 				element = ui.document.createElement(node[0]);
 				if (node.length > 2 && node[1]) { // There are attributes.
-					var attrs = node[1]
-					for (attrName in attrs) if (attr.hasOwnProperty(attrName)) {
+					var attrs = node[1];
+					for (var attrName in attrs) if (attr.hasOwnProperty(attrName)) {
 						element.setAttribute(attrName, attrs[attrName]);
 					}
 				}

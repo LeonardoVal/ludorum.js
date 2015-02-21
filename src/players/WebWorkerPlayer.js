@@ -57,8 +57,7 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 			this.__future__.resolve(Match.commandQuit);
 		}
 		this.__future__ = new Future();
-		this.worker.postMessage('PLAYER.decision(ludorum.Game.fromJSON('+ game.toJSON() 
-			+'), '+ JSON.stringify(player) +')');
+		this.worker.postMessage('PLAYER.decision(ludorum.Game.fromJSON('+ game.toJSON() +'), '+ JSON.stringify(player) +')');
 		return this.__future__;
 	}
 }); // declare WebWorkerPlayer

@@ -70,9 +70,9 @@ games.Pig = declare(Game, {
 			var game = this;
 			return new aleatories.dice.D6(function (value) {
 				value = isNaN(value) ? this.value() : +value;
-				return (value > 1) 
-					? new game.constructor(activePlayer,  game.goal, game.__scores__, game.__rolls__.concat(value))
-					: new game.constructor(game.opponent(), game.goal, game.__scores__, []);
+				return (value > 1) ? 
+					new game.constructor(activePlayer,  game.goal, game.__scores__, game.__rolls__.concat(value)) :
+					new game.constructor(game.opponent(), game.goal, game.__scores__, []);
 			});
 		} else {
 			throw new Error("Invalid moves: "+ JSON.stringify(moves));

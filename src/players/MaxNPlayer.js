@@ -10,7 +10,7 @@ var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
 	constructor: function MaxNPlayer(params) {
 		HeuristicPlayer.call(this, params);
 		initialize(this, params)
-			.integer('horizon', { defaultValue: 3, coerce: true })
+			.integer('horizon', { defaultValue: 3, coerce: true });
 	},
 
 	/** This player evaluates each state using the `maxn` method, taking the 
@@ -60,8 +60,8 @@ var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
 		if (!values) { // game is not quiescent.
 			var activePlayer = game.activePlayer(),
 				moves = this.movesFor(game, activePlayer),
-				values = {},
 				otherValues, next;
+			values = {};
 			if (moves.length < 1) {
 				throw new Error('No moves for unfinished game '+ game +'.');
 			}

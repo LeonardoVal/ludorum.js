@@ -49,7 +49,10 @@ module.exports = function(grunt) {
 		},
 		jshint: { //////////////////////////////////////////////////////////////
 			build: {
-				options: { },
+				options: { // Check <http://jshint.com/docs/options/>.
+					loopfunc: true,
+					boss: true
+				},
 				src: ['build/<%= pkg.name %>.js'],
 			},
 		},
@@ -73,7 +76,6 @@ module.exports = function(grunt) {
 			build: { browsers: ['PhantomJS'] },
 			chrome: { browsers: ['Chrome'] },
 			firefox: { browsers: ['Firefox'] },
-			opera: { browsers: ['Opera'] },
 			iexplore: { browsers: ['IE'] }
 		},
 		docker: { //////////////////////////////////////////////////////////////
@@ -144,7 +146,7 @@ module.exports = function(grunt) {
 // Register tasks. /////////////////////////////////////////////////////////////
 	grunt.registerTask('lib', ['bowercopy:lib']);
 	
-	grunt.registerTask('compile', ['concat_sourcemap:build', 'uglify:build']); 
+	grunt.registerTask('compile', ['concat_sourcemap:build', 'jshint:build', 'uglify:build']); 
 	grunt.registerTask('test', ['compile', 'karma:build']);
 	grunt.registerTask('test-all', ['test', 'karma:chrome', 'karma:firefox', 'karma:iexplore', /*'karma:opera'*/]);
 	grunt.registerTask('build', ['test', 'docker:build']);

@@ -38,8 +38,8 @@ games.Mutropas = declare(Game, {
 	pieces go to each player, and one is left out.
 	*/
 	dealPieces: function dealPieces(random) {
-		var random = random || this.random,
-			piecesPerPlayer = (this.allPieces.length / 2)|0,
+		random = random || this.random;
+		var piecesPerPlayer = (this.allPieces.length / 2)|0,
 			split1 = random.split(piecesPerPlayer, this.allPieces),
 			split2 = random.split(piecesPerPlayer, split1[1]);
 		return obj(this.players[0], split1[0], this.players[1], split2[0]);
@@ -129,8 +129,8 @@ games.Mutropas = declare(Game, {
 		var playedPieces = this.playedPieces,
 			opponentPieces = this.pieces[this.opponent(player)],
 			possiblePieces = iterable(this.allPieces).filter(function (p) {
-				return playedPieces.indexOf(p) < 0 // p has not been played yet ...
-					&& opponentPieces.indexOf(p) < 0; // ... and the opponent does not have it.
+				return playedPieces.indexOf(p) < 0 && // p has not been played yet ...
+					opponentPieces.indexOf(p) < 0; // ... and the opponent does not have it.
 			});
 		return possiblePieces.combinations(possiblePieces.count() - 1);
 	},

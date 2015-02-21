@@ -90,7 +90,7 @@ var Tournament = exports.Tournament = declare({
 							moves[role].length);
 					}
 				}
-			})
+			});
 		});
 	},
 	
@@ -106,7 +106,9 @@ var Tournament = exports.Tournament = declare({
 	*/	
 	onBegin: function onBegin() {
 		this.events.emit('begin', this);
-		this.logger && this.logger.info('Tournament begins for game ', game.name, '.');
+		if (this.logger) {
+			this.logger.info('Tournament begins for game ', game.name, '.');
+		}
 	},
 	
 	/** + The `beforeMatch` event triggered by `Tournament.beforeMatch(match)` 
@@ -115,7 +117,9 @@ var Tournament = exports.Tournament = declare({
 	*/
 	beforeMatch: function beforeMatch(match) {
 		this.events.emit('beforeMatch', match, this);
-		this.logger && this.logger.debug('Beginning match with ', JSON.stringify(match.players), '.');
+		if (this.logger) {
+			this.logger.debug('Beginning match with ', JSON.stringify(match.players), '.');
+		}
 	},
 	
 	/** + The `afterMatch` event triggered by `Tournament.afterMatch(match)` 
@@ -124,7 +128,9 @@ var Tournament = exports.Tournament = declare({
 	*/
 	afterMatch: function afterMatch(match) {
 		this.events.emit('afterMatch', match, this);
-		this.logger && this.logger.debug('Finishing match with ', JSON.stringify(match.players), '.');
+		if (this.logger) {
+			this.logger.debug('Finishing match with ', JSON.stringify(match.players), '.');
+		}
 	},
 	
 	/** + The `end` event triggered by `Tournament.onEnd()` when the whole 
@@ -133,7 +139,9 @@ var Tournament = exports.Tournament = declare({
 	*/
 	onEnd: function onEnd() {
 		this.events.emit('end', this.statistics, this);
-		this.logger && this.logger.info('Tournament ends for game ', game.name, ':\n', this.statistics, '\n');
+		if (this.logger) {
+			this.logger.info('Tournament ends for game ', game.name, ':\n', this.statistics, '\n');
+		}
 	}
 }); // declare Tournament
 

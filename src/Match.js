@@ -75,7 +75,9 @@ var Match = exports.Match = declare({
 			return Future.when(this);
 		}
 		var ply = this.ply(), game = this.state(), results, next;
-		(ply < 1) && this.onBegin(game);
+		if (ply < 1) {
+			this.onBegin(game);
+		}
 		game = this.__advanceAleatories__(game); // Instantiate all random variables.
 		results = game.result();
 		if (results) { // If the match has finished ...
@@ -142,10 +144,11 @@ var Match = exports.Match = declare({
 	*/
 	onBegin: function onBegin(game) {
 		this.events.emit('begin', game, this);
-		this.logger && this.logger.info('Match begins with ', 
-			iterable(this.players).map(function (attr) {
+		if (this.logger) {
+			this.logger.info('Match begins with ', iterable(this.players).map(function (attr) {
 				return attr[1] +' as '+ attr[0];
 			}).join(', '), '; for ', game, '.');
+		}
 	},
 	
 	/** + The `move` event fired by `Match.onMove(game, moves)` every time the
@@ -154,7 +157,9 @@ var Match = exports.Match = declare({
 	*/
 	onMove: function onMove(game, moves) {
 		this.events.emit('move', game, moves, this);
-		this.logger && this.logger.info('Players move: ', JSON.stringify(moves), ' in ', game);
+		if (this.logger) {
+			this.logger.info('Players move: ', JSON.stringify(moves), ' in ', game);
+		}
 	},
 	
 	/** + The `next` event fired by `Match.onNext(game, next)` signals when the
@@ -164,7 +169,9 @@ var Match = exports.Match = declare({
 	*/
 	onNext: function onNext(game, next) {
 		this.events.emit('next', game, next, this);
-		this.logger && this.logger.info('Match advances from ', game, ' to ', next);
+		if (this.logger) {
+			this.logger.info('Match advances from ', game, ' to ', next);
+		}
 	},
 	
 	/** + The `end` event triggered by `Match.onEnd(game, results)` notifies 
@@ -173,7 +180,9 @@ var Match = exports.Match = declare({
 	*/
 	onEnd: function onEnd(game, results) {
 		this.events.emit('end', game, results, this);
-		this.logger && this.logger.info('Match for ', game, 'ends with ', JSON.stringify(results));
+		if (this.logger) {
+			this.logger.info('Match for ', game, 'ends with ', JSON.stringify(results));
+		}
 	},
 	
 	/** + The `quit` event triggered by `Match.onQuit(game, player)` is emitted
@@ -182,7 +191,9 @@ var Match = exports.Match = declare({
 	*/
 	onQuit: function onQuit(game, player) {
 		this.events.emit('quit', game, player, this);
-		this.logger && this.logger.info('Match for ', game, ' aborted because player '+ player +' quitted.');
+		if (this.logger) {
+			this.logger.info('Match for ', game, ' aborted because player '+ player +' quitted.');
+		}
 	},
 	
 	toString: function toString() {

@@ -56,7 +56,7 @@ tournaments.Elimination = declare(Tournament, {
 					playerName = tuple[1].name;
 				playoffResult[playerName] = (+playoffResult[playerName] || 0) + matchResult[role];
 				players[playerName] = tuple[1];
-			})
+			});
 		});
 		var winnerName = iterable(playoffResult).greater(function (pair) {
 			return pair[1];

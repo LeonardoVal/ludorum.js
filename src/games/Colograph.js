@@ -183,7 +183,7 @@ games.Colograph = declare(Game, {
 			pair = random.choice(edges);
 			if (pair[1].length > 0) {
 				pair2 = random.split(1, pair[1]);
-				pair[0].push(pair2[0][0])
+				pair[0].push(pair2[0][0]);
 				pair[1] = pair2[1];
 				n--;
 			}

@@ -1,7 +1,6 @@
 ﻿/** Package wrapper and layout.
 */
-"use strict";
-(function (global, init) { // Universal Module Definition.
+(function (global, init) { "use strict"; // Universal Module Definition.
 	if (typeof define === 'function' && define.amd) {
 		define(['creatartis-base'], init); // AMD module.
 	} else if (typeof module === 'object' && module.exports) {
@@ -9,7 +8,7 @@
 	} else { // Browser or web worker (probably).
 		global.ludorum = init(global.base); // Assumes base is loaded.
 	}
-})(this, function __init__(base) {
+})(this, function __init__(base) { "use strict";
 // Import synonyms. ////////////////////////////////////////////////////////////
 	var declare = base.declare,
 		unimplemented = base.objects.unimplemented,

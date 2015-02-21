@@ -9,8 +9,8 @@ players.TracePlayer = declare(Player, {
 	constructor: function TracePlayer(params) {
 		Player.call(this, params);
 		this.trace = iterable(params.trace);
-		this.__iterator__ = this.trace.__iter__();
-		this.__decision__ = this.__iterator__();
+		this.__iter__ = this.trace.__iter__();
+		this.__decision__ = this.__iter__();
 	},
 
 	/** The `decision(game, player)` returns the next move in the trace, or the 
@@ -18,7 +18,7 @@ players.TracePlayer = declare(Player, {
 	*/
 	decision: function(game, player) {
 		try {
-			this.__decision__ = this.__iterator__();
+			this.__decision__ = this.__iter__();
 		} catch (err) {
 			Iterable.prototype.catchStop(err);
 		}

@@ -58,8 +58,8 @@ games.TicTacToe = declare(Game, {
 		var activePlayer = this.activePlayer(), 
 			move = +moves[activePlayer];
 		if (isNaN(move) || this.board.charAt(move) !== '_') {
-			throw new Error('Invalid move '+ JSON.stringify(moves) +' for board '+ this.board
-					+' (moves= '+ JSON.stringify(moves) +').');
+			throw new Error('Invalid move '+ JSON.stringify(moves) +' for board '+ this.board +
+				' (moves= '+ JSON.stringify(moves) +').');
 		}
 		var newBoard = this.board.substring(0, move) + activePlayer.charAt(0) + this.board.substring(move + 1);
 		return new this.constructor(this.opponent(activePlayer), newBoard);
@@ -97,7 +97,7 @@ games.TicTacToe = declare(Game, {
 			moves = this.moves(),
 			board = this.board,
 			classNames = { 'X': "ludorum-square-Xs", 'O': "ludorum-square-Os", '_': "ludorum-square-empty" },
-			squareHTML = { 'X': "X", 'O': "O", '_': "&nbsp;" };;
+			squareHTML = { 'X': "X", 'O': "O", '_': "&nbsp;" };
 		moves = moves && moves[activePlayer] && moves[activePlayer].length > 0;
 		(new CheckerboardFromString(3, 3, this.board, '_'))
 			.renderAsHTMLTable(ui.document, ui.container, function (data) {

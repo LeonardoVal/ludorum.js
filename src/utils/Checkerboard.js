@@ -27,9 +27,9 @@ var Checkerboard = utils.Checkerboard = declare({
 	a coordinate is inside the board, use `isValidCoord(coord)`.
 	*/
 	isValidCoord: function isValidCoord(coord) {
-		return Array.isArray(coord) && !isNaN(coord[0]) && !isNaN(coord[1])
-			&& coord[0] >= 0 && coord[0] < this.height 
-			&& coord[1] >= 0 && coord[1] < this.width;
+		return Array.isArray(coord) && !isNaN(coord[0]) && !isNaN(coord[1])	&& 
+			coord[0] >= 0 && coord[0] < this.height && 
+			coord[1] >= 0 && coord[1] < this.width;
 	},
 	
 	/** Method `coordinates()` returns the sequence of the board's valid 
@@ -281,7 +281,7 @@ var Checkerboard = utils.Checkerboard = declare({
 				td.className = data.className;
 				td.innerHTML = data.innerHTML;
 				if (data.onclick) {
-					td.onclick = data.onclick
+					td.onclick = data.onclick;
 				}
 				tr.appendChild(td);
 			});

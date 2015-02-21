@@ -1,7 +1,6 @@
 /** Package wrapper and layout.
 */
-"use strict";
-(function (global, init) { // Universal Module Definition.
+(function (global, init) { "use strict"; // Universal Module Definition.
 	if (typeof define === 'function' && define.amd) {
 		define(['creatartis-base'], init); // AMD module.
 	} else if (typeof module === 'object' && module.exports) {
@@ -9,7 +8,7 @@
 	} else { // Browser or web worker (probably).
 		global.ludorum = init(global.base); // Assumes base is loaded.
 	}
-})(this, function __init__(base) {
+})(this, function __init__(base) { "use strict";
 // Import synonyms. ////////////////////////////////////////////////////////////
 	var declare = base.declare,
 		unimplemented = base.objects.unimplemented,
@@ -375,11 +374,11 @@ var Game = exports.Game = declare({
 			and keeps the value for future calls.
 			*/
 			result: function result() {
-				var result = super_result.call(this);
+				var r = game.result.call(this);
 				this.result = function cachedResult() { // Replace result() method with cached version.
-					return result;
+					return r;
 				};
-				return result;
+				return r;
 			}
 		});
 	}, // static cached
@@ -402,7 +401,6 @@ var Game = exports.Game = declare({
 			moves: function moves() {
 				var fixedMoves = this.__fixedMoves__ || (this.__fixedMoves__ = {}),
 					allMoves = super_moves.call(this),
-					moves = {},
 					activePlayer;
 				for (var i = 0; i < this.activePlayers.length; i++) {
 					if (fixedMoves.hasOwnProperty(this.activePlayers[i])) {
@@ -410,12 +408,7 @@ var Game = exports.Game = declare({
 						break;
 					}
 				}
-				if (activePlayer && allMoves) {
-					moves[activePlayer] = allMoves[activePlayer];
-					return moves;
-				} else {
-					return null;
-				}
+				return activePlayer && allMoves ? obj(activePlayer, allMoves[activePlayer]) : null;
 			},
 		
 			/** The `next(moves)` of a serialized game advances the actual game if with the given
@@ -600,7 +593,9 @@ var Match = exports.Match = declare({
 			return Future.when(this);
 		}
 		var ply = this.ply(), game = this.state(), results, next;
-		(ply < 1) && this.onBegin(game);
+		if (ply < 1) {
+			this.onBegin(game);
+		}
 		game = this.__advanceAleatories__(game); // Instantiate all random variables.
 		results = game.result();
 		if (results) { // If the match has finished ...
@@ -667,10 +662,11 @@ var Match = exports.Match = declare({
 	*/
 	onBegin: function onBegin(game) {
 		this.events.emit('begin', game, this);
-		this.logger && this.logger.info('Match begins with ', 
-			iterable(this.players).map(function (attr) {
+		if (this.logger) {
+			this.logger.info('Match begins with ', iterable(this.players).map(function (attr) {
 				return attr[1] +' as '+ attr[0];
 			}).join(', '), '; for ', game, '.');
+		}
 	},
 	
 	/** + The `move` event fired by `Match.onMove(game, moves)` every time the
@@ -679,7 +675,9 @@ var Match = exports.Match = declare({
 	*/
 	onMove: function onMove(game, moves) {
 		this.events.emit('move', game, moves, this);
-		this.logger && this.logger.info('Players move: ', JSON.stringify(moves), ' in ', game);
+		if (this.logger) {
+			this.logger.info('Players move: ', JSON.stringify(moves), ' in ', game);
+		}
 	},
 	
 	/** + The `next` event fired by `Match.onNext(game, next)` signals when the
@@ -689,7 +687,9 @@ var Match = exports.Match = declare({
 	*/
 	onNext: function onNext(game, next) {
 		this.events.emit('next', game, next, this);
-		this.logger && this.logger.info('Match advances from ', game, ' to ', next);
+		if (this.logger) {
+			this.logger.info('Match advances from ', game, ' to ', next);
+		}
 	},
 	
 	/** + The `end` event triggered by `Match.onEnd(game, results)` notifies 
@@ -698,7 +698,9 @@ var Match = exports.Match = declare({
 	*/
 	onEnd: function onEnd(game, results) {
 		this.events.emit('end', game, results, this);
-		this.logger && this.logger.info('Match for ', game, 'ends with ', JSON.stringify(results));
+		if (this.logger) {
+			this.logger.info('Match for ', game, 'ends with ', JSON.stringify(results));
+		}
 	},
 	
 	/** + The `quit` event triggered by `Match.onQuit(game, player)` is emitted
@@ -707,7 +709,9 @@ var Match = exports.Match = declare({
 	*/
 	onQuit: function onQuit(game, player) {
 		this.events.emit('quit', game, player, this);
-		this.logger && this.logger.info('Match for ', game, ' aborted because player '+ player +' quitted.');
+		if (this.logger) {
+			this.logger.info('Match for ', game, ' aborted because player '+ player +' quitted.');
+		}
 	},
 	
 	toString: function toString() {
@@ -808,7 +812,7 @@ var Tournament = exports.Tournament = declare({
 							moves[role].length);
 					}
 				}
-			})
+			});
 		});
 	},
 	
@@ -824,7 +828,9 @@ var Tournament = exports.Tournament = declare({
 	*/	
 	onBegin: function onBegin() {
 		this.events.emit('begin', this);
-		this.logger && this.logger.info('Tournament begins for game ', game.name, '.');
+		if (this.logger) {
+			this.logger.info('Tournament begins for game ', game.name, '.');
+		}
 	},
 	
 	/** + The `beforeMatch` event triggered by `Tournament.beforeMatch(match)` 
@@ -833,7 +839,9 @@ var Tournament = exports.Tournament = declare({
 	*/
 	beforeMatch: function beforeMatch(match) {
 		this.events.emit('beforeMatch', match, this);
-		this.logger && this.logger.debug('Beginning match with ', JSON.stringify(match.players), '.');
+		if (this.logger) {
+			this.logger.debug('Beginning match with ', JSON.stringify(match.players), '.');
+		}
 	},
 	
 	/** + The `afterMatch` event triggered by `Tournament.afterMatch(match)` 
@@ -842,7 +850,9 @@ var Tournament = exports.Tournament = declare({
 	*/
 	afterMatch: function afterMatch(match) {
 		this.events.emit('afterMatch', match, this);
-		this.logger && this.logger.debug('Finishing match with ', JSON.stringify(match.players), '.');
+		if (this.logger) {
+			this.logger.debug('Finishing match with ', JSON.stringify(match.players), '.');
+		}
 	},
 	
 	/** + The `end` event triggered by `Tournament.onEnd()` when the whole 
@@ -851,7 +861,9 @@ var Tournament = exports.Tournament = declare({
 	*/
 	onEnd: function onEnd() {
 		this.events.emit('end', this.statistics, this);
-		this.logger && this.logger.info('Tournament ends for game ', game.name, ':\n', this.statistics, '\n');
+		if (this.logger) {
+			this.logger.info('Tournament ends for game ', game.name, ':\n', this.statistics, '\n');
+		}
 	}
 }); // declare Tournament
 
@@ -884,18 +896,18 @@ var Aleatory = exports.Aleatory = declare({
 	random variable.
 	*/
 	value: function value() {
-		var n = this.random.random(), value;
+		var n = this.random.random(), v;
 		iterable(this.distribution()).forEach(function (pair) {
 			n -= pair[1];
 			if (n <= 0) {
-				value = pair[0];
+				v = pair[0];
 				throw Iterable.STOP_ITERATION;
 			}
 		});
-		if (typeof value === 'undefined') {
+		if (typeof v === 'undefined') {
 			throw new Error("Random value could not be obtained.");
 		}
-		return value;
+		return v;
 	},
 	
 	/** The function `Aleatory.next(value)` returns the next game state given a specific value for 
@@ -1048,8 +1060,8 @@ players.TracePlayer = declare(Player, {
 	constructor: function TracePlayer(params) {
 		Player.call(this, params);
 		this.trace = iterable(params.trace);
-		this.__iterator__ = this.trace.__iter__();
-		this.__decision__ = this.__iterator__();
+		this.__iter__ = this.trace.__iter__();
+		this.__decision__ = this.__iter__();
 	},
 
 	/** The `decision(game, player)` returns the next move in the trace, or the 
@@ -1057,7 +1069,7 @@ players.TracePlayer = declare(Player, {
 	*/
 	decision: function(game, player) {
 		try {
-			this.__decision__ = this.__iterator__();
+			this.__decision__ = this.__iter__();
 		} catch (err) {
 			Iterable.prototype.catchStop(err);
 		}
@@ -1098,8 +1110,8 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 		if (Object.keys(move).length < 2) { // One active player.
 			return this.stateEvaluation(game.next(move), player);
 		} else { // Many active players.
-			var sum = 0, count = 0,
-				move = copy(obj(player, [move[player]]), move);
+			var sum = 0, count = 0;
+			move = copy(obj(player, [move[player]]), move);
 			game.possibleMoves(move).forEach(function (ms) {
 				sum += this.stateEvaluation(game.next(ms), player);
 				++count;
@@ -1229,7 +1241,7 @@ var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
 	constructor: function MaxNPlayer(params) {
 		HeuristicPlayer.call(this, params);
 		initialize(this, params)
-			.integer('horizon', { defaultValue: 3, coerce: true })
+			.integer('horizon', { defaultValue: 3, coerce: true });
 	},
 
 	/** This player evaluates each state using the `maxn` method, taking the 
@@ -1279,8 +1291,8 @@ var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
 		if (!values) { // game is not quiescent.
 			var activePlayer = game.activePlayer(),
 				moves = this.movesFor(game, activePlayer),
-				values = {},
 				otherValues, next;
+			values = {};
 			if (moves.length < 1) {
 				throw new Error('No moves for unfinished game '+ game +'.');
 			}
@@ -1471,13 +1483,13 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 	selectMoves: function selectMoves(moves, game, player) {
 		var monteCarloPlayer = this,
 			endTime = Date.now() + this.timeCap,
+			gameNext = game.next.bind(game),
 			options = moves.map(function (move) {
 				return { 
 					move: move, 
-					nexts: (Object.keys(move).length < 2 ? [game.next(move)]
-						: game.possibleMoves(copy(obj(player, [move[player]]), move)).map(function (ms) {
-							return game.next(ms);
-						})
+					nexts: (Object.keys(move).length < 2 ? 
+						[game.next(move)] :
+						game.possibleMoves(copy(obj(player, [move[player]]), move)).map(gameNext)
 					),
 					sum: 0, 
 					count: 0 
@@ -1583,7 +1595,8 @@ var UserInterfacePlayer = players.UserInterfacePlayer = declare(Player, {
 		if (this.__future__ && this.__future__.isPending()) {
 			this.__future__.resolve(new Match.CommandQuit());
 		}
-		return this.__future__ = new Future();
+		this.__future__ = new Future();
+		return this.__future__;
 	},
 	
 	/**  User interfaces have to be configured to call `perform(action)` upon 
@@ -1665,8 +1678,7 @@ var UserInterface = players.UserInterface = declare({
 	perform: function perform(action, actionRole) {
 		iterable(this.match.players).forEach(function (pair) {
 			var role = pair[0], player = pair[1];
-			if (player instanceof UserInterfacePlayer 
-			&& (!actionRole || player.role === actionRole)) {
+			if (player instanceof UserInterfacePlayer && (!actionRole || player.role === actionRole)) {
 				player.perform(action);
 			}
 		});
@@ -1713,8 +1725,8 @@ UserInterface.BasicHTMLInterface = declare(UserInterface, {
 			if (Array.isArray(node)) {
 				element = ui.document.createElement(node[0]);
 				if (node.length > 2 && node[1]) { // There are attributes.
-					var attrs = node[1]
-					for (attrName in attrs) if (attr.hasOwnProperty(attrName)) {
+					var attrs = node[1];
+					for (var attrName in attrs) if (attr.hasOwnProperty(attrName)) {
 						element.setAttribute(attrName, attrs[attrName]);
 					}
 				}
@@ -1792,8 +1804,7 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 			this.__future__.resolve(Match.commandQuit);
 		}
 		this.__future__ = new Future();
-		this.worker.postMessage('PLAYER.decision(ludorum.Game.fromJSON('+ game.toJSON() 
-			+'), '+ JSON.stringify(player) +')');
+		this.worker.postMessage('PLAYER.decision(ludorum.Game.fromJSON('+ game.toJSON() +'), '+ JSON.stringify(player) +')');
 		return this.__future__;
 	}
 }); // declare WebWorkerPlayer
@@ -1843,9 +1854,9 @@ var Checkerboard = utils.Checkerboard = declare({
 	a coordinate is inside the board, use `isValidCoord(coord)`.
 	*/
 	isValidCoord: function isValidCoord(coord) {
-		return Array.isArray(coord) && !isNaN(coord[0]) && !isNaN(coord[1])
-			&& coord[0] >= 0 && coord[0] < this.height 
-			&& coord[1] >= 0 && coord[1] < this.width;
+		return Array.isArray(coord) && !isNaN(coord[0]) && !isNaN(coord[1])	&& 
+			coord[0] >= 0 && coord[0] < this.height && 
+			coord[1] >= 0 && coord[1] < this.width;
 	},
 	
 	/** Method `coordinates()` returns the sequence of the board's valid 
@@ -2097,7 +2108,7 @@ var Checkerboard = utils.Checkerboard = declare({
 				td.className = data.className;
 				td.innerHTML = data.innerHTML;
 				if (data.onclick) {
-					td.onclick = data.onclick
+					td.onclick = data.onclick;
 				}
 				tr.appendChild(td);
 			});
@@ -2416,7 +2427,9 @@ utils.Cache = declare({
 	*/
 	constructor: function Cache(game) {
 		this.clear();
-		game && this.root(game);
+		if (game) {
+			this.root(game);
+		}
 	},
 	
 	/** The `stateIdentifier(state)` of every game state is used as the key in 
@@ -2486,8 +2499,8 @@ utils.Cache = declare({
 		} else {
 			var nextState = entry.state.next(moves),
 				nextStateId = this.stateIdentifier(nextState),
-				nextEntry = this.get(nextStateId) // Reuse entry in cache if it exists.
-					|| this.entry(nextState, nextStateId); // Else add new entry.
+				nextEntry = this.get(nextStateId) || // Reuse entry in cache if it exists.
+					this.entry(nextState, nextStateId); // Else add new entry.
 			descendants[movesId] = [moves, nextEntry];
 			nextEntry.precursors.push([moves, entry]);
 			return nextEntry;
@@ -2538,7 +2551,7 @@ utils.Cache = declare({
 				entry = this.get(id);
 				pruned[id] = entry;
 				pending.push.apply(pending, iterable(entry.descendants).mapApply(function (id, pair) {
-					return pair[1].id;
+					return pair[1][id];
 				}).toArray());
 			}
 		}
@@ -2855,7 +2868,7 @@ games.OddsAndEvens = declare(Game, {
 	next: function next(moves) {
 		raiseIf(typeof moves.Evens !== 'number' || typeof moves.Odds !== 'number',
 			'Invalid moves '+ (JSON.stringify(moves) || moves) +'!');
-		var parity = !((moves.Evens + moves.Odds) % 2);
+		var parity = (moves.Evens + moves.Odds) % 2 === 0;
 		return new this.constructor(this.turns - 1, {
 			Evens: this.points.Evens + (parity ? 1 : 0),
 			Odds: this.points.Odds + (parity ? 0 : 1)
@@ -2928,8 +2941,8 @@ games.TicTacToe = declare(Game, {
 		var activePlayer = this.activePlayer(), 
 			move = +moves[activePlayer];
 		if (isNaN(move) || this.board.charAt(move) !== '_') {
-			throw new Error('Invalid move '+ JSON.stringify(moves) +' for board '+ this.board
-					+' (moves= '+ JSON.stringify(moves) +').');
+			throw new Error('Invalid move '+ JSON.stringify(moves) +' for board '+ this.board +
+				' (moves= '+ JSON.stringify(moves) +').');
 		}
 		var newBoard = this.board.substring(0, move) + activePlayer.charAt(0) + this.board.substring(move + 1);
 		return new this.constructor(this.opponent(activePlayer), newBoard);
@@ -2967,7 +2980,7 @@ games.TicTacToe = declare(Game, {
 			moves = this.moves(),
 			board = this.board,
 			classNames = { 'X': "ludorum-square-Xs", 'O': "ludorum-square-Os", '_': "ludorum-square-empty" },
-			squareHTML = { 'X': "X", 'O': "O", '_': "&nbsp;" };;
+			squareHTML = { 'X': "X", 'O': "O", '_': "&nbsp;" };
 		moves = moves && moves[activePlayer] && moves[activePlayer].length > 0;
 		(new CheckerboardFromString(3, 3, this.board, '_'))
 			.renderAsHTMLTable(ui.document, ui.container, function (data) {
@@ -3496,9 +3509,9 @@ games.Pig = declare(Game, {
 			var game = this;
 			return new aleatories.dice.D6(function (value) {
 				value = isNaN(value) ? this.value() : +value;
-				return (value > 1) 
-					? new game.constructor(activePlayer,  game.goal, game.__scores__, game.__rolls__.concat(value))
-					: new game.constructor(game.opponent(), game.goal, game.__scores__, []);
+				return (value > 1) ? 
+					new game.constructor(activePlayer,  game.goal, game.__scores__, game.__rolls__.concat(value)) :
+					new game.constructor(game.opponent(), game.goal, game.__scores__, []);
 			});
 		} else {
 			throw new Error("Invalid moves: "+ JSON.stringify(moves));
@@ -3661,8 +3674,8 @@ games.Mutropas = declare(Game, {
 	pieces go to each player, and one is left out.
 	*/
 	dealPieces: function dealPieces(random) {
-		var random = random || this.random,
-			piecesPerPlayer = (this.allPieces.length / 2)|0,
+		random = random || this.random;
+		var piecesPerPlayer = (this.allPieces.length / 2)|0,
 			split1 = random.split(piecesPerPlayer, this.allPieces),
 			split2 = random.split(piecesPerPlayer, split1[1]);
 		return obj(this.players[0], split1[0], this.players[1], split2[0]);
@@ -3752,8 +3765,8 @@ games.Mutropas = declare(Game, {
 		var playedPieces = this.playedPieces,
 			opponentPieces = this.pieces[this.opponent(player)],
 			possiblePieces = iterable(this.allPieces).filter(function (p) {
-				return playedPieces.indexOf(p) < 0 // p has not been played yet ...
-					&& opponentPieces.indexOf(p) < 0; // ... and the opponent does not have it.
+				return playedPieces.indexOf(p) < 0 && // p has not been played yet ...
+					opponentPieces.indexOf(p) < 0; // ... and the opponent does not have it.
 			});
 		return possiblePieces.combinations(possiblePieces.count() - 1);
 	},
@@ -3826,8 +3839,7 @@ games.Othello = declare(Game, {
 	makeBoard: function makeBoard(rows, columns, string){
 		rows = isNaN(rows) ? 8 : +rows;
 		columns = isNaN(columns) ? 8 : +columns;
-		raiseIf(rows < 4 || columns < 4 || rows % 2 || columns % 2,
-			"An Othello board must have even dimensions greater than 3.")
+		raiseIf(rows < 4 || columns < 4 || rows % 2 || columns % 2, "An Othello board must have even dimensions greater than 3.");
 		if (typeof string === 'string') {
 			return new CheckerboardFromString(rows, columns, string);
 		} else {
@@ -4012,7 +4024,7 @@ games.Othello = declare(Game, {
 					'W': player.charAt(0) === 'W' ? 1 : -1,
 					'B': player.charAt(0) === 'B' ? 1 : -1
 				}) / weightSum;
-			}
+			};
 			heuristic.weights = weights;
 			return heuristic;
 		},
@@ -4148,9 +4160,8 @@ games.Bahab = declare(Game, {
 			iterable(pieceMoves).forEachApply(function (dx, dy) {
 				var coordTo = [coord[0] + dx, coord[1] + dy],
 					squareTo = board.square(coordTo);
-				if (board.isValidCoord(coordTo) 
-						&& !squareTo.match(pieceRegExp)
-						&& (piece.toLowerCase() != 'b' || squareTo.toLowerCase() != 'a')) {
+				if (board.isValidCoord(coordTo) && !squareTo.match(pieceRegExp) &&
+						(piece.toLowerCase() != 'b' || squareTo.toLowerCase() != 'a')) {
 					_moves.push([coord, coordTo]); // Valid coordinate and not occupied by a friendly piece.
 				}
 			});
@@ -4422,7 +4433,7 @@ games.Colograph = declare(Game, {
 			pair = random.choice(edges);
 			if (pair[1].length > 0) {
 				pair2 = random.split(1, pair[1]);
-				pair[0].push(pair2[0][0])
+				pair[0].push(pair2[0][0]);
 				pair[1] = pair2[1];
 				n--;
 			}
@@ -4744,7 +4755,7 @@ tournaments.Elimination = declare(Tournament, {
 					playerName = tuple[1].name;
 				playoffResult[playerName] = (+playoffResult[playerName] || 0) + matchResult[role];
 				players[playerName] = tuple[1];
-			})
+			});
 		});
 		var winnerName = iterable(playoffResult).greater(function (pair) {
 			return pair[1];

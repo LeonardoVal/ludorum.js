@@ -336,11 +336,11 @@ var Game = exports.Game = declare({
 			and keeps the value for future calls.
 			*/
 			result: function result() {
-				var result = super_result.call(this);
+				var r = game.result.call(this);
 				this.result = function cachedResult() { // Replace result() method with cached version.
-					return result;
+					return r;
 				};
-				return result;
+				return r;
 			}
 		});
 	}, // static cached
@@ -363,7 +363,6 @@ var Game = exports.Game = declare({
 			moves: function moves() {
 				var fixedMoves = this.__fixedMoves__ || (this.__fixedMoves__ = {}),
 					allMoves = super_moves.call(this),
-					moves = {},
 					activePlayer;
 				for (var i = 0; i < this.activePlayers.length; i++) {
 					if (fixedMoves.hasOwnProperty(this.activePlayers[i])) {
@@ -371,12 +370,7 @@ var Game = exports.Game = declare({
 						break;
 					}
 				}
-				if (activePlayer && allMoves) {
-					moves[activePlayer] = allMoves[activePlayer];
-					return moves;
-				} else {
-					return null;
-				}
+				return activePlayer && allMoves ? obj(activePlayer, allMoves[activePlayer]) : null;
 			},
 		
 			/** The `next(moves)` of a serialized game advances the actual game if with the given

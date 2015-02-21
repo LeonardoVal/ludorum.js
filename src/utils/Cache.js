@@ -9,7 +9,9 @@ utils.Cache = declare({
 	*/
 	constructor: function Cache(game) {
 		this.clear();
-		game && this.root(game);
+		if (game) {
+			this.root(game);
+		}
 	},
 	
 	/** The `stateIdentifier(state)` of every game state is used as the key in 
@@ -79,8 +81,8 @@ utils.Cache = declare({
 		} else {
 			var nextState = entry.state.next(moves),
 				nextStateId = this.stateIdentifier(nextState),
-				nextEntry = this.get(nextStateId) // Reuse entry in cache if it exists.
-					|| this.entry(nextState, nextStateId); // Else add new entry.
+				nextEntry = this.get(nextStateId) || // Reuse entry in cache if it exists.
+					this.entry(nextState, nextStateId); // Else add new entry.
 			descendants[movesId] = [moves, nextEntry];
 			nextEntry.precursors.push([moves, entry]);
 			return nextEntry;
@@ -131,7 +133,7 @@ utils.Cache = declare({
 				entry = this.get(id);
 				pruned[id] = entry;
 				pending.push.apply(pending, iterable(entry.descendants).mapApply(function (id, pair) {
-					return pair[1].id;
+					return pair[1][id];
 				}).toArray());
 			}
 		}

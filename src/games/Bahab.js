@@ -75,9 +75,8 @@ games.Bahab = declare(Game, {
 			iterable(pieceMoves).forEachApply(function (dx, dy) {
 				var coordTo = [coord[0] + dx, coord[1] + dy],
 					squareTo = board.square(coordTo);
-				if (board.isValidCoord(coordTo) 
-						&& !squareTo.match(pieceRegExp)
-						&& (piece.toLowerCase() != 'b' || squareTo.toLowerCase() != 'a')) {
+				if (board.isValidCoord(coordTo) && !squareTo.match(pieceRegExp) &&
+						(piece.toLowerCase() != 'b' || squareTo.toLowerCase() != 'a')) {
 					_moves.push([coord, coordTo]); // Valid coordinate and not occupied by a friendly piece.
 				}
 			});

@@ -32,13 +32,13 @@ players.MonteCarloPlayer = declare(HeuristicPlayer, {
 	selectMoves: function selectMoves(moves, game, player) {
 		var monteCarloPlayer = this,
 			endTime = Date.now() + this.timeCap,
+			gameNext = game.next.bind(game),
 			options = moves.map(function (move) {
 				return { 
 					move: move, 
-					nexts: (Object.keys(move).length < 2 ? [game.next(move)]
-						: game.possibleMoves(copy(obj(player, [move[player]]), move)).map(function (ms) {
-							return game.next(ms);
-						})
+					nexts: (Object.keys(move).length < 2 ? 
+						[game.next(move)] :
+						game.possibleMoves(copy(obj(player, [move[player]]), move)).map(gameNext)
 					),
 					sum: 0, 
 					count: 0 
