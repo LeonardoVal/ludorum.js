@@ -9,7 +9,7 @@
 		global.ludorum = init(global.base); // Assumes base is loaded.
 	}
 })(this, function __init__(base) { "use strict";
-// Import synonyms. ////////////////////////////////////////////////////////////
+// Import synonyms. ////////////////////////////////////////////////////////////////////////////////
 	var declare = base.declare,
 		unimplemented = base.objects.unimplemented,
 		obj = base.obj,
@@ -23,13 +23,13 @@
 		Statistics = base.Statistics,
 		Events = base.Events;
 
-// Library layout. /////////////////////////////////////////////////////////////
+// Library layout. /////////////////////////////////////////////////////////////////////////////////
 	var exports = {
 		__name__: 'ludorum',
-		__init__: __init__
+		__init__: __init__,
+		__dependencies__: [base]
 	};
-	__init__.dependencies = {'creatartis-base': base};
-
+	
 	/** The namespace `ludorum.utils` contains miscellaneous classes, functions 
 	and definitions.
 	*/

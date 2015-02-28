@@ -19,8 +19,6 @@ Open source under an MIT license. See [LICENSE](LICENSE.md).
 
 Development requires [NodeJS](http://nodejs.org/) (ver >= 0.10). Download the repository and run `npm install` to install: [RequireJS](http://requirejs.org/), [Grunt](http://gruntjs.com/) and some of its plugins. For testing I also use [jsconsole](http://jsconsole.com/).
 
-There is also a dependency with another library of mine: [creatartis-base](http://github.com/LeonardoVal/creatartis-base). It is included in `package.json` as a development dependency, but it is really a production dependency. It must be installed manually. This avoids problems which arise when `npm install` duplicates this module. Running [`npm dedupe`](https://www.npmjs.org/doc/cli/npm-dedupe.html) should help, yet as of the date this was written [it does not work when using URL dependencies](https://github.com/npm/npm/issues/3081#issuecomment-12486316). 
-
 ## Contact
 
 This software is being continually developed. Suggestions and comments are always welcome via [email](mailto:leonardo.val@creatartis.com).
