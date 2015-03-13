@@ -3617,8 +3617,8 @@ games.ConnectFour = declare(games.ConnectionGame, {
 				}
 			});
 		table.insertBefore(
-			ui.build.apply(ui, [ui.document.createElement('colgroup')]
-				.concat(Iterable.repeat(['col'], this.board.width).toArray())),
+			ui.build(ui.document.createElement('colgroup'), 
+				Iterable.repeat(['col'], this.board.width).toArray()),
 			table.firstChild
 		);
 		return ui;
