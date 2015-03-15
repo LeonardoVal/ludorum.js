@@ -1,4 +1,4 @@
-﻿{
+{
 	"moduleType": [
 		"amd",
 		"globals",
@@ -25,14 +25,14 @@
 	],
 	"dependencies": {
 		"requirejs": "2.1.9",
-		"creatartis-base": "git://github.com/LeonardoVal/creatartis-base.git"
+		"creatartis-base": "~0.1.4"
 	},
 	"devDependencies": {
 		"jquery": "~2.0.3"
 	},
 	"name": "ludorum",
 	"description": "A board game implementation library, focusing on artificial intelligence.",
-	"version": "0.1.2",
+	"version": "0.1.3-alpha",
 	"keywords": [
 		"board game",
 		"game",
