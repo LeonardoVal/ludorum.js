@@ -62,6 +62,7 @@ games.Pig = declare(Game, {
 	next: function next(moves) {
 		var activePlayer = this.activePlayer(),
 			move = moves[activePlayer];
+		raiseIf(typeof move === 'undefined', 'No move for active player ', activePlayer, ' at ', this, '!');
 		if (move === 'hold') {
 			var scores = copy(this.__scores__);
 			scores[activePlayer] += iterable(this.__rolls__).sum();
@@ -75,7 +76,7 @@ games.Pig = declare(Game, {
 					new game.constructor(game.opponent(), game.goal, game.__scores__, []);
 			});
 		} else {
-			throw new Error("Invalid moves: "+ JSON.stringify(moves));
+			raise("Invalid moves ", JSON.stringify(moves), " at ", this, "!");
 		}
 	},
 	

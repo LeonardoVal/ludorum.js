@@ -42,13 +42,13 @@ games.Choose2Win = declare(Game, {
 	next: function next(moves) {
 		var activePlayer = this.activePlayer(),
 			opponent = this.opponent(activePlayer);
+		raiseIf(!moves.hasOwnProperty(activePlayer), 'No move for active player ', activePlayer, ' at ', this, '!');
 		switch (moves[activePlayer]) {
 			case 'win': return new this.constructor(this.__turns__ - 1, opponent, activePlayer);
 			case 'lose': return new this.constructor(this.__turns__ - 1, opponent, opponent);
 			case 'pass': return new this.constructor(this.__turns__ - 1, opponent);
-			default: break; // So the lint would not complaint.
+			default: raise('Invalid move ', moves[activePlayer], ' for player ', activePlayer, ' at ', this, '!');
 		}
-		throw new Error('Invalid move '+ moves[activePlayer] +' for player '+ activePlayer +'.');
 	},
 	
 	__serialize__: function __serialize__() {
