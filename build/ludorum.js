@@ -14,6 +14,7 @@
 		unimplemented = base.objects.unimplemented,
 		obj = base.obj,
 		copy = base.copy,
+		raise = base.raise,
 		raiseIf = base.raiseIf,
 		Iterable = base.Iterable,
 		iterable = base.iterable,
@@ -1027,804 +1028,6 @@ Aleatory subclasses) and related definitions.
 var aleatories = exports.aleatories = { };
 
 
-/** # RandomPlayer
-
-Automatic players that moves fully randomly.
-*/	
-players.RandomPlayer = declare(Player, {
-	/** The constructor takes the player's `name` and a `random` number 
-	generator (`base.Randomness.DEFAULT` by default).
-	*/
-	constructor: function RandomPlayer(params) {
-		Player.call(this, params);
-		initialize(this, params)
-			.object('random', { defaultValue: Randomness.DEFAULT });
-	},
-
-	/** The `decision(game, player)` is made completely at random.
-	*/
-	decision: function(game, player) {
-		return this.random.choice(this.movesFor(game, player));
-	}
-}); // declare RandomPlayer.
-
-
-/** # TracePlayer
-
-Automatic player that is scripted previously.
-*/
-players.TracePlayer = declare(Player, {
-	/** The constructor takes the player's `name` and the `trace` as an 
-	sequence of moves to make.
-	*/
-	constructor: function TracePlayer(params) {
-		Player.call(this, params);
-		this.trace = iterable(params.trace);
-		this.__iter__ = this.trace.__iter__();
-		this.__decision__ = this.__iter__();
-	},
-
-	/** The `decision(game, player)` returns the next move in the trace, or the 
-	last one if the trace has ended.
-	*/
-	decision: function(game, player) {
-		try {
-			this.__decision__ = this.__iter__();
-		} catch (err) {
-			Iterable.prototype.catchStop(err);
-		}
-		return this.__decision__;
-	},
-	
-	__serialize__: function __serialize__() {
-		return ['TracePlayer', { name: this.name, trace: this.trace.toArray() }];
-	}
-}); // declare TracePlayer.
-
-
-/** # HeuristicPlayer
-
-This is the base type of automatic players based on heuristic evaluations of 
-game states or moves.
-*/
-var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
-	/** The constructor takes the player's `name` and a `random` number 
-	generator (`base.Randomness.DEFAULT` by default). Many heuristic can be 
-	based on randomness, but this is also necessary to chose between moves with
-	the same evaluation without any bias.
-	*/
-	constructor: function HeuristicPlayer(params) {
-		Player.call(this, params);
-		initialize(this, params)
-			.object('random', { defaultValue: Randomness.DEFAULT })
-			.func('heuristic', { ignore: true });
-	},
-
-	/** An `HeuristicPlayer` choses the best moves at any given game state. For
-	this purpose it evaluates every move with 
-	`moveEvaluation(move, game, player)`. By default this function evaluates
-	the states resulting from making each move, which is the most common thing
-	to do.
-	*/
-	moveEvaluation: function moveEvaluation(move, game, player) {
-		if (Object.keys(move).length < 2) { // One active player.
-			return this.stateEvaluation(game.next(move), player);
-		} else { // Many active players.
-			var sum = 0, count = 0;
-			move = copy(obj(player, [move[player]]), move);
-			game.possibleMoves(move).forEach(function (ms) {
-				sum += this.stateEvaluation(game.next(ms), player);
-				++count;
-			});
-			return count > 0 ? sum / count : 0; // Average all evaluations.
-		}
-	},
-
-	/** The `stateEvaluation(game, player)` calculates a number as the 
-	assessment of the given game state for the given player. The base 
-	implementation returns the result for the player is the game has results, 
-	else it returns the heuristic value for the state.
-	*/
-	stateEvaluation: function stateEvaluation(game, player) {
-		var gameResult = game.result();
-		return gameResult ? gameResult[player] : this.heuristic(game, player);
-	},
-
-	/** The `heuristic(game, player)` is an evaluation used at states that are 
-	not finished games. The default implementation returns a random number in 
-	[-0.5, 0.5). This is only useful in testing. Any serious use should redefine 
-	this.
-	*/
-	heuristic: function heuristic(game, player) {
-		return this.random.random(-0.5, 0.5);
-	},
-	
-	/** The `bestMoves(evaluatedMoves)` are all the best evaluated in the given
-	sequence of tuples [move, evaluation].
-	*/
-	bestMoves: function bestMoves(evaluatedMoves) {
-		return iterable(evaluatedMoves).greater(function (pair) {
-			return pair[1];
-		}).map(function (pair) {
-			return pair[0];
-		});
-	},
-	
-	/** `selectMoves(moves, game, player)` return an array with the best 
-	evaluated moves. The evaluation is done with the `moveEvaluation` method. 
-	The default implementation always returns a `Future`.
-	*/
-	selectMoves: function selectMoves(moves, game, player) {
-		var heuristicPlayer = this,
-			asyncEvaluations = false,
-			evaluatedMoves = moves.map(function (move) {
-				var e = heuristicPlayer.moveEvaluation(move, game, player);
-				if (e instanceof Future) {
-					asyncEvaluations = asyncEvaluations || true;
-					return e.then(function (e) {
-						return [move, e];
-					});
-				} else {
-					return [move, e];
-				}
-			});
-		if (asyncEvaluations) { // Avoid using Future if possible.
-			return Future.all(evaluatedMoves).then(this.bestMoves);
-		} else {
-			return this.bestMoves(evaluatedMoves);
-		}
-	},
-	
-	/** The `decision(game, player)` selects randomly from the best evaluated 
-	moves.
-	*/
-	decision: function decision(game, player) {
-		var heuristicPlayer = this,
-			moves = game.moves();
-		raiseIf(!moves || !moves.hasOwnProperty(player),
-			"Player "+ player +" is not active (moves= "+ JSON.stringify(moves) +")!");
-		var playerMoves = moves[player];
-		raiseIf(!Array.isArray(playerMoves) || playerMoves.length < 1,
-			"Player "+ player +" has no moves ("+ playerMoves +")!");
-		if (playerMoves.length == 1) { // Forced moves.
-			return playerMoves[0];
-		} else {
-			moves = playerMoves.map(function (move) {
-				return copy(obj(player, move), moves);
-			});
-			var selectedMoves = heuristicPlayer.selectMoves(moves, game, player);
-			return Future.then(selectedMoves, function (selectedMoves) {
-				raiseIf(!selectedMoves || !selectedMoves.length, 
-					"No moves where selected at ", game, " for player ", player, "!");
-				return heuristicPlayer.random.choice(selectedMoves)[player];
-			});
-		}
-	},
-	
-	// ## Utilities to build heuristics ########################################
-	
-	/** A `composite` heuristic function returns the weighted sum of other
-	functions. The arguments must be a sequence of heuristic functions and a
-	weight. All weights must be between 0 and 1 and add up to 1.
-	*/
-	'static composite': function composite() {
-		var components = Array.prototype.slice.call(arguments), weightSum = 0;
-		raiseIf(components.length < 1,
-			"HeuristicPlayer.composite() cannot take an odd number of arguments!");
-		for (var i = 0; i < components.length; i += 2) {
-			raiseIf(typeof components[i] !== 'function', 
-				"HeuristicPlayer.composite() argument ", i, " (", components[i], ") is not a function!");
-			components[i+1] = +components[i+1];
-			raiseIf(isNaN(components[i+1]) || components[i+1] < 0 || components[i+1] > 1, 
-				"HeuristicPlayer.composite() argument ", i+1, " (", components[i+1], ") is not a valid weight!");
-		}
-		return function compositeHeuristic(game, player) {
-			var sum = 0;
-			for (var i = 0; i+1 < components.length; i += 2) {
-				sum += components[i](game, player) * components[i+1];
-			}
-			return sum;
-		};
-	}
-}); // declare HeuristicPlayer.
-
-
-/** # MaxNPlayer
-
-Automatic players based on the MaxN algorithm, a MiniMax variant for games of
-more than two players.
-*/
-var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
-	/** Besides the parameters of every [`HeuristicPlayer`](HeuristicPlayer.js.html),
-	an `horizon` for the search may be specified (3 plies by default).
-	*/
-	constructor: function MaxNPlayer(params) {
-		HeuristicPlayer.call(this, params);
-		initialize(this, params)
-			.integer('horizon', { defaultValue: 3, coerce: true });
-	},
-
-	/** This player evaluates each state using the `maxn` method, taking the 
-	evaluation for the given `player`.
-	*/
-	stateEvaluation: function stateEvaluation(game, player) {
-		return this.maxN(game, player, 0)[player];
-	},
-
-	/** `heuristics(game)` returns an heuristic value for each players in the 
-	game, as an object.
-	*/
-	heuristics: function heuristic(game) {
-		var result = {}, maxN = this;
-		game.players.forEach(function (role) {
-			result[role] = maxN.heuristic(game, role);
-		});
-		return result;
-	},
-
-	/** `quiescence(game, player, depth)` is a stability test for the given 
-	`game` state and the given `player`. If the game is quiescent, this function
-	must return evaluations. Else it must return null. 
-	
-	Final game states are always quiescent, and their evaluations are the game's 
-	result for each player. This default implementation also returns heuristic 
-	evaluations for every game state at a deeper depth than the player's 
-	horizon, calculated via the `heuristics()` method. 
-	*/
-	quiescence: function quiescence(game, player, depth) {
-		var results = game.result();
-		if (results) {
-			return results;
-		} else if (depth >= this.horizon) {
-			return this.heuristics(game);
-		} else {
-			return null;
-		}
-	},
-	
-	/** The core `maxN(game, player, depth)` algorithm return the evaluations 
-	for each player of the given game, assuming each player tries to maximize 
-	its own evaluation regardless of the others'.
-	*/
-	maxN: function maxN(game, player, depth) {
-		var values = this.quiescence(game, player, depth);
-		if (!values) { // game is not quiescent.
-			var activePlayer = game.activePlayer(),
-				moves = this.movesFor(game, activePlayer),
-				otherValues, next;
-			values = {};
-			if (moves.length < 1) {
-				throw new Error('No moves for unfinished game '+ game +'.');
-			}
-			for (var i = 0; i < moves.length; ++i) {
-				next = game.next(obj(activePlayer, moves[i]));
-				otherValues = this.maxN(next, player, depth + 1);
-				if (otherValues[activePlayer] > (values[activePlayer] || -Infinity)) {
-					values = otherValues;
-				}
-			}
-		}
-		return values;
-	},
-	
-	toString: function toString() {
-		return (this.constructor.name || 'MaxNPlayer') +'('+ JSON.stringify({
-			name: this.name, horizon: this.horizon
-		}) +')';
-	}
-}); // declare MiniMaxPlayer.
-
-
-/** # MiniMaxPlayer
-
-Automatic players based on pure MiniMax.
-*/
-var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
-	/** The constructor takes the player's `name` and the MiniMax search's 
-	`horizon` (`4` by default).
-	*/
-	constructor: function MiniMaxPlayer(params) {
-		HeuristicPlayer.call(this, params);
-		initialize(this, params)
-			.integer('horizon', { defaultValue: 4, coerce: true });
-	},
-
-	/** Every state's evaluation is the minimax value for the given game and 
-	player.
-	*/
-	stateEvaluation: function stateEvaluation(game, player) {
-		return this.minimax(game, player, 0);
-	},
-
-	/** The `quiescence(game, player, depth)` method is a stability test for the 
-	given game state. If the game is quiescent, this function must return an 
-	evaluation. Else it must return NaN or an equivalent value. 
-	
-	Final game states are always quiescent, and their evaluation is the game's
-	result for the given player. This default implementation also return an 
-	heuristic evaluation for every game state at a deeper depth than the 
-	player's horizon.
-	*/
-	quiescence: function quiescence(game, player, depth) {
-		var results = game.result();
-		if (results) {
-			return results[player];
-		} else if (depth >= this.horizon) {
-			return this.heuristic(game, player);
-		} else {
-			return NaN;
-		}
-	},
-	
-	/** The `minimax(game, player, depth)` method calculates the Minimax 
-	evaluation of the given game for the given player. If the game is not 
-	finished and the depth is greater than the horizon, `heuristic` is used.
-	*/
-	minimax: function minimax(game, player, depth) {
-		var value = this.quiescence(game, player, depth);
-		if (isNaN(value)) { // game is not quiescent.
-			var activePlayer = game.activePlayer(),
-				moves = this.movesFor(game, activePlayer), 
-				comparison, next;
-			if (moves.length < 1) {
-				throw new Error('No moves for unfinished game '+ game +'.');
-			}
-			if (activePlayer == player) {
-				value = -Infinity;
-				comparison = Math.max;
-			} else {
-				value = +Infinity;
-				comparison = Math.min;
-			}
-			for (var i = 0; i < moves.length; ++i) {
-				next = game.next(obj(activePlayer, moves[i]));
-				value = comparison(value, this.minimax(next, player, depth + 1));
-			}
-		}
-		return value;
-	},
-	
-	toString: function toString() {
-		return (this.constructor.name || 'MiniMaxPlayer') +'('+ JSON.stringify({
-			name: this.name, horizon: this.horizon
-		}) +')';
-	}
-}); // declare MiniMaxPlayer.
-
-
-/** # AlphaBetaPlayer
-
-Automatic players based on MiniMax with alfa-beta pruning.
-*/
-players.AlphaBetaPlayer = declare(MiniMaxPlayer, {
-	/** The constructor does not add anything to the parent
-	[`MiniMaxPlayer`](MiniMaxPlayer.js.html) constructor.
-	*/
-	constructor: function AlphaBetaPlayer(params) {
-		MiniMaxPlayer.call(this, params);
-	},
-
-	/** Every state's evaluation is the minimax value for the given game and 
-	player. The alfa an beta arguments are initialized with `-Infinity` and
-	`Infinity`.
-	*/
-	stateEvaluation: function stateEvaluation(game, player) {
-		return this.minimax(game, player, 0, -Infinity, Infinity);
-	},
-
-	/** The `minimax(game, player, depth, alfa, beta)` method calculates the 
-	Minimax evaluation of the given game for the given player. If the game is 
-	not finished and the depth is greater than the horizon, the heuristic is
-	used.
-	*/
-	minimax: function minimax(game, player, depth, alpha, beta) {
-		var value = this.quiescence(game, player, depth);
-		if (!isNaN(value)) {
-			return value;
-		}
-		var activePlayer = game.activePlayer(),
-			isActive = activePlayer == player,
-			moves = this.movesFor(game, activePlayer), next;
-		if (moves.length < 1) {
-			throw new Error('No moves for unfinished game '+ game +'.');
-		}
-		for (var i = 0; i < moves.length; i++) {
-			next = game.next(obj(activePlayer, moves[i]));
-			value = this.minimax(next, player, depth + 1, alpha, beta);
-			if (isActive) {
-				if (alpha < value) { // MAX
-					alpha = value;
-				}
-			} else {
-				if (beta > value) { // MIN
-					beta = value;
-				}
-			}
-			if (beta <= alpha) {
-				break;
-			}
-		}
-		return isActive ? alpha : beta;
-	}
-}); // declare AlphaBetaPlayer.
-
-
-/** # MonteCarloPlayer
-
-Automatic player based on flat Monte Carlo tree search.
-*/
-players.MonteCarloPlayer = declare(HeuristicPlayer, {
-	/** The constructor builds a player that chooses its moves using the 
-	[flat Monte Carlo game tree search method](http://en.wikipedia.org/wiki/Monte-Carlo_tree_search). 
-	The parameters may include:
-	
-	+ `simulationCount=30`: Maximum amount of simulations performed for each 
-		available move at each decision.
-	+ `timeCap=1000ms`: Time limit for the player to decide.
-	+ `agent`: Player instance used in the simulations. If undefined moves are
-		chosen at random. Agents with asynchronous decisions are not supported.
-	*/
-	constructor: function MonteCarloPlayer(params) {
-		HeuristicPlayer.call(this, params);
-		initialize(this, params)
-			.number('simulationCount', { defaultValue: 30, coerce: true })
-			.number('timeCap', { defaultValue: 1000, coerce: true })
-			.number('horizon', { defaultValue: Infinity, coerce: true });
-		if (params) switch (typeof params.agent) {
-			case 'function': this.agent = new HeuristicPlayer({ heuristic: params.agent }); break;
-			case 'object': this.agent = params.agent; break;
-			default: this.agent = null;
-		}
-	},
-	
-	/** `selectMoves(moves, game, player)` return an array with the best 
-	evaluated moves.
-	*/
-	selectMoves: function selectMoves(moves, game, player) {
-		var monteCarloPlayer = this,
-			endTime = Date.now() + this.timeCap,
-			gameNext = game.next.bind(game),
-			options = moves.map(function (move) {
-				return { 
-					move: move, 
-					nexts: (Object.keys(move).length < 2 ? 
-						[game.next(move)] :
-						game.possibleMoves(copy(obj(player, [move[player]]), move)).map(gameNext)
-					),
-					sum: 0, 
-					count: 0 
-				};
-			});
-		for (var i = 0; i < this.simulationCount && Date.now() < endTime; ++i) {
-			options.forEach(function (option) {
-				option.nexts = option.nexts.filter(function (next) {
-					var sim = monteCarloPlayer.simulation(next, player);
-					option.sum += sim.result[player];
-					++option.count;
-					return sim.plies > 0;
-				});
-			});
-		}
-		options = iterable(options).greater(function (option) {
-			raiseIf(isNaN(option.sum), "State evaluation is NaN for move ", option.move, "!");
-			return option.count > 0 ? option.sum / option.count : 0;
-		}).map(function (option) {
-			return option.move;
-		});
-		return options;
-	},
-	
-	/** This player's `stateEvaluation(game, player)` runs `simulationCount` 
-	simulations and returns the average result.
-	*/
-	stateEvaluation: function stateEvaluation(game, player) {
-		var resultSum = 0, 
-			simulationCount = this.simulationCount,
-			sim;
-		for (var i = 0; i < simulationCount; ++i) {
-			sim = this.simulation(game, player);
-			resultSum += sim.result[player];
-			if (sim.plies < 1) { // game is final.
-				break;
-			}
-		}
-		return simulationCount > 0 ? resultSum / simulationCount : 0;
-	},
-	
-	/** A `simulation(game, player)` plays a random match from the given `game`
-	state and returns an object with the final state (`game`), its result 
-	(`result`) and the number of plies simulated (`plies`).
-	*/
-	simulation: function simulation(game, player) {
-		var mc = this,
-			plies, move, moves;
-		for (plies = 0; true; ++plies) {
-			if (game instanceof Aleatory) {
-				game = game.next();
-			} else {
-				moves = game.moves();
-				if (!moves) { // If game state is final ...
-					return { game: game, result: game.result(), plies: plies };
-				} else if (plies > this.horizon) { // If past horizon ...
-					return { game: game, result: obj(player, this.heuristic(game, player)), plies: plies };
-				} else { // ... else advance.
-					move = {};
-					game.activePlayers.forEach(function (activePlayer) {
-						move[activePlayer] = mc.agent ? mc.agent.decision(game, activePlayer) 
-							: mc.random.choice(moves[activePlayer]);
-					});
-					game = game.next(move);
-				}
-			}
-		}
-		raise("Simulation ended unexpectedly for player ", player, " in game ", game, "!");
-	},
-	
-	__serialize__: function __serialize__() {
-		return [this.constructor.name, { name: this.name, 
-			simulationCount: this.simulationCount, timeCap: this.timeCap, 
-			agent: this.agent 
-		}];
-	}
-}); // declare MonteCarloPlayer
-
-
-/** # UserInterfacePlayer
-
-Implementation of player user interfaces and proxies.
-*/
-var UserInterfacePlayer = players.UserInterfacePlayer = declare(Player, {
-	/** `UserInterfacePlayer` is a generic type for all players that are proxies 
-	of user interfaces.
-	*/
-	constructor: function UserInterfacePlayer(params) {
-		Player.call(this, params);
-	},
-
-	/** The `participate` method assigns this players role to the given role.
-	*/
-	participate: function participate(match, role) {
-		this.role = role;
-		return this;
-	},
-	
-	/** The `decision(game, player)` of this players returns a future that will 
-	be resolved when the `perform()` method is called.
-	*/
-	decision: function decision(game, player) {
-		if (this.__future__ && this.__future__.isPending()) {
-			this.__future__.resolve(new Match.CommandQuit());
-		}
-		this.__future__ = new Future();
-		return this.__future__;
-	},
-	
-	/**  User interfaces have to be configured to call `perform(action)` upon 
-	each significant user action.players. It resolves the future returned by the
-	`decision()` method.
-	*/
-	perform: function perform(action) {
-		var future = this.__future__;
-		if (future) {
-			this.__future__ = null;
-			future.resolve(action);
-		}
-		return !!future;
-	}
-}); // declare UserInterfacePlayer.
-
-// ## User interfaces ##########################################################
-
-var UserInterface = players.UserInterface = declare({
-	/** `UserInterface` is the base abstract type for user interfaces that 
-	display a game and allow one or more players to play. The `config` argument 
-	may include the `match` being played.
-	*/
-	constructor: function UserInterface(config) {
-		this.onBegin = this.onBegin.bind(this);
-		this.onNext = this.onNext.bind(this);
-		this.onEnd = this.onEnd.bind(this);
-		if (config.match) {
-			this.show(config.match);
-		}
-	},
-	
-	/** `show(match)` discards the current state and sets up to display the 
-	given `match`.
-	*/
-	show: function show(match) {
-		if (this.match) {
-			match.events.off('begin', this.onBegin);
-			match.events.off('next', this.onNext);
-			match.events.off('end', this.onEnd);
-		}
-		this.match = match;
-		match.events.on('begin', this.onBegin);
-		match.events.on('next', this.onNext);
-		match.events.on('end', this.onEnd);
-	},
-	
-	/** When the player is participated of a match, callbacks are registered to 
-	the following match's events.
-	
-	+ `onBegin(game)` handles the `'begin'` event of the match.
-	*/
-	onBegin: function onBegin(game) {
-		this.display(game);
-	},
-	
-	/** + `onNext(game, next)` handles the `'move'` event of the match.
-	*/
-	onNext: function onNext(game, next) {
-		this.display(next);
-	},
-	
-	/** + `onEnd(game, results)` handles the `'end'` event of the match.
-	*/
-	onEnd: function onEnd(game, results) {
-		this.results = results;
-		this.display(game);
-	},
-	
-	/** `display(game)` renders the game in this user interface. Not 
-	implemented, so please override.
-	*/
-	display: unimplemented("UserInterface", "display"),
-	
-	/** `perform(action, actionRole=undefined)` makes the given player perform 
-	the action if the player has a `perform()` method and is included in this 
-	UI's players.
-	*/
-	perform: function perform(action, actionRole) {
-		iterable(this.match.players).forEach(function (pair) {
-			var role = pair[0], player = pair[1];
-			if (player instanceof UserInterfacePlayer && (!actionRole || player.role === actionRole)) {
-				player.perform(action);
-			}
-		});
-	}
-}); // declare UserInterface.
-
-// ### HTML based user interfaces ##############################################
-
-UserInterface.BasicHTMLInterface = declare(UserInterface, {
-	/** `BasicHTMLInterface(config)` builds a simple HTML based UI, that renders 
-	the game on the DOM using its `display()` method. The `config` argument may
-	include:
-	
-	+ `document=window.document`: the DOM root.
-	+ `container`: the DOM node to render the game in, or its name.
-	*/
-	constructor: function BasicHTMLInterface(config) {
-		UserInterface.call(this, config);
-		this.document = config.document || base.global.document;
-		this.container = config.container;
-		if (typeof this.container === 'string') {
-			this.container = this.document.getElementById(this.container);
-		}
-	},
-
-	/** On `display(game)` the `container` is emptied and the game is rendered
-	using its `display(ui)` method.
-	*/
-	display: function display(game) {
-		var container = this.container, child;
-		while (child = container.firstChild) { // It seems the DOM API does not provide a method for this. :-(
-			container.removeChild(child);
-		}
-		game.display(this);
-	},
-	
-	/** `build()` helps DOM creation. The `nodes` argument specifies DOM 
-	elements, each with an array of the shape: `[tag, attributes, elements]`.
-	*/
-	build: function build(parent, nodes) {
-		var ui = this;
-		nodes.forEach(function (node) {
-			var element;
-			if (Array.isArray(node)) {
-				element = ui.document.createElement(node[0]);
-				if (node.length > 2 && node[1]) { // There are attributes.
-					var attrs = node[1];
-					for (var attrName in attrs) if (attr.hasOwnProperty(attrName)) {
-						element.setAttribute(attrName, attrs[attrName]);
-					}
-				}
-				if (node.length > 1 && node[node.length-1]) { // There are child elements.
-					ui.build(element, node[node.length-1]);
-				}
-			} else if (typeof node === 'string') {
-				element = ui.document.createTextNode(node);
-			}
-			if (element && parent) {
-				parent.appendChild(element);
-			}
-		});
-		return parent;
-	}
-}); // declare HTMLInterface.
-
-
-/** # WebWorkerPlayer
-
-A proxy for another player executing inside a webworker.
-*/
-var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
-	/** The constructor builds a player that is a proxy for another player 
-	executing in a webworker. The parameters must include:
-	
-	+ `worker`: The `Worker` instance where the actual player is executing.
-	*/
-	constructor: function WebWorkerPlayer(params) {
-		Player.call(this, params);
-		initialize(this, params)
-			.object('worker');
-		this.worker.onmessage = base.Parallel.prototype.__onmessage__.bind(this);
-	},
-	
-	/** The static `createWorker(playerBuilder)` method creates (asynchronously)
-	and initializes a web worker. The modules `creatartis-base` and `ludorum` 
-	are loaded in the webworker's root namespace (`self`), before calling the 
-	given `playerBuilder` function. Its results will be stored in the global 
-	variable `PLAYER`.
-	*/
-	"static createWorker": function createWorker(playerBuilder) {
-		raiseIf('string function'.indexOf(typeof playerBuilder) < 0, 
-			"Invalid player builder: "+ playerBuilder +"!");
-		var parallel = new base.Parallel();
-		return parallel.run('self.ludorum = ('+ exports.__init__ +')(self.base), "OK"'
-			).then(function () {
-				return parallel.run('self.PLAYER = ('+ playerBuilder +').call(self), "OK"');
-			}).then(function () {
-				return parallel.worker;
-			});
-	},
-	
-	/** The static `create(params)` method creates (asynchronously) and 
-	initializes a `WebWorkerPlayer`, with a web worker ready to play. The 
-	`params` must include the `playerBuilder` function to execute on the web 
-	worker's environment.
-	*/
-	"static create": function create(params) {
-		var WebWorkerPlayer = this;
-		return WebWorkerPlayer.createWorker(params.playerBuilder).then(function (worker) {
-			return new WebWorkerPlayer({name: name, worker: worker}); 
-		});
-	},
-	
-	/** This player's `decision(game, player)` is delegated to this player's 
-	webworker, returning a future that will be resolved when the parallel 
-	execution is over.
-	
-	Warning! If this method is called while another decision is pending, the 
-	player will assume the previous match was aborted, issuing a quit command.
-	*/
-	decision: function decision(game, player) {
-		if (this.__future__ && this.__future__.isPending()) {
-			this.__future__.resolve(Match.commandQuit);
-		}
-		this.__future__ = new Future();
-		this.worker.postMessage('PLAYER.decision(ludorum.Game.fromJSON('+ game.toJSON() +'), '+ JSON.stringify(player) +')');
-		return this.__future__;
-	}
-}); // declare WebWorkerPlayer
-
-/** # Dice aleatories
-
-Implementations of common dice and related functions.
-*/
-aleatories.dice = {
-	/** Common dice variants.
-	*/
-	D4: Aleatory.withRange(1, 4),
-	D6: Aleatory.withRange(1, 6),
-	D8: Aleatory.withRange(1, 8),
-	D10: Aleatory.withRange(1, 10),
-	D12: Aleatory.withRange(1, 12),
-	D20: Aleatory.withRange(1, 20),
-	D100: Aleatory.withRange(1, 100),
-}; //// declare Dice.
-
 /** # Checkerboard
 
 Base class for checkerboards representations based on several different data 
@@ -2560,6 +1763,953 @@ utils.Cache = declare({
 }); // declare Cache
 
 
+/** # Game tree
+
+A data structure to help building game trees, i.e. trees in which each node is a game state, the
+final states are leaves and each child node belongs to one of the next states of its parent.
+*/
+var GameTree = declare({
+	/** Each instance represents a node in the game tree. The `parent` must be null or undefined at
+	the root. The given `transition` is either the moves or the aleatory values used to move from 
+	the parent's state to this node's state. They also must be null or undefined at the root.
+	*/
+	constructor: function GameTree(parent, state, transition) {
+		this.parent = parent;
+		this.state = state;
+		this.transition = transition;
+		this.children = {};
+	},
+	
+	/** This node's `children` are stored in an object, hence getting the count is a little tricky.
+	*/
+	childrenCount: function childrenCount() {
+		return Object.keys(this.children).length;
+	},
+	
+	/** In the `children` object nodes are stored with a serialization of their transitions as keys.
+	By default the JSON _"strinigification"_ is used.
+	*/
+	__childSerialization__: function __childSerialization__(moves) {
+		return JSON.stringify(moves);
+	},
+	
+	/** A node expansion takes the `moves` to calculate the next state and creates the child node
+	with it. If the node already exists, it is returned and none is created.
+	*/
+	expand: function expand(transition) {
+		var key = this.__childSerialization__(transition),
+			child = this.children[key], nextState;
+		if (!child) {
+			try {
+				nextState = this.state.next(transition); // Whether state is an instance of Game or Aleatory.
+			} catch (err) {
+				raise("Node expansion for ", this.state, " with ", JSON.stringify(transition),
+					" failed with: ", err);
+			}
+			child = new this.constructor(this, nextState, transition);
+			this.children[key] = child;
+		}
+		return child;
+	},
+	
+	/** Returns the possible moves is the state is an instance of Game, or the possible values if
+	the state is an instance of Aleatory.
+	*/
+	possibleTransitions: function possibleTransitions() {
+		if (this.state instanceof Aleatory) {
+			return this.state.distribution();
+		} else if (this.state instanceof Game) {
+			return this.state.possibleMoves();
+		} else {
+			raise("Cannot get possible transitions from ("+ this.state +")! Is it a Game or Aleatory?");
+		}
+	},
+	
+	/** A full expansion creates all child nodes for this node.
+	*/
+	expandAll: function expandAll() {
+		var node = this;
+		return this.possibleTransitions().map(function (transition) {
+			return node.expand(transition);
+		});
+	}
+}); // declare GameTree
+
+/** # RandomPlayer
+
+Automatic players that moves fully randomly.
+*/	
+players.RandomPlayer = declare(Player, {
+	/** The constructor takes the player's `name` and a `random` number 
+	generator (`base.Randomness.DEFAULT` by default).
+	*/
+	constructor: function RandomPlayer(params) {
+		Player.call(this, params);
+		initialize(this, params)
+			.object('random', { defaultValue: Randomness.DEFAULT });
+	},
+
+	/** The `decision(game, player)` is made completely at random.
+	*/
+	decision: function(game, player) {
+		return this.random.choice(this.movesFor(game, player));
+	}
+}); // declare RandomPlayer.
+
+
+/** # TracePlayer
+
+Automatic player that is scripted previously.
+*/
+players.TracePlayer = declare(Player, {
+	/** The constructor takes the player's `name` and the `trace` as an 
+	sequence of moves to make.
+	*/
+	constructor: function TracePlayer(params) {
+		Player.call(this, params);
+		this.trace = iterable(params.trace);
+		this.__iter__ = this.trace.__iter__();
+		this.__decision__ = this.__iter__();
+	},
+
+	/** The `decision(game, player)` returns the next move in the trace, or the 
+	last one if the trace has ended.
+	*/
+	decision: function(game, player) {
+		try {
+			this.__decision__ = this.__iter__();
+		} catch (err) {
+			Iterable.prototype.catchStop(err);
+		}
+		return this.__decision__;
+	},
+	
+	__serialize__: function __serialize__() {
+		return ['TracePlayer', { name: this.name, trace: this.trace.toArray() }];
+	}
+}); // declare TracePlayer.
+
+
+/** # HeuristicPlayer
+
+This is the base type of automatic players based on heuristic evaluations of 
+game states or moves.
+*/
+var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
+	/** The constructor takes the player's `name` and a `random` number 
+	generator (`base.Randomness.DEFAULT` by default). Many heuristic can be 
+	based on randomness, but this is also necessary to chose between moves with
+	the same evaluation without any bias.
+	*/
+	constructor: function HeuristicPlayer(params) {
+		Player.call(this, params);
+		initialize(this, params)
+			.object('random', { defaultValue: Randomness.DEFAULT })
+			.func('heuristic', { ignore: true });
+	},
+
+	/** An `HeuristicPlayer` choses the best moves at any given game state. For
+	this purpose it evaluates every move with 
+	`moveEvaluation(move, game, player)`. By default this function evaluates
+	the states resulting from making each move, which is the most common thing
+	to do.
+	*/
+	moveEvaluation: function moveEvaluation(move, game, player) {
+		if (Object.keys(move).length < 2) { // One active player.
+			return this.stateEvaluation(game.next(move), player);
+		} else { // Many active players.
+			var sum = 0, count = 0;
+			move = copy(obj(player, [move[player]]), move);
+			game.possibleMoves(move).forEach(function (ms) {
+				sum += this.stateEvaluation(game.next(ms), player);
+				++count;
+			});
+			return count > 0 ? sum / count : 0; // Average all evaluations.
+		}
+	},
+
+	/** The `stateEvaluation(game, player)` calculates a number as the 
+	assessment of the given game state for the given player. The base 
+	implementation returns the result for the player is the game has results, 
+	else it returns the heuristic value for the state.
+	*/
+	stateEvaluation: function stateEvaluation(game, player) {
+		var gameResult = game.result();
+		return gameResult ? gameResult[player] : this.heuristic(game, player);
+	},
+
+	/** The `heuristic(game, player)` is an evaluation used at states that are 
+	not finished games. The default implementation returns a random number in 
+	[-0.5, 0.5). This is only useful in testing. Any serious use should redefine 
+	this.
+	*/
+	heuristic: function heuristic(game, player) {
+		return this.random.random(-0.5, 0.5);
+	},
+	
+	/** The `bestMoves(evaluatedMoves)` are all the best evaluated in the given
+	sequence of tuples [move, evaluation].
+	*/
+	bestMoves: function bestMoves(evaluatedMoves) {
+		return iterable(evaluatedMoves).greater(function (pair) {
+			return pair[1];
+		}).map(function (pair) {
+			return pair[0];
+		});
+	},
+	
+	/** `selectMoves(moves, game, player)` return an array with the best 
+	evaluated moves. The evaluation is done with the `moveEvaluation` method. 
+	The default implementation always returns a `Future`.
+	*/
+	selectMoves: function selectMoves(moves, game, player) {
+		var heuristicPlayer = this,
+			asyncEvaluations = false,
+			evaluatedMoves = moves.map(function (move) {
+				var e = heuristicPlayer.moveEvaluation(move, game, player);
+				if (e instanceof Future) {
+					asyncEvaluations = asyncEvaluations || true;
+					return e.then(function (e) {
+						return [move, e];
+					});
+				} else {
+					return [move, e];
+				}
+			});
+		if (asyncEvaluations) { // Avoid using Future if possible.
+			return Future.all(evaluatedMoves).then(this.bestMoves);
+		} else {
+			return this.bestMoves(evaluatedMoves);
+		}
+	},
+	
+	/** The `decision(game, player)` selects randomly from the best evaluated 
+	moves.
+	*/
+	decision: function decision(game, player) {
+		var heuristicPlayer = this,
+			moves = game.moves();
+		raiseIf(!moves || !moves.hasOwnProperty(player),
+			"Player "+ player +" is not active (moves= "+ JSON.stringify(moves) +")!");
+		var playerMoves = moves[player];
+		raiseIf(!Array.isArray(playerMoves) || playerMoves.length < 1,
+			"Player "+ player +" has no moves ("+ playerMoves +")!");
+		if (playerMoves.length == 1) { // Forced moves.
+			return playerMoves[0];
+		} else {
+			moves = playerMoves.map(function (move) {
+				return copy(obj(player, move), moves);
+			});
+			var selectedMoves = heuristicPlayer.selectMoves(moves, game, player);
+			return Future.then(selectedMoves, function (selectedMoves) {
+				raiseIf(!selectedMoves || !selectedMoves.length, 
+					"No moves where selected at ", game, " for player ", player, "!");
+				return heuristicPlayer.random.choice(selectedMoves)[player];
+			});
+		}
+	},
+	
+	// ## Utilities to build heuristics ########################################
+	
+	/** A `composite` heuristic function returns the weighted sum of other
+	functions. The arguments must be a sequence of heuristic functions and a
+	weight. All weights must be between 0 and 1 and add up to 1.
+	*/
+	'static composite': function composite() {
+		var components = Array.prototype.slice.call(arguments), weightSum = 0;
+		raiseIf(components.length < 1,
+			"HeuristicPlayer.composite() cannot take an odd number of arguments!");
+		for (var i = 0; i < components.length; i += 2) {
+			raiseIf(typeof components[i] !== 'function', 
+				"HeuristicPlayer.composite() argument ", i, " (", components[i], ") is not a function!");
+			components[i+1] = +components[i+1];
+			raiseIf(isNaN(components[i+1]) || components[i+1] < 0 || components[i+1] > 1, 
+				"HeuristicPlayer.composite() argument ", i+1, " (", components[i+1], ") is not a valid weight!");
+		}
+		return function compositeHeuristic(game, player) {
+			var sum = 0;
+			for (var i = 0; i+1 < components.length; i += 2) {
+				sum += components[i](game, player) * components[i+1];
+			}
+			return sum;
+		};
+	}
+}); // declare HeuristicPlayer.
+
+
+/** # MaxNPlayer
+
+Automatic players based on the MaxN algorithm, a MiniMax variant for games of
+more than two players.
+*/
+var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
+	/** Besides the parameters of every [`HeuristicPlayer`](HeuristicPlayer.js.html),
+	an `horizon` for the search may be specified (3 plies by default).
+	*/
+	constructor: function MaxNPlayer(params) {
+		HeuristicPlayer.call(this, params);
+		initialize(this, params)
+			.integer('horizon', { defaultValue: 3, coerce: true });
+	},
+
+	/** This player evaluates each state using the `maxn` method, taking the 
+	evaluation for the given `player`.
+	*/
+	stateEvaluation: function stateEvaluation(game, player) {
+		return this.maxN(game, player, 0)[player];
+	},
+
+	/** `heuristics(game)` returns an heuristic value for each players in the 
+	game, as an object.
+	*/
+	heuristics: function heuristic(game) {
+		var result = {}, maxN = this;
+		game.players.forEach(function (role) {
+			result[role] = maxN.heuristic(game, role);
+		});
+		return result;
+	},
+
+	/** `quiescence(game, player, depth)` is a stability test for the given 
+	`game` state and the given `player`. If the game is quiescent, this function
+	must return evaluations. Else it must return null. 
+	
+	Final game states are always quiescent, and their evaluations are the game's 
+	result for each player. This default implementation also returns heuristic 
+	evaluations for every game state at a deeper depth than the player's 
+	horizon, calculated via the `heuristics()` method. 
+	*/
+	quiescence: function quiescence(game, player, depth) {
+		var results = game.result();
+		if (results) {
+			return results;
+		} else if (depth >= this.horizon) {
+			return this.heuristics(game);
+		} else {
+			return null;
+		}
+	},
+	
+	/** The core `maxN(game, player, depth)` algorithm return the evaluations 
+	for each player of the given game, assuming each player tries to maximize 
+	its own evaluation regardless of the others'.
+	*/
+	maxN: function maxN(game, player, depth) {
+		var values = this.quiescence(game, player, depth);
+		if (!values) { // game is not quiescent.
+			var activePlayer = game.activePlayer(),
+				moves = this.movesFor(game, activePlayer),
+				otherValues, next;
+			values = {};
+			if (moves.length < 1) {
+				throw new Error('No moves for unfinished game '+ game +'.');
+			}
+			for (var i = 0; i < moves.length; ++i) {
+				next = game.next(obj(activePlayer, moves[i]));
+				otherValues = this.maxN(next, player, depth + 1);
+				if (otherValues[activePlayer] > (values[activePlayer] || -Infinity)) {
+					values = otherValues;
+				}
+			}
+		}
+		return values;
+	},
+	
+	toString: function toString() {
+		return (this.constructor.name || 'MaxNPlayer') +'('+ JSON.stringify({
+			name: this.name, horizon: this.horizon
+		}) +')';
+	}
+}); // declare MiniMaxPlayer.
+
+
+/** # MiniMaxPlayer
+
+Automatic players based on pure MiniMax.
+*/
+var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
+	/** The constructor takes the player's `name` and the MiniMax search's 
+	`horizon` (`4` by default).
+	*/
+	constructor: function MiniMaxPlayer(params) {
+		HeuristicPlayer.call(this, params);
+		initialize(this, params)
+			.integer('horizon', { defaultValue: 4, coerce: true });
+	},
+
+	/** Every state's evaluation is the minimax value for the given game and 
+	player.
+	*/
+	stateEvaluation: function stateEvaluation(game, player) {
+		return this.minimax(game, player, 0);
+	},
+
+	/** The `quiescence(game, player, depth)` method is a stability test for the 
+	given game state. If the game is quiescent, this function must return an 
+	evaluation. Else it must return NaN or an equivalent value. 
+	
+	Final game states are always quiescent, and their evaluation is the game's
+	result for the given player. This default implementation also return an 
+	heuristic evaluation for every game state at a deeper depth than the 
+	player's horizon.
+	*/
+	quiescence: function quiescence(game, player, depth) {
+		var results = game.result();
+		if (results) {
+			return results[player];
+		} else if (depth >= this.horizon) {
+			return this.heuristic(game, player);
+		} else {
+			return NaN;
+		}
+	},
+	
+	/** The `minimax(game, player, depth)` method calculates the Minimax 
+	evaluation of the given game for the given player. If the game is not 
+	finished and the depth is greater than the horizon, `heuristic` is used.
+	*/
+	minimax: function minimax(game, player, depth) {
+		var value = this.quiescence(game, player, depth);
+		if (isNaN(value)) { // game is not quiescent.
+			var activePlayer = game.activePlayer(),
+				moves = this.movesFor(game, activePlayer), 
+				comparison, next;
+			if (moves.length < 1) {
+				throw new Error('No moves for unfinished game '+ game +'.');
+			}
+			if (activePlayer == player) {
+				value = -Infinity;
+				comparison = Math.max;
+			} else {
+				value = +Infinity;
+				comparison = Math.min;
+			}
+			for (var i = 0; i < moves.length; ++i) {
+				next = game.next(obj(activePlayer, moves[i]));
+				value = comparison(value, this.minimax(next, player, depth + 1));
+			}
+		}
+		return value;
+	},
+	
+	toString: function toString() {
+		return (this.constructor.name || 'MiniMaxPlayer') +'('+ JSON.stringify({
+			name: this.name, horizon: this.horizon
+		}) +')';
+	}
+}); // declare MiniMaxPlayer.
+
+
+/** # AlphaBetaPlayer
+
+Automatic players based on MiniMax with alfa-beta pruning.
+*/
+players.AlphaBetaPlayer = declare(MiniMaxPlayer, {
+	/** The constructor does not add anything to the parent
+	[`MiniMaxPlayer`](MiniMaxPlayer.js.html) constructor.
+	*/
+	constructor: function AlphaBetaPlayer(params) {
+		MiniMaxPlayer.call(this, params);
+	},
+
+	/** Every state's evaluation is the minimax value for the given game and 
+	player. The alfa an beta arguments are initialized with `-Infinity` and
+	`Infinity`.
+	*/
+	stateEvaluation: function stateEvaluation(game, player) {
+		return this.minimax(game, player, 0, -Infinity, Infinity);
+	},
+
+	/** The `minimax(game, player, depth, alfa, beta)` method calculates the 
+	Minimax evaluation of the given game for the given player. If the game is 
+	not finished and the depth is greater than the horizon, the heuristic is
+	used.
+	*/
+	minimax: function minimax(game, player, depth, alpha, beta) {
+		var value = this.quiescence(game, player, depth);
+		if (!isNaN(value)) {
+			return value;
+		}
+		var activePlayer = game.activePlayer(),
+			isActive = activePlayer == player,
+			moves = this.movesFor(game, activePlayer), next;
+		if (moves.length < 1) {
+			throw new Error('No moves for unfinished game '+ game +'.');
+		}
+		for (var i = 0; i < moves.length; i++) {
+			next = game.next(obj(activePlayer, moves[i]));
+			value = this.minimax(next, player, depth + 1, alpha, beta);
+			if (isActive) {
+				if (alpha < value) { // MAX
+					alpha = value;
+				}
+			} else {
+				if (beta > value) { // MIN
+					beta = value;
+				}
+			}
+			if (beta <= alpha) {
+				break;
+			}
+		}
+		return isActive ? alpha : beta;
+	}
+}); // declare AlphaBetaPlayer.
+
+
+/** # MonteCarloPlayer
+
+Automatic player based on flat Monte Carlo tree search.
+*/
+var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
+	/** The constructor builds a player that chooses its moves using the 
+	[flat Monte Carlo game tree search method](http://en.wikipedia.org/wiki/Monte-Carlo_tree_search). 
+	The parameters may include:
+	
+	+ `simulationCount=30`: Maximum amount of simulations performed for each 
+		available move at each decision.
+	+ `timeCap=1000ms`: Time limit for the player to decide.
+	+ `agent`: Player instance used in the simulations. If undefined moves are
+		chosen at random. Agents with asynchronous decisions are not supported.
+	*/
+	constructor: function MonteCarloPlayer(params) {
+		HeuristicPlayer.call(this, params);
+		initialize(this, params)
+			.number('simulationCount', { defaultValue: 30, coerce: true })
+			.number('timeCap', { defaultValue: 1000, coerce: true })
+			.number('horizon', { defaultValue: Infinity, coerce: true });
+		if (params) switch (typeof params.agent) {
+			case 'function': this.agent = new HeuristicPlayer({ heuristic: params.agent }); break;
+			case 'object': this.agent = params.agent; break;
+			default: this.agent = null;
+		}
+	},
+	
+	/** `selectMoves(moves, game, player)` return an array with the best 
+	evaluated moves.
+	*/
+	selectMoves: function selectMoves(moves, game, player) {
+		var monteCarloPlayer = this,
+			endTime = Date.now() + this.timeCap,
+			gameNext = game.next.bind(game),
+			options = moves.map(function (move) {
+				return { 
+					move: move, 
+					nexts: (Object.keys(move).length < 2 ? 
+						[game.next(move)] :
+						game.possibleMoves(copy(obj(player, [move[player]]), move)).map(gameNext)
+					),
+					sum: 0, 
+					count: 0 
+				};
+			});
+		for (var i = 0; i < this.simulationCount && Date.now() < endTime; ++i) {
+			options.forEach(function (option) {
+				option.nexts = option.nexts.filter(function (next) {
+					var sim = monteCarloPlayer.simulation(next, player);
+					option.sum += sim.result[player];
+					++option.count;
+					return sim.plies > 0;
+				});
+			});
+		}
+		options = iterable(options).greater(function (option) {
+			raiseIf(isNaN(option.sum), "State evaluation is NaN for move ", option.move, "!");
+			return option.count > 0 ? option.sum / option.count : 0;
+		}).map(function (option) {
+			return option.move;
+		});
+		return options;
+	},
+	
+	/** This player's `stateEvaluation(game, player)` runs `simulationCount` 
+	simulations and returns the average result.
+	*/
+	stateEvaluation: function stateEvaluation(game, player) {
+		var resultSum = 0, 
+			simulationCount = this.simulationCount,
+			sim;
+		for (var i = 0; i < simulationCount; ++i) {
+			sim = this.simulation(game, player);
+			resultSum += sim.result[player];
+			if (sim.plies < 1) { // game is final.
+				break;
+			}
+		}
+		return simulationCount > 0 ? resultSum / simulationCount : 0;
+	},
+	
+	/** A `simulation(game, player)` plays a random match from the given `game`
+	state and returns an object with the final state (`game`), its result 
+	(`result`) and the number of plies simulated (`plies`).
+	*/
+	simulation: function simulation(game, player) {
+		var mc = this,
+			plies, move, moves;
+		for (plies = 0; true; ++plies) {
+			if (game instanceof Aleatory) {
+				game = game.next();
+			} else {
+				moves = game.moves();
+				if (!moves) { // If game state is final ...
+					return { game: game, result: game.result(), plies: plies };
+				} else if (plies > this.horizon) { // If past horizon ...
+					return { game: game, result: obj(player, this.heuristic(game, player)), plies: plies };
+				} else { // ... else advance.
+					move = {};
+					game.activePlayers.forEach(function (activePlayer) {
+						move[activePlayer] = mc.agent ? mc.agent.decision(game, activePlayer) 
+							: mc.random.choice(moves[activePlayer]);
+					});
+					game = game.next(move);
+				}
+			}
+		}
+		raise("Simulation ended unexpectedly for player ", player, " in game ", game, "!");
+	},
+	
+	__serialize__: function __serialize__() {
+		return [this.constructor.name, { name: this.name, 
+			simulationCount: this.simulationCount, timeCap: this.timeCap, 
+			agent: this.agent 
+		}];
+	}
+}); // declare MonteCarloPlayer
+
+
+/** # UCTPlayer
+
+Automatic player based on Upper Confidence Bound Monte Carlo tree search.
+*/
+players.UCTPlayer = declare(MonteCarloPlayer, {
+	/** The constructor parameters may include:
+	
+	+ `simulationCount=30`: Maximum amount of simulations performed at each decision.
+	+ `timeCap=1000ms`: Time limit for the player to decide.
+	*/
+	constructor: function UCBPlayer(params) {
+		MonteCarloPlayer.call(this, params);
+		initialize(this, params)
+		/** + `explorationConstant=sqrt(2)`: The exploration factor used in the UCT selection.
+		*/
+			.number('explorationConstant', { defaultValue: Math.sqrt(2), coerce: true })
+		;
+	},
+	
+	/** Evaluate all child nodes of the given `gameTree` according to the [Upper Confidence Bound
+	formula by L. Kocsis and Cs. Szepesvári](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.102.1296). 
+	Returns one of the greatest evaluated, chosen at random.
+	*/
+	selectNode: function selectNode(gameTree, totalSimulationCount, explorationConstant) {
+		explorationConstant = isNaN(explorationConstant) ? this.explorationConstant : +explorationConstant;
+		return this.random.choice(iterable(gameTree.children).select(1).greater(function (n) {
+			return n.uct.results / n.uct.visits + 
+				explorationConstant * Math.sqrt(Math.log(totalSimulationCount) / n.uct.visits);
+		}));
+	},
+	
+	/** `selectMoves(moves, game, player)` return an array with the best evaluated moves.
+	*/
+	selectMoves: function selectMoves(moves, game, player) {
+		var root = new GameTree(null, game),
+			endTime = Date.now() + this.timeCap,
+			node, simulationResult;
+		root.uct = {
+			pending: this.random.shuffle(root.possibleTransitions()), visits: 0, results: 0
+		};
+		for (var i = 0; i < this.simulationCount && Date.now() < endTime; ++i) {
+			node = root;
+			while (node.uct.pending.length < 1 && node.childrenCount() > 0) { // Selection
+				node = this.selectNode(node, i+1, this.explorationConstant);
+			}
+			if (node.uct.pending.length > 0) { // Expansion
+				node = node.expand(node.uct.pending.pop());
+				node.uct = {
+					pending: this.random.shuffle(node.possibleTransitions()), visits: 0, results: 0
+				};
+			}
+			simulationResult = this.simulation(node.state, player); // Simulation
+			for (; node; node = node.parent) { // Backpropagation
+				++node.uct.visits;
+				node.uct.results += simulationResult.result[player];
+				/* if (simulationResult.result[player] > 0) { // If player won in the simulation ...
+					node.uct.wins = (node.uct.wins |0) + 1;
+				}*/
+			}
+		}
+		moves = iterable(root.children).select(1).greater(function (n) {
+			return n.uct.visits;
+		}).map(function (n) {
+			return n.transition;
+		});
+		return moves;
+	},
+	
+	__serialize__: function __serialize__() {
+		return [this.constructor.name, { name: this.name, 
+			simulationCount: this.simulationCount, timeCap: this.timeCap, 
+			explorationConstant: this.explorationConstant 
+		}];
+	}
+}); // declare MonteCarloPlayer
+
+
+/** # UserInterfacePlayer
+
+Implementation of player user interfaces and proxies.
+*/
+var UserInterfacePlayer = players.UserInterfacePlayer = declare(Player, {
+	/** `UserInterfacePlayer` is a generic type for all players that are proxies 
+	of user interfaces.
+	*/
+	constructor: function UserInterfacePlayer(params) {
+		Player.call(this, params);
+	},
+
+	/** The `participate` method assigns this players role to the given role.
+	*/
+	participate: function participate(match, role) {
+		this.role = role;
+		return this;
+	},
+	
+	/** The `decision(game, player)` of this players returns a future that will 
+	be resolved when the `perform()` method is called.
+	*/
+	decision: function decision(game, player) {
+		if (this.__future__ && this.__future__.isPending()) {
+			this.__future__.resolve(new Match.CommandQuit());
+		}
+		this.__future__ = new Future();
+		return this.__future__;
+	},
+	
+	/**  User interfaces have to be configured to call `perform(action)` upon 
+	each significant user action.players. It resolves the future returned by the
+	`decision()` method.
+	*/
+	perform: function perform(action) {
+		var future = this.__future__;
+		if (future) {
+			this.__future__ = null;
+			future.resolve(action);
+		}
+		return !!future;
+	}
+}); // declare UserInterfacePlayer.
+
+// ## User interfaces ##########################################################
+
+var UserInterface = players.UserInterface = declare({
+	/** `UserInterface` is the base abstract type for user interfaces that 
+	display a game and allow one or more players to play. The `config` argument 
+	may include the `match` being played.
+	*/
+	constructor: function UserInterface(config) {
+		this.onBegin = this.onBegin.bind(this);
+		this.onNext = this.onNext.bind(this);
+		this.onEnd = this.onEnd.bind(this);
+		if (config.match) {
+			this.show(config.match);
+		}
+	},
+	
+	/** `show(match)` discards the current state and sets up to display the 
+	given `match`.
+	*/
+	show: function show(match) {
+		if (this.match) {
+			match.events.off('begin', this.onBegin);
+			match.events.off('next', this.onNext);
+			match.events.off('end', this.onEnd);
+		}
+		this.match = match;
+		match.events.on('begin', this.onBegin);
+		match.events.on('next', this.onNext);
+		match.events.on('end', this.onEnd);
+	},
+	
+	/** When the player is participated of a match, callbacks are registered to 
+	the following match's events.
+	
+	+ `onBegin(game)` handles the `'begin'` event of the match.
+	*/
+	onBegin: function onBegin(game) {
+		this.display(game);
+	},
+	
+	/** + `onNext(game, next)` handles the `'move'` event of the match.
+	*/
+	onNext: function onNext(game, next) {
+		this.display(next);
+	},
+	
+	/** + `onEnd(game, results)` handles the `'end'` event of the match.
+	*/
+	onEnd: function onEnd(game, results) {
+		this.results = results;
+		this.display(game);
+	},
+	
+	/** `display(game)` renders the game in this user interface. Not 
+	implemented, so please override.
+	*/
+	display: unimplemented("UserInterface", "display"),
+	
+	/** `perform(action, actionRole=undefined)` makes the given player perform 
+	the action if the player has a `perform()` method and is included in this 
+	UI's players.
+	*/
+	perform: function perform(action, actionRole) {
+		iterable(this.match.players).forEach(function (pair) {
+			var role = pair[0], player = pair[1];
+			if (player instanceof UserInterfacePlayer && (!actionRole || player.role === actionRole)) {
+				player.perform(action);
+			}
+		});
+	}
+}); // declare UserInterface.
+
+// ### HTML based user interfaces ##############################################
+
+UserInterface.BasicHTMLInterface = declare(UserInterface, {
+	/** `BasicHTMLInterface(config)` builds a simple HTML based UI, that renders 
+	the game on the DOM using its `display()` method. The `config` argument may
+	include:
+	
+	+ `document=window.document`: the DOM root.
+	+ `container`: the DOM node to render the game in, or its name.
+	*/
+	constructor: function BasicHTMLInterface(config) {
+		UserInterface.call(this, config);
+		this.document = config.document || base.global.document;
+		this.container = config.container;
+		if (typeof this.container === 'string') {
+			this.container = this.document.getElementById(this.container);
+		}
+	},
+
+	/** On `display(game)` the `container` is emptied and the game is rendered
+	using its `display(ui)` method.
+	*/
+	display: function display(game) {
+		var container = this.container, child;
+		while (child = container.firstChild) { // It seems the DOM API does not provide a method for this. :-(
+			container.removeChild(child);
+		}
+		game.display(this);
+	},
+	
+	/** `build()` helps DOM creation. The `nodes` argument specifies DOM 
+	elements, each with an array of the shape: `[tag, attributes, elements]`.
+	*/
+	build: function build(parent, nodes) {
+		var ui = this;
+		nodes.forEach(function (node) {
+			var element;
+			if (Array.isArray(node)) {
+				element = ui.document.createElement(node[0]);
+				if (node.length > 2 && node[1]) { // There are attributes.
+					var attrs = node[1];
+					for (var attrName in attrs) if (attr.hasOwnProperty(attrName)) {
+						element.setAttribute(attrName, attrs[attrName]);
+					}
+				}
+				if (node.length > 1 && node[node.length-1]) { // There are child elements.
+					ui.build(element, node[node.length-1]);
+				}
+			} else if (typeof node === 'string') {
+				element = ui.document.createTextNode(node);
+			}
+			if (element && parent) {
+				parent.appendChild(element);
+			}
+		});
+		return parent;
+	}
+}); // declare HTMLInterface.
+
+
+/** # WebWorkerPlayer
+
+A proxy for another player executing inside a webworker.
+*/
+var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
+	/** The constructor builds a player that is a proxy for another player 
+	executing in a webworker. The parameters must include:
+	
+	+ `worker`: The `Worker` instance where the actual player is executing.
+	*/
+	constructor: function WebWorkerPlayer(params) {
+		Player.call(this, params);
+		initialize(this, params)
+			.object('worker');
+		this.worker.onmessage = base.Parallel.prototype.__onmessage__.bind(this);
+	},
+	
+	/** The static `createWorker(playerBuilder)` method creates (asynchronously)
+	and initializes a web worker. The modules `creatartis-base` and `ludorum` 
+	are loaded in the webworker's root namespace (`self`), before calling the 
+	given `playerBuilder` function. Its results will be stored in the global 
+	variable `PLAYER`.
+	*/
+	"static createWorker": function createWorker(playerBuilder) {
+		raiseIf('string function'.indexOf(typeof playerBuilder) < 0, 
+			"Invalid player builder: "+ playerBuilder +"!");
+		var parallel = new base.Parallel();
+		return parallel.run('self.ludorum = ('+ exports.__init__ +')(self.base), "OK"'
+			).then(function () {
+				return parallel.run('self.PLAYER = ('+ playerBuilder +').call(self), "OK"');
+			}).then(function () {
+				return parallel.worker;
+			});
+	},
+	
+	/** The static `create(params)` method creates (asynchronously) and 
+	initializes a `WebWorkerPlayer`, with a web worker ready to play. The 
+	`params` must include the `playerBuilder` function to execute on the web 
+	worker's environment.
+	*/
+	"static create": function create(params) {
+		var WebWorkerPlayer = this;
+		return WebWorkerPlayer.createWorker(params.playerBuilder).then(function (worker) {
+			return new WebWorkerPlayer({name: name, worker: worker}); 
+		});
+	},
+	
+	/** This player's `decision(game, player)` is delegated to this player's 
+	webworker, returning a future that will be resolved when the parallel 
+	execution is over.
+	
+	Warning! If this method is called while another decision is pending, the 
+	player will assume the previous match was aborted, issuing a quit command.
+	*/
+	decision: function decision(game, player) {
+		if (this.__future__ && this.__future__.isPending()) {
+			this.__future__.resolve(Match.commandQuit);
+		}
+		this.__future__ = new Future();
+		this.worker.postMessage('PLAYER.decision(ludorum.Game.fromJSON('+ game.toJSON() +'), '+ JSON.stringify(player) +')');
+		return this.__future__;
+	}
+}); // declare WebWorkerPlayer
+
+/** # Dice aleatories
+
+Implementations of common dice and related functions.
+*/
+aleatories.dice = {
+	/** Common dice variants.
+	*/
+	D4: Aleatory.withRange(1, 4),
+	D6: Aleatory.withRange(1, 6),
+	D8: Aleatory.withRange(1, 8),
+	D10: Aleatory.withRange(1, 10),
+	D12: Aleatory.withRange(1, 12),
+	D20: Aleatory.withRange(1, 20),
+	D100: Aleatory.withRange(1, 100),
+}; //// declare Dice.
+
 /** Simple reference games with a predefined outcome, mostly for testing 
 	purposes.
 */
@@ -2666,13 +2816,13 @@ games.Choose2Win = declare(Game, {
 	next: function next(moves) {
 		var activePlayer = this.activePlayer(),
 			opponent = this.opponent(activePlayer);
+		raiseIf(!moves.hasOwnProperty(activePlayer), 'No move for active player ', activePlayer, ' at ', this, '!');
 		switch (moves[activePlayer]) {
 			case 'win': return new this.constructor(this.__turns__ - 1, opponent, activePlayer);
 			case 'lose': return new this.constructor(this.__turns__ - 1, opponent, opponent);
 			case 'pass': return new this.constructor(this.__turns__ - 1, opponent);
-			default: break; // So the lint would not complaint.
+			default: raise('Invalid move ', moves[activePlayer], ' for player ', activePlayer, ' at ', this, '!');
 		}
-		throw new Error('Invalid move '+ moves[activePlayer] +' for player '+ activePlayer +'.');
 	},
 	
 	__serialize__: function __serialize__() {
@@ -3501,6 +3651,7 @@ games.Pig = declare(Game, {
 	next: function next(moves) {
 		var activePlayer = this.activePlayer(),
 			move = moves[activePlayer];
+		raiseIf(typeof move === 'undefined', 'No move for active player ', activePlayer, ' at ', this, '!');
 		if (move === 'hold') {
 			var scores = copy(this.__scores__);
 			scores[activePlayer] += iterable(this.__rolls__).sum();
@@ -3514,7 +3665,7 @@ games.Pig = declare(Game, {
 					new game.constructor(game.opponent(), game.goal, game.__scores__, []);
 			});
 		} else {
-			throw new Error("Invalid moves: "+ JSON.stringify(moves));
+			raise("Invalid moves ", JSON.stringify(moves), " at ", this, "!");
 		}
 	},
 	

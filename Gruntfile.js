@@ -3,21 +3,24 @@
 var sourceFiles = [ 'src/__prologue__.js',
 	'src/Game.js', 'src/Player.js', 'src/Match.js', 
 		'src/Tournament.js', 'src/Aleatory.js',
-	// players.
-	'src/players/RandomPlayer.js', 'src/players/TracePlayer.js',
-		'src/players/HeuristicPlayer.js', 
-		'src/players/MaxNPlayer.js',
-		'src/players/MiniMaxPlayer.js', 'src/players/AlphaBetaPlayer.js',
-		'src/players/MonteCarloPlayer.js',
-		'src/players/UserInterfacePlayer.js',
-		'src/players/WebWorkerPlayer.js',
-	// aleatories.
-		'src/aleatories/dice.js',
 	// utils.
 		'src/utils/Checkerboard.js', 
 			'src/utils/CheckerboardFromString.js',
 		'src/utils/Scanner.js',
 		'src/utils/Cache.js',
+		'src/utils/GameTree.js',
+	// players.
+	'src/players/RandomPlayer.js', 'src/players/TracePlayer.js',
+		'src/players/HeuristicPlayer.js', 
+		'src/players/MaxNPlayer.js',
+		'src/players/MiniMaxPlayer.js', 
+			'src/players/AlphaBetaPlayer.js',
+		'src/players/MonteCarloPlayer.js',
+			'src/players/UCTPlayer.js',
+		'src/players/UserInterfacePlayer.js',
+		'src/players/WebWorkerPlayer.js',
+	// aleatories.
+		'src/aleatories/dice.js',
 	// games.
 	'src/games/Predefined.js',  'src/games/Choose2Win.js',
 		'src/games/ConnectionGame.js',
@@ -126,7 +129,7 @@ module.exports = function(grunt) {
 					"LICENSE.md", "README.md"],
 				"dependencies": {
 					"requirejs": "2.1.9",
-					"creatartis-base": "git://github.com/LeonardoVal/creatartis-base.git"
+					"creatartis-base": "~0.1.4"
 				},
 				"devDependencies": {
 					"jquery": "~2.0.3"
@@ -144,7 +147,7 @@ module.exports = function(grunt) {
 	}); // bower-json.
 	
 // Register tasks. /////////////////////////////////////////////////////////////
-	grunt.registerTask('lib', ['bowercopy:lib']);
+	grunt.registerTask('lib', ['bower-json', 'bowercopy:lib']);
 	
 	grunt.registerTask('compile', ['concat_sourcemap:build', 'jshint:build', 'uglify:build']); 
 	grunt.registerTask('test', ['compile', 'karma:build']);

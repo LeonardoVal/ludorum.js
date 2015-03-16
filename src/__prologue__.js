@@ -14,6 +14,7 @@
 		unimplemented = base.objects.unimplemented,
 		obj = base.obj,
 		copy = base.copy,
+		raise = base.raise,
 		raiseIf = base.raiseIf,
 		Iterable = base.Iterable,
 		iterable = base.iterable,

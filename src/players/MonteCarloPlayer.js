@@ -2,7 +2,7 @@
 
 Automatic player based on flat Monte Carlo tree search.
 */
-players.MonteCarloPlayer = declare(HeuristicPlayer, {
+var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 	/** The constructor builds a player that chooses its moves using the 
 	[flat Monte Carlo game tree search method](http://en.wikipedia.org/wiki/Monte-Carlo_tree_search). 
 	The parameters may include:

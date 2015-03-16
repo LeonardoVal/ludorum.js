@@ -35,17 +35,8 @@ require(['creatartis-base', 'ludorum'], function (base, ludorum) {
 					)
 				});
 			}, runOnWorker: true },
-			{title: "MonteCarlo (1seg h=20)", builder: function () {
-				return new ludorum.players.MonteCarloPlayer({ 
-					simulationCount: 100, timeCap: 1000, horizon: 20, 
-					heuristic: ludorum.players.HeuristicPlayer.composite(
-						ludorum.games.Othello.heuristics.heuristicFromSymmetricWeights(
-							[+9,-3,+3,+3, -3,-3,-1,-1, +3,-1,+1,+1, +3,-1,+1,+1]
-						), 0.6,
-						ludorum.games.Othello.heuristics.pieceRatio, 0.2,
-						ludorum.games.Othello.heuristics.mobilityRatio, 0.2
-					)
-				});
+			{title: "UCT (1.0seg)", builder: function () {
+				return new ludorum.players.UCTPlayer({ simulationCount: 2000, timeCap: 1000 });
 			}, runOnWorker: true }
 		];
 	APP.players = [PLAYER_OPTIONS[0].builder(), PLAYER_OPTIONS[0].builder()];
