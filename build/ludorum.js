@@ -2403,7 +2403,7 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 	selectNode: function selectNode(gameTree, totalSimulationCount, explorationConstant) {
 		explorationConstant = isNaN(explorationConstant) ? this.explorationConstant : +explorationConstant;
 		return this.random.choice(iterable(gameTree.children).select(1).greater(function (n) {
-			return n.uct.results / n.uct.visits + 
+			return n.uct.rewards / n.uct.visits + 
 				explorationConstant * Math.sqrt(Math.log(totalSimulationCount) / n.uct.visits);
 		}));
 	},
@@ -2415,7 +2415,7 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 			endTime = Date.now() + this.timeCap,
 			node, simulationResult;
 		root.uct = {
-			pending: this.random.shuffle(root.possibleTransitions()), visits: 0, results: 0
+			pending: this.random.shuffle(root.possibleTransitions()), visits: 0, rewards: 0
 		};
 		for (var i = 0; i < this.simulationCount && Date.now() < endTime; ++i) {
 			node = root;
@@ -2425,16 +2425,13 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 			if (node.uct.pending.length > 0) { // Expansion
 				node = node.expand(node.uct.pending.pop());
 				node.uct = {
-					pending: this.random.shuffle(node.possibleTransitions()), visits: 0, results: 0
+					pending: this.random.shuffle(node.possibleTransitions()), visits: 0, rewards: 0
 				};
 			}
 			simulationResult = this.simulation(node.state, player); // Simulation
 			for (; node; node = node.parent) { // Backpropagation
 				++node.uct.visits;
-				node.uct.results += simulationResult.result[player];
-				/* if (simulationResult.result[player] > 0) { // If player won in the simulation ...
-					node.uct.wins = (node.uct.wins |0) + 1;
-				}*/
+				node.uct.rewards += (game.normalizedResult(simulationResult.result)[player] + 1) / 2;
 			}
 		}
 		moves = iterable(root.children).select(1).greater(function (n) {
