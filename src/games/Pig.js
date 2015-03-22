@@ -1,7 +1,7 @@
 ﻿/** # Pig.
 
-[Pig](http://en.wikipedia.org/wiki/Pig_%28dice_game%29) is a simple dice betting
-game, used as an example of a game with random variables.
+[Pig](http://en.wikipedia.org/wiki/Pig_%28dice_game%29) is a simple dice betting game, used as an 
+example of a game with random variables.
 */
 games.Pig = declare(Game, {
 	/** The constructor takes:
@@ -30,34 +30,33 @@ games.Pig = declare(Game, {
 		if (!this.result()) {
 			var activePlayer = this.activePlayer(),
 				currentScore = this.__scores__[activePlayer] + iterable(this.__rolls__).sum();
-			return obj(activePlayer, currentScore < this.goal ? ['roll', 'hold'] : ['hold']);
+			return obj(activePlayer, this.__rolls__.length < 1 ? ['roll'] :
+				currentScore >= this.goal ? ['hold'] : ['roll', 'hold']);
 		}
 	},
 
-	/** A Pig match finishes when one player reaches or passes the goal score. 
-	The result for each player is the difference between its score and its 
-	opponent's score.
+	/** A Pig match finishes when one player reaches or passes the goal score. The result for each 
+	player is the difference between its score and its opponent's score.
 	*/
 	result: function result() {
 		var score0 = this.__scores__[this.players[0]],
 			score1 = this.__scores__[this.players[1]];
 		if (score0 >= this.goal || score1 >= this.goal) {
 			var r = {};
-			r[this.players[0]] = score0 - score1;
+			r[this.players[0]] = Math.min(this.goal, score0) - Math.min(this.goal, score1);
 			r[this.players[1]] = -r[this.players[0]];
 			return r;
 		}
 	},
 
-	/** If the active player holds, it earns the sum of the rolls made so in 
-	its turn. If the move is roll, a dice is rolled. A roll of 1 stops the 
-	this turn and the active player earns no points. A roll of 2 or up, makes
-	the turn continue.
+	/** If the active player holds, it earns the sum of the rolls made so in its turn. If the move 
+	is roll, a dice is rolled. A roll of 1 stops the this turn and the active player earns no 
+	points. A roll of 2 or up, makes the turn continue.
 	
-	For this game mechanic, an [aleatory](../Aleatory.js.html) is used. If the 
-	move is `roll`, an instance of [`Dice`](../aleatories/Dice.js.html) is
-	build and returned. The function passed to the `Dice` constructor makes
-	the decision explained before, based on the value of the dice.
+	For this game mechanic, an [aleatory](../Aleatory.js.html) is used. If the move is `roll`, an 
+	instance of this class is build and returned using the [dice shotcuts](../aleatories/dice.js.html). 
+	The function passed to aleatory makes the decision explained before, based on the value of the 
+	dice.
 	*/
 	next: function next(moves) {
 		var activePlayer = this.activePlayer(),
@@ -80,8 +79,14 @@ games.Pig = declare(Game, {
 		}
 	},
 	
-	// ## Utility methods ######################################################
+	// ## Utility methods ##########################################################################
 
+	/** The `resultBounds` for a Pig game are estimated with the goals.
+	*/
+	resultBounds: function resultBounds() {
+		return [-this.goal, +this.goal];
+	},
+	
 	/** Serialization is used in the `toString()` method, but it is also vital 
 	for sending the game state across a network or the marshalling between the 
 	rendering thread and a webworker.
