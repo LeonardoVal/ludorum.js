@@ -193,6 +193,11 @@ Running `TicTacToe.runTestMatch(true)` should output something like this in the 
 	result: {"X":-1,"O":1}
 ```
 
+Tictactoe is a deterministic game, i.e. the flow of the game is only determined by the player's 
+actions. Not all games are like so. Some games use dice, roulettes or shuffled card decks (among 
+others) that also affect the match. Including random variables of these sorts is explained in the 
+next section.
+
 ## A simple stochastic turn-based game: _Pig_ ######################################################
 
 [Pig](http://en.wikipedia.org/wiki/Pig_%28dice_game%29) is a simple dice betting game. Each turn the 
@@ -340,5 +345,121 @@ Running the test may leave something like this in the console:
 "{"One":100,"Two":84}
 	result: {"One":16,"Two":-16}"
 ```
+
+Both games treated so far have been strictly turn-based, what is usually known as _igougo_ (from _"I 
+go, you go"_). In every turn, only one player can decide and move. Yet not all games are like this.
+In the next section, we will deal with games that allow more than one player to be active in a turn.
+
+## A simple deterministic simultaneous game: _Odds & Evens_ ########################################
+
+[Odds and evens](http://en.wikipedia.org/wiki/Odds_and_evens) is a classic child game. Each turn 
+each of the two players will chose at the same time either to play a 1 or a 2. If the sum of both 
+numbers is even, the Evens player earns a point. Otherwise the Odds players earns a point. The game
+is played until one of the players reaches a certain amount of points, winning the game. This is a 
+simple example of a simultaneous game, i.e. a game in which more than one player can move at any 
+given turn. Another simple example is [Rock-Paper-Scissors](https://en.wikipedia.org/wiki/Rock-Paper-Scissors),
+and a much more complicated example would be [Diplomacy](http://en.wikipedia.org/wiki/Diplomacy_%28game%29).
+
+A game state of Odds & Evens is very simple, since it must include the current scores. Both players
+are active every turn.
+
+```javascript
+function OddsAndEvens(scores) {
+	ludorum.Game.call(this, this.players);
+	this._scores = scores || {Odds: 0, Evens: 0};
+}
+
+OddsAndEvens.prototype = Object.create(ludorum.Game.prototype);
+OddsAndEvens.prototype.constructor = OddsAndEvens;
+
+OddsAndEvens.prototype.name = 'Odds&Evens';
+OddsAndEvens.prototype.players = ['Odds', 'Evens'];
+
+OddsAndEvens.prototype.scores = function scores() {
+	return this._scores;
+};
+```
+
+Game ends when the points goal is reached by either player. Here we use a goal of 10 points. The 
+match result is the difference of points.
+
+```javascript
+OddsAndEvens.prototype.result = function result() {
+	var scores = this._scores;
+	if (scores.Odds >= 10) {
+		return this.victory('Odds', Math.min(10, scores.Odds) - scores.Evens);
+	} else if (scores.Evens >= 10) {
+		return this.victory('Evens', Math.min(10, scores.Evens) - scores.Odds);
+	} else {
+		return null;
+	}
+};
+
+OddsAndEvens.prototype.resultBounds = function resultBounds() {
+	return [-10, 10];
+};
+```
+
+At every turn, both players can play either 1 or 2. The next game state simply adds one point to the
+proper player considering the parity of the sum of the moves.
+
+```javascript
+OddsAndEvens.prototype.moves = function moves() {
+	if (this.result()) {
+		return null;
+	} else {
+		return {Odds: [1, 2], Evens: [1, 2]};
+	}
+};
+
+OddsAndEvens.prototype.next = function next(moves) {
+	if (typeof moves.Odds !== 'number' || typeof moves.Evens !== 'number') { // Check both players played a number.
+		throw new Error('Invalid moves ('+ JSON.stringify(moves) +') at '+ this +'!');
+	}
+	var newScores = JSON.parse(JSON.stringify(this._scores));
+	if ((moves.Odds + moves.Evens) % 2 == 1) {
+		newScores.Odds++;
+	} else {
+		newScores.Evens++;
+	}
+	return new OddsAndEvens(newScores);
+};
+```
+
+As we did in all cases before, to test our implementation of OddsAndEvens we make matches between 
+random players.
+
+```javascript
+OddsAndEvens.runTestMatch = function runTestMatch(showMoves) {
+	var players = [new ludorum.players.RandomPlayer(), new ludorum.players.RandomPlayer()],
+		match = new ludorum.Match(new OddsAndEvens(), players);
+	if (showMoves) {
+		match.events.on('move', function (game, moves) {
+			console.log(JSON.stringify(game._scores) +'\n\tmoves: '+ JSON.stringify(moves));
+		});
+	}
+	match.events.on('end', function (game, result) {
+		console.log(JSON.stringify(game._scores) +'\n\tresult: '+ JSON.stringify(result));
+	});
+	return match.run();
+};
+```
+
+The test's output in the console may look as follows:
+
+```
+{"Odds":0,"Evens":0}
+	moves: {"Odds":1,"Evens":1}
+{"Odds":0,"Evens":1}
+	moves: {"Odds":2,"Evens":2}
+...
+{"Odds":9,"Evens":9}
+	moves: {"Odds":2,"Evens":2}
+{"Odds":9,"Evens":10}
+	result: {"Odds":-1,"Evens":1}
+```
+
+Making a stochastic simultaneous game implies the combination of the two schemes. Aleatory variables
+don't collide with more than one active player per turn.
 
 by [Leonardo Val](http://github.com/LeonardoVal).

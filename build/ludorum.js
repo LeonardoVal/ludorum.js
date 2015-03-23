@@ -2971,12 +2971,17 @@ games.ConnectionGame = declare(Game, {
 	}
 }); // declare ConnectionGame.
 
-/** Classic child game, implemented as a simple example of a simultaneous game.
+/** # Odds & Evens
+
+[Odds and evens](http://en.wikipedia.org/wiki/Odds_and_evens) is a classic child game, implemented 
+as a simple example of a simultaneous game, i.e. a game in which more than one player can move at 
+any given turn.
 */
 games.OddsAndEvens = declare(Game, {
-	/** new games.OddsAndEvens(turns=1, points=<cero for both players>):
-		Odds and evens is a very simple simultaneous game. Each turn both 
-		players draw either a one or a two.
+	/** The constructor takes:
+	
+		+ `turns=1`: The number of turns remaining in the game.
+		+ `points=<zero for every player>`: The scores for every player.
 	*/
 	constructor: function OddsAndEvens(turns, points) {
 		Game.call(this, this.players); // Both players are active.
@@ -2986,20 +2991,17 @@ games.OddsAndEvens = declare(Game, {
 
 	name: 'OddsAndEvens',
 	
-	/** games.OddsAndEvens.players=['Evens', 'Odds']:
-		Players for odds and evens.
+	/** Players for odds and evens are called like that: Evens and Odds.
 	*/
 	players: ['Evens', 'Odds'],
 
-	/** games.OddsAndEvens.moves():
-		Moves always are 1 and 2.
+	/** Each turn both players draw either a 1 or a 2.
 	*/
 	moves: function moves() {
 		return this.turns < 1 ? null : { Evens: [1, 2], Odds: [1, 2] };
 	},
 
-	/** games.OddsAndEvens.result():
-		The winner is the player with more points.
+	/** The winner is the player with more points.
 	*/
 	result: function result() {
 		var pointDifference = this.points.Evens - this.points.Odds;
@@ -3009,8 +3011,7 @@ games.OddsAndEvens = declare(Game, {
 		};
 	},
 
-	/** games.OddsAndEvens.next(moves):
-		The player matching the parity of the moves sum earns a point.
+	/** The player matching the parity of the moves sum earns a point.
 	*/
 	next: function next(moves) {
 		raiseIf(typeof moves.Evens !== 'number' || typeof moves.Odds !== 'number',
@@ -3022,6 +3023,8 @@ games.OddsAndEvens = declare(Game, {
 		});
 	},
 
+	// ## Utility methods ##########################################################################
+	
 	__serialize__: function __serialize__() {
 		return [this.name, this.turns, this.points];
 	}
