@@ -6,6 +6,7 @@ var sourceFiles = [ 'src/__prologue__.js',
 	// utils.
 		'src/utils/Checkerboard.js', 
 			'src/utils/CheckerboardFromString.js',
+			'src/utils/CheckerboardFromPieces.js',
 		'src/utils/Scanner.js',
 		'src/utils/Cache.js',
 		'src/utils/GameTree.js',
