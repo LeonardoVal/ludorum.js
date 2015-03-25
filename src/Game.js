@@ -269,10 +269,7 @@ var Game = exports.Game = declare({
 	caches or hashes. This method calculates a string that uniquely identifies this game state,
 	based on the game's serialization.
 	*/
-	identifier: function identifier() {
-		var args = this.__serialize__();
-		return args.shift() + args.map(JSON.stringify).join('');
-	},
+	identifier: unimplemented("Game", "identifier"),
 
 	/** The default string representation of a game is also based on the serialization. Changing
 	this is not recommended.
