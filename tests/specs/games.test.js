@@ -68,10 +68,8 @@
 		});
 	}
 	
-	["Predefined", "Choose2Win", "TicTacToe", "ToadsAndFrogs", "Mancala", 
-		"ConnectFour", "Pig", "ConnectionGame", "Othello", "Bahab",
-		"Colograph"]
-	.forEach(function (name) { // Zerosum games for 2 players with one active player per turn.
+	["Predefined", "Choose2Win", "TicTacToe", "ToadsAndFrogs", "Pig", "ConnectionGame", "Bahab",
+	].forEach(function (name) { // Zerosum games for 2 players with one active player per turn.
 		describe("games."+ name, function () {
 			var game = new ludorum.games[name](),
 				options = { zeroSum: true, oneActivePlayerPerTurn: true };
@@ -80,8 +78,8 @@
 		});
 	});
 	
-	["OddsAndEvens", "Mutropas"]
-	.forEach(function (name) { // Zerosum simultaneous games for 2 players.
+	["OddsAndEvens", "Mutropas"
+	].forEach(function (name) { // Zerosum simultaneous games for 2 players.
 		describe("games."+ name, function () {
 			var game = new ludorum.games[name](),
 				options = { zeroSum: true };
