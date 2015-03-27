@@ -9,8 +9,8 @@ games.Bahab = declare(Game, {
 	*/
 	players: ['Uppercase', 'Lowercase'],
 	
-	/** The constructor takes the `activePlayer` (Uppercase by default) and the 
-	`board` as a string (`initialBoard` by default).
+	/** The constructor takes the `activePlayer` (Uppercase by default) and the `board` as a string 
+	(`initialBoard` by default).
 	*/
 	constructor: function Bahab(activePlayer, board) {
 		Game.call(this, activePlayer);
@@ -18,22 +18,21 @@ games.Bahab = declare(Game, {
 			: new CheckerboardFromString(5, 5, board || this.initialBoard);
 	},
 	
-	/** The `initialBoard` has two ranks of pieces for each player. All B pieces
-	except one A piece at the center of the first rank.
+	/** The `initialBoard` has two ranks of pieces for each player. All B pieces except one A piece 
+	at the center of the first rank.
 	*/
 	initialBoard: ['BBABB', 'BBBBB', '.....', 'bbbbb', 'bbabb'].join(''),
 
-	/** `__PLAYER_ENDGAME_RE__` regular expressions are used to optimize result 
-	calculations. They match if the player has no A piece or if its opponent has 
-	an A piece in its rank.
+	/** `__PLAYER_ENDGAME_RE__` regular expressions are used to optimize result calculations. They 
+	match if the player has no A piece or if its opponent has an A piece in its rank.
 	*/
 	__PLAYER_ENDGAME_RE__: {
 		Uppercase: /^[.Bab]+$|^.{0,4}[a]/, 
 		Lowercase: /^[.bAB]+$|[A].{0,4}$/ 
 	},
 	
-	/** A player wins when it moves its A piece to the opponent's first rank, 
-	and loses when its A piece is captured by the opponent.
+	/** A player wins when it moves its A piece to the opponent's first rank, and loses when its A 
+	piece is captured by the opponent.
 	*/
 	result: function result() {
 		var board = this.board.string, player;
@@ -46,18 +45,17 @@ games.Bahab = declare(Game, {
 		return this.moves() ? null : this.defeat(this.activePlayer());
 	},
 	
-	/** `__PLAYER_PIECES_RE__` regular expressions are used to optimize move 
-	calculations.
+	/** `__PLAYER_PIECES_RE__` regular expressions are used to optimize move calculations.
 	*/
 	__PLAYER_PIECES_RE__: {
 		Uppercase: /[AB]/g,
 		Lowercase: /[ab]/g
 	},
 	
-	/** All pieces move one square forward. A pieces can move straight forward 
-	or diagonally, and B pieces move only diagonally. Pieces can move to any
-	square that is empty or occupied by an opponent's piece. If the piece moves 
-	to an occupied square, it captures the piece in it.
+	/** All pieces move one square forward. Piece A can move straight backwards or diagonally 
+	forward, and B pieces move only diagonally forward. Pieces can move to any square that is empty 
+	or occupied by an opponent's piece of the same type. If the piece moves to an occupied square, 
+	it captures the piece in it.
 	*/
 	moves: function moves() {
 		var activePlayer = this.activePlayer(),
@@ -67,16 +65,16 @@ games.Bahab = declare(Game, {
 		board.string.replace(pieceRegExp, function (piece, i) {
 			var coord = [(i / 5)|0, i % 5], pieceMoves;
 			switch (piece) {
-				case 'A': pieceMoves = [[+1,-1], [+1, 0], [+1,+1]]; break;
+				case 'A': pieceMoves = [[+1,-1], [-1, 0], [+1,+1]]; break;
 				case 'B': pieceMoves = [[+1,-1], [+1,+1]]; break;
-				case 'a': pieceMoves = [[-1,-1], [-1, 0], [-1,+1]]; break;
+				case 'a': pieceMoves = [[-1,-1], [+1, 0], [-1,+1]]; break;
 				case 'b': pieceMoves = [[-1,-1], [-1,+1]]; break;
 			}
 			iterable(pieceMoves).forEachApply(function (dx, dy) {
 				var coordTo = [coord[0] + dx, coord[1] + dy],
 					squareTo = board.square(coordTo);
 				if (board.isValidCoord(coordTo) && !squareTo.match(pieceRegExp) &&
-						(piece.toLowerCase() != 'b' || squareTo.toLowerCase() != 'a')) {
+						(squareTo == '.' || piece.toLowerCase() == squareTo.toLowerCase())) {
 					_moves.push([coord, coordTo]); // Valid coordinate and not occupied by a friendly piece.
 				}
 			});
@@ -85,9 +83,8 @@ games.Bahab = declare(Game, {
 		return _moves.length > 0 ? obj(activePlayer, _moves) : null;
 	},
 	
-	/** Valid move for this game are pairs of coordinates (`[row, column]`), the
-	first one being where the moving piece starts, and the second one being 
-	where the moving piece ends.	
+	/** Valid move for this game are pairs of coordinates (`[row, column]`), the first one being 
+	where the moving piece starts, and the second one being where the moving piece ends.	
 	*/
 	next: function next(moves) {
 		if (!moves) {
@@ -101,19 +98,18 @@ games.Bahab = declare(Game, {
 		return new this.constructor(this.opponent(), this.board.move(move[0], move[1]));
 	},
 	
-	// ## User intefaces #######################################################
+	// ## User intefaces ###########################################################################
 	
-	/** The `display(ui)` method is called by a `UserInterface` to render the
-	game state. The only supported user interface type is `BasicHTMLInterface`.
-	The look can be configured using CSS classes.
+	/** The `display(ui)` method is called by a `UserInterface` to render the game state. The only 
+	supported user interface type is `BasicHTMLInterface`. The look can be configured using CSS 
+	classes.
 	*/
 	display: function display(ui) {
 		raiseIf(!ui || !(ui instanceof UserInterface.BasicHTMLInterface), "Unsupported UI!");
 		return this.__displayHTML__(ui);
 	},
 	
-	/** The game board is rendered in HTML as a table. The look can be customized
-	with CSS classes.
+	/** The game board is rendered in HTML as a table. The look can be customized with CSS classes.
 	*/
 	__displayHTML__: function __displayHTML__(ui) {
 		var game = this,
@@ -137,14 +133,15 @@ games.Bahab = declare(Game, {
 			data.innerHTML = data.square == '.' ? '&nbsp;' : data.square;
 			if (ui.selectedPiece) {
 				if (selectedMoves && selectedMoves.indexOf(JSON.stringify(data.coord)) >= 0) {
-					data.className = "ludorum-square-move";
+					data.className = "ludorum-square-"+ activePlayer +"-move";
 					data.onclick = function () {
 						var selectedPiece = ui.selectedPiece;
 						ui.selectedPiece = (void 0);
 						ui.perform([selectedPiece, data.coord], activePlayer);
-					};					
+					};
 				}
-			} else if (movesByFrom.hasOwnProperty(JSON.stringify(data.coord))) {
+			}
+			if (movesByFrom.hasOwnProperty(JSON.stringify(data.coord))) {
 				data.onclick = function () {
 					ui.selectedPiece = data.coord;
 					ui.display(game); // Redraw the game state.			
@@ -154,7 +151,7 @@ games.Bahab = declare(Game, {
 		return ui;
 	},
 	
-	// ## Utility methods ######################################################
+	// ## Utility methods ##########################################################################
 	
 	/** The game state serialization simply contains the constructor arguments.
 	*/
