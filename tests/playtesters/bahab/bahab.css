@@ -1,0 +1,91 @@
+﻿/* CSS for the user interface to playtest the Bahab implementation. 
+*/
+body {
+	font-family: Arial, Helvetica, sans-serif;
+}
+header {
+	margin-bottom: 1em;
+	text-align: center;
+}
+footer {
+	clear: both;
+	margin-top: 1em;
+	text-align: center;
+	font-size: large;
+}
+
+#container {
+	margin: auto;
+	width: 40em;
+}
+
+#board {
+	float: left;
+}
+
+#controls {
+	float: left;
+	text-align: center;
+	margin-left: 2em;
+	font-size: large;
+}
+#controls button {
+	border: 2px solid black;
+	border-radius: 2px;
+	font-size: large;
+}
+#controls select {
+	border: none;
+	text-align: center;
+	font-size: large;
+}
+#controls button {
+	background-color: white;
+	color: black;
+}
+#controls button:hover {
+	background-color: black;
+	color: white;
+}
+
+/* Game board *****************************************************************/
+#board table {
+	border-collapse: collapse;
+	width: 15em;
+	height: 15em;
+	/*margin: auto;*/
+/*BEGIN user-select: none */
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+/*END user-select: none */
+}
+#board table td {
+	border: 2px solid grey;
+	font-size: 4em;
+	font-family: monospace;
+	width: 1em;
+	height: 1em;
+	text-align: center;
+}
+#board table .ludorum-square-Uppercase-A {
+	color: rgb(255,0,0);
+}
+#board table .ludorum-square-Uppercase-B {
+	color: rgb(150,0,0);
+}
+#board table .ludorum-square-Uppercase-move {
+	background-color: rgb(255,150,150);
+}
+#board table .ludorum-square-Lowercase-A {
+	color: rgb(0,0,255);
+}
+#board table .ludorum-square-Lowercase-B {
+	color: rgb(0,0,150);
+}
+#board table .ludorum-square-Lowercase-move {
+	background-color: rgb(150,150,255);
+}
