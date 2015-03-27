@@ -10,6 +10,7 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 	+ `simulationCount=30`: Maximum amount of simulations performed for each 
 		available move at each decision.
 	+ `timeCap=1000ms`: Time limit for the player to decide.
+	+ `horizon=500`: Maximum amount of moves performed in simulations.
 	+ `agent`: Player instance used in the simulations. If undefined moves are
 		chosen at random. Agents with asynchronous decisions are not supported.
 	*/
@@ -18,7 +19,7 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 		initialize(this, params)
 			.number('simulationCount', { defaultValue: 30, coerce: true })
 			.number('timeCap', { defaultValue: 1000, coerce: true })
-			.number('horizon', { defaultValue: Infinity, coerce: true });
+			.number('horizon', { defaultValue: 500, coerce: true });
 		if (params) switch (typeof params.agent) {
 			case 'function': this.agent = new HeuristicPlayer({ heuristic: params.agent }); break;
 			case 'object': this.agent = params.agent; break;
