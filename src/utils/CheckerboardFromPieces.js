@@ -10,13 +10,20 @@ var CheckerboardFromPieces = utils.CheckerboardFromPieces = declare(Checkerboard
 	*/
 	constructor: function CheckerboardFromPieces(height, width, pieces, emptySquare) {
 		Checkerboard.call(this, height, width);
+		var board = this;
 		if (arguments.length > 3) {
 			this.emptySquare = emptySquare;
 		}
-		this.pieces = iterable(pieces || []).map(function (piece) {
-			var position = piece.position;
-			return [position[0] * width + position[1], piece];
-		}).toObject();
+		if (Array.isArray(pieces)) {
+			this.pieces = pieces;
+			this.__piecesByCoord__ = {};
+			iterable(pieces || []).forEach(function (piece) {
+				raiseIf(!Array.isArray(piece.position), "Piece has not a position (", piece, ")!");
+				board.__piecesByCoord__[piece.position+ ''] = piece;
+			});
+		} else {
+			raise("Invalid pieces definition: ", pieces, "!");
+		}
 	},
 	
 	/** The `emptySquare` in `CheckerboardFromPieces` is `null` by default.
@@ -26,7 +33,7 @@ var CheckerboardFromPieces = utils.CheckerboardFromPieces = declare(Checkerboard
 	/** The default string conversion of `CheckerboardFromPieces` prints the piece list.
 	*/
 	toString: function toString() {
-		return '['+ iterable(this.pieces).select(1).join(', ') +']';
+		return '['+ this.pieces.join(', ') +']';
 	},
 	
 	// ## Board information ########################################################################
@@ -35,8 +42,7 @@ var CheckerboardFromPieces = utils.CheckerboardFromPieces = declare(Checkerboard
 	and the coordinate is inside the board. Else returns `outside`.
 	*/
 	square: function square(coord, outside) {
-		var pos = coord[0] * this.width + coord[1];
-		return this.pieces.hasOwnProperty(pos) ? this.pieces[pos] : outside;
+		return this.__piecesByCoord__[coord] || outside;
 	},
 	
 	// ## Board modification #######################################################################
@@ -60,10 +66,10 @@ var CheckerboardFromPieces = utils.CheckerboardFromPieces = declare(Checkerboard
 	*/
 	__place__: function __place__(coord, value) {
 		raiseIf(!this.isValidCoord(coord), "Invalid coordinate ", coord, "!");
-		var pos = coord[0] * this.width + coord[1];
-		delete this.pieces[pos];
+		var id = coord +'';
+		delete this.pieces[id];
 		if (value) {
-			this.pieces[pos] = value;
+			this.pieces[id] = value;
 		}
 		return this;
 	}
