@@ -90,6 +90,18 @@
 			expect(board3x3.swap.bind(board3x3, [0,0], [0, 9])).toThrow();
 		}); // swaps pieces properly
 		
+		it("whole board transformations", function () {
+			var board3x3 = new CheckerboardFromString(3, 3, '123456789');
+			expect(board3x3.horizontalSymmetry().string).toBe('321654987');
+			expect(board3x3.verticalSymmetry().string).toBe('789456123');
+			expect(board3x3.verticalSymmetry().horizontalSymmetry().string).toBe('987654321');
+			expect(board3x3.clockwiseRotation().string).toBe('741852963');
+			expect(board3x3.clockwiseRotation().clockwiseRotation().string).toBe('987654321');
+			expect(board3x3.counterClockwiseRotation().string).toBe('369258147');
+			expect(board3x3.counterClockwiseRotation().counterClockwiseRotation().string).toBe('987654321');
+			expect(board3x3.clockwiseRotation().counterClockwiseRotation().string).toBe('123456789');
+		}); // whole board transformations
+		
 		it("walks properly", function () {
 			var board3x3 = new CheckerboardFromString(3, 3, '123456789');
 			expect(board3x3.asString(board3x3.walk([0,0], [+1,+1]))).toBe('159');
