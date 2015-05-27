@@ -11,16 +11,17 @@ var CheckerboardFromPieces = utils.CheckerboardFromPieces = declare(Checkerboard
 	constructor: function CheckerboardFromPieces(height, width, pieces, emptySquare) {
 		Checkerboard.call(this, height, width);
 		var board = this;
-		if (arguments.length > 3) {
+		if (emptySquare !== this.emptySquare) {
 			this.emptySquare = emptySquare;
 		}
 		if (Array.isArray(pieces)) {
-			this.pieces = pieces;
-			this.__piecesByCoord__ = {};
+			this.pieces = {}; 
 			iterable(pieces || []).forEach(function (piece) {
 				raiseIf(!Array.isArray(piece.position), "Piece has not a position (", piece, ")!");
-				board.__piecesByCoord__[piece.position+ ''] = piece;
+				board.pieces[piece.position +''] = piece;
 			});
+		} else if (typeof pieces === 'object') {
+			this.pieces = base.copy({}, pieces);
 		} else {
 			raise("Invalid pieces definition: ", pieces, "!");
 		}
@@ -33,7 +34,7 @@ var CheckerboardFromPieces = utils.CheckerboardFromPieces = declare(Checkerboard
 	/** The default string conversion of `CheckerboardFromPieces` prints the piece list.
 	*/
 	toString: function toString() {
-		return '['+ this.pieces.join(', ') +']';
+		return '['+ iterable(this.pieces).select(1).join(', ') +']';
 	},
 	
 	// ## Board information ########################################################################
@@ -42,23 +43,17 @@ var CheckerboardFromPieces = utils.CheckerboardFromPieces = declare(Checkerboard
 	and the coordinate is inside the board. Else returns `outside`.
 	*/
 	square: function square(coord, outside) {
-		return this.__piecesByCoord__[coord] || outside;
+		return this.pieces[coord] || outside;
 	},
 	
 	// ## Board modification #######################################################################
 	
 	/** Cloning a `CheckerboardFromPieces` simply calls the constructor again with the proper 
-	arguments to replicate this instance.
-	
-	Warning! The list of pieces is copied shallowly.
+	arguments to replicate this instance. The `pieces` object is copied _shallowly_ by the 
+	constructor.
 	*/
 	clone: function clone() {
-		var newPieces = [].concat(this.pieces);
-		if (this.hasOwnProperty('emptySquare')) {
-			return new this.constructor(this.height, this.width, newPieces, this.emptySquare);
-		} else {
-			return new this.constructor(this.height, this.width, newPieces);
-		}
+		return new this.constructor(this.height, this.width, this.pieces, this.emptySquare);
 	},
 	
 	/** A `place(coord, value)` means removing any existing piece at the given `coord` and adding 
