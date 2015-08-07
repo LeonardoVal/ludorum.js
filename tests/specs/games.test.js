@@ -1,4 +1,4 @@
-﻿define(['creatartis-base', 'ludorum'], function (base, ludorum) {
+﻿define(['ludorum', 'creatartis-base', 'sermat'], function (ludorum, base, Sermat) {
 	var RANDOM = base.Randomness.DEFAULT;	
 	
 	function itIsGameInstance(game) {
@@ -7,7 +7,7 @@
 			expect(game.name).toBeTruthy();
 			expect(game.players).toBeOfType(Array);
 			expect(game.players.length).toBeGreaterThan(0);
-			expect(game.__serialize__()).toBeOfType(Array);
+			expect(Sermat.sermat(game)).toBeOfType(game.constructor);
 		});
 	}
 
