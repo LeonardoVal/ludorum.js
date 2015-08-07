@@ -142,10 +142,3 @@ var Aleatory = exports.Aleatory = declare({
 		});
 	}
 }); // declare Aleatory.
-
-/** ## Aleatories namespace
-
-The namespace `ludorum.aleatories` is a bundle of random game states (i.e. 
-Aleatory subclasses) and related definitions.
-*/
-var aleatories = exports.aleatories = { };

@@ -2,7 +2,7 @@
 
 Implementations of common dice and related functions.
 */
-aleatories.dice = {
+var dice = aleatories.dice = {
 	/** Common dice variants.
 	*/
 	D4: Aleatory.withRange(1, 4),

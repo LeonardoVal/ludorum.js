@@ -63,10 +63,3 @@ var Player = exports.Player = declare({
 		return args.shift() +'('+ args.map(JSON.stringify).join(',') +')';
 	}
 }); // declare Player.
-
-/** ## Players namespace
-
-The namespace `ludorum.players` contains all kinds of players provided by
-this library: artificial intelligences, user interface proxies and others.
-*/
-var players = exports.players = {};

@@ -144,10 +144,3 @@ var Tournament = exports.Tournament = declare({
 		}
 	}
 }); // declare Tournament
-
-/** ## Tournament namespace
-
-The namespace `ludorum.tournaments` holds several contest types implemented 
-as Tournament subtypes.
-*/
-var tournaments = exports.tournaments = {};
