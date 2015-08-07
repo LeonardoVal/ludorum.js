@@ -1,13 +1,14 @@
 ﻿var APP = {},
-	JS_ROOT = '../../..';
+	JS_ROOT = '../../';
 
 require.config({
 	paths: {
-		'creatartis-base': JS_ROOT +"/lib/creatartis-base", 
-		ludorum: JS_ROOT +"/build/ludorum"
+		'creatartis-base': JS_ROOT +"lib/creatartis-base", 
+		sermat: JS_ROOT +"lib/sermat-umd",
+		ludorum: JS_ROOT +"lib/ludorum"
 	}
 });
-require(['creatartis-base', 'ludorum'], function (base, ludorum) {
+require(['ludorum', 'creatartis-base', 'sermat'], function (ludorum, base, Sermat) {
 	APP.imports = {base: base, ludorum: ludorum};
 	APP.elements = {
 		selectXs: document.getElementById('playerXs'),

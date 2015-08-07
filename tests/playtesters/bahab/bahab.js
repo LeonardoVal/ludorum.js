@@ -2,12 +2,13 @@
 
 require.config({
 	paths: {
-		'creatartis-base': "../../../lib/creatartis-base", 
-		ludorum: "../../../build/ludorum"
+		'creatartis-base': '../../lib/creatartis-base',
+		sermat: '../../lib/sermat-umd',
+		ludorum: '../../lib/ludorum'
 	}
 });
-require(['creatartis-base', 'ludorum'], function (base, ludorum) {
-	APP.imports = {base: base, ludorum: ludorum};
+require(['ludorum', 'creatartis-base'], function (ludorum, base) {
+	APP.imports = { base: base, ludorum: ludorum };
 	APP.elements = {
 		selectUppercase: document.getElementById('playerUppercase'),
 		selectLowercase: document.getElementById('playerLowercase'),
