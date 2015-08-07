@@ -13,8 +13,9 @@ module.exports = function(config) {
     files: [
       'tests/karma-tester.js',
       {pattern: 'tests/specs/*.test.js', included: false},
-      {pattern: 'build/ludorum.js', included: false},
-      {pattern: 'lib/creatartis-base.js', included: false},
+      {pattern: 'tests/lib/ludorum.js', included: false},
+      {pattern: 'tests/lib/creatartis-base.js', included: false},
+	  {pattern: 'tests/lib/sermat-umd.js', included: false}
     ],
 
     // list of files to exclude
@@ -22,8 +23,10 @@ module.exports = function(config) {
 
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
-    preprocessors: {
-		'build/ludorum.js': ['sourcemap'] // Source map loader.
+    preprocessors: { // Source map loader.
+		'tests/lib/ludorum.js': ['sourcemap'], 
+		'tests/lib/creatartis-base.js': ['sourcemap'],
+		'tests/lib/sermat-umd.js': ['sourcemap']
 	},
 
     // test results reporter to use

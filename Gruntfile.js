@@ -1,50 +1,34 @@
 ﻿/** Gruntfile for [ludorum.js](http://github.com/LeonardoVal/ludorum.js).
 */
-var sourceFiles = [ 'src/__prologue__.js',
-	'src/Game.js', 'src/Player.js', 'src/Match.js', 
-		'src/Tournament.js', 'src/Aleatory.js',
+var sourceFiles = [ '__prologue__',
+	'Game', 'Player', 'Match', 'Tournament', 'Aleatory',
 	// utils.
-		'src/utils/Checkerboard.js', 
-			'src/utils/CheckerboardFromString.js',
-			'src/utils/CheckerboardFromPieces.js',
-		'src/utils/Scanner.js',
-		'src/utils/Cache.js',
-		'src/utils/GameTree.js',
+		'utils/Checkerboard', 'utils/CheckerboardFromString', 'utils/CheckerboardFromPieces',
+		'utils/Scanner', 'utils/Cache', 'utils/GameTree',
 	// players.
-	'src/players/RandomPlayer.js', 'src/players/TracePlayer.js',
-		'src/players/HeuristicPlayer.js', 
-		'src/players/MaxNPlayer.js',
-		'src/players/MiniMaxPlayer.js', 
-			'src/players/AlphaBetaPlayer.js',
-		'src/players/MonteCarloPlayer.js',
-			'src/players/UCTPlayer.js',
-		'src/players/UserInterfacePlayer.js',
-		'src/players/WebWorkerPlayer.js',
+	'players/RandomPlayer', 'players/TracePlayer', 'players/HeuristicPlayer', 'players/MaxNPlayer',
+		'players/MiniMaxPlayer', 'players/AlphaBetaPlayer', 'players/MonteCarloPlayer', 
+		'players/UCTPlayer', 'players/UserInterfacePlayer', 'players/WebWorkerPlayer',
 	// aleatories.
-		'src/aleatories/dice.js',
+		'aleatories/dice',
 	// games.
-	'src/games/Predefined.js',
-		'src/games/Choose2Win.js',
-		'src/games/ConnectionGame.js',
-		'src/games/OddsAndEvens.js',
-		'src/games/TicTacToe.js',
-		'src/games/ToadsAndFrogs.js',
-		'src/games/Pig.js',
-		'src/games/Mutropas.js',
-		'src/games/Bahab.js',
+	'games/Predefined', 'games/Choose2Win', 'games/ConnectionGame', 'games/OddsAndEvens',
+		'games/TicTacToe', 'games/ToadsAndFrogs', 'games/Pig', 'games/Mutropas',
+		'games/Bahab',
 	// tournaments.
-	'src/tournaments/RoundRobin.js', 'src/tournaments/Measurement.js',
-		'src/tournaments/Elimination.js',
+	'tournaments/RoundRobin', 'tournaments/Measurement', 'tournaments/Elimination',
 // end
-	'src/__epilogue__.js'];
+	'__epilogue__'].map(function (path) { 
+		return 'src/'+ path +'.js';
+	});
 
-// Init config. ////////////////////////////////////////////////////////////////
+// Init config. ////////////////////////////////////////////////////////////////////////////////////
 module.exports = function(grunt) {
 	grunt.file.defaultEncoding = 'utf8';
-// Init config. ////////////////////////////////////////////////////////////////
+// Init config. ////////////////////////////////////////////////////////////////////////////////////
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
-		concat_sourcemap: { ////////////////////////////////////////////////////
+		concat_sourcemap: { ////////////////////////////////////////////////////////////////////////
 			build: {
 				src: sourceFiles,
 				dest: 'build/<%= pkg.name %>.js',
@@ -53,7 +37,7 @@ module.exports = function(grunt) {
 				}
 			},
 		},
-		jshint: { //////////////////////////////////////////////////////////////
+		jshint: { //////////////////////////////////////////////////////////////////////////////////
 			build: {
 				options: { // Check <http://jshint.com/docs/options/>.
 					loopfunc: true,
@@ -62,7 +46,7 @@ module.exports = function(grunt) {
 				src: ['build/<%= pkg.name %>.js'],
 			},
 		},
-		uglify: { //////////////////////////////////////////////////////////////
+		uglify: { //////////////////////////////////////////////////////////////////////////////////
 			build: {
 				src: 'build/<%= pkg.name %>.js',
 				dest: 'build/<%= pkg.name %>.min.js',
@@ -75,7 +59,7 @@ module.exports = function(grunt) {
 				}
 			}
 		},
-		karma: { ///////////////////////////////////////////////////////////////
+		karma: { ///////////////////////////////////////////////////////////////////////////////////
 			options: {
 				configFile: 'tests/karma.conf.js'
 			},
@@ -84,77 +68,48 @@ module.exports = function(grunt) {
 			firefox: { browsers: ['Firefox'] },
 			iexplore: { browsers: ['IE'] }
 		},
-		docker: { //////////////////////////////////////////////////////////////
+		docker: { //////////////////////////////////////////////////////////////////////////////////
 			build: {
-				src: ["src/**/*.js", "README.md", 'docs/*.md'],
-				dest: "docs/docker",
+				src: ['src/**/*.js', 'README.md', 'docs/*.md'],
+				dest: 'docs/docker',
 				options: {
 					colourScheme: 'borland',
 					ignoreHidden: true,
 					exclude: 'src/__prologue__.js,src/__epilogue__.js'
 				}
 			}
-		},
-		bowercopy: { ///////////////////////////////////////////////////////////
-			options: {
-				clean: true,
-				runBower: true,
-				srcPrefix: 'bower_components'
-			},
-			lib: {
-				options: {
-					destPrefix: 'lib'
-				},
-				files: {
-					'jquery.js': 'jquery/jquery.js',
-					'require.js': 'requirejs/require.js',
-					'creatartis-base.js': 'creatartis-base/build/creatartis-base.js'
-				},
-			}
 		}
 	});
-// Load tasks. /////////////////////////////////////////////////////////////////
+// Load tasks. /////////////////////////////////////////////////////////////////////////////////////
 	grunt.loadNpmTasks('grunt-concat-sourcemap');
-	grunt.loadNpmTasks('grunt-karma');
-	grunt.loadNpmTasks('grunt-contrib-uglify');
-	grunt.loadNpmTasks('grunt-docker');
-	grunt.loadNpmTasks('grunt-bowercopy');
 	grunt.loadNpmTasks('grunt-contrib-jshint');
+	grunt.loadNpmTasks('grunt-contrib-uglify');
+	grunt.loadNpmTasks('grunt-karma');
+	grunt.loadNpmTasks('grunt-docker');
 
-// Custom tasks. ///////////////////////////////////////////////////////////////
-	grunt.registerTask('bower-json', 'Writes <bower.json> based on <package.json>.', function() {
-		var pkg = grunt.config.get('pkg'),
-			bowerJSON = { // bower.json own members.
-				"moduleType": ["amd", "globals", "node"],
-				"authors": [pkg.author],
-				"ignore": ["**/.*", "node_modules", "bower_components", "src", 
-					"tests", "docs", "bower.json", "package.json", "Gruntfile.js", 
-					"LICENSE.md", "README.md"],
-				"dependencies": {
-					"requirejs": "2.1.9",
-					"creatartis-base": "~0.1.4"
-				},
-				"devDependencies": {
-					"jquery": "~2.0.3"
-				}
-			};
-		// Copy package.json members to bower.json.
-		['name', 'description', 'version', 'keywords', 'licence', 'homepage',
-		 'contributors', 'private', 'main', 'dependencies', 'devDependencies',
-		 'optionalDependencies'].forEach(function (id) {
-			if (pkg.hasOwnProperty(id) && !bowerJSON.hasOwnProperty(id)) {
-				bowerJSON[id] = pkg[id];
-			}
-		});
-		grunt.file.write('bower.json', JSON.stringify(bowerJSON, null, '\t'), { encoding: 'utf8' });
-	}); // bower-json.
+// Custom tasks. ///////////////////////////////////////////////////////////////////////////////////
+	grunt.registerTask('test-lib', 'Copies libraries for the testing facilities to use.', function() {
+		var path = require('path'),
+			pkg = grunt.config.get('pkg');
+		grunt.log.writeln("Copied to tests/lib/: "+ [
+			'node_modules/requirejs/require.js',
+			'node_modules/creatartis-base/build/creatartis-base.js',
+			'node_modules/creatartis-base/build/creatartis-base.js.map',
+			'node_modules/sermat/build/sermat-umd.js',
+			'node_modules/sermat/build/sermat-umd.js.map',
+			'build/'+ pkg.name +'.js', 
+			'build/'+ pkg.name +'.js.map'
+		].map(function (fileToCopy) {
+			var baseName = path.basename(fileToCopy);
+			grunt.file.copy('./'+ fileToCopy, './tests/lib/'+ baseName);
+			return baseName;
+		}).join(", ") +".");
+	}); // test-lib
 	
-// Register tasks. /////////////////////////////////////////////////////////////
-	grunt.registerTask('lib', ['bower-json', 'bowercopy:lib']);
-	
+// Register tasks. /////////////////////////////////////////////////////////////////////////////////
 	grunt.registerTask('compile', ['concat_sourcemap:build', 'jshint:build', 'uglify:build']); 
-	grunt.registerTask('test', ['compile', 'karma:build']);
-	grunt.registerTask('test-all', ['test', 'karma:chrome', 'karma:firefox', 'karma:iexplore', /*'karma:opera'*/]);
+	grunt.registerTask('test', ['compile', 'test-lib', 'karma:build']);
+	grunt.registerTask('test-all', ['test', 'karma:chrome', 'karma:firefox', 'karma:iexplore']);
 	grunt.registerTask('build', ['test', 'docker:build']);
 	grunt.registerTask('default', ['build']);
 };
