@@ -20,25 +20,25 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 	namespace (`self`). If a `workerSetup` function is given, it is also run. After that, the 
 	`playerBuilder` function is called and its results stored in the variable `self.PLAYER`.
 	*/
-	"static createWorker": function createWorker(playerBuilder, workerSetup) {
+	'static createWorker': function createWorker(playerBuilder, workerSetup) {
 		raiseIf('string function'.indexOf(typeof playerBuilder) < 0, "Invalid player builder: "+ playerBuilder +"!");
 		var parallel = new base.Parallel();
-		return parallel.run('self.ludorum = ('+ exports.__init__ +')(self.base), "OK"').then(function () {
-				if (typeof workerSetup === 'function') {
-					return parallel.run('('+ workerSetup +')(), "OK"');
-				}
-			}).then(function () {
-				return parallel.run('self.PLAYER = ('+ playerBuilder +').call(self), "OK"');
-			}).then(function () {
-				return parallel.worker;
-			});
+		return parallel.loadModule(exports, true).then(function () {
+			return parallel.run(
+				(typeof workerSetup === 'function' ? '('+ workerSetup +')(),\n' : '')+
+				'self.PLAYER = ('+ playerBuilder +').call(self),\n'+
+				'"OK"'
+			);
+		}).then(function () {
+			return parallel.worker;
+		});
 	},
 	
 	/** The static `create(params)` method creates (asynchronously) and initializes a 
 	`WebWorkerPlayer`, with a web worker ready to play. The `params` must include the 
 	`playerBuilder` function to execute on the web worker's environment.
 	*/
-	"static create": function create(params) {
+	'static create': function create(params) {
 		var WebWorkerPlayer = this;
 		return WebWorkerPlayer.createWorker(params.playerBuilder, params.workerSetup).then(function (worker) {
 			return new WebWorkerPlayer({name: name, worker: worker}); 
@@ -56,7 +56,7 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 			this.__future__.resolve(Match.commandQuit);
 		}
 		this.__future__ = new Future();
-		this.worker.postMessage('PLAYER.decision(ludorum.Game.fromJSON('+ game.toJSON() +'), '+ JSON.stringify(player) +')');
+		this.worker.postMessage('PLAYER.decision(Sermat.mat('+ JSON.stringify(Sermat.ser(game)) +'), '+ JSON.stringify(player) +')');
 		return this.__future__;
 	}
 }); // declare WebWorkerPlayer
