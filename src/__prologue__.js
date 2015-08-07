@@ -2,20 +2,20 @@
 */
 (function (global, init) { "use strict"; // Universal Module Definition.
 	if (typeof define === 'function' && define.amd) {
-		define(['creatartis-base'], init); // AMD module.
+		define(['creatartis-base', 'sermat'], init); // AMD module.
 	} else if (typeof module === 'object' && module.exports) {
-		module.exports = init(require('creatartis-base')); // CommonJS module.
+		module.exports = init(require('creatartis-base'), require('sermat')); // CommonJS module.
 	} else { // Browser or web worker (probably).
-		global.ludorum = init(global.base); // Assumes base is loaded.
+		global.ludorum = init(global.base, global.Sermat); // Assumes base is loaded.
 	}
-})(this, function __init__(base) { "use strict";
+})(this, function __init__(base, Sermat) { "use strict";
 // Import synonyms. ////////////////////////////////////////////////////////////////////////////////
-	var declare = base.declare,
-		unimplemented = base.objects.unimplemented,
+	var unimplemented = base.objects.unimplemented,
 		obj = base.obj,
 		copy = base.copy,
 		raise = base.raise,
 		raiseIf = base.raiseIf,
+		declare = base.declare,
 		Iterable = base.Iterable,
 		iterable = base.iterable,
 		Future = base.Future,
@@ -26,12 +26,17 @@
 
 // Library layout. /////////////////////////////////////////////////////////////////////////////////
 	var exports = {
-		__name__: 'ludorum',
-		__init__: __init__,
-		__dependencies__: [base]
-	};
-	
-	/** The namespace `ludorum.utils` contains miscellaneous classes, functions 
-	and definitions.
-	*/
-	var utils = exports.utils = {};
+			__package__: 'ludorum',
+			__name__: 'ludorum',
+			__init__: __init__,
+			__dependencies__: [base, Sermat],
+			__SERMAT__: { include: [base] }
+		},
+		/** The library is organized in the following _namespaces_.
+		*/
+		aleatories = exports.aleatories = {},
+		games = exports.games = {},
+		players = exports.players =  {},
+		tournaments = exports.tournaments = {},
+		utils = exports.utils = {}
+	;

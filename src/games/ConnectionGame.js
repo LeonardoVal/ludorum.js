@@ -1,11 +1,9 @@
 ﻿/** # ConnectionGame
 
-Base class for a subset of the family of 
-[connection games](http://en.wikipedia.org/wiki/Connection_game), which includes 
-[TicTacToe](http://en.wikipedia.org/wiki/Tic-tac-toe), 
-[ConnectFour](http://en.wikipedia.org/wiki/Connect_Four) and
-[Gomoku](http://en.wikipedia.org/wiki/Gomoku). It implements a rectangular 
-board, the placing of the pieces and the checks for lines.
+Base class for a subset of the family of [connection games](http://en.wikipedia.org/wiki/Connection_game), 
+which includes [TicTacToe](http://en.wikipedia.org/wiki/Tic-tac-toe), 
+[ConnectFour](http://en.wikipedia.org/wiki/Connect_Four) and [Gomoku](http://en.wikipedia.org/wiki/Gomoku).
+It implements a rectangular board, the placing of the pieces and the checks for lines.
 */
 games.ConnectionGame = declare(Game, {
 	/** Boards by default have 9 rows ...
@@ -20,9 +18,8 @@ games.ConnectionGame = declare(Game, {
 	*/
 	lineLength: 5,
 
-	/** The constructor takes the active player and the board given as a string.
-	For the game's `board` this last string argument is used to build a 
-	[`CheckerboardFromString`](../utils/CheckerboardFromString.js.html).
+	/** The constructor takes the active player and the board given as a string. For the game's 
+	`board` this last string argument is used to build a [`CheckerboardFromString`](../utils/CheckerboardFromString.js.html).
 	*/
 	constructor: function ConnectionGame(activePlayer, board) {
 		Game.call(this, activePlayer);
@@ -57,9 +54,9 @@ games.ConnectionGame = declare(Game, {
 		return __lines__;
 	})(),
 	
-	/** A connection game ends when either player gets the required amount of
-	pieces aligned (either horizontally, vertically or diagonally), hence 
-	winning the game. The match ends in a tie if the board gets full.
+	/** A connection game ends when either player gets the required amount of pieces aligned (either
+	horizontally, vertically or diagonally), hence winning the game. The match ends in a tie if the 
+	board gets full.
 	*/
 	result: function result() {
 		if (this.hasOwnProperty('__result__')) {
@@ -78,8 +75,8 @@ games.ConnectionGame = declare(Game, {
 		return this.__result__ = null; // The game continues.
 	},
 	
-	/** The active player can place a piece in any empty square in the board.
-	The moves are indices in the board's string representation.
+	/** The active player can place a piece in any empty square in the board. The moves are indices
+	in the board's string representation.
 	*/
 	moves: function moves() {
 		if (this.hasOwnProperty('__moves__')) {
@@ -97,8 +94,8 @@ games.ConnectionGame = declare(Game, {
 		}
 	},
 
-	/** To get from one game state to the next, an active player's piece in the 
-	square indicated by its move.
+	/** To get from one game state to the next, an active player's piece in the square indicated by 
+	its move.
 	*/
 	next: function next(moves) {
 		var activePlayer = this.activePlayer(),
@@ -111,11 +108,11 @@ games.ConnectionGame = declare(Game, {
 		);
 	},
 	
-	// ## User intefaces #######################################################
+	// ## User intefaces ###########################################################################
 	
-	/** The `display(ui)` method is called by a `UserInterface` to render the
-	game state. The only supported user interface type is `BasicHTMLInterface`.
-	The look can be configured using CSS classes.
+	/** The `display(ui)` method is called by a `UserInterface` to render the game state. The only 
+	supported user interface type is `BasicHTMLInterface`. The look can be configured using CSS 
+	classes.
 	*/
 	display: function display(ui) {
 		raiseIf(!ui || !(ui instanceof UserInterface.BasicHTMLInterface), "Unsupported UI!");
@@ -136,7 +133,14 @@ games.ConnectionGame = declare(Game, {
 		return ui;
 	},
 
-	__serialize__: function __serialize__() {
-		return [this.name, this.activePlayer(), this.board.string];
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: exports.__package__ +'.ConnectionGame',
+		serializer: function serialize_ConnectionGame(obj) {
+			return [obj.activePlayer(), obj.board];
+		}
 	}
 }); // declare ConnectionGame.

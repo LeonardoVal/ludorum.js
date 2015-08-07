@@ -153,9 +153,12 @@ games.Bahab = declare(Game, {
 	
 	// ## Utility methods ##########################################################################
 	
-	/** The game state serialization simply contains the constructor arguments.
+	/** Serialization and materialization using Sermat.
 	*/
-	__serialize__: function __serialize__() {
-		return [this.name, this.activePlayer(), this.board.string];
+	'static __SERMAT__': {
+		identifier: exports.__package__ +'.Bahab',
+		serializer: function serialize_Bahab(obj) {
+			return [obj.activePlayer(), obj.board];
+		}
 	}
 }); // declare Bahab.

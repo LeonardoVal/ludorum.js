@@ -52,7 +52,12 @@ games.OddsAndEvens = declare(Game, {
 
 	// ## Utility methods ##########################################################################
 	
-	__serialize__: function __serialize__() {
-		return [this.name, this.turns, this.points];
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: exports.__package__ +'.OddsAndEvens',
+		serializer: function serialize_OddsAndEvens(obj) {
+			return [obj.turns, obj.points];
+		}
 	}
 }); // declare OddsAndEvens.

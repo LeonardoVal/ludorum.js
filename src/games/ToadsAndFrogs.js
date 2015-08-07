@@ -69,7 +69,14 @@ games.ToadsAndFrogs = declare(Game, {
 		return new this.constructor(this.opponent(), board);
 	},
 
-	__serialize__: function __serialize__() {
-		 return [this.name, this.activePlayer, this.board];
+	// ## Utility methods ##########################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: exports.__package__ +'.ToadsAndFrogs',
+		serializer: function serialize_ToadsAndFrogs(obj) {
+			return [obj.activePlayer(), obj.board];
+		}
 	}	
 }); // declare ToadsAndFrogs

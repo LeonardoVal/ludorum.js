@@ -54,7 +54,14 @@ games.Predefined = declare(Game, {
 		return new this.constructor(this.opponent(), this.__results__, this.height - 1, this.width);
 	},
 	
-	__serialize__: function __serialize__() {
-		return [this.name, this.activePlayer(), this.results, this.height, this.width];
+	// ## Utility methods ##########################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: exports.__package__ +'.Predefined',
+		serializer: function serialize_Predefined(obj) {
+			return [obj.activePlayer(), obj.__results__, obj.height, obj.width];
+		}
 	}
 }); // declare Predefined.

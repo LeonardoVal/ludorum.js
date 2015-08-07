@@ -163,10 +163,17 @@ games.Mutropas = declare(Game, {
 	
 	// ## Utility methods ##########################################################################
 	
-	/** Serialization is used in the `toString()` method, but it is also vital for sending the game 
-	state across a network or the marshalling between the rendering thread and a webworker.
+	/** Serialization and materialization using Sermat.
 	*/
-	__serialize__: function __serialize__() {
-		return [this.name, { pieces: this.__pieces__, scores: this.__scores__ }];
+	'static __SERMAT__': {
+		identifier: exports.__package__ +'.Mutropas',
+		serializer: function serialize_Mutropas(obj) {
+			return [{ 
+				random: obj.random,
+				pieces: obj.pieces, 
+				playedPieces: obj.playedPieces,
+				scores: obj.__scores__
+			}];
+		}
 	}
 }); // declare Mutropas

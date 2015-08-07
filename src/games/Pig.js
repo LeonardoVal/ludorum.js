@@ -87,11 +87,12 @@ games.Pig = declare(Game, {
 		return [-this.goal, +this.goal];
 	},
 	
-	/** Serialization is used in the `toString()` method, but it is also vital 
-	for sending the game state across a network or the marshalling between the 
-	rendering thread and a webworker.
-	*/	
-	__serialize__: function __serialize__() {
-		return [this.name, this.activePlayer(), this.goal, this.__scores__, this.__rolls__];
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: exports.__package__ +'.Pig',
+		serializer: function serialize_Pig(obj) {
+			return [obj.activePlayer(), obj.goal, obj.__scores__, obj.__rolls__];
+		}
 	}
 }); // Pig.

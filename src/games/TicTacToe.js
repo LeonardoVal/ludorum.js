@@ -5,8 +5,8 @@ Implementation of the traditional [Tic-Tac-Toe game](http://en.wikipedia.org/wik
 games.TicTacToe = declare(Game, {
 	name: 'TicTacToe',
 
-	/** The constructor takes the `activePlayer` (`"Xs"` by default) and the
-	`board` as a string (empty board as default).
+	/** The constructor takes the `activePlayer` (`"Xs"` by default) and the `board` as a string 
+	(empty board as default).
 	*/
 	constructor: function TicTacToe(activePlayer, board) {
 		Game.call(this, activePlayer);
@@ -17,8 +17,8 @@ games.TicTacToe = declare(Game, {
 	*/
 	players: ['Xs', 'Os'],
 	
-	/** A match ends with a victory for any player that has three marks in line, 
-	or a draw if the board is full.
+	/** A match ends with a victory for any player that has three marks in line, or a draw if the 
+	board is full.
 	*/
 	result: (function () {
 		return function result() {			
@@ -34,8 +34,7 @@ games.TicTacToe = declare(Game, {
 		};
 	})(),
 	
-	/** The active player's `moves()` are the indexes of empty squares in the 
-	board.
+	/** The active player's `moves()` are the indexes of empty squares in the board.
 	*/
 	moves: function moves() {
 		if (!this.result()) {
@@ -51,8 +50,8 @@ games.TicTacToe = declare(Game, {
 		}		
 	},
 	
-	/** The `next(moves)` game state puts the mark of the active player in the
-	square indicated by the move. 
+	/** The `next(moves)` game state puts the mark of the active player in the square indicated by 
+	the move. 
 	*/
 	next: function next(moves) {
 		var activePlayer = this.activePlayer(), 
@@ -64,17 +63,19 @@ games.TicTacToe = declare(Game, {
 		var newBoard = this.board.substring(0, move) + activePlayer.charAt(0) + this.board.substring(move + 1);
 		return new this.constructor(this.opponent(activePlayer), newBoard);
 	},
-
-	// ## Utility methods ######################################################
 	
-	/** The serialization of the game is a representation of a call to its
-	constructor.
+	// ## Utility methods ##########################################################################
+	
+	/** Serialization and materialization using Sermat.
 	*/
-	__serialize__: function __serialize__() {
-		return [this.name, this.activePlayer(), this.board];
+	'static __SERMAT__': {
+		identifier: exports.__package__ +'.TicTacToe',
+		serializer: function serialize_TicTacToe(obj) {
+			return [obj.activePlayer(), obj.board];
+		}
 	},
 	
-	// ## User intefaces #######################################################
+	// ## User intefaces ###########################################################################
 	
 	/** `printBoard()` creates a text (ASCII) version of the board.
 	*/
@@ -87,9 +88,9 @@ games.TicTacToe = declare(Game, {
 		].join('\n');
 	},
 	
-	/** The `display(ui)` method is called by a `UserInterface` to render the
-	game state. The only supported user interface type is `BasicHTMLInterface`.
-	The look can be configured using CSS classes.
+	/** The `display(ui)` method is called by a `UserInterface` to render the game state. The only 
+	supported user interface type is `BasicHTMLInterface`. The look can be configured using CSS 
+	classes.
 	*/
 	display: function display(ui) {
 		raiseIf(!ui || !(ui instanceof UserInterface.BasicHTMLInterface), "Unsupported UI!");
@@ -112,16 +113,15 @@ games.TicTacToe = declare(Game, {
 		return ui;
 	},
 	
-	// ## Heuristics and AI ####################################################
+	// ## Heuristics and AI ########################################################################
 	
-	/** `TicTacToe.heuristics` is a bundle of helper functions to build heuristic 
-	evaluation functions for this game.
+	/** `TicTacToe.heuristics` is a bundle of helper functions to build heuristic evaluation 
+	functions for this game.
 	*/
 	"static heuristics": {
-		/** `heuristicFromWeights(weights)` builds an heuristic evaluation 
-		function from weights for each square in the board. The result of the 
-		function is the weighted sum, empty squares being ignored, opponent 
-		squares considered negative.
+		/** `heuristicFromWeights(weights)` builds an heuristic evaluation function from weights for
+		each square in the board. The result of the function is the weighted sum, empty squares 
+		being ignored, opponent squares considered negative.
 		*/
 		heuristicFromWeights: function heuristicFromWeights(weights) {
 			var weightSum = iterable(weights).map(Math.abs).sum();
@@ -136,19 +136,19 @@ games.TicTacToe = declare(Game, {
 		}
 	},
 	
-	// ## TicTacToe type initialization ########################################
+	// ## TicTacToe type initialization ############################################################
 	
 	'': function () { 
-		/** The regular expressions `WIN_X` and `WIN_O` used in the victory test 
-		are calculated here.
+		/** The regular expressions `WIN_X` and `WIN_O` used in the victory test are calculated 
+		here.
 		*/
 		var board3x3 = new CheckerboardFromString(3, 3, '_'.repeat(9)),
 			lines = board3x3.sublines(board3x3.lines(), 3);
 		this.prototype.WIN_X = new RegExp(board3x3.asRegExps(lines, 'X', '.'));
 		this.prototype.WIN_O = new RegExp(board3x3.asRegExps(lines, 'O', '.'));
 		
-		/** The `defaultHeuristic `for TicTacToe is based on weights for each 
-		square. Center is worth 5, corners 2 and the other squares 1.
+		/** The `defaultHeuristic `for TicTacToe is based on weights for each square. Center is 
+		worth 5, corners 2 and the other squares 1.
 		*/
 		this.heuristics.defaultHeuristic = this.heuristics
 			.heuristicFromWeights([2,1,2,1,5,1,2,1,2]);
