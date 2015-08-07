@@ -250,63 +250,22 @@ var Game = exports.Game = declare({
 
 	// ## Conversions & presentations ##############################################################
 
-	/** Many methods are based in the serialization of the game instances. The abstract method 
-	`__serialize__()` should returns an array, where the first element should be the name of the 
-	game, and the rest are the arguments to call the game's constructor in order to rebuild this 
-	game's state.
-	*/
-	__serialize__: unimplemented("Game", "__serialize__"),
-	
-	/** Based on the game's serialization, `clone()` creates a copy of this game state.
-	*/
-	clone: function clone() {
-		var args = this.__serialize__();
-		args.shift(); // Remove first element (game's name).
-		return new (this.constructor.bind.apply(this.constructor, args))();
-	},
-
 	/** Some algorithms require an `identifier()` for each game state, in order to store them in 
 	caches or hashes. This method calculates a string that uniquely identifies this game state,
 	based on the game's serialization.
 	*/
 	identifier: unimplemented("Game", "identifier"),
 
-	/** The default string representation of a game is also based on the serialization. Changing
-	this is not recommended.
+	/** Based on the game's serialization, `clone()` creates a copy of this game state.
+	*/
+	clone: function clone() {
+		return this.constructor.__materialize__(this.__serialize__());
+	},
+
+	/** The default string representation of a game is equal to the result of `toJSON`.
 	*/
 	toString: function toString() {
-		var args = this.__serialize__();
-		return args.shift() +'('+ args.map(JSON.stringify).join(',') +')';
-	},
-	
-	/** The default JSON representation (i.e. `toJSON()`) is a straight JSON stringification of the
-	serialization. It may be used to transfer the game state between server and client, frames or
-	workers.
-	*/
-	toJSON: function toJSON() {
-		return JSON.stringify(this.__serialize__());
-	},
-	
-	/** The static counterpart of `toJSON()` is `fromJSON()`, which creates a new instance of this
-	game from the given JSON. The function in `Game` abstract class finds the proper constructor
-	with the game name and calls it.
-	*/
-	"static fromJSON": function fromJSON(data) {
-		if (typeof data === 'string') {
-			data = JSON.parse(data);
-			raiseIf(!Array.isArray(data) || data.length < 1, "Invalid JSON data: "+ data +"!");
-		} else {
-			raiseIf(!Array.isArray(data) || data.length < 1, "Invalid JSON data: "+ data +"!");
-			data = data.slice(); // Shallow copy.
-		}
-		var cons = games[data[0]];
-		raiseIf(typeof cons !== 'function', "Unknown game '", data[0], "'!");
-		if (typeof cons.fromJSON === 'function') {
-			return cons.fromJSON(data); // Call game's fromJSON.
-		} else { // Call game's constructor.
-			data[0] = this; 
-			return new (cons.bind.apply(cons, data))();
-		}
+		return this.toJSON();
 	},
 	
 	/** ## Cached games ############################################################################
@@ -393,10 +352,3 @@ var Game = exports.Game = declare({
 	} // static serialized
 	
 }); // declare Game.
-	
-/** ## Games namespace #############################################################################
-
-The namespace `ludorum.games` contains all game implementations (as `Game` subclasses) provided by
-this library.
-*/
-var games = exports.games = {};
