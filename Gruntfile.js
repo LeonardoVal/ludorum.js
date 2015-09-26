@@ -1,40 +1,40 @@
 ﻿/** Gruntfile for [ludorum.js](http://github.com/LeonardoVal/ludorum.js).
 */
-var sourceFiles = [ '__prologue__',
-	'Game', 'Player', 'Match', 'Tournament', 'Aleatory',
-	// utils.
-		'utils/Checkerboard', 'utils/CheckerboardFromString', 'utils/CheckerboardFromPieces',
-		'utils/Scanner', 'utils/Cache', 'utils/GameTree',
-	// players.
-	'players/RandomPlayer', 'players/TracePlayer', 'players/HeuristicPlayer', 'players/MaxNPlayer',
-		'players/MiniMaxPlayer', 'players/AlphaBetaPlayer', 'players/MonteCarloPlayer', 
-		'players/UCTPlayer', 'players/UserInterfacePlayer', 'players/WebWorkerPlayer',
-	// aleatories.
-		'aleatories/dice',
-	// games.
-	'games/Predefined', 'games/Choose2Win', 'games/ConnectionGame', 'games/OddsAndEvens',
-		'games/TicTacToe', 'games/ToadsAndFrogs', 'games/Pig', 'games/Mutropas',
-		'games/Bahab',
-	// tournaments.
-	'tournaments/RoundRobin', 'tournaments/Measurement', 'tournaments/Elimination',
-// end
-	'__epilogue__'].map(function (path) { 
-		return 'src/'+ path +'.js';
-	});
-
-// Init config. ////////////////////////////////////////////////////////////////////////////////////
 module.exports = function(grunt) {
+	var SOURCE_FILES = [ '__prologue__',
+		'Game', 'Player', 'Match', 'Contingent', 'Tournament', 
+		// utils.
+			'utils/Checkerboard', 'utils/CheckerboardFromString', 'utils/CheckerboardFromPieces',
+			'utils/Scanner', 'utils/Cache', 'utils/GameTree',
+		// players.
+		'players/RandomPlayer', 'players/TracePlayer', 'players/HeuristicPlayer', 'players/MaxNPlayer',
+			'players/MiniMaxPlayer', 'players/AlphaBetaPlayer', 'players/MonteCarloPlayer', 
+			'players/UCTPlayer', 'players/UserInterfacePlayer', 'players/WebWorkerPlayer',
+		// aleatories.
+			'aleatories/Aleatory', 'aleatories/UniformAleatory', 'aleatories/dice',
+		// games.
+		'games/Predefined', 'games/Choose2Win', 'games/ConnectionGame', 'games/OddsAndEvens',
+			'games/TicTacToe', 'games/ToadsAndFrogs', 'games/Pig', 'games/Mutropas',
+			'games/Bahab',
+		// tournaments.
+		'tournaments/RoundRobin', 'tournaments/Measurement', 'tournaments/Elimination',
+	// end
+		'__epilogue__'].map(function (path) { 
+			return 'src/'+ path +'.js';
+		});
+
 	grunt.file.defaultEncoding = 'utf8';
 // Init config. ////////////////////////////////////////////////////////////////////////////////////
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
-		concat_sourcemap: { ////////////////////////////////////////////////////////////////////////
+		concat: { //////////////////////////////////////////////////////////////////////////////////
+			options: {
+				separator: '\n\n',
+				sourceMap: true
+			},
 			build: {
-				src: sourceFiles,
-				dest: 'build/<%= pkg.name %>.js',
-				options: {
-					separator: '\n\n'
-				}
+				src: SOURCE_FILES,
+				dest: 'build/<%= pkg.name %>.js'
 			},
 		},
 		jshint: { //////////////////////////////////////////////////////////////////////////////////
@@ -43,7 +43,7 @@ module.exports = function(grunt) {
 					loopfunc: true,
 					boss: true
 				},
-				src: ['build/<%= pkg.name %>.js'],
+				src: ['build/<%= pkg.name %>.js', 'tests/specs/*.js'],
 			},
 		},
 		uglify: { //////////////////////////////////////////////////////////////////////////////////
@@ -81,7 +81,7 @@ module.exports = function(grunt) {
 		}
 	});
 // Load tasks. /////////////////////////////////////////////////////////////////////////////////////
-	grunt.loadNpmTasks('grunt-concat-sourcemap');
+	grunt.loadNpmTasks('grunt-contrib-concat');
 	grunt.loadNpmTasks('grunt-contrib-jshint');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-karma');
@@ -107,7 +107,7 @@ module.exports = function(grunt) {
 	}); // test-lib
 	
 // Register tasks. /////////////////////////////////////////////////////////////////////////////////
-	grunt.registerTask('compile', ['concat_sourcemap:build', 'jshint:build', 'uglify:build']); 
+	grunt.registerTask('compile', ['concat:build', 'jshint:build', 'uglify:build']); 
 	grunt.registerTask('test', ['compile', 'test-lib', 'karma:build']);
 	grunt.registerTask('test-all', ['test', 'karma:chrome', 'karma:firefox', 'karma:iexplore']);
 	grunt.registerTask('build', ['test', 'docker:build']);
