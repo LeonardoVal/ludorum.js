@@ -72,18 +72,18 @@ var Game = exports.Game = declare({
 		
 	If the game has finished then a _falsy_ value must be returned (`null` is recommended).
 	*/
-	moves: unimplemented("Game", "moves"),
+	moves: unimplemented("Game", "moves()"),
 
-	/** Once the players have chosen their moves, the method `next(moves)` is used to perform the 
-	given moves. It returns a new game instance with the resulting state. The moves object should 
-	have a move for each active player. For example:
+	/** Once the players have chosen their moves, the method `next` is used to perform the given 
+	moves. It returns a new game instance with the resulting state. The first `moves` argument 
+	should be an object with a move for each active player. For example:
 
 	+ `{ Player1: 'Rock', Player2: 'Paper' }`
 	
 	There isn't a default implementation, so it must be overriden. It is strongly advised to check 
-	if the moves argument has valid moves.
+	if the arguments are valid.
 	*/
-	next: unimplemented("Game", "next"),
+	next: unimplemented("Game", "next(moves)"),
 
 	/** If the game is finished the result of the game is calculated with `result()`. It returns an 
 	object with every player in the game related to a number. This number must be positive if the 
@@ -93,7 +93,7 @@ var Game = exports.Game = declare({
 	
 	If the game is not finished, this function must return a _falsy_ value (`null` is recommended).
 	*/
-	result: unimplemented("Game", "result"),
+	result: unimplemented("Game", "result()"),
 
 	/** Some games may assign scores to the players in a finished game. This may differ from the
 	result, since the score sign doesn't have to indicate victory or defeat. For example:
@@ -140,8 +140,8 @@ var Game = exports.Game = declare({
 	*/
 	activePlayer: function activePlayer() {
 		var len = this.activePlayers.length;
-		raiseIf(len < 1, 'There is no active player.');
-		raiseIf(len > 1, 'More than one player is active.');
+		raiseIf(len < 1, 'There are no active players!');
+		raiseIf(len > 1, 'More than one player is active!');
 		return this.activePlayers[0];
 	},
 
@@ -171,7 +171,7 @@ var Game = exports.Game = declare({
 	(activePlayer by default) and returns the next game state.
 	*/
 	perform: function perform() {
-		var moves = {}, move, player;
+		var moves = {}, player;
 		for (var i = 0; i < arguments.length; i += 2) {
 			player = arguments[i + 1];
 			if (typeof player === 'undefined') {
@@ -302,15 +302,15 @@ var Game = exports.Game = declare({
 	/** Based on the game's serialization, `clone()` creates a copy of this game state.
 	*/
 	clone: function clone() {
-		return this.constructor.__materialize__(this.__serialize__());
+		return Sermat.sermat(this);
 	},
 
 	/** The default string representation of a game is equal to the result of `toJSON`.
 	*/
 	toString: function toString() {
-		return this.toJSON();
+		return Sermat.ser(this);
 	},
-	
+		
 	/** ## Cached games ############################################################################
 
 	A `cached(game)` has modified `moves()` and `result()` methods that cache the calls of the base
@@ -540,7 +540,7 @@ var Match = exports.Match = declare({
 		if (ply < 1) {
 			this.onBegin(game);
 		}
-		game = this.__advanceAleatories__(game); // Instantiate all random variables.
+		game = this.__advanceContingents__(game); // Remove all non-determinism.
 		results = game.result();
 		if (results) { // If the match has finished ...
 			this.onEnd(game, results);
@@ -557,9 +557,9 @@ var Match = exports.Match = declare({
 		}
 	},
 	
-	__advanceAleatories__: function __advanceAleatories__(game, moves) {
-		for (var next; game instanceof Aleatory; game = next) {
-			next = game.next();
+	__advanceContingents__: function __advanceContingents__(game, moves) {
+		for (var next; game.isContingent; game = next) {
+			next = game.randomNext();
 			this.history.push(next);
 			this.onNext(game, next);
 		}
@@ -569,7 +569,7 @@ var Match = exports.Match = declare({
 	__advance__: function __advance__(game, moves) {
 		var match = this,
 			quitters = game.activePlayers.filter(function (p) {
-				return moves[p] instanceof Match.CommandQuit;
+				return moves[p].__command__ === 'quit';
 			});
 		if (quitters.length > 0) {
 			match.onQuit(game, quitters[0]);
@@ -589,10 +589,10 @@ var Match = exports.Match = declare({
 	The available commands are:
 	*/
 	
-	/** + `CommandQuit()`: A quit command means the player that issued it is leaving the match. The 
-	match is then aborted.
+	/** + `quit`: A quit command means the player that issued it is leaving the match. The match is 
+	then aborted.
 	*/
-	"static CommandQuit": function CommandQuit() { },
+	"static COMMAND_QUIT": { __command__: 'quit' },
 	
 	/** ## Events ##################################################################################
 	
@@ -663,7 +663,7 @@ var Match = exports.Match = declare({
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: exports.__package__ +'.Match',
+		identifier: 'Match',
 		serializer: function serialize_Match(obj) {
 			return [obj.game, obj.players, obj.history];
 		},
@@ -679,6 +679,102 @@ var Match = exports.Match = declare({
 	}
 }); // declare Match.
 
+
+/** # Contingent
+
+Contingent states are game states that depend on other factors that the players choices. They are
+used to represent randomness in non-deterministic games. The random variables (called `haps`) can
+be dice, card decks, roulettes, etc.
+*/
+var Contingent = exports.Contingent = declare({
+	/** Flag to distinguish contingent states from normal game states.
+	*/
+	isContingent: true,
+	
+	/** The default implementation takes a set of `haps`, a game `state` and a set of `moves`. See
+	the `next` method for further details.
+	*/
+	constructor: function Contingent(haps, state, moves) {
+		if (haps) {
+			this.__haps__ = haps;
+		}
+		if (state) {
+			this.__state__ = state;
+		}
+		if (moves) {
+			this.__moves__ = moves;
+		}
+	},
+	
+	/** A contingent state's `haps` are the equivalent of `moves` in normal game states. The method 
+	returns an object with the random variables on which this node depends, e.g.: 
+	`{ die: aleatories.dice.D6 }`.
+	*/
+	haps: function haps() {
+		return this.__haps__;
+	},
+	
+	/** Contingent game states' `next` states depend on the `haps` provided, e.g. `{die1: 4, die2: 2}`.
+	If values for the `haps` are not provided, they are resolved randonmly (using `randomHaps()`).
+	
+	By default this method can have two possible behaviours. If the contingent state was created 
+	with `moves`, the previous `state`'s `next` method is called with these `moves` and the `haps`.
+	Else, it is assumed that the game state constructor will deal with the haps. So it is called
+	with the original arguments of the state and the `haps`.
+	*/
+	next: function next(haps) {
+		var state = this.__state__;
+		if (this.__moves__) {
+			return state.next(this.__moves__, haps || this.randomHaps());
+		} else {
+			var sermatRecord = Sermat.record(state.constructor),
+				args = sermatRecord.serializer(state)[0];
+			return sermatRecord.materializer(null, [copy(haps, args)]);
+		}
+	},
+	
+	/** Method `randomHaps` calculates a random set of haps.
+	*/
+	randomHaps: function randomHaps(random) {
+		return iterable(this.haps()).mapApply(function (n, h) {
+			return [n, h.value(random)];
+		}).toObject();
+	},
+	
+	/** A `randomNext` picks one of the next states at random.
+	*/
+	randomNext: function randomNext(random) {
+		return this.next(this.randomHaps(random));
+	},
+	
+	/** The method `possibleHaps` is analogous to `Game.possibleMoves`. It calculates all possible 
+	combinations of haps.
+	*/
+	possibleHaps: function possibleHaps() {
+		return Iterable.product.apply(Iterable,
+			iterable(this.haps()).mapApply(function (n, hap) {
+				return hap.distribution().mapApply(function (v, p) {
+					return [n, v, p];
+				});
+			}).toArray()
+		).map(function (haps) {
+			var prob = 1;
+			return [iterable(haps).mapApply(function (n, v, p) {
+				prob *= p;
+				return [n, v];
+			}).toObject(), prob];
+		}).toArray();
+	},
+	
+	// ## Utilities ################################################################################
+	
+	'static __SERMAT__': {
+		identifier: 'Contingent',
+		serializer: function serialize_Contingent(obj) {
+			return [obj.__haps__ || null, obj.__state__ || null, obj.__moves__ || null];
+		}
+	}
+});
 
 /** # Tournament
 
@@ -826,152 +922,6 @@ var Tournament = exports.Tournament = declare({
 		}
 	}
 }); // declare Tournament
-
-
-/** # Aleatory
-
-Aleatories are representations of intermediate game states that depend on some 
-form of randomness. `Aleatory` is an abstract class from which different means
-of non determinism can be build, like: dice, card decks, roulettes, etcetera.
-*/
-var Aleatory = exports.Aleatory = declare({
-	/** The constructor may take a next function and a random generator (an
-	instance of `creatartis-base.Randomness`).
-	*/
-	constructor: function Aleatory(next, random) {
-		this.random = random || Randomness.DEFAULT;
-		if (typeof next === 'function') {
-			this.next = next;
-		}
-	},
-	
-	/** The aleatory is always related to a random variable of some sort. The
-	`Aleatory.value()` can be used to obtain a valid random value for that 
-	random variable.
-	*/
-	value: function value() {
-		var n = this.random.random(), v;
-		iterable(this.distribution()).forEach(function (pair) {
-			n -= pair[1];
-			if (n <= 0) {
-				v = pair[0];
-				throw Iterable.STOP_ITERATION;
-			}
-		});
-		if (typeof v === 'undefined') {
-			throw new Error("Random value could not be obtained.");
-		}
-		return v;
-	},
-	
-	/** The function `Aleatory.next(value)` returns the next game state given a specific value for 
-	the random variable. This next game state may also be another `Aleatory`, or the corresponding 
-	[`Game`](Game.html) instance. If no value is given, then a random valid value is chosen, using 
-	the `Aleatory.random` randomness generator.
-	*/
-	next: unimplemented("Aleatory", "next"),
-	
-	/** In order to properly search a game tree with aleatory nodes, the random variables' 
-	distribution have to be known. `Aleatory.distribution()` computes the histogram for the random 
-	variables on which this aleatory depends, as a sequence of pairs `[value, probability]`.
-	*/
-	distribution: unimplemented("Aleatory", "distribution"),
-	
-	/** ## Generic constructors ####################################################################
-	
-	The following methods are meant to simplify defining common aleatory variables:
-	*/
-	
-	/**	+ `fromDistribution` builds an `Aleatory` instance that uses the given distribution.
-	*/
-	'static fromDistribution': function fromDistribution(dist, next, random) {
-		var alea = new Aleatory(next, random);
-		alea.distribution = function distribution() {
-			return dist;
-		};
-		return alea;
-	},
-	
-	/**	+ `withDistribution` returns a constructor for aleatories that use the given ditribution.
-	*/
-	'static withDistribution': function withDistribution(dist) {
-		return declare(Aleatory, {
-			distribution: function distribution() {
-				return dist;
-			},
-		});
-	},
-	
-	/** + `fromValues` builds an `Aleatory` instance that uses the given values, assuming all have 
-	equal probabilities.
-	*/
-	'static fromValues': function fromValues(values, next, random) {
-		values = iterable(values).toArray();
-		var prob = 1 / values.length,
-			alea = new Aleatory(next, random);
-		alea.value = function value() {
-			return this.random.choice(values);
-		};
-		alea.distribution = function distribution() {
-			return values.map(function (value) {
-				return [value, prob];
-			});
-		};
-		return alea;
-	},
-	
-	/** + `withValues` returns an `Aleatory` constructor for aleatories that use the given a list of 
-	values, assuming all these values have equal probabilities.
-	*/
-	'static withValues': function withValues(values) {
-		values = iterable(values).toArray();
-		var prob = 1 / values.length;
-		return declare(Aleatory, {
-			value: function value() {
-				return this.random.choice(values);
-			},
-		
-			distribution: function distribution() {
-				return values.map(function (value) {
-					return [value, prob];
-				});
-			}
-		});
-	},
-	
-	/**	+ `fromRange` returns an aleatory that ranges over all integers between `min` and `max`
-	(inclusively).
-	*/
-	'static fromRange': function fromRange(min, max, next, random) {
-		var alea = new Aleatory(next, random);
-		alea.value = function value() {
-			return this.random.randomInt(min, max + 1);
-		};
-		alea.distribution = function distribution() {
-			return Iterable.range(min, max + 1).map(function (value) {
-				return [value, 1 / (max + 1 - min)];
-			});
-		};
-		return alea;
-	},
-	
-	/**	+ `withRange` returns a uniform aleatory constructor ranging over all integers between `min`
-	and `max` (inclusively).
-	*/
-	'static withRange': function withRange(min, max) {
-		return declare(Aleatory, {
-			value: function value() {
-				return this.random.randomInt(min, max + 1);
-			},
-			
-			distribution: function distribution() {
-				return Iterable.range(min, max + 1).map(function (value) {
-					return [value, 1 / (max + 1 - min)];
-				});
-			}
-		});
-	}
-}); // declare Aleatory.
 
 
 /** # Checkerboard
@@ -1458,7 +1408,7 @@ var CheckerboardFromString = utils.CheckerboardFromString = declare(Checkerboard
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: exports.__package__ +'.CheckerboardFromString',
+		identifier: 'CheckerboardFromString',
 		serializer: function serialize_CheckerboardFromString(obj) {
 			var r = [obj.height, obj.width, obj.string];
 			if (obj.hasOwnProperty('emptySquare')) {
@@ -1863,7 +1813,7 @@ var GameTree = declare({
 			child = this.children[key], nextState;
 		if (!child) {
 			try {
-				nextState = this.state.next(transition); // Whether state is an instance of Game or Aleatory.
+				nextState = this.state.next(transition); 
 			} catch (err) {
 				raise("Node expansion for ", this.state, " with ", JSON.stringify(transition),
 					" failed with: ", err);
@@ -1878,12 +1828,11 @@ var GameTree = declare({
 	the state is an instance of Aleatory.
 	*/
 	possibleTransitions: function possibleTransitions() {
-		if (this.state instanceof Aleatory) {
-			return this.state.distribution();
-		} else if (this.state instanceof Game) {
-			return this.state.possibleMoves();
+		var state = this.state;
+		if (state.isContingent) {
+			return state.possibleHaps();
 		} else {
-			raise("Cannot get possible transitions from ("+ this.state +")! Is it a Game or Aleatory?");
+			return state.possibleMoves();
 		}
 	},
 	
@@ -1892,7 +1841,8 @@ var GameTree = declare({
 	expandAll: function expandAll() {
 		var node = this;
 		return this.possibleTransitions().map(function (transition) {
-			return node.expand(transition);
+			return node.expand(// An array as transition means it belongs to a contingent state
+				Array.isArray(transition) ? transition[0] : transition);
 		});
 	}
 }); // declare GameTree
@@ -1954,14 +1904,12 @@ players.TracePlayer = declare(Player, {
 
 /** # HeuristicPlayer
 
-This is the base type of automatic players based on heuristic evaluations of 
-game states or moves.
+This is the base type of automatic players based on heuristic evaluations of game states or moves.
 */
 var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
-	/** The constructor takes the player's `name` and a `random` number 
-	generator (`base.Randomness.DEFAULT` by default). Many heuristic can be 
-	based on randomness, but this is also necessary to chose between moves with
-	the same evaluation without any bias.
+	/** The constructor takes the player's `name` and a `random` number generator 
+	(`base.Randomness.DEFAULT` by default). Many heuristic can be based on randomness, but this is 
+	also necessary to chose between moves with the same evaluation without any bias.
 	*/
 	constructor: function HeuristicPlayer(params) {
 		Player.call(this, params);
@@ -1970,112 +1918,127 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 			.func('heuristic', { ignore: true });
 	},
 
-	/** An `HeuristicPlayer` choses the best moves at any given game state. For
-	this purpose it evaluates every move with 
-	`moveEvaluation(move, game, player)`. By default this function evaluates
-	the states resulting from making each move, which is the most common thing
-	to do.
+	/** An `HeuristicPlayer` choses the best moves at any given game state. For this purpose it 
+	evaluates every move with `moveEvaluation(move, game, player)`. By default this function 
+	evaluates the states resulting from making each move, which is the most common thing to do.
 	*/
 	moveEvaluation: function moveEvaluation(move, game, player) {
+		var heuristicPlayer = this;
 		if (Object.keys(move).length < 2) { // One active player.
 			return this.stateEvaluation(game.next(move), player);
 		} else { // Many active players.
 			var sum = 0, count = 0;
 			move = copy(obj(player, [move[player]]), move);
 			game.possibleMoves(move).forEach(function (ms) {
-				sum += this.stateEvaluation(game.next(ms), player);
+				sum += heuristicPlayer.stateEvaluation(game.next(ms), player);
 				++count;
 			});
 			return count > 0 ? sum / count : 0; // Average all evaluations.
 		}
 	},
 
-	/** The `stateEvaluation(game, player)` calculates a number as the 
-	assessment of the given game state for the given player. The base 
-	implementation returns the result for the player is the game has results, 
-	else it returns the heuristic value for the state.
+	/** The `stateEvaluation(game, player)` calculates a number as the assessment of the given game 
+	state for the given player. The base implementation returns the result for the player is the 
+	game has results, else it returns the heuristic value for the state.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
 		var gameResult = game.result();
 		return gameResult ? gameResult[player] : this.heuristic(game, player);
 	},
 
-	/** The `heuristic(game, player)` is an evaluation used at states that are 
-	not finished games. The default implementation returns a random number in 
-	[-0.5, 0.5). This is only useful in testing. Any serious use should redefine 
-	this.
+	/** The `heuristic(game, player)` is an evaluation used at states that are not finished games. 
+	The default implementation returns a random number in [-0.5, 0.5). This is only useful in 
+	testing. Any serious use should redefine this.
 	*/
 	heuristic: function heuristic(game, player) {
 		return this.random.random(-0.5, 0.5);
 	},
 	
-	/** The `bestMoves(evaluatedMoves)` are all the best evaluated in the given
-	sequence of tuples [move, evaluation].
+	/**TODO WIP
 	*/
-	bestMoves: function bestMoves(evaluatedMoves) {
-		return iterable(evaluatedMoves).greater(function (pair) {
-			return pair[1];
-		}).map(function (pair) {
-			return pair[0];
+	evaluatedMoves: function evaluatedMoves(game, player) {
+		var heuristicPlayer = this,
+			isAsync = false;
+		if (!game.isContingent) {
+			/** Every move is evaluated using `moveEvaluation`. This may be asynchronous and hence
+			result in a `Future`.
+			*/
+			var result = this.possibleMoves(game, player).map(function (move) {
+				var e = heuristicPlayer.moveEvaluation(move, game, player);
+				isAsync = isAsync || Future.__isFuture__(e);
+				return Future.then(e, function (e) {
+					return [move, e];
+				});
+			});
+			return isAsync ? Future.all(result) : result;
+		} else {
+			/** Contingent game states don't have moves. Hence all posible haps are explored, and
+			when a non-contingent game state is reached the moves are evaluated.
+			*/
+			var posible = iterable(game.possibleHaps()).mapApply(function (haps, prob) {
+				var es = heuristicPlayer.evaluatedMoves(game.next(haps), player);
+				isAsync = isAsync || Future.__isFuture__(es);
+				return Future.then(es, function (es) {
+					return es.map(function (e) {
+						e[1] *= prob; // Multiply the evaluation by the probability of the haps.
+						return e;
+					});
+				});
+			});
+			/** After all posible scenarios have been evaluated, group the evaluations by move and
+			sum the evaluations weighted by probability.
+			*/
+			return Future.then(isAsync ? Future.all(posible) : posible, function (posible) {
+				return iterable(posible).groupBy(function (p) {
+					return p[0]; // Group evaluations by move.
+				}).mapApply(function (move, evals) {
+					return [move, iterable(evals).select(1).sum()];
+				});
+			});
+		}
+	}, // evaluatedMoves()
+	
+	/** TODO WIP
+	*/
+	possibleMoves: function possibleMoves(game, player) {
+		var moves = game.moves();
+		raiseIf(!moves || !moves[player] || !Array.isArray(moves[player]) || moves[player].length < 1,
+			"Player "+ player +" has no moves in "+ game +" (moves= "+ moves +")!");
+		return iterable(moves[player]).map(function (move) {
+			return copy(obj(player, move), moves);
 		});
 	},
 	
-	/** `selectMoves(moves, game, player)` return an array with the best 
-	evaluated moves. The evaluation is done with the `moveEvaluation` method. 
-	The default implementation always returns a `Future`.
+	/** The `bestMoves(evaluatedMoves)` are all the best evaluated in the given sequence of tuples 
+	[move, evaluation].
 	*/
-	selectMoves: function selectMoves(moves, game, player) {
-		var heuristicPlayer = this,
-			asyncEvaluations = false,
-			evaluatedMoves = moves.map(function (move) {
-				var e = heuristicPlayer.moveEvaluation(move, game, player);
-				if (e instanceof Future) {
-					asyncEvaluations = asyncEvaluations || true;
-					return e.then(function (e) {
-						return [move, e];
-					});
-				} else {
-					return [move, e];
-				}
+	bestMoves: function bestMoves(evaluatedMoves) {
+		return Future.then(iterable(evaluatedMoves), function (evaluatedMoves) {
+			return evaluatedMoves.greater(function (pair) {
+				return pair[1];
+			}).map(function (pair) {
+				return pair[0];
 			});
-		if (asyncEvaluations) { // Avoid using Future if possible.
-			return Future.all(evaluatedMoves).then(this.bestMoves);
-		} else {
-			return this.bestMoves(evaluatedMoves);
-		}
+		});
 	},
 	
-	/** The `decision(game, player)` selects randomly from the best evaluated 
-	moves.
+	/** The `decision(game, player)` selects randomly from the best evaluated moves.
 	*/
 	decision: function decision(game, player) {
-		var heuristicPlayer = this,
-			moves = game.moves();
-		raiseIf(!moves || !moves.hasOwnProperty(player),
-			"Player "+ player +" is not active (moves= "+ JSON.stringify(moves) +")!");
-		var playerMoves = moves[player];
-		raiseIf(!Array.isArray(playerMoves) || playerMoves.length < 1,
-			"Player "+ player +" has no moves ("+ playerMoves +")!");
-		if (playerMoves.length == 1) { // Forced moves.
-			return playerMoves[0];
-		} else {
-			moves = playerMoves.map(function (move) {
-				return copy(obj(player, move), moves);
-			});
-			var selectedMoves = heuristicPlayer.selectMoves(moves, game, player);
-			return Future.then(selectedMoves, function (selectedMoves) {
-				raiseIf(!selectedMoves || !selectedMoves.length, 
-					"No moves where selected at ", game, " for player ", player, "!");
-				return heuristicPlayer.random.choice(selectedMoves)[player];
-			});
-		}
+		var random = this.random;
+		return Future.then(this.bestMoves(this.evaluatedMoves(game, player)), function (bestMoves) {
+			bestMoves = iterable(bestMoves).toArray();
+			raiseIf(!bestMoves || !bestMoves.length, 
+				"No moves where selected at ", game, " for player ", player, "!");
+			return random.choice(bestMoves)[player];
+		});
 	},
 	
-	// ## Utilities to build heuristics ########################################
+	// ## Utilities to build heuristics ############################################################
 	
-	/** A `composite` heuristic function returns the weighted sum of other
-	functions. The arguments must be a sequence of heuristic functions and a
-	weight. All weights must be between 0 and 1 and add up to 1.
+	/** A `composite` heuristic function returns the weighted sum of other functions. The arguments 
+	must be a sequence of heuristic functions and a weight. All weights must be between 0 and 1 and
+	add up to 1.
 	*/
 	'static composite': function composite() {
 		var components = Array.prototype.slice.call(arguments), weightSum = 0;
@@ -2097,7 +2060,6 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 		};
 	}
 }); // declare HeuristicPlayer.
-
 
 /** # MaxNPlayer
 
@@ -2410,8 +2372,8 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 		var mc = this,
 			plies, move, moves;
 		for (plies = 0; true; ++plies) {
-			if (game instanceof Aleatory) {
-				game = game.next();
+			if (game.isContingent) {
+				game = game.randomNext(this.random);
 			} else {
 				moves = game.moves();
 				if (!moves) { // If game state is final ...
@@ -2753,6 +2715,98 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 	}
 }); // declare WebWorkerPlayer
 
+/** # Aleatory
+
+Aleatories are different means of non determinism that games can use, like: dice, card decks, 
+roulettes, etc. They are used by `Aleatoric` game states.
+*/
+var Aleatory = exports.aleatories.Aleatory = declare({
+	/** The base class implements an integer uniform random variable between a minimum and maximum
+	value (inclusively).
+	+ 
+	*/
+	constructor: function Aleatory(min, max) {
+		switch (arguments.length) {
+			case 1: this.range = [1, min]; break;
+			case 2: this.range = [min, max]; break;
+		}
+	},
+	
+	/** The `Aleatory.value()` can be used to obtain a valid random value for the random variable.
+	*/
+	value: function value(random) {
+		return (random || Randomness.DEFAULT).randomInt(this.range[0], this.range[1] + 1);
+	},
+		
+	/** In order to properly search a game tree with aleatory nodes, the random variables' 
+	distribution has to be known. `Aleatory.distribution()` computes the histogram for the random 
+	variables on which this aleatory depends, as a sequence of pairs `[value, probability]`.
+	
+	By default it returns a flat histogram, assuming the random variable is uniform.
+	*/
+	distribution: function () {
+		var min = this.range[0], 
+			max = this.range[1],
+			probability = 1 / (max - min + 1);
+		return Iterable.range(min, max + 1).map(function (value) {
+			return [value, probability];
+		});
+	},
+	
+	// ## Utility methods ##########################################################################
+
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'Aleatory',
+		serializer: function serialize_Aleatory(obj) {
+			return [this.range];
+		}
+	}
+}); // declare Aleatory.
+
+
+/** # UniformAleatory
+
+An uniform aleatory is one that ranges over a set of values, all of which have the same probability
+of occurrence.
+*/
+var UniformAleatory = exports.aleatories.UniformAleatory = declare(Aleatory, {
+	/** An uniform aleatory is defined by a sequence of `values`. The sequence cannot be empty, but
+	one value is supported as weird as it may be.
+	*/
+	constructor: function UniformAleatory(values) {
+		this.__values__ = iterable(values).toArray();
+		raiseIf(this.__values__.length < 1, "No values for aleatory!");
+	},
+
+	/** The `value` is one of the `values` used to build this aleatory, picked at random.
+	*/
+	value: function value(random) {
+		return (random || Randomness.DEFAULT).choice(this.__values__);
+	},
+	
+	/** The `distribution` of an uniform aleatory is a sequence of pairs `[value, probability]`.
+	*/
+	distribution: function distribution() {
+		var prob = 1 / this.__values__.length;
+		return this.__values__.map(function (v) {
+			return [v, prob];
+		});
+	},
+	
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'UniformAleatory',
+		serializer: function serialize_UniformAleatory(obj) {
+			return [this.__values__];
+		}
+	}
+});
+
 /** # Dice aleatories
 
 Implementations of common dice and related functions.
@@ -2760,13 +2814,38 @@ Implementations of common dice and related functions.
 var dice = aleatories.dice = {
 	/** Common dice variants.
 	*/
-	D4: Aleatory.withRange(1, 4),
-	D6: Aleatory.withRange(1, 6),
-	D8: Aleatory.withRange(1, 8),
-	D10: Aleatory.withRange(1, 10),
-	D12: Aleatory.withRange(1, 12),
-	D20: Aleatory.withRange(1, 20),
-	D100: Aleatory.withRange(1, 100),
+	D4: new Aleatory(1, 4),
+	D6: new Aleatory(1, 6),
+	D8: new Aleatory(1, 8),
+	D10: new Aleatory(1, 10),
+	D12: new Aleatory(1, 12),
+	D20: new Aleatory(1, 20),
+	D100: new Aleatory(1, 100),
+	
+	/** The `sumProbability` that rolling `n` dice of `s` sides yields a sum equal to `p`. Check the 
+	article at [Mathworld](http://mathworld.wolfram.com/Dice.html).
+	*/
+	sumProbability: function sumProbability(p, n, s) {
+		n = n|0;
+		s = s|0;
+		p = p|0;
+		if (isNaN(n) || isNaN(s) || isNaN(p) || n < 1 || s < 2) {
+			return NaN;
+		} else if (p < n || p > n * s) {
+			return 0;
+		} else {
+			var factorial = base.math.factorial,
+				fact_n = factorial(n),
+				fact_n_1 = fact_n / n; // factorial(n - 1)
+			return Math.pow(s, -n) *
+				Iterable.range(0, Math.floor((p - n) / s) + 1).map(function (k) {
+					var comb1 = fact_n / factorial(k) / factorial(n - k),
+						x = p - s * k - 1,
+						comb2 = factorial(x) / fact_n_1 / factorial(x - n + 1);
+					return (k % 2 ? -1 : 1) * comb1 * comb2;
+				}).sum();
+		}
+	}
 }; //// declare Dice.
 
 /** Simple reference games with a predefined outcome, mostly for testing 
@@ -2830,7 +2909,7 @@ games.Predefined = declare(Game, {
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: exports.__package__ +'.Predefined',
+		identifier: 'Predefined',
 		serializer: function serialize_Predefined(obj) {
 			return [obj.activePlayer(), obj.__results__, obj.height, obj.width];
 		}
@@ -2895,7 +2974,7 @@ games.Choose2Win = declare(Game, {
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: exports.__package__ +'.Choose2Win',
+		identifier: 'Choose2Win',
 		serializer: function serialize_Choose2Win(obj) {
 			var r = [obj.__turns__, obj.activePlayer()];
 			if (obj.__winner__) {
@@ -3046,7 +3125,7 @@ games.ConnectionGame = declare(Game, {
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: exports.__package__ +'.ConnectionGame',
+		identifier: 'ConnectionGame',
 		serializer: function serialize_ConnectionGame(obj) {
 			return [obj.activePlayer(), obj.board];
 		}
@@ -3110,7 +3189,7 @@ games.OddsAndEvens = declare(Game, {
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: exports.__package__ +'.OddsAndEvens',
+		identifier: 'OddsAndEvens',
 		serializer: function serialize_OddsAndEvens(obj) {
 			return [obj.turns, obj.points];
 		}
@@ -3189,7 +3268,7 @@ games.TicTacToe = declare(Game, {
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: exports.__package__ +'.TicTacToe',
+		identifier: 'TicTacToe',
 		serializer: function serialize_TicTacToe(obj) {
 			return [obj.activePlayer(), obj.board];
 		}
@@ -3351,7 +3430,7 @@ games.ToadsAndFrogs = declare(Game, {
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: exports.__package__ +'.ToadsAndFrogs',
+		identifier: 'ToadsAndFrogs',
 		serializer: function serialize_ToadsAndFrogs(obj) {
 			return [obj.activePlayer(), obj.board];
 		}
@@ -3411,30 +3490,32 @@ games.Pig = declare(Game, {
 	},
 
 	/** If the active player holds, it earns the sum of the rolls made so in its turn. If the move 
-	is roll, a dice is rolled. A roll of 1 stops the this turn and the active player earns no 
+	is roll, a die is rolled. A roll of 1 stops the this turn and the active player earns no 
 	points. A roll of 2 or up, makes the turn continue.
 	
-	For this game mechanic, an [aleatory](../Aleatory.js.html) is used. If the move is `roll`, an 
-	instance of this class is build and returned using the [dice shotcuts](../aleatories/dice.js.html). 
-	The function passed to aleatory makes the decision explained before, based on the value of the 
-	dice.
+	For this game mechanic, an [contingent game state](../Contingent.js.html) is used. If the move 
+	is `roll`, an instance of this class is build and returned using the [dice shotcuts](
+	../aleatories/dice.js.html) as random variables. This aleatoric game state will call the `next` 
+	method again with the same moves and the values of the random variables, and then the match will
+	continue.
 	*/
-	next: function next(moves) {
+	next: function next(moves, haps) {
 		var activePlayer = this.activePlayer(),
-			move = moves[activePlayer];
-		raiseIf(typeof move === 'undefined', 'No move for active player ', activePlayer, ' at ', this, '!');
+			move = moves && moves[activePlayer];
+		raiseIf(!move, 'No move for active player ', activePlayer, ' at ', this, '!');
 		if (move === 'hold') {
 			var scores = copy(this.__scores__);
 			scores[activePlayer] += iterable(this.__rolls__).sum();
 			return new this.constructor(this.opponent(), this.goal, scores, []);
 		} else if (move === 'roll') {
-			var game = this;
-			return new aleatories.dice.D6(function (value) {
-				value = isNaN(value) ? this.value() : +value;
-				return (value > 1) ? 
-					new game.constructor(activePlayer,  game.goal, game.__scores__, game.__rolls__.concat(value)) :
-					new game.constructor(game.opponent(), game.goal, game.__scores__, []);
-			});
+			var roll = (haps && haps.die)|0;
+			if (!roll) { // Dice has not been rolled.
+				return new Contingent({ die: aleatories.dice.D6 }, this, moves);
+			} else { // Dice has been rolled.
+				return (roll > 1) ? 
+					new this.constructor(activePlayer,  this.goal, this.__scores__, this.__rolls__.concat(roll)) :
+					new this.constructor(this.opponent(), this.goal, this.__scores__, []);
+			}
 		} else {
 			raise("Invalid moves ", JSON.stringify(moves), " at ", this, "!");
 		}
@@ -3451,7 +3532,7 @@ games.Pig = declare(Game, {
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: exports.__package__ +'.Pig',
+		identifier: 'Pig',
 		serializer: function serialize_Pig(obj) {
 			return [obj.activePlayer(), obj.goal, obj.__scores__, obj.__rolls__];
 		}
@@ -3462,7 +3543,7 @@ games.Pig = declare(Game, {
 /** # Mutropas
 
 Mutropas is a game invented for Ludorum as a simple example of a game of hidden (a.k.a. incomplete)
-information.
+information. It is also a simultaneous game.
 */
 games.Mutropas = declare(Game, {
 	name: 'Mutropas',
@@ -3483,7 +3564,6 @@ games.Mutropas = declare(Game, {
 	constructor: function Mutropas(args) {
 		Game.call(this, this.players);
 		args = args || {};
-		this.random = args.random || Randomness.DEFAULT;
 		this.playedPieces = args.playedPieces || [];
 		this.pieces = args.pieces || this.dealPieces();
 		this.__scores__ = args.scores || obj(this.players[0], 0, this.players[1], 0);
@@ -3499,7 +3579,7 @@ games.Mutropas = declare(Game, {
 	pieces go to each player, and one is left out.
 	*/
 	dealPieces: function dealPieces(random) {
-		random = random || this.random;
+		random = random || Randomness.DEFAULT;
 		var piecesPerPlayer = (this.allPieces.length / 2)|0,
 			split1 = random.split(piecesPerPlayer, this.allPieces),
 			split2 = random.split(piecesPerPlayer, split1[1]);
@@ -3604,22 +3684,10 @@ games.Mutropas = declare(Game, {
 	This allows to model the uncertainty that each player has about its opponent's pieces. By doing
 	so an artificial player that searches the game space cannot infer the pieces the opponent has,
 	and hence it cannot cheat.
-	*/
+	*/	
 	view: function view(player) {
-		var gameState = this,
-			opponent = this.opponent(player),
-			random = this.random;
-		return Aleatory.withValues(this.__possiblePieces__(opponent), random,
-			function (pieces) {
-				pieces = pieces || this.value();
-				return new gameState.constructor({ 
-					random: random,
-					playedPieces: gameState.playedPieces,
-					scores: gameState.scores(),
-					pieces: obj(player, gameState.pieces[player], opponent, pieces)
-				});
-			}
-		);
+		var opponent = this.opponent(player);
+		return new Contingent({ pieces: new UniformAleatory(this.__possiblePieces__(opponent)) }, this);
 	},
 	
 	// ## Utility methods ##########################################################################
@@ -3627,10 +3695,9 @@ games.Mutropas = declare(Game, {
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: exports.__package__ +'.Mutropas',
+		identifier: 'Mutropas',
 		serializer: function serialize_Mutropas(obj) {
-			return [{ 
-				random: obj.random,
+			return [{
 				pieces: obj.pieces, 
 				playedPieces: obj.playedPieces,
 				scores: obj.__scores__
@@ -3797,7 +3864,7 @@ games.Bahab = declare(Game, {
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: exports.__package__ +'.Bahab',
+		identifier: 'Bahab',
 		serializer: function serialize_Bahab(obj) {
 			return [obj.activePlayer(), obj.board];
 		}
@@ -3978,15 +4045,17 @@ tournaments.Elimination = declare(Tournament, {
 
 
 // See __prologue__.js
-	exports.__SERMAT__.include.push(
-		Match,
+	[Match,
 		games.Bahab, games.Choose2Win, games.ConnectionGame, games.Mutropas, games.OddsAndEvens,
 			games.Pig, games.Predefined, games.TicTacToe, games.ToadsAndFrogs,
+		aleatories.Aleatory, aleatories.UniformAleatory,
 		utils.CheckerboardFromString
-	);
-	Sermat.include(exports); //FIXME?
+	].forEach(function (type) {
+		type.__SERMAT__.identifier = exports.__package__ +'.'+ type.__SERMAT__.identifier;
+		exports.__SERMAT__.include.push(type);
+	});
+	Sermat.include(exports); // Ludorum uses Sermat internally.
 
 	return exports;
 });
-
 //# sourceMappingURL=ludorum.js.map

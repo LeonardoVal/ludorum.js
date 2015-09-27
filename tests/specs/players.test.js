@@ -14,7 +14,7 @@
 				expect(new Player()).toBeOfType(ludorum.Player);
 			});
 		});
-	})
+	});
 
 	describe("games.Predefined", function () { /////////////////////
 		var MATCH_COUNT = 10,

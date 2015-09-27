@@ -1,44 +1,52 @@
 ﻿define(['creatartis-base', 'ludorum'], function (base, ludorum) {
-	var Aleatory = ludorum.Aleatory,
+	var aleatories = ludorum.aleatories,
 		iterable = base.iterable;
 
-	describe("aleatories", function () { ////////////////////////////////////////////////////
-		it(".from*() & .with*() shortcuts", function () {
-			var dist = [[true, 0.5], [false, 0.5]];
-			[Aleatory.fromDistribution(dist), 
-			 new (Aleatory.withDistribution(dist))()
-			].forEach(function (alea) {
-				iterable(dist).zip(alea.distribution()).forEachApply(function (d1, d2) {
-					expect(JSON.stringify(d1)).toBe(JSON.stringify(d2))
-				});
-				for (var i = 0; i < 5; ++i) {
-					expect(typeof alea.value()).toBe('boolean');
-				}
+	function expectUniformDistribution(dist, values) {
+		dist = iterable(dist).toArray();
+		var prob = 1 / values.length;
+		values.forEach(function (value, i) {
+			expect(dist[i][0]).toBe(value);
+			expect(dist[i][1]).toBe(prob);
+		});
+	}
+		
+	describe("aleatories", function () { ///////////////////////////////////////////////////////////
+		it("Aleatory base", function () {
+			var d6 = new aleatories.Aleatory(1, 6);
+			expectUniformDistribution(d6.distribution(), [1,2,3,4,5,6]);
+		});
+		
+		it("UniformAleatory", function () {
+			var alea = new aleatories.UniformAleatory("xyz");
+			expectUniformDistribution(alea.distribution(), ['x','y','z']);
+			expect(function () { // Must fail because of too few values.
+				return new aleatories.UniformAleatory([]);
+			}).toThrow();
+		});
+		
+		it("dice", function () {
+			var dice = ludorum.aleatories.dice;
+			expect(dice).toBeDefined();
+			'D4 D6 D8 D10 D12 D20 D100'.split(/\s+/).forEach(function (id) {
+				var die = dice[id];
+				expect(die).toBeDefined();
+				expectUniformDistribution(die.distribution(), 
+					base.Iterable.range(1, +(id.substr(1)) + 1).toArray()
+				);
 			});
-			
-			[Aleatory.fromValues(['a', 'b', 'c']),
-			 new (Aleatory.withValues(['a', 'b', 'c']))()
-			].forEach(function (alea) {
-				dist = [['a', 1/3], ['b', 1/3], ['c', 1/3]];
-				iterable(dist).zip(alea.distribution()).forEachApply(function (d1, d2) {
-					expect(JSON.stringify(d1)).toBe(JSON.stringify(d2))
-				});
-				for (var i = 0; i < 5; ++i) {
-					expect(['a', 'b', 'c'].indexOf(alea.value())).not.toBeLessThan(0);
-				}
-			});
-			
-			[Aleatory.fromRange(2, 4),
-			 new (Aleatory.withRange(2, 4))()
-			].forEach(function (alea) {
-				dist = [[2, 1/3], [3, 1/3], [4, 1/3]];
-				iterable(dist).zip(alea.distribution()).forEachApply(function (d1, d2) {
-					expect(JSON.stringify(d1)).toBe(JSON.stringify(d2))
-				});
-				for (var i = 0; i < 5; ++i) {
-					expect([2, 3, 4].indexOf(alea.value())).not.toBeLessThan(0);
-				}
-			});
+		});
+		
+		it("dice.sumProbability", function () {
+			var dice = ludorum.aleatories.dice;
+			expect(typeof dice.sumProbability).toBe('function');
+			expect(dice.sumProbability(1,2,6)).toBe(0);
+			expect(1 / dice.sumProbability(2,2,6)).toBe(36);
+			expect(1 / dice.sumProbability(3,2,6)).toBe(18);
+			expect(1 / dice.sumProbability(7,2,6)).toBe(6);
+			expect(1 / dice.sumProbability(11,2,6)).toBe(18);
+			expect(1 / dice.sumProbability(12,2,6)).toBe(36);
+			expect(dice.sumProbability(13,2,6)).toBe(0);
 		});
 	}); //// aleatories
 	

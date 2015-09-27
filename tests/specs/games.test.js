@@ -19,14 +19,18 @@
 			expect(result[player]).toBeOfType('number');
 			sum += result[player];
 		});
-		options && options.zeroSum && expect(sum).toBe(0);
+		if (options && options.zeroSum) {
+			expect(sum).toBe(0);
+		}
 	}
 	
 	function checkUnfinishedGame(game, options) {
 		var moves = game.moves();
 		expect(moves).toBeTruthy();
 		expect(game.activePlayers).toBeOfType(Array);
-		options && options.oneActivePlayerPerTurn && expect(game.activePlayers.length).toBe(1);
+		if (options && options.oneActivePlayerPerTurn) {
+			expect(game.activePlayers.length).toBe(1);
+		}
 		if (game.activePlayers.length === 1) {
 			expect(game.activePlayer()).toBe(game.activePlayers[0]);
 		} else {
@@ -43,8 +47,8 @@
 		it("works like a game", function () {
 			var MAX_PLIES = 500, moves, decisions;
 			for (var i = 0; i < MAX_PLIES; i++) {
-				while (game && game instanceof ludorum.Aleatory) {
-					game = game.next();
+				while (game && game.isContingent) {
+					game = game.randomNext();
 				}
 				expect(game).toBeOfType(ludorum.Game);
 				moves = game.moves();
@@ -103,10 +107,10 @@
 						moves = game.moves();
 						expect(moves).toBeTruthy();
 						expect(game.result()).toBeFalsy();
-						moves = moves[game.activePlayer()]
+						moves = moves[game.activePlayer()];
 						expect(moves).toBeTruthy();
 						expect(moves.length).toEqual(w);
-						game = game.next(base.obj(game.activePlayer(), moves[i % w]))
+						game = game.next(base.obj(game.activePlayer(), moves[i % w]));
 					}
 					expect(game.moves()).toBeFalsy();
 					results = game.result();
