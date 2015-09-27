@@ -1,7 +1,7 @@
 ﻿/** # Mutropas
 
 Mutropas is a game invented for Ludorum as a simple example of a game of hidden (a.k.a. incomplete)
-information.
+information. It is also a simultaneous game.
 */
 games.Mutropas = declare(Game, {
 	name: 'Mutropas',
@@ -22,7 +22,6 @@ games.Mutropas = declare(Game, {
 	constructor: function Mutropas(args) {
 		Game.call(this, this.players);
 		args = args || {};
-		this.random = args.random || Randomness.DEFAULT;
 		this.playedPieces = args.playedPieces || [];
 		this.pieces = args.pieces || this.dealPieces();
 		this.__scores__ = args.scores || obj(this.players[0], 0, this.players[1], 0);
@@ -38,7 +37,7 @@ games.Mutropas = declare(Game, {
 	pieces go to each player, and one is left out.
 	*/
 	dealPieces: function dealPieces(random) {
-		random = random || this.random;
+		random = random || Randomness.DEFAULT;
 		var piecesPerPlayer = (this.allPieces.length / 2)|0,
 			split1 = random.split(piecesPerPlayer, this.allPieces),
 			split2 = random.split(piecesPerPlayer, split1[1]);
@@ -143,22 +142,10 @@ games.Mutropas = declare(Game, {
 	This allows to model the uncertainty that each player has about its opponent's pieces. By doing
 	so an artificial player that searches the game space cannot infer the pieces the opponent has,
 	and hence it cannot cheat.
-	*/
+	*/	
 	view: function view(player) {
-		var gameState = this,
-			opponent = this.opponent(player),
-			random = this.random;
-		return Aleatory.withValues(this.__possiblePieces__(opponent), random,
-			function (pieces) {
-				pieces = pieces || this.value();
-				return new gameState.constructor({ 
-					random: random,
-					playedPieces: gameState.playedPieces,
-					scores: gameState.scores(),
-					pieces: obj(player, gameState.pieces[player], opponent, pieces)
-				});
-			}
-		);
+		var opponent = this.opponent(player);
+		return new Contingent({ pieces: new UniformAleatory(this.__possiblePieces__(opponent)) }, this);
 	},
 	
 	// ## Utility methods ##########################################################################
@@ -166,10 +153,9 @@ games.Mutropas = declare(Game, {
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: exports.__package__ +'.Mutropas',
+		identifier: 'Mutropas',
 		serializer: function serialize_Mutropas(obj) {
-			return [{ 
-				random: obj.random,
+			return [{
 				pieces: obj.pieces, 
 				playedPieces: obj.playedPieces,
 				scores: obj.__scores__
