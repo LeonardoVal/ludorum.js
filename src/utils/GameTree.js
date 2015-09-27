@@ -36,7 +36,7 @@ var GameTree = declare({
 			child = this.children[key], nextState;
 		if (!child) {
 			try {
-				nextState = this.state.next(transition); // Whether state is an instance of Game or Aleatory.
+				nextState = this.state.next(transition); 
 			} catch (err) {
 				raise("Node expansion for ", this.state, " with ", JSON.stringify(transition),
 					" failed with: ", err);
@@ -51,12 +51,11 @@ var GameTree = declare({
 	the state is an instance of Aleatory.
 	*/
 	possibleTransitions: function possibleTransitions() {
-		if (this.state instanceof Aleatory) {
-			return this.state.distribution();
-		} else if (this.state instanceof Game) {
-			return this.state.possibleMoves();
+		var state = this.state;
+		if (state.isContingent) {
+			return state.possibleHaps();
 		} else {
-			raise("Cannot get possible transitions from ("+ this.state +")! Is it a Game or Aleatory?");
+			return state.possibleMoves();
 		}
 	},
 	
@@ -65,7 +64,8 @@ var GameTree = declare({
 	expandAll: function expandAll() {
 		var node = this;
 		return this.possibleTransitions().map(function (transition) {
-			return node.expand(transition);
+			return node.expand(// An array as transition means it belongs to a contingent state
+				Array.isArray(transition) ? transition[0] : transition);
 		});
 	}
 }); // declare GameTree

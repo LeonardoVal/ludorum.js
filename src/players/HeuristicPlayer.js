@@ -1,13 +1,11 @@
 ﻿/** # HeuristicPlayer
 
-This is the base type of automatic players based on heuristic evaluations of 
-game states or moves.
+This is the base type of automatic players based on heuristic evaluations of game states or moves.
 */
 var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
-	/** The constructor takes the player's `name` and a `random` number 
-	generator (`base.Randomness.DEFAULT` by default). Many heuristic can be 
-	based on randomness, but this is also necessary to chose between moves with
-	the same evaluation without any bias.
+	/** The constructor takes the player's `name` and a `random` number generator 
+	(`base.Randomness.DEFAULT` by default). Many heuristic can be based on randomness, but this is 
+	also necessary to chose between moves with the same evaluation without any bias.
 	*/
 	constructor: function HeuristicPlayer(params) {
 		Player.call(this, params);
@@ -16,112 +14,127 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 			.func('heuristic', { ignore: true });
 	},
 
-	/** An `HeuristicPlayer` choses the best moves at any given game state. For
-	this purpose it evaluates every move with 
-	`moveEvaluation(move, game, player)`. By default this function evaluates
-	the states resulting from making each move, which is the most common thing
-	to do.
+	/** An `HeuristicPlayer` choses the best moves at any given game state. For this purpose it 
+	evaluates every move with `moveEvaluation(move, game, player)`. By default this function 
+	evaluates the states resulting from making each move, which is the most common thing to do.
 	*/
 	moveEvaluation: function moveEvaluation(move, game, player) {
+		var heuristicPlayer = this;
 		if (Object.keys(move).length < 2) { // One active player.
 			return this.stateEvaluation(game.next(move), player);
 		} else { // Many active players.
 			var sum = 0, count = 0;
 			move = copy(obj(player, [move[player]]), move);
 			game.possibleMoves(move).forEach(function (ms) {
-				sum += this.stateEvaluation(game.next(ms), player);
+				sum += heuristicPlayer.stateEvaluation(game.next(ms), player);
 				++count;
 			});
 			return count > 0 ? sum / count : 0; // Average all evaluations.
 		}
 	},
 
-	/** The `stateEvaluation(game, player)` calculates a number as the 
-	assessment of the given game state for the given player. The base 
-	implementation returns the result for the player is the game has results, 
-	else it returns the heuristic value for the state.
+	/** The `stateEvaluation(game, player)` calculates a number as the assessment of the given game 
+	state for the given player. The base implementation returns the result for the player is the 
+	game has results, else it returns the heuristic value for the state.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
 		var gameResult = game.result();
 		return gameResult ? gameResult[player] : this.heuristic(game, player);
 	},
 
-	/** The `heuristic(game, player)` is an evaluation used at states that are 
-	not finished games. The default implementation returns a random number in 
-	[-0.5, 0.5). This is only useful in testing. Any serious use should redefine 
-	this.
+	/** The `heuristic(game, player)` is an evaluation used at states that are not finished games. 
+	The default implementation returns a random number in [-0.5, 0.5). This is only useful in 
+	testing. Any serious use should redefine this.
 	*/
 	heuristic: function heuristic(game, player) {
 		return this.random.random(-0.5, 0.5);
 	},
 	
-	/** The `bestMoves(evaluatedMoves)` are all the best evaluated in the given
-	sequence of tuples [move, evaluation].
+	/**TODO WIP
 	*/
-	bestMoves: function bestMoves(evaluatedMoves) {
-		return iterable(evaluatedMoves).greater(function (pair) {
-			return pair[1];
-		}).map(function (pair) {
-			return pair[0];
+	evaluatedMoves: function evaluatedMoves(game, player) {
+		var heuristicPlayer = this,
+			isAsync = false;
+		if (!game.isContingent) {
+			/** Every move is evaluated using `moveEvaluation`. This may be asynchronous and hence
+			result in a `Future`.
+			*/
+			var result = this.possibleMoves(game, player).map(function (move) {
+				var e = heuristicPlayer.moveEvaluation(move, game, player);
+				isAsync = isAsync || Future.__isFuture__(e);
+				return Future.then(e, function (e) {
+					return [move, e];
+				});
+			});
+			return isAsync ? Future.all(result) : result;
+		} else {
+			/** Contingent game states don't have moves. Hence all posible haps are explored, and
+			when a non-contingent game state is reached the moves are evaluated.
+			*/
+			var posible = iterable(game.possibleHaps()).mapApply(function (haps, prob) {
+				var es = heuristicPlayer.evaluatedMoves(game.next(haps), player);
+				isAsync = isAsync || Future.__isFuture__(es);
+				return Future.then(es, function (es) {
+					return es.map(function (e) {
+						e[1] *= prob; // Multiply the evaluation by the probability of the haps.
+						return e;
+					});
+				});
+			});
+			/** After all posible scenarios have been evaluated, group the evaluations by move and
+			sum the evaluations weighted by probability.
+			*/
+			return Future.then(isAsync ? Future.all(posible) : posible, function (posible) {
+				return iterable(posible).groupBy(function (p) {
+					return p[0]; // Group evaluations by move.
+				}).mapApply(function (move, evals) {
+					return [move, iterable(evals).select(1).sum()];
+				});
+			});
+		}
+	}, // evaluatedMoves()
+	
+	/** TODO WIP
+	*/
+	possibleMoves: function possibleMoves(game, player) {
+		var moves = game.moves();
+		raiseIf(!moves || !moves[player] || !Array.isArray(moves[player]) || moves[player].length < 1,
+			"Player "+ player +" has no moves in "+ game +" (moves= "+ moves +")!");
+		return iterable(moves[player]).map(function (move) {
+			return copy(obj(player, move), moves);
 		});
 	},
 	
-	/** `selectMoves(moves, game, player)` return an array with the best 
-	evaluated moves. The evaluation is done with the `moveEvaluation` method. 
-	The default implementation always returns a `Future`.
+	/** The `bestMoves(evaluatedMoves)` are all the best evaluated in the given sequence of tuples 
+	[move, evaluation].
 	*/
-	selectMoves: function selectMoves(moves, game, player) {
-		var heuristicPlayer = this,
-			asyncEvaluations = false,
-			evaluatedMoves = moves.map(function (move) {
-				var e = heuristicPlayer.moveEvaluation(move, game, player);
-				if (e instanceof Future) {
-					asyncEvaluations = asyncEvaluations || true;
-					return e.then(function (e) {
-						return [move, e];
-					});
-				} else {
-					return [move, e];
-				}
+	bestMoves: function bestMoves(evaluatedMoves) {
+		return Future.then(iterable(evaluatedMoves), function (evaluatedMoves) {
+			return evaluatedMoves.greater(function (pair) {
+				return pair[1];
+			}).map(function (pair) {
+				return pair[0];
 			});
-		if (asyncEvaluations) { // Avoid using Future if possible.
-			return Future.all(evaluatedMoves).then(this.bestMoves);
-		} else {
-			return this.bestMoves(evaluatedMoves);
-		}
+		});
 	},
 	
-	/** The `decision(game, player)` selects randomly from the best evaluated 
-	moves.
+	/** The `decision(game, player)` selects randomly from the best evaluated moves.
 	*/
 	decision: function decision(game, player) {
-		var heuristicPlayer = this,
-			moves = game.moves();
-		raiseIf(!moves || !moves.hasOwnProperty(player),
-			"Player "+ player +" is not active (moves= "+ JSON.stringify(moves) +")!");
-		var playerMoves = moves[player];
-		raiseIf(!Array.isArray(playerMoves) || playerMoves.length < 1,
-			"Player "+ player +" has no moves ("+ playerMoves +")!");
-		if (playerMoves.length == 1) { // Forced moves.
-			return playerMoves[0];
-		} else {
-			moves = playerMoves.map(function (move) {
-				return copy(obj(player, move), moves);
-			});
-			var selectedMoves = heuristicPlayer.selectMoves(moves, game, player);
-			return Future.then(selectedMoves, function (selectedMoves) {
-				raiseIf(!selectedMoves || !selectedMoves.length, 
-					"No moves where selected at ", game, " for player ", player, "!");
-				return heuristicPlayer.random.choice(selectedMoves)[player];
-			});
-		}
+		var random = this.random;
+		return Future.then(this.bestMoves(this.evaluatedMoves(game, player)), function (bestMoves) {
+			bestMoves = iterable(bestMoves).toArray();
+			raiseIf(!bestMoves || !bestMoves.length, 
+				"No moves where selected at ", game, " for player ", player, "!");
+			return random.choice(bestMoves)[player];
+		});
 	},
 	
-	// ## Utilities to build heuristics ########################################
+	// ## Utilities to build heuristics ############################################################
 	
-	/** A `composite` heuristic function returns the weighted sum of other
-	functions. The arguments must be a sequence of heuristic functions and a
-	weight. All weights must be between 0 and 1 and add up to 1.
+	/** A `composite` heuristic function returns the weighted sum of other functions. The arguments 
+	must be a sequence of heuristic functions and a weight. All weights must be between 0 and 1 and
+	add up to 1.
 	*/
 	'static composite': function composite() {
 		var components = Array.prototype.slice.call(arguments), weightSum = 0;

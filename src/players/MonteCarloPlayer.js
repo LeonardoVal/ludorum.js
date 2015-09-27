@@ -89,8 +89,8 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 		var mc = this,
 			plies, move, moves;
 		for (plies = 0; true; ++plies) {
-			if (game instanceof Aleatory) {
-				game = game.next();
+			if (game.isContingent) {
+				game = game.randomNext(this.random);
 			} else {
 				moves = game.moves();
 				if (!moves) { // If game state is final ...
