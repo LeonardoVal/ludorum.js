@@ -125,9 +125,10 @@ function post(cmd, blind, response /* passed in when echoing from remote console
     history.push(cmd);
     setHistory(history);
 
-    if (historySupported) {
+    /*if (historySupported) {
       window.history.pushState(cmd, cmd, '?' + encodeURIComponent(cmd));
-    }
+    }*/
+	
   } 
 
   if (!remoteId || response) echo(cmd);
