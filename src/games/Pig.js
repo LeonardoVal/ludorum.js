@@ -50,30 +50,32 @@ games.Pig = declare(Game, {
 	},
 
 	/** If the active player holds, it earns the sum of the rolls made so in its turn. If the move 
-	is roll, a dice is rolled. A roll of 1 stops the this turn and the active player earns no 
+	is roll, a die is rolled. A roll of 1 stops the this turn and the active player earns no 
 	points. A roll of 2 or up, makes the turn continue.
 	
-	For this game mechanic, an [aleatory](../Aleatory.js.html) is used. If the move is `roll`, an 
-	instance of this class is build and returned using the [dice shotcuts](../aleatories/dice.js.html). 
-	The function passed to aleatory makes the decision explained before, based on the value of the 
-	dice.
+	For this game mechanic, an [contingent game state](../Contingent.js.html) is used. If the move 
+	is `roll`, an instance of this class is build and returned using the [dice shotcuts](
+	../aleatories/dice.js.html) as random variables. This aleatoric game state will call the `next` 
+	method again with the same moves and the values of the random variables, and then the match will
+	continue.
 	*/
-	next: function next(moves) {
+	next: function next(moves, haps) {
 		var activePlayer = this.activePlayer(),
-			move = moves[activePlayer];
-		raiseIf(typeof move === 'undefined', 'No move for active player ', activePlayer, ' at ', this, '!');
+			move = moves && moves[activePlayer];
+		raiseIf(!move, 'No move for active player ', activePlayer, ' at ', this, '!');
 		if (move === 'hold') {
 			var scores = copy(this.__scores__);
 			scores[activePlayer] += iterable(this.__rolls__).sum();
 			return new this.constructor(this.opponent(), this.goal, scores, []);
 		} else if (move === 'roll') {
-			var game = this;
-			return new aleatories.dice.D6(function (value) {
-				value = isNaN(value) ? this.value() : +value;
-				return (value > 1) ? 
-					new game.constructor(activePlayer,  game.goal, game.__scores__, game.__rolls__.concat(value)) :
-					new game.constructor(game.opponent(), game.goal, game.__scores__, []);
-			});
+			var roll = (haps && haps.die)|0;
+			if (!roll) { // Dice has not been rolled.
+				return new Contingent({ die: aleatories.dice.D6 }, this, moves);
+			} else { // Dice has been rolled.
+				return (roll > 1) ? 
+					new this.constructor(activePlayer,  this.goal, this.__scores__, this.__rolls__.concat(roll)) :
+					new this.constructor(this.opponent(), this.goal, this.__scores__, []);
+			}
 		} else {
 			raise("Invalid moves ", JSON.stringify(moves), " at ", this, "!");
 		}
@@ -90,7 +92,7 @@ games.Pig = declare(Game, {
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: exports.__package__ +'.Pig',
+		identifier: 'Pig',
 		serializer: function serialize_Pig(obj) {
 			return [obj.activePlayer(), obj.goal, obj.__scores__, obj.__rolls__];
 		}
