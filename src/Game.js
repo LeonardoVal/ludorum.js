@@ -29,18 +29,18 @@ var Game = exports.Game = declare({
 		
 	If the game has finished then a _falsy_ value must be returned (`null` is recommended).
 	*/
-	moves: unimplemented("Game", "moves"),
+	moves: unimplemented("Game", "moves()"),
 
-	/** Once the players have chosen their moves, the method `next(moves)` is used to perform the 
-	given moves. It returns a new game instance with the resulting state. The moves object should 
-	have a move for each active player. For example:
+	/** Once the players have chosen their moves, the method `next` is used to perform the given 
+	moves. It returns a new game instance with the resulting state. The first `moves` argument 
+	should be an object with a move for each active player. For example:
 
 	+ `{ Player1: 'Rock', Player2: 'Paper' }`
 	
 	There isn't a default implementation, so it must be overriden. It is strongly advised to check 
-	if the moves argument has valid moves.
+	if the arguments are valid.
 	*/
-	next: unimplemented("Game", "next"),
+	next: unimplemented("Game", "next(moves)"),
 
 	/** If the game is finished the result of the game is calculated with `result()`. It returns an 
 	object with every player in the game related to a number. This number must be positive if the 
@@ -50,7 +50,7 @@ var Game = exports.Game = declare({
 	
 	If the game is not finished, this function must return a _falsy_ value (`null` is recommended).
 	*/
-	result: unimplemented("Game", "result"),
+	result: unimplemented("Game", "result()"),
 
 	/** Some games may assign scores to the players in a finished game. This may differ from the
 	result, since the score sign doesn't have to indicate victory or defeat. For example:
@@ -97,8 +97,8 @@ var Game = exports.Game = declare({
 	*/
 	activePlayer: function activePlayer() {
 		var len = this.activePlayers.length;
-		raiseIf(len < 1, 'There is no active player.');
-		raiseIf(len > 1, 'More than one player is active.');
+		raiseIf(len < 1, 'There are no active players!');
+		raiseIf(len > 1, 'More than one player is active!');
 		return this.activePlayers[0];
 	},
 
@@ -128,7 +128,7 @@ var Game = exports.Game = declare({
 	(activePlayer by default) and returns the next game state.
 	*/
 	perform: function perform() {
-		var moves = {}, move, player;
+		var moves = {}, player;
 		for (var i = 0; i < arguments.length; i += 2) {
 			player = arguments[i + 1];
 			if (typeof player === 'undefined') {
@@ -259,15 +259,15 @@ var Game = exports.Game = declare({
 	/** Based on the game's serialization, `clone()` creates a copy of this game state.
 	*/
 	clone: function clone() {
-		return this.constructor.__materialize__(this.__serialize__());
+		return Sermat.sermat(this);
 	},
 
 	/** The default string representation of a game is equal to the result of `toJSON`.
 	*/
 	toString: function toString() {
-		return this.toJSON();
+		return Sermat.ser(this);
 	},
-	
+		
 	/** ## Cached games ############################################################################
 
 	A `cached(game)` has modified `moves()` and `result()` methods that cache the calls of the base
