@@ -69,7 +69,7 @@ games.TicTacToe = declare(Game, {
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: exports.__package__ +'.TicTacToe',
+		identifier: 'TicTacToe',
 		serializer: function serialize_TicTacToe(obj) {
 			return [obj.activePlayer(), obj.board];
 		}

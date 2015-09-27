@@ -55,7 +55,7 @@ games.Choose2Win = declare(Game, {
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: exports.__package__ +'.Choose2Win',
+		identifier: 'Choose2Win',
 		serializer: function serialize_Choose2Win(obj) {
 			var r = [obj.__turns__, obj.activePlayer()];
 			if (obj.__winner__) {

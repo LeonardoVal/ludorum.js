@@ -138,7 +138,7 @@ games.ConnectionGame = declare(Game, {
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: exports.__package__ +'.ConnectionGame',
+		identifier: 'ConnectionGame',
 		serializer: function serialize_ConnectionGame(obj) {
 			return [obj.activePlayer(), obj.board];
 		}

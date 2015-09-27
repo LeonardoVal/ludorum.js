@@ -59,7 +59,7 @@ games.Predefined = declare(Game, {
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: exports.__package__ +'.Predefined',
+		identifier: 'Predefined',
 		serializer: function serialize_Predefined(obj) {
 			return [obj.activePlayer(), obj.__results__, obj.height, obj.width];
 		}

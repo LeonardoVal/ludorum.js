@@ -74,7 +74,7 @@ games.ToadsAndFrogs = declare(Game, {
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: exports.__package__ +'.ToadsAndFrogs',
+		identifier: 'ToadsAndFrogs',
 		serializer: function serialize_ToadsAndFrogs(obj) {
 			return [obj.activePlayer(), obj.board];
 		}

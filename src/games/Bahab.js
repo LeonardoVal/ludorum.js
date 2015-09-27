@@ -156,7 +156,7 @@ games.Bahab = declare(Game, {
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: exports.__package__ +'.Bahab',
+		identifier: 'Bahab',
 		serializer: function serialize_Bahab(obj) {
 			return [obj.activePlayer(), obj.board];
 		}
