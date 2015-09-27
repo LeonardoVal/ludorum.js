@@ -139,7 +139,7 @@ var CheckerboardFromString = utils.CheckerboardFromString = declare(Checkerboard
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: exports.__package__ +'.CheckerboardFromString',
+		identifier: 'CheckerboardFromString',
 		serializer: function serialize_CheckerboardFromString(obj) {
 			var r = [obj.height, obj.width, obj.string];
 			if (obj.hasOwnProperty('emptySquare')) {
