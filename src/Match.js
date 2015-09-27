@@ -74,7 +74,7 @@ var Match = exports.Match = declare({
 		if (ply < 1) {
 			this.onBegin(game);
 		}
-		game = this.__advanceAleatories__(game); // Instantiate all random variables.
+		game = this.__advanceContingents__(game); // Remove all non-determinism.
 		results = game.result();
 		if (results) { // If the match has finished ...
 			this.onEnd(game, results);
@@ -91,9 +91,9 @@ var Match = exports.Match = declare({
 		}
 	},
 	
-	__advanceAleatories__: function __advanceAleatories__(game, moves) {
-		for (var next; game instanceof Aleatory; game = next) {
-			next = game.next();
+	__advanceContingents__: function __advanceContingents__(game, moves) {
+		for (var next; game.isContingent; game = next) {
+			next = game.randomNext();
 			this.history.push(next);
 			this.onNext(game, next);
 		}
@@ -103,7 +103,7 @@ var Match = exports.Match = declare({
 	__advance__: function __advance__(game, moves) {
 		var match = this,
 			quitters = game.activePlayers.filter(function (p) {
-				return moves[p] instanceof Match.CommandQuit;
+				return moves[p].__command__ === 'quit';
 			});
 		if (quitters.length > 0) {
 			match.onQuit(game, quitters[0]);
@@ -123,10 +123,10 @@ var Match = exports.Match = declare({
 	The available commands are:
 	*/
 	
-	/** + `CommandQuit()`: A quit command means the player that issued it is leaving the match. The 
-	match is then aborted.
+	/** + `quit`: A quit command means the player that issued it is leaving the match. The match is 
+	then aborted.
 	*/
-	"static CommandQuit": function CommandQuit() { },
+	"static COMMAND_QUIT": { __command__: 'quit' },
 	
 	/** ## Events ##################################################################################
 	
@@ -197,7 +197,7 @@ var Match = exports.Match = declare({
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: exports.__package__ +'.Match',
+		identifier: 'Match',
 		serializer: function serialize_Match(obj) {
 			return [obj.game, obj.players, obj.history];
 		},
