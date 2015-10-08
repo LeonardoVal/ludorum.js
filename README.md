@@ -7,9 +7,7 @@ Ludorum is a board game framework. It is not focused on graphics or user interfa
 
 * Simple reference games, like [TicTacToe](http://en.wikipedia.org/wiki/Tic-tac-toe) and [ToadsAndFrogs](http://en.wikipedia.org/wiki/Toads_and_Frogs_%28game%29).
 
-[![Built with Grunt](https://cdn.gruntjs.com/builtwith.png)](http://gruntjs.com/)
-
-[![NPM](https://nodei.co/npm/ludorum.png)](https://www.npmjs.com/package/ludorum)
+[![Built with Grunt](https://cdn.gruntjs.com/builtwith.png)](http://gruntjs.com/) [![NPM](https://nodei.co/npm/ludorum.png?mini=true)](https://www.npmjs.com/package/ludorum)
 
 It supports loading with AMD (with [RequireJS](http://requirejs.org/)) or a script tag (sets 'ludorum' in the global namespace). In order to work requires another library of mine called [creatartis-base](https://github.com/LeonardoVal/creatartis-base).
 
