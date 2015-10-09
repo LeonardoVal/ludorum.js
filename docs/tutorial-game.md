@@ -52,6 +52,9 @@ function TicTacToe(activePlayer, board) {
 
 TicTacToe.prototype = Object.create(ludorum.Game.prototype);
 TicTacToe.prototype.constructor = TicTacToe;
+(Object.setPrototypeOf || function (constructor, parent) {
+    constructor.__proto__ = parent; // ES5 polyfill for Object.setPrototypeOf.
+})(TicTacToe, ludorum.Game);
 ```
 
 First we add the simple class properties of `name` and `players`.
@@ -134,24 +137,15 @@ A random player is a player that chooses its moves randomly. A instance of `Matc
 Running `TicTacToe.runTestMatch(true)` should output something like this in the console:
 
 ```
-[         ]
-	moves: {"X":7}
-[       X ]
-	moves: {"O":3}
-[   O   X ]
-	moves: {"X":2}
-[  XO   X ]
-	moves: {"O":5}
-[  XO O X ]
-	moves: {"X":6}
-[  XO OXX ]
-	moves: {"O":8}
-[  XO OXXO]
-	moves: {"X":0}
-[X XO OXXO]
-	moves: {"O":4}
-[X XOOOXXO]
-	result: {"X":-1,"O":1}
+[         ] moves: {"X":7}
+[       X ] moves: {"O":3}
+[   O   X ] moves: {"X":2}
+[  XO   X ] moves: {"O":5}
+[  XO O X ] moves: {"X":6}
+[  XO OXX ] moves: {"O":8}
+[  XO OXXO] moves: {"X":0}
+[X XO OXXO] moves: {"O":4}
+[X XOOOXXO] result: {"X":-1,"O":1}
 ```
 
 Tictactoe is a deterministic game, i.e. the flow of the game is only determined by the player's actions. Not all games are like so. Some games use dice, roulettes or shuffled card decks (among others) that also affect the match. Including random variables of these sorts is explained in the next section.
@@ -173,6 +167,9 @@ function Pig(activePlayer, scores, points) {
 
 Pig.prototype = Object.create(ludorum.Game.prototype);
 Pig.prototype.constructor = Pig;
+(Object.setPrototypeOf || function (constructor, parent) {
+    constructor.__proto__ = parent; // ES5 polyfill for Object.setPrototypeOf.
+})(Pig, ludorum.Game);
 
 Pig.prototype.name = 'Pig';
 Pig.prototype.players = ['One', 'Two'];
@@ -216,10 +213,12 @@ Pig.prototype.moves = function moves() {
 };
 ```
 
-The most complicated part would be to calculate the next state given a game state and a move. This is not because the game logic is complex in itself, but because it involves a die, which is a random variable. Simply put, if the player decides to roll the game state's `next` method must return an aleatory state; which represents the die being rolled. Once determined the actual value of the die, this aleatory state calculates the actual next game state.
+The most complicated part would be to calculate the next state given a game state and a move. This is not because the game logic is complex in itself, but because it involves a die, which is a random variable. Simply put, if the player decides to roll the game state's `next` method must return a `Contingent` state. By default, this instances hold references to the state and moves that originated them. They also have a set of `Aleatory` variables. The values of these random variables (called `haps`) resolved the indetermination in the flow of the game. Once determined the actual value of these haps, the `next` method is called again on the original state with the same moves and the values for the haps. The `next` method will then calculate the actual next state.
+
+In this case, the only random variable involved is a six-sided die, which is already defined in `ludorum.aleatories.dice.D6`. If `haps` are provided, the `next` method calculates a game state; else it builds a contingent state. 
 
 ```javascript
-Pig.prototype.next = function next(moves) {
+Pig.prototype.next = function next(moves, haps) {
 	var activePlayer = this.activePlayer(),
 		move = moves[activePlayer];
 	if (typeof move === 'undefined') { // Check if the active player is moving.
@@ -230,22 +229,19 @@ Pig.prototype.next = function next(moves) {
 		scores[activePlayer] += this.points; // Add points to the active player's score.
 		return new Pig(this.opponent(), scores, 0); // Pass the turn to the other player.
 	} else if (move === 'roll') {
-		var game = this;
-		return new ludorum.aleatories.dice.D6(function (value) { // Build aleatory state.
-			value = isNaN(value) ? this.value() : +value;
-			if (value > 1) { // A roll greater than 1 allows the active player to continue.
-				return new Pig(activePlayer, game._scores, game.points + value);
-			} else { // A roll of 1 passes the turn to the other player.
-				return new Pig(game.opponent(), game._scores, 0);
-			}
-		});
+		var roll = (haps && haps.die)|0;
+		if (!roll) { // Dice has not been rolled.
+			return new Contingent({ die: ludorum.aleatories.dice.D6 }, this, moves);
+		} else { // Dice has been rolled.
+			return (roll > 1) ? 
+				new this.constructor(activePlayer,  this.goal, this.__scores__, this.__rolls__.concat(roll)) :
+				new this.constructor(this.opponent(), this.goal, this.__scores__, []);
+		}
 	} else {
 		throw new Error("Invalid moves "+ JSON.stringify(moves) +" at "+ this +"!");
 	}
 };
 ```
-
-Ludorum has the `Aleatory` type and to help with these mechanics. The `aleatories.dice.D6` is a constructor of aleatory states which are resolved by rolling a six-sided die. The callback function passed to this constructor will build the next game state once the die is rolled. The `value` argument passed to this callback is the value of the die to use, but it may be undefined. If so, the method `this.value()` assigns a random value. This is the case of matches, since `value` is given usually during searches in AI algorithms.
 
 Again, to test our implementation of Pig we set up a match between random players.
 
@@ -269,17 +265,12 @@ Pig.runTestMatch = function runTestMatch(showMoves) {
 Running the test may leave something like this in the console:
 
 ```
-{"One":0,"Two":0} One has 0
-	moves: {"One":"roll"}
-{"One":0,"Two":0} One has 6
-	moves: {"One":"hold"}
-{"One":6,"Two":0} Two has 0
-	moves: {"Two":"roll"}
+{"One":0,"Two":0} One has 0, moves: {"One":"roll"}
+{"One":0,"Two":0} One has 6, moves: {"One":"hold"}
+{"One":6,"Two":0} Two has 0, moves: {"Two":"roll"}
 ...
-{"One":94,"Two":84} One has 6
-	moves: {"One":"hold"}
-"{"One":100,"Two":84}
-	result: {"One":16,"Two":-16}"
+{"One":94,"Two":84} One has 6, moves: {"One":"hold"}
+{"One":100,"Two":84}, result: {"One":16,"Two":-16}
 ```
 
 Both games treated so far have been strictly turn-based, what is usually known as _igougo_ (from _"I go, you go"_). In every turn, only one player can decide and move. Yet not all games are like this. In the next section, we will deal with games that allow more than one player to be active in a turn.
@@ -298,6 +289,9 @@ function OddsAndEvens(scores) {
 
 OddsAndEvens.prototype = Object.create(ludorum.Game.prototype);
 OddsAndEvens.prototype.constructor = OddsAndEvens;
+(Object.setPrototypeOf || function (constructor, parent) {
+    constructor.__proto__ = parent; // ES5 polyfill for Object.setPrototypeOf.
+})(OddsAndEvens, ludorum.Game);
 
 OddsAndEvens.prototype.name = 'Odds&Evens';
 OddsAndEvens.prototype.players = ['Odds', 'Evens'];
@@ -372,17 +366,13 @@ OddsAndEvens.runTestMatch = function runTestMatch(showMoves) {
 The test's output in the console may look as follows:
 
 ```
-{"Odds":0,"Evens":0}
-	moves: {"Odds":1,"Evens":1}
-{"Odds":0,"Evens":1}
-	moves: {"Odds":2,"Evens":2}
+{"Odds":0,"Evens":0} moves: {"Odds":1,"Evens":1}
+{"Odds":0,"Evens":1} moves: {"Odds":2,"Evens":2}
 ...
-{"Odds":9,"Evens":9}
-	moves: {"Odds":2,"Evens":2}
-{"Odds":9,"Evens":10}
-	result: {"Odds":-1,"Evens":1}
+{"Odds":9,"Evens":9} moves: {"Odds":2,"Evens":2}
+{"Odds":9,"Evens":10} result: {"Odds":-1,"Evens":1}
 ```
 
 Making a stochastic simultaneous game implies the combination of the two schemes. Aleatory variables don't collide with more than one active player per turn.
 
-by [Leonardo Val](http://github.com/LeonardoVal).
+_By [Leonardo Val](http://github.com/LeonardoVal)_.
