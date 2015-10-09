@@ -399,13 +399,12 @@ var Game = exports.Game = declare({
 
 /** # Player
 
-Player is the base type for all playing agents. Basically, playing a game means
-choosing a move from all available ones, each time the game enables the player 
-to do so.
+Player is the base type for all playing agents. Basically, playing a game means choosing a move from 
+all available ones, each time the game enables the player to do so.
 */
 var Player = exports.Player = declare({
-	/** The default constructor takes only its `name` from the given `params`.
-	This is an abstract class that is meant to be extended.
+	/** The default constructor takes only its `name` from the given `params`. This is an abstract 
+	class that is meant to be extended.
 	*/
 	constructor: (function () {
 		var __PlayerCount__ = 0; // Used by the Player's default naming.
@@ -415,17 +414,15 @@ var Player = exports.Player = declare({
 		};
 	})(),
 
-	/** A player is asked to choose a move by calling 
-	`Player.decision(game, role)`. The result is the selected move if it can be 
-	obtained synchronously, else a future is returned.
+	/** A player is asked to choose a move by calling `Player.decision(game, role)`. The result is 
+	the selected move if it can be obtained synchronously, else a future is returned.
 	*/
 	decision: function decision(game, role) {
 		return this.movesFor(game, role)[0]; // Indeed not a very thoughtful base implementation. 
 	},
 
-	/** To help implement the decision, `Player.movesFor(game, player)` gets
-	the moves in the game for the player. It also checks if there are any moves,
-	and if it not so an error is risen.
+	/** To help implement the decision, `Player.movesFor(game, player)` gets the moves in the game 
+	for the player. It also checks if there are any moves, and if it not so an error is risen.
 	*/
 	movesFor: function movesFor(game, role) {
 		var moves = game.moves();
@@ -434,32 +431,30 @@ var Player = exports.Player = declare({
 		return moves[role];
 	},
 	
-	/** Before starting a [match](Match.js.html), all players are asked to join
-	by calling `Player.participate(match, role)`. This allows the player to
-	prepare properly. If this implies building another instance of the player 
-	object, it must be returned in order to participate in the match.
+	/** Before starting a [match](Match.js.html), all players are asked to join by calling 
+	`Player.participate(match, role)`. This allows the player to prepare properly. If this implies 
+	building another instance of the player object, it must be returned in order to participate in 
+	the match.
 	*/
 	participate: function participate(match, role) {
 		return this;
 	},
 	
-	// ## Conversions & presentations #########################################
-
-	/** Players can also be serialized, pretty much in the same way 
-	[games](Game.html) are. `Player.__serialize__()` returns an array, where the 
-	first element should be the name of the game, and the rest the arguments to 
-	call the player's constructor in order to rebuild this player's state.
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
 	*/
-	__serialize__: function __serialize__() {
-		return [this.constructor.name, {name: this.name}];
+	'static __SERMAT__': {
+		identifier: 'Player',
+		serializer: function serialize_Player(obj) {
+			return this.serializeAsProperties(obj, ['name']);
+		}
 	},
 	
-	/** The string representation of the player is derived straight from its
-	serialization.
+	/** The string representation of the player is derived straight from its serialization.
 	*/
 	toString: function toString() {
-		var args = this.__serialize__();
-		return args.shift() +'('+ args.map(JSON.stringify).join(',') +')';
+		return Sermat.ser(this);
 	}
 }); // declare Player.
 
@@ -1852,8 +1847,8 @@ var GameTree = declare({
 Automatic players that moves fully randomly.
 */	
 players.RandomPlayer = declare(Player, {
-	/** The constructor takes the player's `name` and a `random` number 
-	generator (`base.Randomness.DEFAULT` by default).
+	/** The constructor takes the player's `name` and a `random` number generator
+	(`base.Randomness.DEFAULT` by default).
 	*/
 	constructor: function RandomPlayer(params) {
 		Player.call(this, params);
@@ -1865,7 +1860,18 @@ players.RandomPlayer = declare(Player, {
 	*/
 	decision: function(game, player) {
 		return this.random.choice(this.movesFor(game, player));
-	}
+	},
+	
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'RandomPlayer',
+		serializer: function serialize_RandomPlayer(obj) {
+			return this.serializeAsProperties(obj, ['name', 'random']);
+		}
+	},
 }); // declare RandomPlayer.
 
 
@@ -1874,8 +1880,7 @@ players.RandomPlayer = declare(Player, {
 Automatic player that is scripted previously.
 */
 players.TracePlayer = declare(Player, {
-	/** The constructor takes the player's `name` and the `trace` as an 
-	sequence of moves to make.
+	/** The constructor takes the player's `name` and the `trace` as an sequence of moves to make.
 	*/
 	constructor: function TracePlayer(params) {
 		Player.call(this, params);
@@ -1884,8 +1889,8 @@ players.TracePlayer = declare(Player, {
 		this.__decision__ = this.__iter__();
 	},
 
-	/** The `decision(game, player)` returns the next move in the trace, or the 
-	last one if the trace has ended.
+	/** The `decision(game, player)` returns the next move in the trace, or the last one if the 
+	trace has ended.
 	*/
 	decision: function(game, player) {
 		try {
@@ -1896,8 +1901,15 @@ players.TracePlayer = declare(Player, {
 		return this.__decision__;
 	},
 	
-	__serialize__: function __serialize__() {
-		return ['TracePlayer', { name: this.name, trace: this.trace.toArray() }];
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'Player',
+		serializer: function serialize_Player(obj) {
+			return [{name: obj.name, trace: obj.trace.toArray()}];
+		}
 	}
 }); // declare TracePlayer.
 
@@ -1906,6 +1918,7 @@ players.TracePlayer = declare(Player, {
 
 This is the base type of automatic players based on heuristic evaluations of game states or moves.
 */
+
 var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 	/** The constructor takes the player's `name` and a `random` number generator 
 	(`base.Randomness.DEFAULT` by default). Many heuristic can be based on randomness, but this is 
@@ -1954,7 +1967,10 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 		return this.random.random(-0.5, 0.5);
 	},
 	
-	/**TODO WIP
+	/** Heuristic players work by evaluating the moves of the `player` in the given `game` state. If
+	the game state is contingent, then all possible scenarios are evaluated and aggregated. The 
+	result of `evaluatedMoves` is a sequence of pairs `[move, evaluation]`, or a future for such 
+	sequence if the evaluation function is asynchronous.
 	*/
 	evaluatedMoves: function evaluatedMoves(game, player) {
 		var heuristicPlayer = this,
@@ -1998,7 +2014,8 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 		}
 	}, // evaluatedMoves()
 	
-	/** TODO WIP
+	/** The `possibleMoves` for a `player` in a given `game` is a set of objects, with one move for
+	the player, and all the options for the opponents.
 	*/
 	possibleMoves: function possibleMoves(game, player) {
 		var moves = game.moves();
@@ -2013,8 +2030,8 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 	[move, evaluation].
 	*/
 	bestMoves: function bestMoves(evaluatedMoves) {
-		return Future.then(iterable(evaluatedMoves), function (evaluatedMoves) {
-			return evaluatedMoves.greater(function (pair) {
+		return Future.then(evaluatedMoves, function (evaluatedMoves) {
+			return iterable(evaluatedMoves).greater(function (pair) {
 				return pair[1];
 			}).map(function (pair) {
 				return pair[0];
@@ -2063,12 +2080,11 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 
 /** # MaxNPlayer
 
-Automatic players based on the MaxN algorithm, a MiniMax variant for games of
-more than two players.
+Automatic players based on the MaxN algorithm, a MiniMax variant for games of more than two players.
 */
 var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
-	/** Besides the parameters of every [`HeuristicPlayer`](HeuristicPlayer.js.html),
-	an `horizon` for the search may be specified (3 plies by default).
+	/** Besides the parameters of every [`HeuristicPlayer`](HeuristicPlayer.js.html), an `horizon` 
+	for the search may be specified (3 plies by default).
 	*/
 	constructor: function MaxNPlayer(params) {
 		HeuristicPlayer.call(this, params);
@@ -2076,15 +2092,14 @@ var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
 			.integer('horizon', { defaultValue: 3, coerce: true });
 	},
 
-	/** This player evaluates each state using the `maxn` method, taking the 
-	evaluation for the given `player`.
+	/** This player evaluates each state using the `maxn` method, taking the evaluation for the 
+	given `player`.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
 		return this.maxN(game, player, 0)[player];
 	},
 
-	/** `heuristics(game)` returns an heuristic value for each players in the 
-	game, as an object.
+	/** `heuristics(game)` returns an heuristic value for each players in the game, as an object.
 	*/
 	heuristics: function heuristic(game) {
 		var result = {}, maxN = this;
@@ -2094,14 +2109,13 @@ var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
 		return result;
 	},
 
-	/** `quiescence(game, player, depth)` is a stability test for the given 
-	`game` state and the given `player`. If the game is quiescent, this function
-	must return evaluations. Else it must return null. 
+	/** `quiescence(game, player, depth)` is a stability test for the given `game` state and the 
+	given `player`. If the game is quiescent, this function must return evaluations. Else it must 
+	return null. 
 	
-	Final game states are always quiescent, and their evaluations are the game's 
-	result for each player. This default implementation also returns heuristic 
-	evaluations for every game state at a deeper depth than the player's 
-	horizon, calculated via the `heuristics()` method. 
+	Final game states are always quiescent, and their evaluations are the game's result for each 
+	player. This default implementation also returns heuristic evaluations for every game state at 
+	a deeper depth than the player's horizon, calculated via the `heuristics()` method. 
 	*/
 	quiescence: function quiescence(game, player, depth) {
 		var results = game.result();
@@ -2114,9 +2128,8 @@ var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
 		}
 	},
 	
-	/** The core `maxN(game, player, depth)` algorithm return the evaluations 
-	for each player of the given game, assuming each player tries to maximize 
-	its own evaluation regardless of the others'.
+	/** The core `maxN(game, player, depth)` algorithm return the evaluations for each player of the 
+	given game, assuming each player tries to maximize its own evaluation regardless of the others'.
 	*/
 	maxN: function maxN(game, player, depth) {
 		var values = this.quiescence(game, player, depth);
@@ -2139,13 +2152,17 @@ var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
 		return values;
 	},
 	
-	toString: function toString() {
-		return (this.constructor.name || 'MaxNPlayer') +'('+ JSON.stringify({
-			name: this.name, horizon: this.horizon
-		}) +')';
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'MaxNPlayer',
+		serializer: function serialize_MaxNPlayer(obj) {
+			return this.serializeAsProperties(obj, ['name', 'horizon']);
+		}
 	}
-}); // declare MiniMaxPlayer.
-
+}); // declare MaxNPlayer.
 
 /** # MiniMaxPlayer
 
@@ -2216,13 +2233,17 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 		return value;
 	},
 	
-	toString: function toString() {
-		return (this.constructor.name || 'MiniMaxPlayer') +'('+ JSON.stringify({
-			name: this.name, horizon: this.horizon
-		}) +')';
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'MiniMaxPlayer',
+		serializer: function serialize_MiniMaxPlayer(obj) {
+			return this.serializeAsProperties(obj, ['name', 'horizon']);
+		}
 	}
 }); // declare MiniMaxPlayer.
-
 
 /** # AlphaBetaPlayer
 
@@ -2277,6 +2298,17 @@ players.AlphaBetaPlayer = declare(MiniMaxPlayer, {
 			}
 		}
 		return isActive ? alpha : beta;
+	},
+	
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'AlphaBetaPlayer',
+		serializer: function serialize_AlphaBetaPlayer(obj) {
+			return this.serializeAsProperties(obj, ['name', 'horizon']);
+		}
 	}
 }); // declare AlphaBetaPlayer.
 
@@ -2290,12 +2322,12 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 	[flat Monte Carlo game tree search method](http://en.wikipedia.org/wiki/Monte-Carlo_tree_search). 
 	The parameters may include:
 	
-	+ `simulationCount=30`: Maximum amount of simulations performed for each 
-		available move at each decision.
+	+ `simulationCount=30`: Maximum amount of simulations performed for each available move at each 
+		decision.
 	+ `timeCap=1000ms`: Time limit for the player to decide.
 	+ `horizon=500`: Maximum amount of moves performed in simulations.
-	+ `agent`: Player instance used in the simulations. If undefined moves are
-		chosen at random. Agents with asynchronous decisions are not supported.
+	+ `agent`: Player instance used in the simulations. If undefined moves are chosen at random. 
+		Agents with asynchronous decisions are not supported.
 	*/
 	constructor: function MonteCarloPlayer(params) {
 		HeuristicPlayer.call(this, params);
@@ -2310,14 +2342,14 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 		}
 	},
 	
-	/** `selectMoves(moves, game, player)` return an array with the best 
-	evaluated moves.
+	/** `evaluatedMoves(game, player)` returns a sequence with the evaluated moves.
 	*/
-	selectMoves: function selectMoves(moves, game, player) {
+	evaluatedMoves: function evaluatedMoves(game, player) {
+		raiseIf(game.isContingent, "MonteCarloPlayer cannot evaluate root contingent states!"); //FIXME
 		var monteCarloPlayer = this,
 			endTime = Date.now() + this.timeCap,
 			gameNext = game.next.bind(game),
-			options = moves.map(function (move) {
+			options = this.possibleMoves(game, player).map(function (move) {
 				return { 
 					move: move, 
 					nexts: (Object.keys(move).length < 2 ? 
@@ -2327,7 +2359,7 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 					sum: 0, 
 					count: 0 
 				};
-			});
+			}).toArray(); // Else the following updates won't work.
 		for (var i = 0; i < this.simulationCount && Date.now() < endTime; ++i) {
 			options.forEach(function (option) {
 				option.nexts = option.nexts.filter(function (next) {
@@ -2338,17 +2370,14 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 				});
 			});
 		}
-		options = iterable(options).greater(function (option) {
+		return options.map(function (option) {
 			raiseIf(isNaN(option.sum), "State evaluation is NaN for move ", option.move, "!");
-			return option.count > 0 ? option.sum / option.count : 0;
-		}).map(function (option) {
-			return option.move;
+			return [option.move, option.count > 0 ? option.sum / option.count : 0];
 		});
-		return options;
 	},
 	
-	/** This player's `stateEvaluation(game, player)` runs `simulationCount` 
-	simulations and returns the average result.
+	/** This player's `stateEvaluation(game, player)` runs `simulationCount` simulations and returns 
+	the average result. It is provided for compatibility, since `evaluatedMoves` does not call it.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
 		var resultSum = 0, 
@@ -2364,9 +2393,9 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 		return simulationCount > 0 ? resultSum / simulationCount : 0;
 	},
 	
-	/** A `simulation(game, player)` plays a random match from the given `game`
-	state and returns an object with the final state (`game`), its result 
-	(`result`) and the number of plies simulated (`plies`).
+	/** A `simulation(game, player)` plays a random match from the given `game` state and returns an 
+	object with the final state (`game`), its result (`result`) and the number of plies simulated 
+	(`plies`).
 	*/
 	simulation: function simulation(game, player) {
 		var mc = this,
@@ -2393,11 +2422,15 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 		raise("Simulation ended unexpectedly for player ", player, " in game ", game, "!");
 	},
 	
-	__serialize__: function __serialize__() {
-		return [this.constructor.name, { name: this.name, 
-			simulationCount: this.simulationCount, timeCap: this.timeCap, 
-			agent: this.agent 
-		}];
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'MonteCarloPlayer',
+		serializer: function serialize_MonteCarloPlayer(obj) {
+			return this.serializeAsProperties(obj, ['name', 'simulationCount', 'timeCap', 'agent']);
+		}
 	}
 }); // declare MonteCarloPlayer
 
@@ -2433,9 +2466,9 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 		}));
 	},
 	
-	/** `selectMoves(moves, game, player)` return an array with the best evaluated moves.
+	/** `evaluatedMoves(game, player)` return a sequence with the evaluated moves.
 	*/
-	selectMoves: function selectMoves(moves, game, player) {
+	evaluatedMoves: function evaluatedMoves(game, player) {
 		var root = new GameTree(null, game),
 			endTime = Date.now() + this.timeCap,
 			node, simulationResult;
@@ -2459,21 +2492,22 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 				node.uct.rewards += (game.normalizedResult(simulationResult.result)[player] + 1) / 2;
 			}
 		}
-		moves = iterable(root.children).select(1).greater(function (n) {
-			return n.uct.visits;
-		}).map(function (n) {
-			return n.transition;
+		return iterable(root.children).select(1).map(function (n) {
+			return [n.transition, n.uct.visits];
 		});
-		return moves;
 	},
 	
-	__serialize__: function __serialize__() {
-		return [this.constructor.name, { name: this.name, 
-			simulationCount: this.simulationCount, timeCap: this.timeCap, 
-			explorationConstant: this.explorationConstant 
-		}];
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'UCTPlayer',
+		serializer: function serialize_UCTPlayer(obj) {
+			return this.serializeAsProperties(obj, ['name', 'simulationCount', 'timeCap', 'explorationConstant']);
+		}
 	}
-}); // declare MonteCarloPlayer
+}); // declare UCTPlayer
 
 
 /** # UserInterfacePlayer
