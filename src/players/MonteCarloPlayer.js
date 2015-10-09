@@ -7,12 +7,12 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 	[flat Monte Carlo game tree search method](http://en.wikipedia.org/wiki/Monte-Carlo_tree_search). 
 	The parameters may include:
 	
-	+ `simulationCount=30`: Maximum amount of simulations performed for each 
-		available move at each decision.
+	+ `simulationCount=30`: Maximum amount of simulations performed for each available move at each 
+		decision.
 	+ `timeCap=1000ms`: Time limit for the player to decide.
 	+ `horizon=500`: Maximum amount of moves performed in simulations.
-	+ `agent`: Player instance used in the simulations. If undefined moves are
-		chosen at random. Agents with asynchronous decisions are not supported.
+	+ `agent`: Player instance used in the simulations. If undefined moves are chosen at random. 
+		Agents with asynchronous decisions are not supported.
 	*/
 	constructor: function MonteCarloPlayer(params) {
 		HeuristicPlayer.call(this, params);
@@ -27,14 +27,14 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 		}
 	},
 	
-	/** `selectMoves(moves, game, player)` return an array with the best 
-	evaluated moves.
+	/** `evaluatedMoves(game, player)` returns a sequence with the evaluated moves.
 	*/
-	selectMoves: function selectMoves(moves, game, player) {
+	evaluatedMoves: function evaluatedMoves(game, player) {
+		raiseIf(game.isContingent, "MonteCarloPlayer cannot evaluate root contingent states!"); //FIXME
 		var monteCarloPlayer = this,
 			endTime = Date.now() + this.timeCap,
 			gameNext = game.next.bind(game),
-			options = moves.map(function (move) {
+			options = this.possibleMoves(game, player).map(function (move) {
 				return { 
 					move: move, 
 					nexts: (Object.keys(move).length < 2 ? 
@@ -44,7 +44,7 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 					sum: 0, 
 					count: 0 
 				};
-			});
+			}).toArray(); // Else the following updates won't work.
 		for (var i = 0; i < this.simulationCount && Date.now() < endTime; ++i) {
 			options.forEach(function (option) {
 				option.nexts = option.nexts.filter(function (next) {
@@ -55,17 +55,14 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 				});
 			});
 		}
-		options = iterable(options).greater(function (option) {
+		return options.map(function (option) {
 			raiseIf(isNaN(option.sum), "State evaluation is NaN for move ", option.move, "!");
-			return option.count > 0 ? option.sum / option.count : 0;
-		}).map(function (option) {
-			return option.move;
+			return [option.move, option.count > 0 ? option.sum / option.count : 0];
 		});
-		return options;
 	},
 	
-	/** This player's `stateEvaluation(game, player)` runs `simulationCount` 
-	simulations and returns the average result.
+	/** This player's `stateEvaluation(game, player)` runs `simulationCount` simulations and returns 
+	the average result. It is provided for compatibility, since `evaluatedMoves` does not call it.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
 		var resultSum = 0, 
@@ -81,9 +78,9 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 		return simulationCount > 0 ? resultSum / simulationCount : 0;
 	},
 	
-	/** A `simulation(game, player)` plays a random match from the given `game`
-	state and returns an object with the final state (`game`), its result 
-	(`result`) and the number of plies simulated (`plies`).
+	/** A `simulation(game, player)` plays a random match from the given `game` state and returns an 
+	object with the final state (`game`), its result (`result`) and the number of plies simulated 
+	(`plies`).
 	*/
 	simulation: function simulation(game, player) {
 		var mc = this,
@@ -110,10 +107,14 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 		raise("Simulation ended unexpectedly for player ", player, " in game ", game, "!");
 	},
 	
-	__serialize__: function __serialize__() {
-		return [this.constructor.name, { name: this.name, 
-			simulationCount: this.simulationCount, timeCap: this.timeCap, 
-			agent: this.agent 
-		}];
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'MonteCarloPlayer',
+		serializer: function serialize_MonteCarloPlayer(obj) {
+			return this.serializeAsProperties(obj, ['name', 'simulationCount', 'timeCap', 'agent']);
+		}
 	}
 }); // declare MonteCarloPlayer

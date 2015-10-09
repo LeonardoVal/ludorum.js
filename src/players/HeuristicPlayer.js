@@ -2,6 +2,7 @@
 
 This is the base type of automatic players based on heuristic evaluations of game states or moves.
 */
+
 var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 	/** The constructor takes the player's `name` and a `random` number generator 
 	(`base.Randomness.DEFAULT` by default). Many heuristic can be based on randomness, but this is 
@@ -50,7 +51,10 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 		return this.random.random(-0.5, 0.5);
 	},
 	
-	/**TODO WIP
+	/** Heuristic players work by evaluating the moves of the `player` in the given `game` state. If
+	the game state is contingent, then all possible scenarios are evaluated and aggregated. The 
+	result of `evaluatedMoves` is a sequence of pairs `[move, evaluation]`, or a future for such 
+	sequence if the evaluation function is asynchronous.
 	*/
 	evaluatedMoves: function evaluatedMoves(game, player) {
 		var heuristicPlayer = this,
@@ -94,7 +98,8 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 		}
 	}, // evaluatedMoves()
 	
-	/** TODO WIP
+	/** The `possibleMoves` for a `player` in a given `game` is a set of objects, with one move for
+	the player, and all the options for the opponents.
 	*/
 	possibleMoves: function possibleMoves(game, player) {
 		var moves = game.moves();
@@ -109,8 +114,8 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 	[move, evaluation].
 	*/
 	bestMoves: function bestMoves(evaluatedMoves) {
-		return Future.then(iterable(evaluatedMoves), function (evaluatedMoves) {
-			return evaluatedMoves.greater(function (pair) {
+		return Future.then(evaluatedMoves, function (evaluatedMoves) {
+			return iterable(evaluatedMoves).greater(function (pair) {
 				return pair[1];
 			}).map(function (pair) {
 				return pair[0];

@@ -29,9 +29,9 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 		}));
 	},
 	
-	/** `selectMoves(moves, game, player)` return an array with the best evaluated moves.
+	/** `evaluatedMoves(game, player)` return a sequence with the evaluated moves.
 	*/
-	selectMoves: function selectMoves(moves, game, player) {
+	evaluatedMoves: function evaluatedMoves(game, player) {
 		var root = new GameTree(null, game),
 			endTime = Date.now() + this.timeCap,
 			node, simulationResult;
@@ -55,18 +55,19 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 				node.uct.rewards += (game.normalizedResult(simulationResult.result)[player] + 1) / 2;
 			}
 		}
-		moves = iterable(root.children).select(1).greater(function (n) {
-			return n.uct.visits;
-		}).map(function (n) {
-			return n.transition;
+		return iterable(root.children).select(1).map(function (n) {
+			return [n.transition, n.uct.visits];
 		});
-		return moves;
 	},
 	
-	__serialize__: function __serialize__() {
-		return [this.constructor.name, { name: this.name, 
-			simulationCount: this.simulationCount, timeCap: this.timeCap, 
-			explorationConstant: this.explorationConstant 
-		}];
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'UCTPlayer',
+		serializer: function serialize_UCTPlayer(obj) {
+			return this.serializeAsProperties(obj, ['name', 'simulationCount', 'timeCap', 'explorationConstant']);
+		}
 	}
-}); // declare MonteCarloPlayer
+}); // declare UCTPlayer
