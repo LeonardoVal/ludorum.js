@@ -3,8 +3,8 @@
 Automatic players that moves fully randomly.
 */	
 players.RandomPlayer = declare(Player, {
-	/** The constructor takes the player's `name` and a `random` number 
-	generator (`base.Randomness.DEFAULT` by default).
+	/** The constructor takes the player's `name` and a `random` number generator
+	(`base.Randomness.DEFAULT` by default).
 	*/
 	constructor: function RandomPlayer(params) {
 		Player.call(this, params);
@@ -16,5 +16,16 @@ players.RandomPlayer = declare(Player, {
 	*/
 	decision: function(game, player) {
 		return this.random.choice(this.movesFor(game, player));
-	}
+	},
+	
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'RandomPlayer',
+		serializer: function serialize_RandomPlayer(obj) {
+			return this.serializeAsProperties(obj, ['name', 'random']);
+		}
+	},
 }); // declare RandomPlayer.

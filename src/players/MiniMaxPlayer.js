@@ -67,9 +67,14 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 		return value;
 	},
 	
-	toString: function toString() {
-		return (this.constructor.name || 'MiniMaxPlayer') +'('+ JSON.stringify({
-			name: this.name, horizon: this.horizon
-		}) +')';
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'MiniMaxPlayer',
+		serializer: function serialize_MiniMaxPlayer(obj) {
+			return this.serializeAsProperties(obj, ['name', 'horizon']);
+		}
 	}
 }); // declare MiniMaxPlayer.

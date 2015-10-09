@@ -51,5 +51,16 @@ players.AlphaBetaPlayer = declare(MiniMaxPlayer, {
 			}
 		}
 		return isActive ? alpha : beta;
+	},
+	
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'AlphaBetaPlayer',
+		serializer: function serialize_AlphaBetaPlayer(obj) {
+			return this.serializeAsProperties(obj, ['name', 'horizon']);
+		}
 	}
 }); // declare AlphaBetaPlayer.
