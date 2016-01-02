@@ -20,15 +20,19 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 	namespace (`self`). If a `workerSetup` function is given, it is also run. After that, the 
 	`playerBuilder` function is called and its results stored in the variable `self.PLAYER`.
 	*/
-	'static createWorker': function createWorker(playerBuilder, workerSetup) {
-		raiseIf('string function'.indexOf(typeof playerBuilder) < 0, "Invalid player builder: "+ playerBuilder +"!");
+	'static createWorker': function createWorker(params) {
+		raiseIf('string function'.indexOf(typeof params.playerBuilder) < 0,
+			"Invalid player builder: "+ params.playerBuilder +"!");
+		raiseIf(params.workerSetup && 'string function'.indexOf(typeof params.workerSetup) < 0,
+			"Invalid worker setup: "+ params.workerSetup +"!");
 		var parallel = new base.Parallel();
-		return parallel.loadModule(exports, true).then(function () {
+		return Future.sequence([exports].concat(params.dependencies || []), function (dependency) {
+			return parallel.loadModule(dependency, true);
+		}).then(function () {
 			return parallel.run(
-				(typeof workerSetup === 'function' ? '('+ workerSetup +')(),\n' : '')+
-				'self.PLAYER = ('+ playerBuilder +').call(self),\n'+
-				'"OK"'
-			);
+				(params.workerSetup ? '('+ params.workerSetup +')(),\n' : '')+
+				'self.PLAYER = ('+ params.playerBuilder +').call(self),\n'+
+				'"OK"');
 		}).then(function () {
 			return parallel.worker;
 		});
@@ -40,7 +44,7 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 	*/
 	'static create': function create(params) {
 		var WebWorkerPlayer = this;
-		return WebWorkerPlayer.createWorker(params.playerBuilder, params.workerSetup).then(function (worker) {
+		return WebWorkerPlayer.createWorker(params).then(function (worker) {
 			return new WebWorkerPlayer({name: name, worker: worker}); 
 		});
 	},
