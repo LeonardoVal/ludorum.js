@@ -563,11 +563,11 @@ var Match = exports.Match = declare({
 	
 	__advance__: function __advance__(game, moves) {
 		var match = this,
-			quitters = game.activePlayers.filter(function (p) {
-				return moves[p].__command__ === 'quit';
+			abortMatch = !iterable(game.activePlayers).all(function (player) {
+				var move = moves[player];
+				return typeof move.__command__ !== 'function' || move.__command__(match, player);
 			});
-		if (quitters.length > 0) {
-			match.onQuit(game, quitters[0]);
+		if (abortMatch) {
 			return false;
 		}
 		var next = game.next(moves); // Match must go on.
@@ -583,11 +583,17 @@ var Match = exports.Match = declare({
 	
 	The available commands are:
 	*/
-	
-	/** + `quit`: A quit command means the player that issued it is leaving the match. The match is 
-	then aborted.
-	*/
-	"static COMMAND_QUIT": { __command__: 'quit' },
+	"static commands": {
+		/** + `Quit`: A quit command means the player that issued it is leaving the match. The match 
+		is then aborted.
+		*/
+		Quit: declare({
+			__command__: function __command__(match, player) {
+				match.onQuit(match.state(), player);
+				return false;
+			}
+		})
+	},
 	
 	/** ## Events ##################################################################################
 	
@@ -1483,6 +1489,21 @@ var CheckerboardFromPieces = utils.CheckerboardFromPieces = declare(Checkerboard
 			this.pieces[id] = value;
 		}
 		return this;
+	},
+	
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'CheckerboardFromPieces',
+		serializer: function serialize_CheckerboardFromPieces(obj) {
+			var r = [obj.height, obj.width, obj.pieces];
+			if (obj.hasOwnProperty('emptySquare')) {
+				r.push(obj.emptySquare);
+			}
+			return r;
+		}
 	}
 }); // declare utils.CheckerboardFromPieces
 
@@ -2515,8 +2536,7 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 Implementation of player user interfaces and proxies.
 */
 var UserInterfacePlayer = players.UserInterfacePlayer = declare(Player, {
-	/** `UserInterfacePlayer` is a generic type for all players that are proxies 
-	of user interfaces.
+	/** `UserInterfacePlayer` is a generic type for all players that are proxies of user interfaces.
 	*/
 	constructor: function UserInterfacePlayer(params) {
 		Player.call(this, params);
@@ -2529,20 +2549,19 @@ var UserInterfacePlayer = players.UserInterfacePlayer = declare(Player, {
 		return this;
 	},
 	
-	/** The `decision(game, player)` of this players returns a future that will 
-	be resolved when the `perform()` method is called.
+	/** The `decision(game, player)` of this players returns a future that will be resolved when the 
+	`perform()` method is called.
 	*/
 	decision: function decision(game, player) {
 		if (this.__future__ && this.__future__.isPending()) {
-			this.__future__.resolve(new Match.CommandQuit());
+			this.__future__.resolve(new Match.commands.Quit());
 		}
 		this.__future__ = new Future();
 		return this.__future__;
 	},
 	
-	/**  User interfaces have to be configured to call `perform(action)` upon 
-	each significant user action.players. It resolves the future returned by the
-	`decision()` method.
+	/**  User interfaces have to be configured to call `perform(action)` upon each significant user 
+	action.players. It resolves the future returned by the `decision()` method.
 	*/
 	perform: function perform(action) {
 		var future = this.__future__;
@@ -2554,12 +2573,11 @@ var UserInterfacePlayer = players.UserInterfacePlayer = declare(Player, {
 	}
 }); // declare UserInterfacePlayer.
 
-// ## User interfaces ##########################################################
+// ## User interfaces ##############################################################################
 
 var UserInterface = players.UserInterface = declare({
-	/** `UserInterface` is the base abstract type for user interfaces that 
-	display a game and allow one or more players to play. The `config` argument 
-	may include the `match` being played.
+	/** `UserInterface` is the base abstract type for user interfaces that display a game and allow 
+	one or more players to play. The `config` argument may include the `match` being played.
 	*/
 	constructor: function UserInterface(config) {
 		this.onBegin = this.onBegin.bind(this);
@@ -2570,8 +2588,7 @@ var UserInterface = players.UserInterface = declare({
 		}
 	},
 	
-	/** `show(match)` discards the current state and sets up to display the 
-	given `match`.
+	/** `show(match)` discards the current state and sets up to display the given `match`.
 	*/
 	show: function show(match) {
 		if (this.match) {
@@ -2585,8 +2602,8 @@ var UserInterface = players.UserInterface = declare({
 		match.events.on('end', this.onEnd);
 	},
 	
-	/** When the player is participated of a match, callbacks are registered to 
-	the following match's events.
+	/** When the player is participated of a match, callbacks are registered to the following 
+	match's events.
 	
 	+ `onBegin(game)` handles the `'begin'` event of the match.
 	*/
@@ -2607,14 +2624,13 @@ var UserInterface = players.UserInterface = declare({
 		this.display(game);
 	},
 	
-	/** `display(game)` renders the game in this user interface. Not 
-	implemented, so please override.
+	/** `display(game)` renders the game in this user interface. Not implemented, so please 
+	override.
 	*/
 	display: unimplemented("UserInterface", "display"),
 	
-	/** `perform(action, actionRole=undefined)` makes the given player perform 
-	the action if the player has a `perform()` method and is included in this 
-	UI's players.
+	/** `perform(action, actionRole=undefined)` makes the given player perform the action if the 
+	player has a `perform()` method and is included in this UI's players.
 	*/
 	perform: function perform(action, actionRole) {
 		iterable(this.match.players).forEach(function (pair) {
@@ -2626,12 +2642,11 @@ var UserInterface = players.UserInterface = declare({
 	}
 }); // declare UserInterface.
 
-// ### HTML based user interfaces ##############################################
+// ### HTML based user interfaces ##################################################################
 
 UserInterface.BasicHTMLInterface = declare(UserInterface, {
-	/** `BasicHTMLInterface(config)` builds a simple HTML based UI, that renders 
-	the game on the DOM using its `display()` method. The `config` argument may
-	include:
+	/** `BasicHTMLInterface(config)` builds a simple HTML based UI, that renders the game on the DOM 
+	using its `display()` method. The `config` argument may include:
 	
 	+ `document=window.document`: the DOM root.
 	+ `container`: the DOM node to render the game in, or its name.
@@ -2645,8 +2660,8 @@ UserInterface.BasicHTMLInterface = declare(UserInterface, {
 		}
 	},
 
-	/** On `display(game)` the `container` is emptied and the game is rendered
-	using its `display(ui)` method.
+	/** On `display(game)` the `container` is emptied and the game is rendered using its 
+	`display(ui)` method.
 	*/
 	display: function display(game) {
 		var container = this.container, child;
@@ -2656,8 +2671,8 @@ UserInterface.BasicHTMLInterface = declare(UserInterface, {
 		game.display(this);
 	},
 	
-	/** `build()` helps DOM creation. The `nodes` argument specifies DOM 
-	elements, each with an array of the shape: `[tag, attributes, elements]`.
+	/** `build()` helps DOM creation. The `nodes` argument specifies DOM elements, each with an 
+	array of the shape: `[tag, attributes, elements]`.
 	*/
 	build: function build(parent, nodes) {
 		var ui = this;
@@ -2708,15 +2723,19 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 	namespace (`self`). If a `workerSetup` function is given, it is also run. After that, the 
 	`playerBuilder` function is called and its results stored in the variable `self.PLAYER`.
 	*/
-	'static createWorker': function createWorker(playerBuilder, workerSetup) {
-		raiseIf('string function'.indexOf(typeof playerBuilder) < 0, "Invalid player builder: "+ playerBuilder +"!");
+	'static createWorker': function createWorker(params) {
+		raiseIf('string function'.indexOf(typeof params.playerBuilder) < 0,
+			"Invalid player builder: "+ params.playerBuilder +"!");
+		raiseIf(params.workerSetup && 'string function'.indexOf(typeof params.workerSetup) < 0,
+			"Invalid worker setup: "+ params.workerSetup +"!");
 		var parallel = new base.Parallel();
-		return parallel.loadModule(exports, true).then(function () {
+		return Future.sequence([exports].concat(params.dependencies || []), function (dependency) {
+			return parallel.loadModule(dependency, true);
+		}).then(function () {
 			return parallel.run(
-				(typeof workerSetup === 'function' ? '('+ workerSetup +')(),\n' : '')+
-				'self.PLAYER = ('+ playerBuilder +').call(self),\n'+
-				'"OK"'
-			);
+				(params.workerSetup ? '('+ params.workerSetup +')(),\n' : '')+
+				'self.PLAYER = ('+ params.playerBuilder +').call(self),\n'+
+				'"OK"');
 		}).then(function () {
 			return parallel.worker;
 		});
@@ -2728,7 +2747,7 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 	*/
 	'static create': function create(params) {
 		var WebWorkerPlayer = this;
-		return WebWorkerPlayer.createWorker(params.playerBuilder, params.workerSetup).then(function (worker) {
+		return WebWorkerPlayer.createWorker(params).then(function (worker) {
 			return new WebWorkerPlayer({name: name, worker: worker}); 
 		});
 	},
@@ -3321,31 +3340,6 @@ games.TicTacToe = declare(Game, {
 		].join('\n');
 	},
 	
-	/** The `display(ui)` method is called by a `UserInterface` to render the game state. The only 
-	supported user interface type is `BasicHTMLInterface`. The look can be configured using CSS 
-	classes.
-	*/
-	display: function display(ui) {
-		raiseIf(!ui || !(ui instanceof UserInterface.BasicHTMLInterface), "Unsupported UI!");
-		var activePlayer = this.activePlayer(),
-			moves = this.moves(),
-			board = this.board,
-			classNames = { 'X': "ludorum-square-Xs", 'O': "ludorum-square-Os", '_': "ludorum-square-empty" },
-			squareHTML = { 'X': "X", 'O': "O", '_': "&nbsp;" };
-		moves = moves && moves[activePlayer] && moves[activePlayer].length > 0;
-		(new CheckerboardFromString(3, 3, this.board, '_'))
-			.renderAsHTMLTable(ui.document, ui.container, function (data) {
-				data.className = classNames[data.square];
-				data.innerHTML = squareHTML[data.square];
-				if (moves && data.square === '_') {
-					data.move = data.coord[0] * 3 + data.coord[1];
-					data.activePlayer = activePlayer;
-					data.onclick = ui.perform.bind(ui, data.move, activePlayer);
-				}
-			});
-		return ui;
-	},
-	
 	// ## Heuristics and AI ########################################################################
 	
 	/** `TicTacToe.heuristics` is a bundle of helper functions to build heuristic evaluation 
@@ -3838,59 +3832,6 @@ games.Bahab = declare(Game, {
 			throw new Error("Invalid moves "+ JSON.stringify(moves) +"!");
 		}
 		return new this.constructor(this.opponent(), this.board.move(move[0], move[1]));
-	},
-	
-	// ## User intefaces ###########################################################################
-	
-	/** The `display(ui)` method is called by a `UserInterface` to render the game state. The only 
-	supported user interface type is `BasicHTMLInterface`. The look can be configured using CSS 
-	classes.
-	*/
-	display: function display(ui) {
-		raiseIf(!ui || !(ui instanceof UserInterface.BasicHTMLInterface), "Unsupported UI!");
-		return this.__displayHTML__(ui);
-	},
-	
-	/** The game board is rendered in HTML as a table. The look can be customized with CSS classes.
-	*/
-	__displayHTML__: function __displayHTML__(ui) {
-		var game = this,
-			moves = this.moves(),
-			activePlayer = this.activePlayer(),
-			board = this.board,
-			classNames = {
-				'A': "ludorum-square-Uppercase-A", 'B': "ludorum-square-Uppercase-B",
-				'a': "ludorum-square-Lowercase-A", 'b': "ludorum-square-Lowercase-B",
-				'.': "ludorum-square-empty"
-			},
-			movesByFrom = moves ? iterable(moves[activePlayer]).groupAll(function (m) {
-				return JSON.stringify(m[0]);
-			}) : {},
-			selectedMoves = ui.selectedPiece && 
-				movesByFrom[JSON.stringify(ui.selectedPiece)].map(function (m) {
-					return JSON.stringify(m[1]);
-				});
-		board.renderAsHTMLTable(ui.document, ui.container, function (data) {
-			data.className = classNames[data.square];
-			data.innerHTML = data.square == '.' ? '&nbsp;' : data.square;
-			if (ui.selectedPiece) {
-				if (selectedMoves && selectedMoves.indexOf(JSON.stringify(data.coord)) >= 0) {
-					data.className = "ludorum-square-"+ activePlayer +"-move";
-					data.onclick = function () {
-						var selectedPiece = ui.selectedPiece;
-						ui.selectedPiece = (void 0);
-						ui.perform([selectedPiece, data.coord], activePlayer);
-					};
-				}
-			}
-			if (movesByFrom.hasOwnProperty(JSON.stringify(data.coord))) {
-				data.onclick = function () {
-					ui.selectedPiece = data.coord;
-					ui.display(game); // Redraw the game state.			
-				};
-			}
-		});
-		return ui;
 	},
 	
 	// ## Utility methods ##########################################################################
