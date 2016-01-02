@@ -67,5 +67,20 @@ var CheckerboardFromPieces = utils.CheckerboardFromPieces = declare(Checkerboard
 			this.pieces[id] = value;
 		}
 		return this;
+	},
+	
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'CheckerboardFromPieces',
+		serializer: function serialize_CheckerboardFromPieces(obj) {
+			var r = [obj.height, obj.width, obj.pieces];
+			if (obj.hasOwnProperty('emptySquare')) {
+				r.push(obj.emptySquare);
+			}
+			return r;
+		}
 	}
 }); // declare utils.CheckerboardFromPieces
