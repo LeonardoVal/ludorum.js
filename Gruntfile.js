@@ -1,5 +1,7 @@
 ﻿/** Gruntfile for [ludorum.js](http://github.com/LeonardoVal/ludorum.js).
 */
+var path = require('path');
+
 module.exports = function(grunt) {
 	var SOURCE_FILES = [ '__prologue__',
 		'Game', 'Player', 'Match', 'Contingent', 'Tournament', 
@@ -46,6 +48,18 @@ module.exports = function(grunt) {
 				src: ['build/<%= pkg.name %>.js', 'tests/specs/*.js'],
 			},
 		},
+		copy: { ////////////////////////////////////////////////////////////////////////////////////
+			test: {
+				files: [
+					'node_modules/requirejs/require.js',
+					'node_modules/creatartis-base/build/creatartis-base.js', 'node_modules/creatartis-base/build/creatartis-base.js.map',
+					'node_modules/sermat/build/sermat-umd.js', 'node_modules/sermat/build/sermat-umd.js.map',
+					'build/<%= pkg.name %>.js', 'build/<%= pkg.name %>.js.map'
+					].map(function (f) {
+						return { nonull: true, src: f, dest: 'tests/lib/'+ path.basename(f) };
+					})
+			}
+		},
 		uglify: { //////////////////////////////////////////////////////////////////////////////////
 			build: {
 				src: 'build/<%= pkg.name %>.js',
@@ -82,33 +96,15 @@ module.exports = function(grunt) {
 	});
 // Load tasks. /////////////////////////////////////////////////////////////////////////////////////
 	grunt.loadNpmTasks('grunt-contrib-concat');
+	grunt.loadNpmTasks('grunt-contrib-copy');
 	grunt.loadNpmTasks('grunt-contrib-jshint');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-karma');
 	grunt.loadNpmTasks('grunt-docker');
-
-// Custom tasks. ///////////////////////////////////////////////////////////////////////////////////
-	grunt.registerTask('test-lib', 'Copies libraries for the testing facilities to use.', function() {
-		var path = require('path'),
-			pkg = grunt.config.get('pkg');
-		grunt.log.writeln("Copied to tests/lib/: "+ [
-			'node_modules/requirejs/require.js',
-			'node_modules/creatartis-base/build/creatartis-base.js',
-			'node_modules/creatartis-base/build/creatartis-base.js.map',
-			'node_modules/sermat/build/sermat-umd.js',
-			'node_modules/sermat/build/sermat-umd.js.map',
-			'build/'+ pkg.name +'.js', 
-			'build/'+ pkg.name +'.js.map'
-		].map(function (fileToCopy) {
-			var baseName = path.basename(fileToCopy);
-			grunt.file.copy('./'+ fileToCopy, './tests/lib/'+ baseName);
-			return baseName;
-		}).join(", ") +".");
-	}); // test-lib
 	
 // Register tasks. /////////////////////////////////////////////////////////////////////////////////
-	grunt.registerTask('compile', ['concat:build', 'jshint:build', 'uglify:build']); 
-	grunt.registerTask('test', ['compile', 'test-lib', 'karma:build']);
+	grunt.registerTask('compile', ['concat:build', 'jshint:build', 'uglify:build', 'copy:test']); 
+	grunt.registerTask('test', ['compile', 'karma:build']);
 	grunt.registerTask('test-all', ['test', 'karma:chrome', 'karma:firefox', 'karma:iexplore']);
 	grunt.registerTask('build', ['test', 'docker:build']);
 	grunt.registerTask('default', ['build']);
