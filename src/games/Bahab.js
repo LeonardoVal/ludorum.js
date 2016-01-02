@@ -98,59 +98,6 @@ games.Bahab = declare(Game, {
 		return new this.constructor(this.opponent(), this.board.move(move[0], move[1]));
 	},
 	
-	// ## User intefaces ###########################################################################
-	
-	/** The `display(ui)` method is called by a `UserInterface` to render the game state. The only 
-	supported user interface type is `BasicHTMLInterface`. The look can be configured using CSS 
-	classes.
-	*/
-	display: function display(ui) {
-		raiseIf(!ui || !(ui instanceof UserInterface.BasicHTMLInterface), "Unsupported UI!");
-		return this.__displayHTML__(ui);
-	},
-	
-	/** The game board is rendered in HTML as a table. The look can be customized with CSS classes.
-	*/
-	__displayHTML__: function __displayHTML__(ui) {
-		var game = this,
-			moves = this.moves(),
-			activePlayer = this.activePlayer(),
-			board = this.board,
-			classNames = {
-				'A': "ludorum-square-Uppercase-A", 'B': "ludorum-square-Uppercase-B",
-				'a': "ludorum-square-Lowercase-A", 'b': "ludorum-square-Lowercase-B",
-				'.': "ludorum-square-empty"
-			},
-			movesByFrom = moves ? iterable(moves[activePlayer]).groupAll(function (m) {
-				return JSON.stringify(m[0]);
-			}) : {},
-			selectedMoves = ui.selectedPiece && 
-				movesByFrom[JSON.stringify(ui.selectedPiece)].map(function (m) {
-					return JSON.stringify(m[1]);
-				});
-		board.renderAsHTMLTable(ui.document, ui.container, function (data) {
-			data.className = classNames[data.square];
-			data.innerHTML = data.square == '.' ? '&nbsp;' : data.square;
-			if (ui.selectedPiece) {
-				if (selectedMoves && selectedMoves.indexOf(JSON.stringify(data.coord)) >= 0) {
-					data.className = "ludorum-square-"+ activePlayer +"-move";
-					data.onclick = function () {
-						var selectedPiece = ui.selectedPiece;
-						ui.selectedPiece = (void 0);
-						ui.perform([selectedPiece, data.coord], activePlayer);
-					};
-				}
-			}
-			if (movesByFrom.hasOwnProperty(JSON.stringify(data.coord))) {
-				data.onclick = function () {
-					ui.selectedPiece = data.coord;
-					ui.display(game); // Redraw the game state.			
-				};
-			}
-		});
-		return ui;
-	},
-	
 	// ## Utility methods ##########################################################################
 	
 	/** Serialization and materialization using Sermat.

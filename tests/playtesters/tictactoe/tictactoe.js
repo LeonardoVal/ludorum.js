@@ -1,82 +1,71 @@
-﻿var APP = {},
-	JS_ROOT = '../../';
+﻿require.config({ paths: {
+	'creatartis-base': '../../lib/creatartis-base', 
+	'sermat': '../../lib/sermat-umd',
+	'ludorum': '../../lib/ludorum',
+	'playtester': '../../lib/playtester-common'
+}});
+require(['ludorum', 'creatartis-base', 'sermat', 'playtester'], function (ludorum, base, Sermat, PlayTesterApp) {
+	var CheckerboardFromString = ludorum.utils.CheckerboardFromString;
 
-require.config({
-	paths: {
-		'creatartis-base': JS_ROOT +"lib/creatartis-base", 
-		sermat: JS_ROOT +"lib/sermat-umd",
-		ludorum: JS_ROOT +"lib/ludorum"
-	}
-});
-require(['ludorum', 'creatartis-base', 'sermat'], function (ludorum, base, Sermat) {
-	APP.imports = {base: base, ludorum: ludorum};
-	APP.elements = {
-		selectXs: document.getElementById('playerXs'),
-		selectOs: document.getElementById('playerOs'),
-		buttonReset: document.getElementById('reset'),
-		footer: document.getElementsByTagName('footer')[0]
-	};
-
-// Player options. /////////////////////////////////////////////////////////////
-	var PLAYER_OPTIONS = APP.PLAYER_OPTIONS = [
-		{title: "You", builder: function () { 
-			return new ludorum.players.UserInterfacePlayer(); 
-		}, runOnWorker: false },
-		{title: "Random", builder: function () { 
-			return new ludorum.players.RandomPlayer();
-		}, runOnWorker: false },
-		{title: "MonteCarlo (20 sims)", builder: function () {
-			return new ludorum.players.MonteCarloPlayer({ simulationCount: 20 });
-		}, runOnWorker: true },
-		{title: "MonteCarlo (80 sims)", builder: function () {
-			return new ludorum.players.MonteCarloPlayer({ simulationCount: 80 });
-		}, runOnWorker: true },
-		{title: "MiniMax AlfaBeta (4 plies)", builder: function () {
-			return new ludorum.players.AlphaBetaPlayer({ horizon: 3 });
-		}, runOnWorker: true },
-		{title: "MiniMax AlfaBeta (6 plies)", builder: function () {
-			return new ludorum.players.AlphaBetaPlayer({ horizon: 5 });
-		}, runOnWorker: true },
-		{title: "MaxN (6 plies)", builder: function () {
-			return new ludorum.players.MaxNPlayer({ horizon: 5 });
-		}, runOnWorker: true },
-	];
-	APP.players = [PLAYER_OPTIONS[0].builder(), PLAYER_OPTIONS[0].builder()];
-	PLAYER_OPTIONS.forEach(function (option, i) {
-		var html = '<option value="'+ i +'">'+ option.title +'</option>';
-		APP.elements.selectXs.innerHTML += html;
-		APP.elements.selectOs.innerHTML += html;
-	});
-	APP.elements.selectXs.onchange = 
-	APP.elements.selectOs.onchange = function () {
-		var i = this === APP.elements.selectXs ? 0 : 1,
-			option = PLAYER_OPTIONS[+this.value];
-		(option.runOnWorker
-			? ludorum.players.WebWorkerPlayer.create({ playerBuilder: option.builder })
-			: base.Future.when(option.builder())
-		).then(function (player) {
-			APP.players[i] = player;
-			APP.reset();
-		});
-	};
-
-// Buttons. ////////////////////////////////////////////////////////////////////
-	APP.elements.buttonReset.onclick = APP.reset = function reset() {
-		var match = new ludorum.Match(new ludorum.games.TicTacToe(), APP.players);
-		APP.ui = new ludorum.players.UserInterface.BasicHTMLInterface({ match: match, container: 'board' });
-		match.events.on('begin', function (game) {
-			APP.elements.footer.innerHTML = base.Text.escapeXML("Turn "+ game.activePlayer() +".");
-		});
-		match.events.on('next', function (game, next) {
-			APP.elements.footer.innerHTML = base.Text.escapeXML("Turn "+ next.activePlayer() +".");
-		});
-		match.events.on('end', function (game, results) {
-			APP.elements.footer.innerHTML = base.Text.escapeXML(results['Xs'] === 0 ? 'Drawed game.'
-				: (results['Xs'] > 0 ? 'Xs' : 'Os') +' wins.');
-		});
-		match.run();
-	};
+	/** Custom HTML interface for TicTacToe.
+	*/
+	var TicTacToeHTMLInterface = base.declare(ludorum.players.UserInterface.BasicHTMLInterface, {
+		constructor: function TicTacToeHTMLInterface() {
+			ludorum.players.UserInterface.BasicHTMLInterface.call(this, {
+				document: document, container: document.getElementById('board')
+			});
+		},
 	
-// Start.
-	APP.reset();
+		/** Each of the board's squares looks are customized via CSS.
+		*/
+		classNames: { 
+			'X': "ludorum-square-Xs", 
+			'O': "ludorum-square-Os", 
+			'_': "ludorum-square-empty" 
+		},
+		
+		/** This is a mapping from the board to HTML for each of the board's squares.
+		*/
+		squareHTML: {
+			'X': "X",
+			'O': "O",
+			'_': "&nbsp;"
+		},
+	
+		display: function display(game) {
+			var ui = this,
+				activePlayer = game.activePlayer(),
+				moves = game.moves(),
+				board = game.board,
+				classNames = this.classNames,
+				squareHTML = this.squareHTML;
+			this.container.innerHTML = ''; // empty the board's DOM.
+			moves = moves && moves[activePlayer] && moves[activePlayer].length > 0;
+			(new CheckerboardFromString(3, 3, game.board, '_'))
+				.renderAsHTMLTable(ui.document, ui.container, function (data) {
+					data.className = classNames[data.square];
+					data.innerHTML = squareHTML[data.square];
+					if (moves && data.square === '_') {
+						data.move = data.coord[0] * 3 + data.coord[1];
+						data.activePlayer = activePlayer;
+						data.onclick = ui.perform.bind(ui, data.move, activePlayer);
+					}
+				});
+		}
+	});
+
+	/** PlayTesterApp initialization.
+	*/
+	base.global.APP = new PlayTesterApp(new ludorum.games.TicTacToe(), new TicTacToeHTMLInterface(),
+		{ bar: document.getElementsByTagName('footer')[0] });
+	APP.playerUI("You")
+		.playerRandom()
+		.playerMonteCarlo("MCTS (20 sims)", 20, true)
+		.playerMonteCarlo("MCTS (80 sims)", 80, true)
+		.playerAlfaBeta("MiniMax-\u03b1\u03b2 (4 plies)", 3, true)
+		.playerAlfaBeta("MiniMax-\u03b1\u03b2 (6 plies)", 5, true)
+		.playerMaxN("MaxN (6 plies)", 5, true)
+		.selects(['playerXs', 'playerOs'])
+		.button('resetButton', document.getElementById('reset'), APP.reset.bind(APP))
+		.reset();
 }); // require().

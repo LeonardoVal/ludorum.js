@@ -88,31 +88,6 @@ games.TicTacToe = declare(Game, {
 		].join('\n');
 	},
 	
-	/** The `display(ui)` method is called by a `UserInterface` to render the game state. The only 
-	supported user interface type is `BasicHTMLInterface`. The look can be configured using CSS 
-	classes.
-	*/
-	display: function display(ui) {
-		raiseIf(!ui || !(ui instanceof UserInterface.BasicHTMLInterface), "Unsupported UI!");
-		var activePlayer = this.activePlayer(),
-			moves = this.moves(),
-			board = this.board,
-			classNames = { 'X': "ludorum-square-Xs", 'O': "ludorum-square-Os", '_': "ludorum-square-empty" },
-			squareHTML = { 'X': "X", 'O': "O", '_': "&nbsp;" };
-		moves = moves && moves[activePlayer] && moves[activePlayer].length > 0;
-		(new CheckerboardFromString(3, 3, this.board, '_'))
-			.renderAsHTMLTable(ui.document, ui.container, function (data) {
-				data.className = classNames[data.square];
-				data.innerHTML = squareHTML[data.square];
-				if (moves && data.square === '_') {
-					data.move = data.coord[0] * 3 + data.coord[1];
-					data.activePlayer = activePlayer;
-					data.onclick = ui.perform.bind(ui, data.move, activePlayer);
-				}
-			});
-		return ui;
-	},
-	
 	// ## Heuristics and AI ########################################################################
 	
 	/** `TicTacToe.heuristics` is a bundle of helper functions to build heuristic evaluation 
