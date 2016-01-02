@@ -3,8 +3,7 @@
 Implementation of player user interfaces and proxies.
 */
 var UserInterfacePlayer = players.UserInterfacePlayer = declare(Player, {
-	/** `UserInterfacePlayer` is a generic type for all players that are proxies 
-	of user interfaces.
+	/** `UserInterfacePlayer` is a generic type for all players that are proxies of user interfaces.
 	*/
 	constructor: function UserInterfacePlayer(params) {
 		Player.call(this, params);
@@ -17,20 +16,19 @@ var UserInterfacePlayer = players.UserInterfacePlayer = declare(Player, {
 		return this;
 	},
 	
-	/** The `decision(game, player)` of this players returns a future that will 
-	be resolved when the `perform()` method is called.
+	/** The `decision(game, player)` of this players returns a future that will be resolved when the 
+	`perform()` method is called.
 	*/
 	decision: function decision(game, player) {
 		if (this.__future__ && this.__future__.isPending()) {
-			this.__future__.resolve(new Match.CommandQuit());
+			this.__future__.resolve(new Match.commands.Quit());
 		}
 		this.__future__ = new Future();
 		return this.__future__;
 	},
 	
-	/**  User interfaces have to be configured to call `perform(action)` upon 
-	each significant user action.players. It resolves the future returned by the
-	`decision()` method.
+	/**  User interfaces have to be configured to call `perform(action)` upon each significant user 
+	action.players. It resolves the future returned by the `decision()` method.
 	*/
 	perform: function perform(action) {
 		var future = this.__future__;
@@ -42,12 +40,11 @@ var UserInterfacePlayer = players.UserInterfacePlayer = declare(Player, {
 	}
 }); // declare UserInterfacePlayer.
 
-// ## User interfaces ##########################################################
+// ## User interfaces ##############################################################################
 
 var UserInterface = players.UserInterface = declare({
-	/** `UserInterface` is the base abstract type for user interfaces that 
-	display a game and allow one or more players to play. The `config` argument 
-	may include the `match` being played.
+	/** `UserInterface` is the base abstract type for user interfaces that display a game and allow 
+	one or more players to play. The `config` argument may include the `match` being played.
 	*/
 	constructor: function UserInterface(config) {
 		this.onBegin = this.onBegin.bind(this);
@@ -58,8 +55,7 @@ var UserInterface = players.UserInterface = declare({
 		}
 	},
 	
-	/** `show(match)` discards the current state and sets up to display the 
-	given `match`.
+	/** `show(match)` discards the current state and sets up to display the given `match`.
 	*/
 	show: function show(match) {
 		if (this.match) {
@@ -73,8 +69,8 @@ var UserInterface = players.UserInterface = declare({
 		match.events.on('end', this.onEnd);
 	},
 	
-	/** When the player is participated of a match, callbacks are registered to 
-	the following match's events.
+	/** When the player is participated of a match, callbacks are registered to the following 
+	match's events.
 	
 	+ `onBegin(game)` handles the `'begin'` event of the match.
 	*/
@@ -95,14 +91,13 @@ var UserInterface = players.UserInterface = declare({
 		this.display(game);
 	},
 	
-	/** `display(game)` renders the game in this user interface. Not 
-	implemented, so please override.
+	/** `display(game)` renders the game in this user interface. Not implemented, so please 
+	override.
 	*/
 	display: unimplemented("UserInterface", "display"),
 	
-	/** `perform(action, actionRole=undefined)` makes the given player perform 
-	the action if the player has a `perform()` method and is included in this 
-	UI's players.
+	/** `perform(action, actionRole=undefined)` makes the given player perform the action if the 
+	player has a `perform()` method and is included in this UI's players.
 	*/
 	perform: function perform(action, actionRole) {
 		iterable(this.match.players).forEach(function (pair) {
@@ -114,12 +109,11 @@ var UserInterface = players.UserInterface = declare({
 	}
 }); // declare UserInterface.
 
-// ### HTML based user interfaces ##############################################
+// ### HTML based user interfaces ##################################################################
 
 UserInterface.BasicHTMLInterface = declare(UserInterface, {
-	/** `BasicHTMLInterface(config)` builds a simple HTML based UI, that renders 
-	the game on the DOM using its `display()` method. The `config` argument may
-	include:
+	/** `BasicHTMLInterface(config)` builds a simple HTML based UI, that renders the game on the DOM 
+	using its `display()` method. The `config` argument may include:
 	
 	+ `document=window.document`: the DOM root.
 	+ `container`: the DOM node to render the game in, or its name.
@@ -133,8 +127,8 @@ UserInterface.BasicHTMLInterface = declare(UserInterface, {
 		}
 	},
 
-	/** On `display(game)` the `container` is emptied and the game is rendered
-	using its `display(ui)` method.
+	/** On `display(game)` the `container` is emptied and the game is rendered using its 
+	`display(ui)` method.
 	*/
 	display: function display(game) {
 		var container = this.container, child;
@@ -144,8 +138,8 @@ UserInterface.BasicHTMLInterface = declare(UserInterface, {
 		game.display(this);
 	},
 	
-	/** `build()` helps DOM creation. The `nodes` argument specifies DOM 
-	elements, each with an array of the shape: `[tag, attributes, elements]`.
+	/** `build()` helps DOM creation. The `nodes` argument specifies DOM elements, each with an 
+	array of the shape: `[tag, attributes, elements]`.
 	*/
 	build: function build(parent, nodes) {
 		var ui = this;

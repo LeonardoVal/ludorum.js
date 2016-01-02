@@ -102,11 +102,11 @@ var Match = exports.Match = declare({
 	
 	__advance__: function __advance__(game, moves) {
 		var match = this,
-			quitters = game.activePlayers.filter(function (p) {
-				return moves[p].__command__ === 'quit';
+			abortMatch = !iterable(game.activePlayers).all(function (player) {
+				var move = moves[player];
+				return typeof move.__command__ !== 'function' || move.__command__(match, player);
 			});
-		if (quitters.length > 0) {
-			match.onQuit(game, quitters[0]);
+		if (abortMatch) {
 			return false;
 		}
 		var next = game.next(moves); // Match must go on.
@@ -122,11 +122,17 @@ var Match = exports.Match = declare({
 	
 	The available commands are:
 	*/
-	
-	/** + `quit`: A quit command means the player that issued it is leaving the match. The match is 
-	then aborted.
-	*/
-	"static COMMAND_QUIT": { __command__: 'quit' },
+	"static commands": {
+		/** + `Quit`: A quit command means the player that issued it is leaving the match. The match 
+		is then aborted.
+		*/
+		Quit: declare({
+			__command__: function __command__(match, player) {
+				match.onQuit(match.state(), player);
+				return false;
+			}
+		})
+	},
 	
 	/** ## Events ##################################################################################
 	
