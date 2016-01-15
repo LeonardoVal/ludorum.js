@@ -37,15 +37,20 @@ beforeEach(function() { // Add custom matchers.
 
 function async_it(desc, func) { // Future friendly version of it().
 	it(desc, function () {
-		var done = false;
+		var finished = false;
 		runs(function () {
-			func().then(function () {
-				done = true;
-			})
+			try {
+				func().then(function () {
+					finished = true;
+				});
+			} catch (err) {
+				console.error(err);
+				finished = true;
+			}
 		});
 		waitsFor(function () {
-			return done;
-		});
+			return finished;
+		}, "Test took too long!", 10000);
 	});
 }
 
