@@ -1,12 +1,11 @@
 ﻿/** # Aleatory
 
 Aleatories are different means of non determinism that games can use, like: dice, card decks, 
-roulettes, etc. They are used by `Aleatoric` game states.
+roulettes, etc. They are used by `Contingent` game states.
 */
 var Aleatory = exports.aleatories.Aleatory = declare({
 	/** The base class implements an integer uniform random variable between a minimum and maximum
 	value (inclusively).
-	+ 
 	*/
 	constructor: function Aleatory(min, max) {
 		switch (arguments.length) {

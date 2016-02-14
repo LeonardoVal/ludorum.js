@@ -37,4 +37,4 @@ var dice = aleatories.dice = {
 				}).sum();
 		}
 	}
-}; //// declare Dice.
+}; // dice.

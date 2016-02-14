@@ -13,15 +13,9 @@ var Contingent = exports.Contingent = declare({
 	the `next` method for further details.
 	*/
 	constructor: function Contingent(haps, state, moves) {
-		if (haps) {
-			this.__haps__ = haps;
-		}
-		if (state) {
-			this.__state__ = state;
-		}
-		if (moves) {
-			this.__moves__ = moves;
-		}
+		this.__haps__ = haps || null;
+		this.__state__ = state || null;
+		this.__moves__ = moves || null;
 	},
 	
 	/** A contingent state's `haps` are the equivalent of `moves` in normal game states. The method 
@@ -86,10 +80,12 @@ var Contingent = exports.Contingent = declare({
 	
 	// ## Utilities ################################################################################
 	
+	/** Serialization and materialization using Sermat.
+	*/
 	'static __SERMAT__': {
 		identifier: 'Contingent',
 		serializer: function serialize_Contingent(obj) {
-			return [obj.__haps__ || null, obj.__state__ || null, obj.__moves__ || null];
+			return [obj.__haps__, obj.__state__, obj.__moves__];
 		}
 	}
 });
