@@ -1,7 +1,7 @@
 ﻿define(['creatartis-base', 'ludorum'], function (base, ludorum) {
 	
 	describe("tournaments.RoundRobin", function () { ///////////////////////////
-		async_it("(games.Choose2Win, players.RandomPlayer)", function () {
+		it("(games.Choose2Win, players.RandomPlayer)", function (done) {
 			var game = new ludorum.games.Choose2Win(),
 				participants = [
 					new ludorum.players.RandomPlayer({name: 'RandomPlayer#1'}), 
@@ -23,12 +23,13 @@
 				expect(stats.count({key:'results', player:'RandomPlayer#2', role:'This'})).toBe(2);
 				expect(stats.count({key:'results', player:'RandomPlayer#2', role:'That'})).toBe(2);
 				expect(stats.sum({key:'results'})).toBe(0); // Choose2Win is a zero-sum game.
+				done();
 			});
 		});
 	}); //// tournaments.RoundRobin
 	
 	describe("tournaments.Measurement", function () { //////////////////////////
-		async_it("(games.Choose2Win, players.RandomPlayer)", function () {
+		it("(games.Choose2Win, players.RandomPlayer)", function (done) {
 			var game = new ludorum.games.Choose2Win(),
 				contest = new ludorum.tournaments.Measurement(game,
 					[new ludorum.players.RandomPlayer({name: 'RandomPlayer#1'})],
@@ -53,12 +54,13 @@
 				expect(stats.count({key:'results', player:'RandomPlayer#3', role:'This'})).toBe(2);
 				expect(stats.count({key:'results', player:'RandomPlayer#3', role:'That'})).toBe(2);
 				expect(stats.sum({key:'results'})).toBe(0);
+				done();
 			});
 		});
 	}); //// tournaments.Measurement
 	
 	describe("tournaments.Elimination", function () { //////////////////////////
-		async_it("(games.Choose2Win, players.RandomPlayer)", function () {
+		it("(games.Choose2Win, players.RandomPlayer)", function (done) {
 			var game = new ludorum.games.Choose2Win(),
 				contest = new ludorum.tournaments.Elimination(game, [
 					new ludorum.players.RandomPlayer({name: 'RandomPlayer#1'}), 
@@ -75,6 +77,7 @@
 				var stats = contest.statistics;
 				expect(matchCount).toBe(6);
 				expect(stats.sum({key:'results'})).toBe(0);
+				done();
 			});
 		});
 	}); //// tournaments.Elimination

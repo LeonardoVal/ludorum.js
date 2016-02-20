@@ -1,7 +1,7 @@
 ﻿define(['creatartis-base', 'ludorum'], function (base, ludorum) {
 	
 	describe("Scanner", function () {
-		async_it("scans games.Predefined", function () {
+		it("scans games.Predefined", function (done) {
 			var scanner = new ludorum.utils.Scanner({ 
 					game: new ludorum.games.Predefined('A', {A: 1, B:-1}, 6, 5),
 					maxWidth: 50,
@@ -21,10 +21,11 @@
 				expect(stats.average({key:'game.width'})).toBe(5);
 				expect(stats.average({key:'game.length'})).toBe(6);
 				expect(stats.average({key:'aborted'})).toBe(0);
+				done();
 			});
 		}); //// scans games.Predefined
 	
-		async_it("scans games.Choose2Win", function () {
+		it("scans games.Choose2Win", function (done) {
 			var scanner = new ludorum.utils.Scanner({ 
 					game: new ludorum.games.Choose2Win(),
 					maxWidth: 50,
@@ -43,10 +44,11 @@
 				expect(stats.count({key:'draw.length'})).toBe(0);
 				expect(stats.average({key:'game.width'})).toBe(3);
 				expect(stats.average({key:'aborted'})).toBe(3);
+				done();
 			});
 		}); //// scans games.Choose2Win
 		
-		async_it("scans games.Predefined with RandomPlayer", function () {
+		it("scans games.Predefined with RandomPlayer", function (done) {
 			var scanner = new ludorum.utils.Scanner({ 
 					game: new ludorum.games.Predefined('A', {A: 1, B:-1}, 6, 5),
 					maxWidth: 50,
@@ -67,6 +69,7 @@
 				expect(stats.average({key:'game.width'})).toBe(5);
 				expect(stats.average({key:'game.length'})).toBe(6);
 				expect(stats.average({key:'aborted'})).toBe(0);
+				done();
 			});
 		}); //// scans games.Predefined with RandomPlayer
 	}); // describe Scanner

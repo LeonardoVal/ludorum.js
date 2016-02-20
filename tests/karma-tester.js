@@ -24,35 +24,29 @@ if (!Function.prototype.bind) {
 //// Testing environment extensions and custom definitions. ////////////////////
 
 beforeEach(function() { // Add custom matchers.
-	this.addMatchers({
-		toBeOfType: function(type) {
-			switch (typeof type) {
-				case 'function': return this.actual instanceof type;
-				case 'string': return typeof this.actual === type;
-				default: throw new Error('Unknown type '+ type +'!');
-			}
+	jasmine.addMatchers({
+		toBeOfType: function (util, customEqualityTesters) {
+			return {
+				compare: function (actual, expected) {
+					switch (typeof expected) {
+						case 'function': return {
+							pass: actual instanceof expected,
+							message: "Expected type "+ expected.name +" but got "+ actual.constructor.name +"."
+						};
+						case 'string': return {
+							pass: typeof actual === expected,
+							message: "Expected type '"+ expected +"' but got '"+ typeof actual +"'."
+						};
+						default: return {
+							pass: false,
+							message: "Unknown type "+ expected +"!"
+						};
+					}
+				}
+			};
 		}
 	});
 });
-
-function async_it(desc, func) { // Future friendly version of it().
-	it(desc, function () {
-		var finished = false;
-		runs(function () {
-			try {
-				func().then(function () {
-					finished = true;
-				});
-			} catch (err) {
-				console.error(err);
-				finished = true;
-			}
-		});
-		waitsFor(function () {
-			return finished;
-		}, "Test took too long!", 10000);
-	});
-}
 
 //// Actual testing brought to you by RequireJS. ///////////////////////////////
 
