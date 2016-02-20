@@ -3117,16 +3117,16 @@ games.ConnectionGame = declare(Game, {
 		if (this.hasOwnProperty('__moves__')) {
 			return this.__moves__;
 		} else if (this.result()) {
-			return this.__moves__ = null;
+			this.__moves__ = null;
 		} else {
-			return this.__moves__ = obj(this.activePlayer(), 
-				iterable(this.board.string).filter(function (c) {
-					return c === '.';
-				}, function (c, i) {
-					return i;
+			var board = this.board;
+			this.__moves__ = obj(this.activePlayer(),
+				board.coordinates().filter(function (coord) {
+					return board.isEmptySquare(coord);
 				}).toArray()
 			);
 		}
+		return this.__moves__;
 	},
 
 	/** To get from one game state to the next, an active player's piece in the square indicated by 
@@ -3135,11 +3135,9 @@ games.ConnectionGame = declare(Game, {
 	next: function next(moves) {
 		var activePlayer = this.activePlayer(),
 			playerIndex = this.players.indexOf(activePlayer),
-			squareIndex = +moves[activePlayer],
-			row = (squareIndex / this.width) >> 0,
-			column = squareIndex % this.width;
-		return new this.constructor((playerIndex + 1) % this.players.length, 
-			this.board.place([row, column], playerIndex.toString(36))
+			coord = moves[activePlayer];
+		return new this.constructor((playerIndex + 1) % this.players.length,
+			this.board.place(coord, playerIndex.toString(36))
 		);
 	},
 	
