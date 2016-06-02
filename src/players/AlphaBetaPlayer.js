@@ -59,7 +59,7 @@ players.AlphaBetaPlayer = declare(MiniMaxPlayer, {
 	*/
 	'static __SERMAT__': {
 		identifier: 'AlphaBetaPlayer',
-		serializer: function serialize_AlphaBetaPlayer(obj) {
+		serializer: function serialize_AlphaBetaPlayer(obj) { //TODO Add heuristic.
 			return this.serializeAsProperties(obj, ['name', 'horizon']);
 		}
 	}

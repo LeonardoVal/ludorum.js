@@ -67,7 +67,8 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 	'static __SERMAT__': {
 		identifier: 'UCTPlayer',
 		serializer: function serialize_UCTPlayer(obj) {
-			return this.serializeAsProperties(obj, ['name', 'simulationCount', 'timeCap', 'explorationConstant']);
+			return this.serializeAsProperties(obj, ['name', 'simulationCount', 'timeCap', 
+				'horizon', 'agent', 'explorationConstant']);
 		}
 	}
 }); // declare UCTPlayer

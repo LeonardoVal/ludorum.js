@@ -73,7 +73,7 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 	*/
 	'static __SERMAT__': {
 		identifier: 'MiniMaxPlayer',
-		serializer: function serialize_MiniMaxPlayer(obj) {
+		serializer: function serialize_MiniMaxPlayer(obj) { //TODO Add heuristic.
 			return this.serializeAsProperties(obj, ['name', 'horizon']);
 		}
 	}

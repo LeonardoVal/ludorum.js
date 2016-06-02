@@ -1,6 +1,37 @@
-﻿define(['creatartis-base', 'ludorum'], function (base, ludorum) {
+﻿define(['creatartis-base', 'sermat', 'ludorum'], function (base, Sermat, ludorum) {
 	
-	describe("tournaments.RoundRobin", function () { ///////////////////////////
+	describe("tournaments", function () { //////////////////////////////////////////////////////////
+		it("can be serialized with Sermat", function () {
+			var game = new ludorum.games.Choose2Win(),
+				players = [
+					new ludorum.players.RandomPlayer({name: 'RandomPlayer#1'}), 
+					new ludorum.players.RandomPlayer({name: 'RandomPlayer#2'})
+				],
+				contest = new ludorum.tournaments.RoundRobin(game, players, 2),
+				contest2 = Sermat.sermat(contest, { mode: Sermat.BINDING_MODE });
+			expect(contest2 instanceof contest.constructor).toBe(true);
+			expect(contest2.game instanceof ludorum.games.Choose2Win).toBe(true);
+			expect(contest2.players.length).toBe(contest.players.length);
+			expect(contest2.matchCount).toBe(contest.matchCount);
+			
+			contest = new ludorum.tournaments.Measurement(game, players[0], [players[1]], 2);
+			contest2 = Sermat.sermat(contest, { mode: Sermat.BINDING_MODE });
+			expect(contest2 instanceof contest.constructor).toBe(true);
+			expect(contest2.game instanceof ludorum.games.Choose2Win).toBe(true);
+			expect(contest2.players.length).toBe(contest.players.length);
+			expect(contest2.opponents.length).toBe(contest.opponents.length);
+			expect(contest2.matchCount).toBe(contest.matchCount);
+			
+			contest = new ludorum.tournaments.Elimination(game, players, 2);
+			contest2 = Sermat.sermat(contest, { mode: Sermat.BINDING_MODE });
+			expect(contest2 instanceof contest.constructor).toBe(true);
+			expect(contest2.game instanceof ludorum.games.Choose2Win).toBe(true);
+			expect(contest2.players.length).toBe(contest.players.length);
+			expect(contest2.matchCount).toBe(contest.matchCount);
+		});
+	}); //// tournaments
+	
+	describe("tournaments.RoundRobin", function () { ///////////////////////////////////////////////
 		it("(games.Choose2Win, players.RandomPlayer)", function (done) {
 			var game = new ludorum.games.Choose2Win(),
 				participants = [
@@ -28,7 +59,7 @@
 		});
 	}); //// tournaments.RoundRobin
 	
-	describe("tournaments.Measurement", function () { //////////////////////////
+	describe("tournaments.Measurement", function () { //////////////////////////////////////////////
 		it("(games.Choose2Win, players.RandomPlayer)", function (done) {
 			var game = new ludorum.games.Choose2Win(),
 				contest = new ludorum.tournaments.Measurement(game,
@@ -59,7 +90,7 @@
 		});
 	}); //// tournaments.Measurement
 	
-	describe("tournaments.Elimination", function () { //////////////////////////
+	describe("tournaments.Elimination", function () { //////////////////////////////////////////////
 		it("(games.Choose2Win, players.RandomPlayer)", function (done) {
 			var game = new ludorum.games.Choose2Win(),
 				contest = new ludorum.tournaments.Elimination(game, [
@@ -81,5 +112,4 @@
 			});
 		});
 	}); //// tournaments.Elimination
-
 }); //// define.

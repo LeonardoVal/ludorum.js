@@ -114,7 +114,7 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 	'static __SERMAT__': {
 		identifier: 'MonteCarloPlayer',
 		serializer: function serialize_MonteCarloPlayer(obj) {
-			return this.serializeAsProperties(obj, ['name', 'simulationCount', 'timeCap', 'agent']);
+			return this.serializeAsProperties(obj, ['name', 'simulationCount', 'horizon', 'timeCap', 'agent']);
 		}
 	}
 }); // declare MonteCarloPlayer

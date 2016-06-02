@@ -29,8 +29,8 @@ players.TracePlayer = declare(Player, {
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: 'Player',
-		serializer: function serialize_Player(obj) {
+		identifier: 'TracePlayer',
+		serializer: function serialize_TracePlayer(obj) {
 			return [{name: obj.name, trace: obj.trace.toArray()}];
 		}
 	}

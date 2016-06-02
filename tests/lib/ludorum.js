@@ -1923,8 +1923,8 @@ players.TracePlayer = declare(Player, {
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: 'Player',
-		serializer: function serialize_Player(obj) {
+		identifier: 'TracePlayer',
+		serializer: function serialize_TracePlayer(obj) {
 			return [{name: obj.name, trace: obj.trace.toArray()}];
 		}
 	}
@@ -2256,7 +2256,7 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 	*/
 	'static __SERMAT__': {
 		identifier: 'MiniMaxPlayer',
-		serializer: function serialize_MiniMaxPlayer(obj) {
+		serializer: function serialize_MiniMaxPlayer(obj) { //TODO Add heuristic.
 			return this.serializeAsProperties(obj, ['name', 'horizon']);
 		}
 	}
@@ -2323,7 +2323,7 @@ players.AlphaBetaPlayer = declare(MiniMaxPlayer, {
 	*/
 	'static __SERMAT__': {
 		identifier: 'AlphaBetaPlayer',
-		serializer: function serialize_AlphaBetaPlayer(obj) {
+		serializer: function serialize_AlphaBetaPlayer(obj) { //TODO Add heuristic.
 			return this.serializeAsProperties(obj, ['name', 'horizon']);
 		}
 	}
@@ -2446,7 +2446,7 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 	'static __SERMAT__': {
 		identifier: 'MonteCarloPlayer',
 		serializer: function serialize_MonteCarloPlayer(obj) {
-			return this.serializeAsProperties(obj, ['name', 'simulationCount', 'timeCap', 'agent']);
+			return this.serializeAsProperties(obj, ['name', 'simulationCount', 'horizon', 'timeCap', 'agent']);
 		}
 	}
 }); // declare MonteCarloPlayer
@@ -2521,7 +2521,8 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 	'static __SERMAT__': {
 		identifier: 'UCTPlayer',
 		serializer: function serialize_UCTPlayer(obj) {
-			return this.serializeAsProperties(obj, ['name', 'simulationCount', 'timeCap', 'explorationConstant']);
+			return this.serializeAsProperties(obj, ['name', 'simulationCount', 'timeCap', 
+				'horizon', 'agent', 'explorationConstant']);
 		}
 	}
 }); // declare UCTPlayer
@@ -3874,6 +3875,15 @@ tournaments.RoundRobin = declare(Tournament, {
 		}).product(Iterable.range(this.matchCount)).map(function (tuple) {
 			return new Match(game, tuple[0]);
 		});
+	},
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'RoundRobin',
+		serializer: function serialize_RoundRobin(obj) { //TODO Include statistics.
+			return [obj.game, obj.players, obj.matchCount];
+		}
 	}
 }); //// declare RoundRobin.
 
@@ -3921,6 +3931,15 @@ tournaments.Measurement = declare(Tournament, {
 				players.splice(tuple[1], 0, tuple[0]);
 				return new Match(game, players);
 			});
+	},
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'Measurement',
+		serializer: function serialize_Measurement(obj) { //TODO Include statistics.
+			return [obj.game, obj.players, obj.opponents, obj.matchCount];
+		}
 	}
 }); //// declare Measurement.
 
@@ -4008,15 +4027,32 @@ tournaments.Elimination = declare(Tournament, {
 			this.__matches__ = iterable(this.__currentBracket__).flatten().toArray();
 		}	
 		return this.__matches__.shift();
+	},
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'Elimination',
+		serializer: function serialize_Elimination(obj) { //TODO Include statistics.
+			return [obj.game, obj.players, obj.matchCount];
+		}
 	}
 }); //// declare Elimination.
 
 
 // See __prologue__.js
 	[Match,
+	// Games.
 		games.Bahab, games.Choose2Win, games.ConnectionGame, games.Mutropas, games.OddsAndEvens,
 			games.Pig, games.Predefined, games.TicTacToe, games.ToadsAndFrogs,
+	// Players.
+		players.AlphaBetaPlayer, players.MiniMaxPlayer, players.MonteCarloPlayer, 
+			players.RandomPlayer, players.TracePlayer, players.UCTPlayer,
+	// Tournaments.
+		tournaments.Elimination, tournaments.Measurement, tournaments.RoundRobin, 
+	// Aleatories.
 		aleatories.Aleatory, aleatories.UniformAleatory,
+	// Utilities.
 		utils.CheckerboardFromString
 	].forEach(function (type) {
 		type.__SERMAT__.identifier = exports.__package__ +'.'+ type.__SERMAT__.identifier;

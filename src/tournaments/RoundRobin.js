@@ -33,5 +33,14 @@ tournaments.RoundRobin = declare(Tournament, {
 		}).product(Iterable.range(this.matchCount)).map(function (tuple) {
 			return new Match(game, tuple[0]);
 		});
+	},
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'RoundRobin',
+		serializer: function serialize_RoundRobin(obj) { //TODO Include statistics.
+			return [obj.game, obj.players, obj.matchCount];
+		}
 	}
 }); //// declare RoundRobin.

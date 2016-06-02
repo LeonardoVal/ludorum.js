@@ -41,5 +41,14 @@ tournaments.Measurement = declare(Tournament, {
 				players.splice(tuple[1], 0, tuple[0]);
 				return new Match(game, players);
 			});
+	},
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'Measurement',
+		serializer: function serialize_Measurement(obj) { //TODO Include statistics.
+			return [obj.game, obj.players, obj.opponents, obj.matchCount];
+		}
 	}
 }); //// declare Measurement.

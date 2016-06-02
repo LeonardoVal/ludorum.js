@@ -81,5 +81,14 @@ tournaments.Elimination = declare(Tournament, {
 			this.__matches__ = iterable(this.__currentBracket__).flatten().toArray();
 		}	
 		return this.__matches__.shift();
+	},
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'Elimination',
+		serializer: function serialize_Elimination(obj) { //TODO Include statistics.
+			return [obj.game, obj.players, obj.matchCount];
+		}
 	}
 }); //// declare Elimination.
