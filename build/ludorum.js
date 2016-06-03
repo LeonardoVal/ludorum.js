@@ -447,7 +447,7 @@ var Player = exports.Player = declare({
 	'static __SERMAT__': {
 		identifier: 'Player',
 		serializer: function serialize_Player(obj) {
-			return this.serializeAsProperties(obj, ['name']);
+			return [{name: obj.name}];
 		}
 	},
 	
@@ -916,6 +916,17 @@ var Tournament = exports.Tournament = declare({
 		this.events.emit('end', this.statistics, this);
 		if (this.logger) {
 			this.logger.info('Tournament ends for game ', game.name, ':\n', this.statistics, '\n');
+		}
+	},
+	
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'Tournament',
+		serializer: function serialize_Tournament(obj) {
+			return [obj.game, obj.players];
 		}
 	}
 }); // declare Tournament
@@ -1925,7 +1936,10 @@ players.TracePlayer = declare(Player, {
 	'static __SERMAT__': {
 		identifier: 'TracePlayer',
 		serializer: function serialize_TracePlayer(obj) {
-			return [{name: obj.name, trace: obj.trace.toArray()}];
+			var ser = Player.__SERMAT__.serializer(obj),
+				args = ser[0];
+			args.trace = obj.trace.toArray();
+			return ser;
 		}
 	}
 }); // declare TracePlayer.
@@ -2092,6 +2106,20 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 			}
 			return sum;
 		};
+	},
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'HeuristicPlayer',
+		serializer: function serialize_HeuristicPlayer(obj) {
+			var ser = Player.__SERMAT__.serializer(obj),
+				args = ser[0];
+			if (obj.hasOwnProperty('heuristic')) {
+				args.heuristic = obj.heuristic;
+			}
+			return ser;
+		}
 	}
 }); // declare HeuristicPlayer.
 
@@ -2176,7 +2204,10 @@ var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
 	'static __SERMAT__': {
 		identifier: 'MaxNPlayer',
 		serializer: function serialize_MaxNPlayer(obj) {
-			return this.serializeAsProperties(obj, ['name', 'horizon']);
+			var ser = HeuristicPlayer.__SERMAT__.serializer(obj),
+				args = ser[0];
+			args.horizon = obj.horizon;
+			return ser;
 		}
 	}
 }); // declare MaxNPlayer.
@@ -2256,8 +2287,11 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 	*/
 	'static __SERMAT__': {
 		identifier: 'MiniMaxPlayer',
-		serializer: function serialize_MiniMaxPlayer(obj) { //TODO Add heuristic.
-			return this.serializeAsProperties(obj, ['name', 'horizon']);
+		serializer: function serialize_MiniMaxPlayer(obj) {
+			var ser = HeuristicPlayer.__SERMAT__.serializer(obj),
+				args = ser[0];
+			args.horizon = obj.horizon;
+			return ser;
 		}
 	}
 }); // declare MiniMaxPlayer.
@@ -2323,8 +2357,8 @@ players.AlphaBetaPlayer = declare(MiniMaxPlayer, {
 	*/
 	'static __SERMAT__': {
 		identifier: 'AlphaBetaPlayer',
-		serializer: function serialize_AlphaBetaPlayer(obj) { //TODO Add heuristic.
-			return this.serializeAsProperties(obj, ['name', 'horizon']);
+		serializer: function serialize_AlphaBetaPlayer(obj) {
+			return MiniMaxPlayer.__SERMAT__.serializer(obj);
 		}
 	}
 }); // declare AlphaBetaPlayer.
@@ -2446,7 +2480,15 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 	'static __SERMAT__': {
 		identifier: 'MonteCarloPlayer',
 		serializer: function serialize_MonteCarloPlayer(obj) {
-			return this.serializeAsProperties(obj, ['name', 'simulationCount', 'horizon', 'timeCap', 'agent']);
+			var ser = HeuristicPlayer.__SERMAT__.serializer(obj),
+				args = ser[0];
+			args.simulationCount = obj.simulationCount;
+			args.timeCap = obj.timeCap;
+			args.horizon = obj.horizon;
+			if (obj.agent) {
+				args.agent = obj.agent;
+			}
+			return ser;
 		}
 	}
 }); // declare MonteCarloPlayer
@@ -2521,8 +2563,10 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 	'static __SERMAT__': {
 		identifier: 'UCTPlayer',
 		serializer: function serialize_UCTPlayer(obj) {
-			return this.serializeAsProperties(obj, ['name', 'simulationCount', 'timeCap', 
-				'horizon', 'agent', 'explorationConstant']);
+			var ser = MonteCarloPlayer.__SERMAT__.serializer(obj),
+				args = ser[0];
+			args.explorationConstant = obj.explorationConstant;
+			return ser;
 		}
 	}
 }); // declare UCTPlayer
@@ -4046,10 +4090,10 @@ tournaments.Elimination = declare(Tournament, {
 		games.Bahab, games.Choose2Win, games.ConnectionGame, games.Mutropas, games.OddsAndEvens,
 			games.Pig, games.Predefined, games.TicTacToe, games.ToadsAndFrogs,
 	// Players.
-		players.AlphaBetaPlayer, players.MiniMaxPlayer, players.MonteCarloPlayer, 
-			players.RandomPlayer, players.TracePlayer, players.UCTPlayer,
+		Player, players.AlphaBetaPlayer, players.MaxNPlayer, players.MiniMaxPlayer, 
+			players.MonteCarloPlayer, players.RandomPlayer, players.TracePlayer, players.UCTPlayer,
 	// Tournaments.
-		tournaments.Elimination, tournaments.Measurement, tournaments.RoundRobin, 
+		Tournament, tournaments.Elimination, tournaments.Measurement, tournaments.RoundRobin, 
 	// Aleatories.
 		aleatories.Aleatory, aleatories.UniformAleatory,
 	// Utilities.
