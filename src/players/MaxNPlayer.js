@@ -79,7 +79,10 @@ var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
 	'static __SERMAT__': {
 		identifier: 'MaxNPlayer',
 		serializer: function serialize_MaxNPlayer(obj) {
-			return this.serializeAsProperties(obj, ['name', 'horizon']);
+			var ser = HeuristicPlayer.__SERMAT__.serializer(obj),
+				args = ser[0];
+			args.horizon = obj.horizon;
+			return ser;
 		}
 	}
 }); // declare MaxNPlayer.

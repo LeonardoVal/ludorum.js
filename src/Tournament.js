@@ -142,5 +142,16 @@ var Tournament = exports.Tournament = declare({
 		if (this.logger) {
 			this.logger.info('Tournament ends for game ', game.name, ':\n', this.statistics, '\n');
 		}
+	},
+	
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'Tournament',
+		serializer: function serialize_Tournament(obj) {
+			return [obj.game, obj.players];
+		}
 	}
 }); // declare Tournament

@@ -48,7 +48,7 @@ var Player = exports.Player = declare({
 	'static __SERMAT__': {
 		identifier: 'Player',
 		serializer: function serialize_Player(obj) {
-			return this.serializeAsProperties(obj, ['name']);
+			return [{name: obj.name}];
 		}
 	},
 	

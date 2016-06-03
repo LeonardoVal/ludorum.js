@@ -159,5 +159,19 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 			}
 			return sum;
 		};
+	},
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'HeuristicPlayer',
+		serializer: function serialize_HeuristicPlayer(obj) {
+			var ser = Player.__SERMAT__.serializer(obj),
+				args = ser[0];
+			if (obj.hasOwnProperty('heuristic')) {
+				args.heuristic = obj.heuristic;
+			}
+			return ser;
+		}
 	}
 }); // declare HeuristicPlayer.

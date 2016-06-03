@@ -1,4 +1,4 @@
-﻿define(['creatartis-base', 'ludorum'], function (base, ludorum) {
+﻿define(['creatartis-base', 'sermat', 'ludorum'], function (base, Sermat, ludorum) {
 	var RANDOM = base.Randomness.DEFAULT,
 		autonomousPlayers = ["RandomPlayer", "HeuristicPlayer", "MiniMaxPlayer", 
 			"AlphaBetaPlayer", "MaxNPlayer", "MonteCarloPlayer", "UCTPlayer"];
@@ -11,7 +11,9 @@
 			it('must have player '+ playerName, function () {
 				var Player = ludorum.players[playerName];
 				expect(Player).toBeOfType('function');
-				expect(new Player()).toBeOfType(ludorum.Player);
+				var p = new Player();
+				expect(p).toBeOfType(ludorum.Player);
+				expect(Sermat.sermat(p, { mode: Sermat.BINDING_MODE })).toBeOfType(Player);
 			});
 		});
 	});

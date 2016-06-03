@@ -4,10 +4,10 @@
 		games.Bahab, games.Choose2Win, games.ConnectionGame, games.Mutropas, games.OddsAndEvens,
 			games.Pig, games.Predefined, games.TicTacToe, games.ToadsAndFrogs,
 	// Players.
-		players.AlphaBetaPlayer, players.MiniMaxPlayer, players.MonteCarloPlayer, 
-			players.RandomPlayer, players.TracePlayer, players.UCTPlayer,
+		Player, players.AlphaBetaPlayer, players.MaxNPlayer, players.MiniMaxPlayer, 
+			players.MonteCarloPlayer, players.RandomPlayer, players.TracePlayer, players.UCTPlayer,
 	// Tournaments.
-		tournaments.Elimination, tournaments.Measurement, tournaments.RoundRobin, 
+		Tournament, tournaments.Elimination, tournaments.Measurement, tournaments.RoundRobin, 
 	// Aleatories.
 		aleatories.Aleatory, aleatories.UniformAleatory,
 	// Utilities.
