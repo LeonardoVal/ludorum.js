@@ -16,12 +16,16 @@ var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
 	given `player`.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
-		return this.maxN(game, player, 0)[player];
+		if (!game.isContingent) {
+			return this.maxN(game, player, 0)[player];
+		} else {
+			raise("MaxNPlayer.stateEvalution() does not support contingent game states!"); //TODO
+		}
 	},
 
 	/** `heuristics(game)` returns an heuristic value for each players in the game, as an object.
 	*/
-	heuristics: function heuristic(game) {
+	heuristics: function heuristics(game) {
 		var result = {}, maxN = this;
 		game.players.forEach(function (role) {
 			result[role] = maxN.heuristic(game, role);
