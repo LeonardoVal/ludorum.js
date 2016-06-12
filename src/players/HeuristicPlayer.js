@@ -39,10 +39,17 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 	game has results, else it returns the heuristic value for the state.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
-		var gameResult = game.result();
-		return gameResult ? gameResult[player] : this.heuristic(game, player);
+		if (!game.isContingent) {
+			var gameResult = game.result();
+			return gameResult ? gameResult[player] : this.heuristic(game, player);
+		} else {
+			/** Heuristics cannot be applied to contingent game states. Hence all posible haps are 
+			explored, and when a non-contingent game state is reached the heuristic is called.
+			*/
+			return game.expectedEvaluation(player, this.stateEvaluation.bind(this));
+		}
 	},
-
+	
 	/** The `heuristic(game, player)` is an evaluation used at states that are not finished games. 
 	The default implementation returns a random number in [-0.5, 0.5). This is only useful in 
 	testing. Any serious use should redefine this.
@@ -59,43 +66,18 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 	evaluatedMoves: function evaluatedMoves(game, player) {
 		var heuristicPlayer = this,
 			isAsync = false;
-		if (!game.isContingent) {
-			/** Every move is evaluated using `moveEvaluation`. This may be asynchronous and hence
-			result in a `Future`.
-			*/
-			var result = this.possibleMoves(game, player).map(function (move) {
+		raiseIf(game.isContingent, "Contingent game state have no moves!");
+		/** Every move is evaluated using `moveEvaluation`. This may be asynchronous and hence
+		result in a `Future`.
+		*/
+		var result = this.possibleMoves(game, player).map(function (move) {
 				var e = heuristicPlayer.moveEvaluation(move, game, player);
 				isAsync = isAsync || Future.__isFuture__(e);
 				return Future.then(e, function (e) {
 					return [move, e];
 				});
 			});
-			return isAsync ? Future.all(result) : result;
-		} else {
-			/** Contingent game states don't have moves. Hence all posible haps are explored, and
-			when a non-contingent game state is reached the moves are evaluated.
-			*/
-			var posible = iterable(game.possibleHaps()).mapApply(function (haps, prob) {
-				var es = heuristicPlayer.evaluatedMoves(game.next(haps), player);
-				isAsync = isAsync || Future.__isFuture__(es);
-				return Future.then(es, function (es) {
-					return es.map(function (e) {
-						e[1] *= prob; // Multiply the evaluation by the probability of the haps.
-						return e;
-					});
-				});
-			});
-			/** After all posible scenarios have been evaluated, group the evaluations by move and
-			sum the evaluations weighted by probability.
-			*/
-			return Future.then(isAsync ? Future.all(posible) : posible, function (posible) {
-				return iterable(posible).groupBy(function (p) {
-					return p[0]; // Group evaluations by move.
-				}).mapApply(function (move, evals) {
-					return [move, iterable(evals).select(1).sum()];
-				});
-			});
-		}
+		return isAsync ? Future.all(result) : result;
 	}, // evaluatedMoves()
 	
 	/** The `possibleMoves` for a `player` in a given `game` is a set of objects, with one move for
@@ -105,7 +87,7 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 		var moves = game.moves();
 		raiseIf(!moves || !moves[player] || !Array.isArray(moves[player]) || moves[player].length < 1,
 			"Player "+ player +" has no moves in "+ game +" (moves= "+ moves +")!");
-		return iterable(moves[player]).map(function (move) {
+		return moves[player].map(function (move) {
 			return copy(obj(player, move), moves);
 		});
 	},
@@ -128,9 +110,8 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 	decision: function decision(game, player) {
 		var random = this.random;
 		return Future.then(this.bestMoves(this.evaluatedMoves(game, player)), function (bestMoves) {
-			bestMoves = iterable(bestMoves).toArray();
-			raiseIf(!bestMoves || !bestMoves.length, 
-				"No moves where selected at ", game, " for player ", player, "!");
+			raiseIf(!bestMoves || !bestMoves.length, "No moves where selected at ", game,
+				" for player ", player, "!");
 			return random.choice(bestMoves)[player];
 		});
 	},

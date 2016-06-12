@@ -81,7 +81,8 @@
 	}); //// games.Choose2Win can be played/won by autonomous players.
 	
 	describe("games.Pig", function () { ////////////////////////////////
-		["RandomPlayer", "MonteCarloPlayer", "UCTPlayer"].forEach(function (playerName) {
+		["RandomPlayer", "HeuristicPlayer", "MiniMaxPlayer", "AlphaBetaPlayer",
+				"MonteCarloPlayer", "UCTPlayer"].forEach(function (playerName) {
 			var MATCH_COUNT = 10,
 				game = new ludorum.games.Pig('One', 15),
 				Player = ludorum.players[playerName];
@@ -100,7 +101,7 @@
 	}); //// games.Pig can be can be played/won by some autonomous players.
 	
 	describe("games.OddsAndEvens", function () { ////////////////////////////////
-		["RandomPlayer", "MonteCarloPlayer", "UCTPlayer"].forEach(function (playerName) {
+		["RandomPlayer", "HeuristicPlayer", "MonteCarloPlayer", "UCTPlayer"].forEach(function (playerName) {
 			var MATCH_COUNT = 10,
 				game = new ludorum.games.OddsAndEvens(),
 				Player = ludorum.players[playerName];

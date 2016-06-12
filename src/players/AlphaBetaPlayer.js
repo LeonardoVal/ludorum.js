@@ -24,6 +24,9 @@ players.AlphaBetaPlayer = declare(MiniMaxPlayer, {
 	used.
 	*/
 	minimax: function minimax(game, player, depth, alpha, beta) {
+		if (game.isContingent) {
+			return this.expectiMinimax(game, player, depth, alpha, beta);
+		}
 		var value = this.quiescence(game, player, depth);
 		if (!isNaN(value)) {
 			return value;
@@ -32,7 +35,7 @@ players.AlphaBetaPlayer = declare(MiniMaxPlayer, {
 			isActive = activePlayer == player,
 			moves = this.movesFor(game, activePlayer), next;
 		if (moves.length < 1) {
-			throw new Error('No moves for unfinished game '+ game +'.');
+			raise("No moves for unfinished game "+ game +"!");
 		}
 		for (var i = 0; i < moves.length; i++) {
 			next = game.next(obj(activePlayer, moves[i]));
@@ -51,6 +54,21 @@ players.AlphaBetaPlayer = declare(MiniMaxPlayer, {
 			}
 		}
 		return isActive ? alpha : beta;
+	},
+	
+	/** The `expectiMinimax(game, player, depth)` method is used when calculating the minimax value
+	of a contingent game state. Basically returns the sum of all the minimax values weighted by the 
+	probability of each possible next state. 
+	*/
+	expectiMinimax: function expectiMinimax(game, player, depth, alpha, beta) {
+		if (!game.isContingent) {
+			return this.minimax(game, player, depth);
+		} else {
+			var p = this;
+			return game.expectedEvaluation(player, function (game, player) {
+				return p.minimax(game, player, depth + 1, alpha, beta);
+			});
+		}
 	},
 	
 	// ## Utilities ################################################################################
