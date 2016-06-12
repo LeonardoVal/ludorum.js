@@ -78,6 +78,38 @@ var Contingent = exports.Contingent = declare({
 		}).toArray();
 	},
 	
+	/** The `expectedEvaluation` method explores al possible resulting game states from this 
+	contingent state and applies an evaluation function. This state evaluation function must have 
+	the signature `stateEvaluation(game, player)`. Asynchronous evaluations are supported, in which
+	case a `Future` will be returned.
+	
+	By default the aggregated result is the sum of the evaluations weighted by the probability of
+	each possible resulting game state. The `aggregation` function may be specified to override this 
+	behaviour and process the results in another way. If given, it will be called with an array of
+	triples `[haps, probability, evaluation]`.
+	*/
+	expectedEvaluation: function expectedEvaluation(player, stateEvaluation, aggregation) {
+		var game = this,
+			isAsync = false,
+			possible = this.possibleHaps().map(function (args) {
+				var game2 = game.next(args[0]),
+					ev = !game2.isContingent ? stateEvaluation(game2, player) : 
+						game2.expectedEvaluation(player, stateEvaluation, aggregation);
+				isAsync = isAsync || Future.__isFuture__(ev);
+				return Future.then(ev, function (ev) {
+					args.push(ev);
+					return args;
+				});
+			});
+		return Future.then(isAsync ? Future.all(possible) : possible, aggregation || function (possible) {
+			var r = 0;
+			possible.forEach(function (triple) {
+				r += triple[1] * triple[2];
+			});
+			return r;
+		});
+	},
+	
 	// ## Utilities ################################################################################
 	
 	/** Serialization and materialization using Sermat.
