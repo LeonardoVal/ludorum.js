@@ -761,6 +761,38 @@ var Contingent = exports.Contingent = declare({
 		}).toArray();
 	},
 	
+	/** The `expectedEvaluation` method explores al possible resulting game states from this 
+	contingent state and applies an evaluation function. This state evaluation function must have 
+	the signature `stateEvaluation(game, player)`. Asynchronous evaluations are supported, in which
+	case a `Future` will be returned.
+	
+	By default the aggregated result is the sum of the evaluations weighted by the probability of
+	each possible resulting game state. The `aggregation` function may be specified to override this 
+	behaviour and process the results in another way. If given, it will be called with an array of
+	triples `[haps, probability, evaluation]`.
+	*/
+	expectedEvaluation: function expectedEvaluation(player, stateEvaluation, aggregation) {
+		var game = this,
+			isAsync = false,
+			possible = this.possibleHaps().map(function (args) {
+				var game2 = game.next(args[0]),
+					ev = !game2.isContingent ? stateEvaluation(game2, player) : 
+						game2.expectedEvaluation(player, stateEvaluation, aggregation);
+				isAsync = isAsync || Future.__isFuture__(ev);
+				return Future.then(ev, function (ev) {
+					args.push(ev);
+					return args;
+				});
+			});
+		return Future.then(isAsync ? Future.all(possible) : possible, aggregation || function (possible) {
+			var r = 0;
+			possible.forEach(function (triple) {
+				r += triple[1] * triple[2];
+			});
+			return r;
+		});
+	},
+	
 	// ## Utilities ################################################################################
 	
 	/** Serialization and materialization using Sermat.
@@ -1986,10 +2018,17 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 	game has results, else it returns the heuristic value for the state.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
-		var gameResult = game.result();
-		return gameResult ? gameResult[player] : this.heuristic(game, player);
+		if (!game.isContingent) {
+			var gameResult = game.result();
+			return gameResult ? gameResult[player] : this.heuristic(game, player);
+		} else {
+			/** Heuristics cannot be applied to contingent game states. Hence all posible haps are 
+			explored, and when a non-contingent game state is reached the heuristic is called.
+			*/
+			return game.expectedEvaluation(player, this.stateEvaluation.bind(this));
+		}
 	},
-
+	
 	/** The `heuristic(game, player)` is an evaluation used at states that are not finished games. 
 	The default implementation returns a random number in [-0.5, 0.5). This is only useful in 
 	testing. Any serious use should redefine this.
@@ -2006,43 +2045,18 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 	evaluatedMoves: function evaluatedMoves(game, player) {
 		var heuristicPlayer = this,
 			isAsync = false;
-		if (!game.isContingent) {
-			/** Every move is evaluated using `moveEvaluation`. This may be asynchronous and hence
-			result in a `Future`.
-			*/
-			var result = this.possibleMoves(game, player).map(function (move) {
+		raiseIf(game.isContingent, "Contingent game state have no moves!");
+		/** Every move is evaluated using `moveEvaluation`. This may be asynchronous and hence
+		result in a `Future`.
+		*/
+		var result = this.possibleMoves(game, player).map(function (move) {
 				var e = heuristicPlayer.moveEvaluation(move, game, player);
 				isAsync = isAsync || Future.__isFuture__(e);
 				return Future.then(e, function (e) {
 					return [move, e];
 				});
 			});
-			return isAsync ? Future.all(result) : result;
-		} else {
-			/** Contingent game states don't have moves. Hence all posible haps are explored, and
-			when a non-contingent game state is reached the moves are evaluated.
-			*/
-			var posible = iterable(game.possibleHaps()).mapApply(function (haps, prob) {
-				var es = heuristicPlayer.evaluatedMoves(game.next(haps), player);
-				isAsync = isAsync || Future.__isFuture__(es);
-				return Future.then(es, function (es) {
-					return es.map(function (e) {
-						e[1] *= prob; // Multiply the evaluation by the probability of the haps.
-						return e;
-					});
-				});
-			});
-			/** After all posible scenarios have been evaluated, group the evaluations by move and
-			sum the evaluations weighted by probability.
-			*/
-			return Future.then(isAsync ? Future.all(posible) : posible, function (posible) {
-				return iterable(posible).groupBy(function (p) {
-					return p[0]; // Group evaluations by move.
-				}).mapApply(function (move, evals) {
-					return [move, iterable(evals).select(1).sum()];
-				});
-			});
-		}
+		return isAsync ? Future.all(result) : result;
 	}, // evaluatedMoves()
 	
 	/** The `possibleMoves` for a `player` in a given `game` is a set of objects, with one move for
@@ -2052,7 +2066,7 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 		var moves = game.moves();
 		raiseIf(!moves || !moves[player] || !Array.isArray(moves[player]) || moves[player].length < 1,
 			"Player "+ player +" has no moves in "+ game +" (moves= "+ moves +")!");
-		return iterable(moves[player]).map(function (move) {
+		return moves[player].map(function (move) {
 			return copy(obj(player, move), moves);
 		});
 	},
@@ -2075,9 +2089,8 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 	decision: function decision(game, player) {
 		var random = this.random;
 		return Future.then(this.bestMoves(this.evaluatedMoves(game, player)), function (bestMoves) {
-			bestMoves = iterable(bestMoves).toArray();
-			raiseIf(!bestMoves || !bestMoves.length, 
-				"No moves where selected at ", game, " for player ", player, "!");
+			raiseIf(!bestMoves || !bestMoves.length, "No moves where selected at ", game,
+				" for player ", player, "!");
 			return random.choice(bestMoves)[player];
 		});
 	},
@@ -2141,12 +2154,16 @@ var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
 	given `player`.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
-		return this.maxN(game, player, 0)[player];
+		if (!game.isContingent) {
+			return this.maxN(game, player, 0)[player];
+		} else {
+			raise("MaxNPlayer.stateEvalution() does not support contingent game states!"); //TODO
+		}
 	},
 
 	/** `heuristics(game)` returns an heuristic value for each players in the game, as an object.
 	*/
-	heuristics: function heuristic(game) {
+	heuristics: function heuristics(game) {
 		var result = {}, maxN = this;
 		game.players.forEach(function (role) {
 			result[role] = maxN.heuristic(game, role);
@@ -2217,8 +2234,8 @@ var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
 Automatic players based on pure MiniMax.
 */
 var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
-	/** The constructor takes the player's `name` and the MiniMax search's 
-	`horizon` (`4` by default).
+	/** The constructor takes the player's `name` and the MiniMax search's `horizon` (`4` by 
+	default).
 	*/
 	constructor: function MiniMaxPlayer(params) {
 		HeuristicPlayer.call(this, params);
@@ -2226,21 +2243,19 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 			.integer('horizon', { defaultValue: 4, coerce: true });
 	},
 
-	/** Every state's evaluation is the minimax value for the given game and 
-	player.
+	/** Every state's evaluation is the minimax value for the given game and player.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
 		return this.minimax(game, player, 0);
 	},
 
-	/** The `quiescence(game, player, depth)` method is a stability test for the 
-	given game state. If the game is quiescent, this function must return an 
-	evaluation. Else it must return NaN or an equivalent value. 
+	/** The `quiescence(game, player, depth)` method is a stability test for the given game state. 
+	If the game is quiescent, this function must return an evaluation. Else it must return `NaN` or 
+	an equivalent value. 
 	
-	Final game states are always quiescent, and their evaluation is the game's
-	result for the given player. This default implementation also return an 
-	heuristic evaluation for every game state at a deeper depth than the 
-	player's horizon.
+	Final game states are always quiescent, and their evaluation is the game's result for the given 
+	player. This default implementation also return an heuristic evaluation for every game state at 
+	a deeper depth than the player's horizon.
 	*/
 	quiescence: function quiescence(game, player, depth) {
 		var results = game.result();
@@ -2253,11 +2268,14 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 		}
 	},
 	
-	/** The `minimax(game, player, depth)` method calculates the Minimax 
-	evaluation of the given game for the given player. If the game is not 
-	finished and the depth is greater than the horizon, `heuristic` is used.
+	/** The `minimax(game, player, depth)` method calculates the Minimax evaluation of the given 
+	game for the given player. If the game is not finished and the depth is greater than the 
+	horizon, `heuristic` is used.
 	*/
 	minimax: function minimax(game, player, depth) {
+		if (game.isContingent) {
+			return this.expectiMinimax(game, player, depth);
+		}
 		var value = this.quiescence(game, player, depth);
 		if (isNaN(value)) { // game is not quiescent.
 			var activePlayer = game.activePlayer(),
@@ -2279,6 +2297,21 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 			}
 		}
 		return value;
+	},
+	
+	/** The `expectiMinimax(game, player, depth)` method is used when calculating the minimax value
+	of a contingent game state. Basically returns the sum of all the minimax values weighted by the 
+	probability of each possible next state. 
+	*/
+	expectiMinimax: function expectiMinimax(game, player, depth) {
+		if (!game.isContingent) {
+			return this.minimax(game, player, depth);
+		} else {
+			var p = this;
+			return game.expectedEvaluation(player, function (game, player) {
+				return p.minimax(game, player, depth + 1);
+			});
+		}
 	},
 	
 	// ## Utilities ################################################################################
@@ -2322,6 +2355,9 @@ players.AlphaBetaPlayer = declare(MiniMaxPlayer, {
 	used.
 	*/
 	minimax: function minimax(game, player, depth, alpha, beta) {
+		if (game.isContingent) {
+			return this.expectiMinimax(game, player, depth, alpha, beta);
+		}
 		var value = this.quiescence(game, player, depth);
 		if (!isNaN(value)) {
 			return value;
@@ -2330,7 +2366,7 @@ players.AlphaBetaPlayer = declare(MiniMaxPlayer, {
 			isActive = activePlayer == player,
 			moves = this.movesFor(game, activePlayer), next;
 		if (moves.length < 1) {
-			throw new Error('No moves for unfinished game '+ game +'.');
+			raise("No moves for unfinished game "+ game +"!");
 		}
 		for (var i = 0; i < moves.length; i++) {
 			next = game.next(obj(activePlayer, moves[i]));
@@ -2349,6 +2385,21 @@ players.AlphaBetaPlayer = declare(MiniMaxPlayer, {
 			}
 		}
 		return isActive ? alpha : beta;
+	},
+	
+	/** The `expectiMinimax(game, player, depth)` method is used when calculating the minimax value
+	of a contingent game state. Basically returns the sum of all the minimax values weighted by the 
+	probability of each possible next state. 
+	*/
+	expectiMinimax: function expectiMinimax(game, player, depth, alpha, beta) {
+		if (!game.isContingent) {
+			return this.minimax(game, player, depth);
+		} else {
+			var p = this;
+			return game.expectedEvaluation(player, function (game, player) {
+				return p.minimax(game, player, depth + 1, alpha, beta);
+			});
+		}
 	},
 	
 	// ## Utilities ################################################################################
@@ -2410,7 +2461,7 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 					sum: 0, 
 					count: 0 
 				};
-			}).toArray(); // Else the following updates won't work.
+			}); // Else the following updates won't work.
 		for (var i = 0; i < this.simulationCount && Date.now() < endTime; ++i) {
 			options.forEach(function (option) {
 				option.nexts = option.nexts.filter(function (next) {

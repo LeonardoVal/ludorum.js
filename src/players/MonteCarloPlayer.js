@@ -44,7 +44,7 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 					sum: 0, 
 					count: 0 
 				};
-			}).toArray(); // Else the following updates won't work.
+			}); // Else the following updates won't work.
 		for (var i = 0; i < this.simulationCount && Date.now() < endTime; ++i) {
 			options.forEach(function (option) {
 				option.nexts = option.nexts.filter(function (next) {
