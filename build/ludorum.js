@@ -2623,6 +2623,72 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 }); // declare UCTPlayer
 
 
+/** # Rule based players
+
+Automatic players based on rules, either for evaluating game states or to choose moves.
+*/
+players.RuleBasedPlayer = declare(Player, {
+	/** todo
+	*/
+	constructor: function RuleBasedPlayer(params) {
+		players.HeuristicPlayer.call(this, params);
+		initialize(this, params)
+			/** + `rules` must be an array of functions that return either a move (if the rule 
+				applies) or `null` (if the rule does not apply).
+			*/
+			.array('rules', { defaultValue: [] })
+			/** + ``
+			*/
+			.func('features', { ignore: true })
+			/** + the `random` generator must be an instance of `Randomness`. 
+			*/
+			.object('random', { defaultValue: Randomness.DEFAULT });
+	},
+
+	/** This function extracts the relevant `features` of the given game state. These data is the
+	one passed to the rules.
+	*/
+	features: function features(game, role) {
+		return [game, role]; // Please override.
+	},
+	
+	/** To choose a move, the `rules` are checked in order. The first rule that fits decides the
+	move to make. If no rule fits, a move is chosen randomly. If a rule returns a move that is not
+	valid, it is ignored.
+	*/
+	decision: function decision(game, role) {
+		var result = null,
+			features = this.features(game, role),
+			moves = this.movesFor(game, role);
+		for (var i = 0, len = this.rules.length; i < len; i++) {
+			result = this.rules[i].call(this, features);
+			if (result !== null && moves.indexOf(result) >= 0) {
+				return result;
+			}
+		}
+		return this.random.choice(moves);
+	},
+
+	// ## Rule based heuristics ####################################################################
+	
+	// ## Utilities ################################################################################
+	
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'RuleBasedPlayer',
+		serializer: function serialize_Player(obj) {
+			var ser = Player.__SERMAT__.serializer(obj),
+				args = ser[0];
+			args.rules = obj.rules;
+			if (obj.hasOwnProperty('features')) {
+				args.features = obj.features;
+			}
+			return ser;
+		}
+	}
+}); // declare RulePlayer.
+
 /** # UserInterfacePlayer
 
 Implementation of player user interfaces and proxies.
@@ -3416,17 +3482,51 @@ games.TicTacToe = declare(Game, {
 		}
 	},
 	
+	/** The `board` is hashed by converting it to a integer in base 3.
+	*/
+	__hash__: function __hash__(board) {
+		var VALUE = {'_': 0, 'X': 1, 'O': 2};
+		return parseInt((board || this.board).split('').map(function (chr) {
+			return VALUE[chr];
+		}).join(''), 3);
+	},
+	
+	/** A `symmetryHash` is a hash value for the game state that can be used in a cache or 
+	transposition table to speed up game tree searches. Many game states may share the same hash
+	value if they can be considered equivalent.
+	
+	In the case of Tictactoe, every board is equivalent with any rotation or symmetry.
+	*/
+	symmetryHash: (function () {
+		var SYMMETRIES = '210543876 678345012 630741852 258147036 876543210 852741630 036147258'
+			.split(' ').map(function (str) {
+				return str.split('').map(function (chr) {
+					return +chr;
+				});
+			}),
+			f =	function symmetricHash() {
+				var board = this.board,
+					syms = SYMMETRIES.map(function (sym) {
+						return sym.map(function (i) {
+							return board.charAt(i);
+						}).join('');
+					});
+				syms.sort();
+				return this.__hash__(syms[0]);
+			};
+		f.SYMMETRIES = SYMMETRIES;
+		return f;
+	})(),
+	
 	// ## User intefaces ###########################################################################
 	
 	/** `printBoard()` creates a text (ASCII) version of the board.
 	*/
 	printBoard: function printBoard() {
 		var board = this.board;
-		return [
-			board.substr(0,3).split('').join('|'), '-+-+-',
-			board.substr(3,3).split('').join('|'), '-+-+-',
-			board.substr(6,3).split('').join('|')
-		].join('\n');
+		return [0,3,6].map(function (i) {
+			return board.substr(0,3).split('').join('|');
+		}).join('\n-+-+-\n');
 	},
 	
 	// ## Heuristics and AI ########################################################################
@@ -3551,7 +3651,19 @@ games.ToadsAndFrogs = declare(Game, {
 		serializer: function serialize_ToadsAndFrogs(obj) {
 			return [obj.activePlayer(), obj.board];
 		}
-	}	
+	},
+	
+	/** The game state is hashed by converting the concatenation of the `activePlayer` and the 
+	`board` it to a integer in base 3.
+	*/
+	__hash__: function __hash__(activePlayer, board) {
+		var VALUE = {'_': 0, 'T': 1, 'F': 2};
+		activePlayer = (activePlayer || this.activePlayer()).charAt(0);
+		board = board || this.board;
+		return parseInt((activePlayer + board).split('').map(function (chr) {
+			return VALUE[chr];
+		}).join(''), 3);
+	}
 }); // declare ToadsAndFrogs
 
 
@@ -3955,21 +4067,12 @@ tournaments.RoundRobin = declare(Tournament, {
 	*/
 	__matches__: function __matches__() {
 		var tournament = this,
-			game = this.game,
-			ms = iterable(this.players);
-		ms = ms.product.apply(ms, Iterable.repeat(this.players, game.players.length - 1).toArray());
-		return ms.filter(function (tuple) { // Check for repeated.
-			for (var i = 1; i < tuple.length; i++) {
-				for (var j = 0; j < i; j++) {
-					if (tuple[i] === tuple[j]) {
-						return false;
-					}
-				}
-			}
-			return true;
-		}).product(Iterable.range(this.matchCount)).map(function (tuple) {
-			return new Match(game, tuple[0]);
-		});
+			game = this.game;
+		return iterable(this.players)
+			.permutations(game.players.length)
+			.product(Iterable.range(this.matchCount)).map(function (tuple) {
+				return new Match(game, tuple[0]);
+			});
 	},
 	
 	/** Serialization and materialization using Sermat.
