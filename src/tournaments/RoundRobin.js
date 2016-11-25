@@ -18,21 +18,12 @@ tournaments.RoundRobin = declare(Tournament, {
 	*/
 	__matches__: function __matches__() {
 		var tournament = this,
-			game = this.game,
-			ms = iterable(this.players);
-		ms = ms.product.apply(ms, Iterable.repeat(this.players, game.players.length - 1).toArray());
-		return ms.filter(function (tuple) { // Check for repeated.
-			for (var i = 1; i < tuple.length; i++) {
-				for (var j = 0; j < i; j++) {
-					if (tuple[i] === tuple[j]) {
-						return false;
-					}
-				}
-			}
-			return true;
-		}).product(Iterable.range(this.matchCount)).map(function (tuple) {
-			return new Match(game, tuple[0]);
-		});
+			game = this.game;
+		return iterable(this.players)
+			.permutations(game.players.length)
+			.product(Iterable.range(this.matchCount)).map(function (tuple) {
+				return new Match(game, tuple[0]);
+			});
 	},
 	
 	/** Serialization and materialization using Sermat.
