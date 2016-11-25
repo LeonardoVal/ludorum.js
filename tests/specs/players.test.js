@@ -3,7 +3,7 @@
 		autonomousPlayers = ["RandomPlayer", "HeuristicPlayer", "MiniMaxPlayer", 
 			"AlphaBetaPlayer", "MaxNPlayer", "MonteCarloPlayer", "UCTPlayer"];
 		
-	describe('Module players', function () {
+	describe('Module players', function () { ///////////////////////////////////////////////////////
 		it('must exist', function () {
 			expect(ludorum.players).toBeDefined();
 		});
@@ -18,7 +18,7 @@
 		});
 	});
 
-	describe("games.Predefined", function () { /////////////////////
+	describe("games.Predefined", function () { /////////////////////////////////////////////////////
 		var MATCH_COUNT = 10,
 			MATCH_LENGTH = 5,
 			MATCH_WIDTH = 6;
@@ -45,7 +45,7 @@
 		}); 
 	}); //// games.Predefined can be played by autonomousPlayers.
 	
-	describe("games.Choose2Win", function () { /////////////////////////
+	describe("games.Choose2Win", function () { /////////////////////////////////////////////////////
 		var MATCH_COUNT = 10,
 			game = new ludorum.games.Choose2Win(),
 			passer = new ludorum.players.TracePlayer({trace: ['pass']});
@@ -80,7 +80,7 @@
 		});
 	}); //// games.Choose2Win can be played/won by autonomous players.
 	
-	describe("games.Pig", function () { ////////////////////////////////
+	describe("games.Pig", function () { ////////////////////////////////////////////////////////////
 		["RandomPlayer", "HeuristicPlayer", "MiniMaxPlayer", "AlphaBetaPlayer",
 				"MonteCarloPlayer", "UCTPlayer"].forEach(function (playerName) {
 			var MATCH_COUNT = 10,
@@ -98,10 +98,11 @@
 				}));
 			});
 		});
-	}); //// games.Pig can be can be played/won by some autonomous players.
+	}); //// games.Pig can be played/won by some autonomous players.
 	
-	describe("games.OddsAndEvens", function () { ////////////////////////////////
-		["RandomPlayer", "HeuristicPlayer", "MonteCarloPlayer", "UCTPlayer"].forEach(function (playerName) {
+	describe("games.OddsAndEvens", function () { ///////////////////////////////////////////////////
+		["RandomPlayer", "HeuristicPlayer", "MonteCarloPlayer", "UCTPlayer"
+		].forEach(function (playerName) {
 			var MATCH_COUNT = 10,
 				game = new ludorum.games.OddsAndEvens(),
 				Player = ludorum.players[playerName];
@@ -117,5 +118,36 @@
 				}));
 			});
 		});
-	}); //// games.OddsAndEvens can be can be played/won by some autonomous players.
+	}); //// games.OddsAndEvens can be played/won by some autonomous players.
+	
+	describe("games.TicTacToe", function () { //////////////////////////////////////////////////////
+		it("can be played by a rule based player", function (done) {
+			function makeRule(re, move) {
+				return function (board) {
+					return re.test(board) ? move : null;
+				};
+			}
+			var MATCH_COUNT = 10,
+				player = new ludorum.players.RuleBasedPlayer({
+					features: function (game, role) {
+						return game.board;
+					},
+					rules: [4, 0, 2, 6, 8].map(function (i) {
+						return function (board) { 
+							return board.charAt(i) === '_' ? i : null; 
+						};
+					})
+				}),
+				game = new ludorum.games.TicTacToe();
+			return base.Future.all(base.Iterable.range(MATCH_COUNT).map(function (i) {
+				var match = new ludorum.Match(game, [player, player]);
+				return match.run().then(function (match) {
+					var result = match.result();
+					expect(result).toBeTruthy();
+					expect(result[game.players[0]] + result[game.players[1]]).toEqual(0);
+					done();
+				});
+			}));
+		});
+	}); //// games.TicTacToe can be played by a rule based player.
 }); //// define.

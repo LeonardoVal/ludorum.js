@@ -65,6 +65,18 @@ require(['ludorum', 'creatartis-base', 'sermat', 'playtester'], function (ludoru
 		.playerAlfaBeta("MiniMax-\u03b1\u03b2 (4 plies)", 3, true)
 		.playerAlfaBeta("MiniMax-\u03b1\u03b2 (6 plies)", 5, true)
 		.playerMaxN("MaxN (6 plies)", 5, true)
+		.player("Rule based", function () {
+			return new ludorum.players.RuleBasedPlayer({
+				features: function (game, role) {
+					return game.board;
+				},
+				rules: [4, 0, 2, 6, 8].map(function (i) {
+					return function (board) { 
+						return board.charAt(i) === '_' ? i : null; 
+					};
+				})
+			}); 
+		}, false)
 		.selects(['playerXs', 'playerOs'])
 		.button('resetButton', document.getElementById('reset'), APP.reset.bind(APP))
 		.reset();
