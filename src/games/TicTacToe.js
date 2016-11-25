@@ -75,17 +75,51 @@ games.TicTacToe = declare(Game, {
 		}
 	},
 	
+	/** The `board` is hashed by converting it to a integer in base 3.
+	*/
+	__hash__: function __hash__(board) {
+		var VALUE = {'_': 0, 'X': 1, 'O': 2};
+		return parseInt((board || this.board).split('').map(function (chr) {
+			return VALUE[chr];
+		}).join(''), 3);
+	},
+	
+	/** A `symmetryHash` is a hash value for the game state that can be used in a cache or 
+	transposition table to speed up game tree searches. Many game states may share the same hash
+	value if they can be considered equivalent.
+	
+	In the case of Tictactoe, every board is equivalent with any rotation or symmetry.
+	*/
+	symmetryHash: (function () {
+		var SYMMETRIES = '210543876 678345012 630741852 258147036 876543210 852741630 036147258'
+			.split(' ').map(function (str) {
+				return str.split('').map(function (chr) {
+					return +chr;
+				});
+			}),
+			f =	function symmetricHash() {
+				var board = this.board,
+					syms = SYMMETRIES.map(function (sym) {
+						return sym.map(function (i) {
+							return board.charAt(i);
+						}).join('');
+					});
+				syms.sort();
+				return this.__hash__(syms[0]);
+			};
+		f.SYMMETRIES = SYMMETRIES;
+		return f;
+	})(),
+	
 	// ## User intefaces ###########################################################################
 	
 	/** `printBoard()` creates a text (ASCII) version of the board.
 	*/
 	printBoard: function printBoard() {
 		var board = this.board;
-		return [
-			board.substr(0,3).split('').join('|'), '-+-+-',
-			board.substr(3,3).split('').join('|'), '-+-+-',
-			board.substr(6,3).split('').join('|')
-		].join('\n');
+		return [0,3,6].map(function (i) {
+			return board.substr(0,3).split('').join('|');
+		}).join('\n-+-+-\n');
 	},
 	
 	// ## Heuristics and AI ########################################################################

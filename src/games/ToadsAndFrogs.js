@@ -78,5 +78,17 @@ games.ToadsAndFrogs = declare(Game, {
 		serializer: function serialize_ToadsAndFrogs(obj) {
 			return [obj.activePlayer(), obj.board];
 		}
-	}	
+	},
+	
+	/** The game state is hashed by converting the concatenation of the `activePlayer` and the 
+	`board` it to a integer in base 3.
+	*/
+	__hash__: function __hash__(activePlayer, board) {
+		var VALUE = {'_': 0, 'T': 1, 'F': 2};
+		activePlayer = (activePlayer || this.activePlayer()).charAt(0);
+		board = board || this.board;
+		return parseInt((activePlayer + board).split('').map(function (chr) {
+			return VALUE[chr];
+		}).join(''), 3);
+	}
 }); // declare ToadsAndFrogs
