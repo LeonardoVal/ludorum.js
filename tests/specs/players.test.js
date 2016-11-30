@@ -130,15 +130,18 @@
 			var MATCH_COUNT = 10,
 				player = new ludorum.players.RuleBasedPlayer({
 					features: function (game, role) {
-						return game.board;
-					},
-					rules: [4, 0, 2, 6, 8].map(function (i) {
-						return function (board) { 
-							return board.charAt(i) === '_' ? i : null; 
-						};
-					})
+						return game.board.split('').map(function (chr) {
+							return chr === '_' ? '_' : chr === role.charAt(0) ? 'A' : 'a';
+						}).join('');
+					}
 				}),
 				game = new ludorum.games.TicTacToe();
+			player
+				.regExpRule(/...._..../, 4)
+				.regExpRule(/_......../, 0)
+				.regExpRule(/.._....../, 2)
+				.regExpRule(/......_../, 6)
+				.regExpRule(/........_/, 8);
 			return base.Future.all(base.Iterable.range(MATCH_COUNT).map(function (i) {
 				var match = new ludorum.Match(game, [player, player]);
 				return match.run().then(function (match) {

@@ -43,10 +43,35 @@ players.RuleBasedPlayer = declare(Player, {
 		}
 		return this.random.choice(moves);
 	},
-
+	
+	/** The rule method adds a rule to the players' list of rules.
+	*/
+	rule: function rule(f) {
+		raiseIf(typeof(f) !== 'function', 'A rule must be in the form of a function!');
+		this.rules.push(f);
+		return this; // for chaining.
+	},
+	
+	// ## Rule definition helpers ##################################################################
+	
+	/** The class `regExpRule` method builds a rule function based on a regular expression.
+	*/
+	'static regExpRule': function regExpRule(regExp, move) {
+		return function (features) {
+			return regExp.test(features) ? move : null;
+		};
+	},
+	
+	/** The instance method `regExpRule` adds a rule based on a regular expression to the players'
+	list of rules.
+	*/
+	regExpRule: function regExpRule(regExp, move) {
+		return this.rule(this.constructor.regExpRule(regExp, move));
+	},
+	
 	// ## Rule based heuristics ####################################################################
 	
-	// ## Utilities ################################################################################
+	// ## Other utilities ##########################################################################
 	
 	/** Serialization and materialization using Sermat.
 	*/
