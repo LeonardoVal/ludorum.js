@@ -9,7 +9,7 @@
 	// Tournaments.
 		Tournament, tournaments.Elimination, tournaments.Measurement, tournaments.RoundRobin, 
 	// Aleatories.
-		aleatories.Aleatory, aleatories.UniformAleatory,
+		aleatories.Aleatory, aleatories.UniformAleatory, aleatories.CustomAleatory,
 	// Utilities.
 		utils.CheckerboardFromString
 	].forEach(function (type) {
