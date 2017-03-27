@@ -42,7 +42,7 @@ var Aleatory = exports.aleatories.Aleatory = declare({
 	'static __SERMAT__': {
 		identifier: 'Aleatory',
 		serializer: function serialize_Aleatory(obj) {
-			return [this.range];
+			return [obj.range[0], obj.range[1]];
 		}
 	}
 }); // declare Aleatory.

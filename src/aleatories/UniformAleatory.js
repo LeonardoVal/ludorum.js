@@ -34,7 +34,7 @@ var UniformAleatory = exports.aleatories.UniformAleatory = declare(Aleatory, {
 	'static __SERMAT__': {
 		identifier: 'UniformAleatory',
 		serializer: function serialize_UniformAleatory(obj) {
-			return [this.__values__];
+			return [obj.__values__];
 		}
 	}
 });
