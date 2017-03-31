@@ -37,6 +37,35 @@ var Aleatory = exports.aleatories.Aleatory = declare({
 	
 	// ## Utility methods ##########################################################################
 
+	/** The `tries` function calculates the distribution of the number of successes, trying `n` 
+	times with a chance of `p`.
+	*/
+	'static tries': function tries(p, n) {
+		var combinations = base.math.combinations;
+		return n <= 0 ? [[0, 1]] : Iterable.range(n + 1).map(function (i) {
+			return [i, Math.pow(p, i) * Math.pow(1 - p, n - i) * combinations(n, i)];
+		}).toArray();
+	},
+	
+	/** Two `aggregate`d distributions make a new distribution with a combination of the domains. By
+	default the value combination function `comb` is the sum. An equality test `eq` can be provided
+	if the combinations cannot be compared with `===`.
+	*/
+	'static aggregate': function aggregate(dist1, dist2, comb, eq) {
+		var distR = [];
+		Iterable.product(dist1, dist2).forEachApply(function (p1, p2) {
+			var v = comb ? comb(p1[0], p2[0]) : p1[0] + p2[0];
+			for (var i = 0; i < distR.length; i++) {
+				if (eq ? eq(distR[i][0], v) : distR[i][0] === v) {
+					distR[i][1] += p1[1] * p2[1];
+					return;
+				}
+			}
+			distR.push([v, p1[1] * p2[1]]);
+		});
+		return distR;
+	},
+	
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
