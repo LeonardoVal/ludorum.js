@@ -14,7 +14,7 @@ module.exports = function(grunt) {
 			'players/UCTPlayer', 'players/RuleBasedPlayer', 
 			'players/UserInterfacePlayer', 'players/WebWorkerPlayer',
 		// aleatories.
-			'aleatories/Aleatory', 'aleatories/UniformAleatory', 'aleatories/CustomAleatory', 'aleatories/dice',
+			'aleatories/Aleatory', 'aleatories/UniformAleatory', 'aleatories/CustomAleatory', 'aleatories/aleatories',
 		// games.
 		'games/Predefined', 'games/Choose2Win', 'games/ConnectionGame', 'games/OddsAndEvens',
 			'games/TicTacToe', 'games/ToadsAndFrogs', 'games/Pig', 'games/Mutropas',

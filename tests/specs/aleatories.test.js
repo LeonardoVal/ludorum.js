@@ -28,7 +28,7 @@
 		it("dice", function () {
 			var dice = ludorum.aleatories.dice;
 			expect(dice).toBeDefined();
-			'D4 D6 D8 D10 D12 D20 D100'.split(/\s+/).forEach(function (id) {
+			'D4 D6 D8 D10 D12 D20'.split(/\s+/).forEach(function (id) {
 				var die = dice[id];
 				expect(die).toBeDefined();
 				expectUniformDistribution(die.distribution(), 
@@ -37,16 +37,16 @@
 			});
 		});
 		
-		it("dice.sumProbability", function () {
-			var dice = ludorum.aleatories.dice;
-			expect(typeof dice.sumProbability).toBe('function');
-			expect(dice.sumProbability(1,2,6)).toBe(0);
-			expect(1 / dice.sumProbability(2,2,6)).toBe(36);
-			expect(1 / dice.sumProbability(3,2,6)).toBe(18);
-			expect(1 / dice.sumProbability(7,2,6)).toBe(6);
-			expect(1 / dice.sumProbability(11,2,6)).toBe(18);
-			expect(1 / dice.sumProbability(12,2,6)).toBe(36);
-			expect(dice.sumProbability(13,2,6)).toBe(0);
+		it("sumProbability", function () {
+			var sumProbability = ludorum.aleatories.sumProbability;
+			expect(typeof sumProbability).toBe('function');
+			expect(sumProbability(1,2,6)).toBe(0);
+			expect(1 / sumProbability(2,2,6)).toBe(36);
+			expect(1 / sumProbability(3,2,6)).toBe(18);
+			expect(1 / sumProbability(7,2,6)).toBe(6);
+			expect(1 / sumProbability(11,2,6)).toBe(18);
+			expect(1 / sumProbability(12,2,6)).toBe(36);
+			expect(sumProbability(13,2,6)).toBe(0);
 		});
 	}); //// aleatories
 	

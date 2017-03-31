@@ -2990,6 +2990,35 @@ var Aleatory = exports.aleatories.Aleatory = declare({
 	
 	// ## Utility methods ##########################################################################
 
+	/** The `tries` function calculates the distribution of the number of successes, trying `n` 
+	times with a chance of `p`.
+	*/
+	'static tries': function tries(p, n) {
+		var combinations = base.math.combinations;
+		return n <= 0 ? [[0, 1]] : Iterable.range(n + 1).map(function (i) {
+			return [i, Math.pow(p, i) * Math.pow(1 - p, n - i) * combinations(n, i)];
+		}).toArray();
+	},
+	
+	/** Two `aggregate`d distributions make a new distribution with a combination of the domains. By
+	default the value combination function `comb` is the sum. An equality test `eq` can be provided
+	if the combinations cannot be compared with `===`.
+	*/
+	'static aggregate': function aggregate(dist1, dist2, comb, eq) {
+		var distR = [];
+		Iterable.product(dist1, dist2).forEachApply(function (p1, p2) {
+			var v = comb ? comb(p1[0], p2[0]) : p1[0] + p2[0];
+			for (var i = 0; i < distR.length; i++) {
+				if (eq ? eq(distR[i][0], v) : distR[i][0] === v) {
+					distR[i][1] += p1[1] * p2[1];
+					return;
+				}
+			}
+			distR.push([v, p1[1] * p2[1]]);
+		});
+		return distR;
+	},
+	
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
@@ -3080,7 +3109,7 @@ var CustomAleatory = exports.aleatories.CustomAleatory = declare(Aleatory, {
 
 Implementations of common dice and related functions.
 */
-var dice = aleatories.dice = {
+aleatories.dice = {
 	/** Common dice variants.
 	*/
 	D4: new Aleatory(1, 4),
@@ -3089,33 +3118,32 @@ var dice = aleatories.dice = {
 	D10: new Aleatory(1, 10),
 	D12: new Aleatory(1, 12),
 	D20: new Aleatory(1, 20),
-	D100: new Aleatory(1, 100),
-	
-	/** The `sumProbability` that rolling `n` dice of `s` sides yields a sum equal to `p`. Check the 
-	article at [Mathworld](http://mathworld.wolfram.com/Dice.html).
-	*/
-	sumProbability: function sumProbability(p, n, s) {
-		n = n|0;
-		s = s|0;
-		p = p|0;
-		if (isNaN(n) || isNaN(s) || isNaN(p) || n < 1 || s < 2) {
-			return NaN;
-		} else if (p < n || p > n * s) {
-			return 0;
-		} else {
-			var factorial = base.math.factorial,
-				fact_n = factorial(n),
-				fact_n_1 = fact_n / n; // factorial(n - 1)
-			return Math.pow(s, -n) *
-				Iterable.range(0, Math.floor((p - n) / s) + 1).map(function (k) {
-					var comb1 = fact_n / factorial(k) / factorial(n - k),
-						x = p - s * k - 1,
-						comb2 = factorial(x) / fact_n_1 / factorial(x - n + 1);
-					return (k % 2 ? -1 : 1) * comb1 * comb2;
-				}).sum();
-		}
-	}
 }; // dice.
+
+/** The `sumProbability` that rolling `n` dice of `s` sides yields a sum equal to `p`. Check the 
+article at [Mathworld](http://mathworld.wolfram.com/Dice.html).
+*/
+aleatories.sumProbability = function sumProbability(p, n, s) {
+	n = n|0;
+	s = s|0;
+	p = p|0;
+	if (isNaN(n) || isNaN(s) || isNaN(p) || n < 1 || s < 2) {
+		return NaN;
+	} else if (p < n || p > n * s) {
+		return 0;
+	} else {
+		var factorial = base.math.factorial,
+			fact_n = factorial(n),
+			fact_n_1 = fact_n / n; // factorial(n - 1)
+		return Math.pow(s, -n) *
+			Iterable.range(0, Math.floor((p - n) / s) + 1).map(function (k) {
+				var comb1 = fact_n / factorial(k) / factorial(n - k),
+					x = p - s * k - 1,
+					comb2 = factorial(x) / fact_n_1 / factorial(x - n + 1);
+				return (k % 2 ? -1 : 1) * comb1 * comb2;
+			}).sum();
+	}
+};
 
 /** Simple reference games with a predefined outcome, mostly for testing 
 	purposes.
