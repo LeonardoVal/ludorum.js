@@ -18,7 +18,7 @@ module.exports = function(grunt) {
 		// games.
 		'games/Predefined', 'games/Choose2Win', 'games/ConnectionGame', 'games/OddsAndEvens',
 			'games/TicTacToe', 'games/ToadsAndFrogs', 'games/Pig', 'games/Mutropas',
-			'games/Bahab',
+			'games/Bahab', 'games/Puzzle15',
 		// tournaments.
 		'tournaments/RoundRobin', 'tournaments/Measurement', 'tournaments/Elimination',
 	// end
