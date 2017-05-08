@@ -1,6 +1,7 @@
 ﻿/** # MaxNPlayer
 
-Automatic players based on the MaxN algorithm, a MiniMax variant for games of more than two players.
+Automatic players based on the [MaxN](http://dl.acm.org/citation.cfm?id=2887795) algorithm, a 
+MiniMax variant for games of more than two players.
 */
 var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
 	/** Besides the parameters of every [`HeuristicPlayer`](HeuristicPlayer.js.html), an `horizon` 
