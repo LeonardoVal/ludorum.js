@@ -4,7 +4,7 @@
 	"keywords": [
 		"board game", "game", "minimax", "artificial intelligence", "game ai"
 	],
-	"version": "0.1.7",
+	"version": "0.2.0",
 	"author": {
 		"name": "Leonardo Val",
 		"email": "leonardo.val@creatartis.com"
