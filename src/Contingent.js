@@ -12,43 +12,29 @@ var Contingent = exports.Contingent = declare({
 	/** The default implementation takes a set of `haps`, a game `state` and a set of `moves`. See
 	the `next` method for further details.
 	*/
-	constructor: function Contingent(haps, state, moves) {
-		this.__haps__ = haps || null;
-		this.__state__ = state || null;
-		this.__moves__ = moves || null;
+	constructor: function Contingent(state, moves, haps, update) {
+		this.state = state;
+		this.moves = moves;
+		/** A contingent state's `haps` are the equivalent of `moves` in normal game states. The 
+		method returns an object with the random variables on which this node depends, e.g.: 
+		`{ die: aleatories.dice.D6 }`.
+		*/
+		this.haps = haps;
+		this.update = !!update;
 	},
-	
-	/** A contingent state's `haps` are the equivalent of `moves` in normal game states. The method 
-	returns an object with the random variables on which this node depends, e.g.: 
-	`{ die: aleatories.dice.D6 }`.
-	*/
-	haps: function haps() {
-		return this.__haps__;
-	},
-	
-	/** Contingent game states' `next` states depend on the `haps` provided, e.g. `{die1: 4, die2: 2}`.
-	If values for the `haps` are not provided, they are resolved randonmly (using `randomHaps()`).
-	
-	By default this method can have two possible behaviours. If the contingent state was created 
-	with `moves`, the previous `state`'s `next` method is called with these `moves` and the `haps`.
-	Else, it is assumed that the game state constructor will deal with the haps. So it is called
-	with the original arguments of the state and the `haps`.
+		
+	/** Contingent game states' `next` and `advance` methods delegate to the corresponding game 
+	`__state__` methods. The `haps` provided must be in the form `{die1: 4, die2: 2}`. If no `haps` 
+	are given, they are resolved randonmly (using `randomHaps()`).
 	*/
 	next: function next(haps) {
-		var state = this.__state__;
-		if (this.__moves__) {
-			return state.next(this.__moves__, haps || this.randomHaps());
-		} else {
-			var sermatRecord = Sermat.record(state.constructor),
-				args = sermatRecord.serializer(state)[0];
-			return sermatRecord.materializer(null, [copy(haps, args)]);
-		}
+		return this.state.next(this.moves, haps || this.randomHaps(), this.update);
 	},
 	
 	/** Method `randomHaps` calculates a random set of haps.
 	*/
 	randomHaps: function randomHaps(random) {
-		return iterable(this.haps()).mapApply(function (n, h) {
+		return iterable(this.haps).mapApply(function (n, h) {
 			return [n, h.value(random)];
 		}).toObject();
 	},
@@ -64,7 +50,7 @@ var Contingent = exports.Contingent = declare({
 	*/
 	possibleHaps: function possibleHaps() {
 		return Iterable.product.apply(Iterable,
-			iterable(this.haps()).mapApply(function (n, hap) {
+			iterable(this.haps).mapApply(function (n, hap) {
 				return hap.distribution().mapApply(function (v, p) {
 					return [n, v, p];
 				});
@@ -117,7 +103,7 @@ var Contingent = exports.Contingent = declare({
 	'static __SERMAT__': {
 		identifier: 'Contingent',
 		serializer: function serialize_Contingent(obj) {
-			return [obj.__haps__, obj.__state__, obj.__moves__];
+			return [obj.state, obj.moves, obj.haps];
 		}
 	}
 });
