@@ -36,7 +36,9 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 			endTime = Date.now() + this.timeCap,
 			node, simulationResult;
 		root.uct = {
-			pending: this.random.shuffle(root.possibleTransitions()), visits: 0, rewards: 0
+			pending: this.random.shuffle(root.possibleTransitions()), 
+			visits: 0, 
+			rewards: 0
 		};
 		for (var i = 0; i < this.simulationCount && Date.now() < endTime; ++i) {
 			node = root;
@@ -46,7 +48,9 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 			if (node.uct.pending.length > 0) { // Expansion
 				node = node.expand(node.uct.pending.pop());
 				node.uct = {
-					pending: this.random.shuffle(node.possibleTransitions()), visits: 0, rewards: 0
+					pending: this.random.shuffle(node.possibleTransitions()),
+					visits: 0,
+					rewards: 0
 				};
 			}
 			simulationResult = this.simulation(node.state, player); // Simulation

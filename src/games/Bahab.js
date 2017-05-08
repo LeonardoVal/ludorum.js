@@ -86,7 +86,7 @@ games.Bahab = declare(Game, {
 	/** Valid move for this game are pairs of coordinates (`[row, column]`), the first one being 
 	where the moving piece starts, and the second one being where the moving piece ends.	
 	*/
-	next: function next(moves) {
+	next: function next(moves, haps, update) {
 		if (!moves) {
 			throw new Error("Invalid moves "+ moves +"!");
 		}
@@ -95,7 +95,14 @@ games.Bahab = declare(Game, {
 		if (!Array.isArray(moves[activePlayer])) {
 			throw new Error("Invalid moves "+ JSON.stringify(moves) +"!");
 		}
-		return new this.constructor(this.opponent(), this.board.move(move[0], move[1]));
+		var nextBoard = this.board.move(move[0], move[1]);
+		if (update) {
+			this.activatePlayers(this.opponent());
+			this.board = nextBoard;
+			return this;
+		} else {
+			return new this.constructor(this.opponent(), nextBoard);
+		}
 	},
 	
 	// ## Utility methods ##########################################################################

@@ -8,10 +8,9 @@ var Game = exports.Game = declare({
 	initialize `Game.activePlayers`, an array with the active players' names.
 	*/
 	constructor: function Game(activePlayers) {
-		this.activePlayers = !activePlayers ? [this.players[0]] : 
-			(!Array.isArray(activePlayers) ? [activePlayers] : activePlayers);
+		this.activatePlayers(activePlayers);
 	},
-
+	
 	/** The game's `name` is used mainly for displaying purposes.
 	*/
 	name: '?',
@@ -32,15 +31,24 @@ var Game = exports.Game = declare({
 	moves: unimplemented("Game", "moves()"),
 
 	/** Once the players have chosen their moves, the method `next` is used to perform the given 
-	moves. It returns a new game instance with the resulting state. The first `moves` argument 
-	should be an object with a move for each active player. For example:
+	moves. The first `moves` argument should be an object with a move for each active player. For 
+	example:
 
 	+ `{ Player1: 'Rock', Player2: 'Paper' }`
 	
-	There isn't a default implementation, so it must be overriden. It is strongly advised to check 
-	if the arguments are valid.
+	A second argument `haps` may be added if the game has random variables. It must have the same
+	form as the `moves` argument, but instead of players as keys it will have random variables as
+	keys.
+	
+	+ `{ die1: 6, die2: 3 }`
+	
+	If the third argument `update` is true indicate that is not necessary to return a new game 
+	instance. Else (and by default) the returned resulting state is always a new game instance.
+	
+	There isn't a default implementation of `next`, so it must be overriden. It is strongly advised 
+	to check if the arguments are valid.
 	*/
-	next: unimplemented("Game", "next(moves)"),
+	next: unimplemented("Game", "next(moves, haps, update)"),
 
 	/** If the game is finished the result of the game is calculated with `result()`. It returns an 
 	object with every player in the game related to a number. This number must be positive if the 
@@ -102,6 +110,14 @@ var Game = exports.Game = declare({
 		return this.activePlayers[0];
 	},
 
+	/** Sets the `activePlayers` of this game state. Since this method changes the current game 
+	state, use with care.
+	*/
+	activatePlayers: function activatePlayers(activePlayers) {
+		return this.activePlayers = !activePlayers ? [this.players[0]] : 
+			(!Array.isArray(activePlayers) ? [activePlayers] : activePlayers);
+	},
+	
 	/** All players in a game are assumed to be opponents. The method `opponents(players=activePlayers)` 
 	returns an array with the opponent roles of the given players, or of the active players by 
 	default. If not all players are opponents this method can be overriden.

@@ -38,15 +38,22 @@ games.Choose2Win = declare(Game, {
 
 	/** If a player moves to win or lose, a final game state is returned. Else the game goes on.
 	*/
-	next: function next(moves) {
+	next: function next(moves, haps, update) {
 		var activePlayer = this.activePlayer(),
 			opponent = this.opponent(activePlayer);
-		raiseIf(!moves.hasOwnProperty(activePlayer), 'No move for active player ', activePlayer, ' at ', this, '!');
-		switch (moves[activePlayer]) {
-			case 'win': return new this.constructor(this.__turns__ - 1, opponent, activePlayer);
-			case 'lose': return new this.constructor(this.__turns__ - 1, opponent, opponent);
-			case 'pass': return new this.constructor(this.__turns__ - 1, opponent);
-			default: raise('Invalid move ', moves[activePlayer], ' for player ', activePlayer, ' at ', this, '!');
+		raiseIf(!moves.hasOwnProperty(activePlayer), 
+			'No move for active player ', activePlayer, ' at ', this, '!');
+		var winner = { win: activePlayer, lose: opponent, pass: undefined },
+			move = moves[activePlayer];
+		if (!winner.hasOwnProperty(move)) {
+			raise('Invalid move ', moves[activePlayer], ' for ', activePlayer, ' at ', this, '!');
+		} else if (update) {
+			this.activatePlayers(opponent);
+			this.__turns__--;
+			this.__winner__ = winner[move];
+			return this;
+		} else {
+			return new this.constructor(this.__turns__ - 1, opponent, winner[move]);
 		}
 	},
 	

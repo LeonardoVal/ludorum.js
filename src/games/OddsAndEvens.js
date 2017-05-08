@@ -5,8 +5,9 @@ as a simple example of a simultaneous game, i.e. a game in which more than one p
 any given turn.
 */
 games.OddsAndEvens = declare(Game, {
-	/** The constructor takes:
+	name: 'OddsAndEvens',
 	
+	/** The constructor takes:
 		+ `turns=1`: The number of turns remaining in the game.
 		+ `points=<zero for every player>`: The scores for every player.
 	*/
@@ -15,8 +16,6 @@ games.OddsAndEvens = declare(Game, {
 		this.turns = isNaN(turns) ? 1 : +turns;
 		this.points = points || { Evens: 0, Odds: 0 };
 	},
-
-	name: 'OddsAndEvens',
 	
 	/** Players for odds and evens are called like that: Evens and Odds.
 	*/
@@ -40,14 +39,21 @@ games.OddsAndEvens = declare(Game, {
 
 	/** The player matching the parity of the moves sum earns a point.
 	*/
-	next: function next(moves) {
+	next: function next(moves, haps, update) {
 		raiseIf(typeof moves.Evens !== 'number' || typeof moves.Odds !== 'number',
 			'Invalid moves '+ (JSON.stringify(moves) || moves) +'!');
-		var parity = (moves.Evens + moves.Odds) % 2 === 0;
-		return new this.constructor(this.turns - 1, {
-			Evens: this.points.Evens + (parity ? 1 : 0),
-			Odds: this.points.Odds + (parity ? 0 : 1)
-		});
+		var parity = (moves.Evens + moves.Odds) % 2 === 0,
+			points = {
+				Evens: this.points.Evens + (parity ? 1 : 0),
+				Odds: this.points.Odds + (parity ? 0 : 1)
+			};
+		if (update) {
+			this.turns--;
+			this.points = points;
+			return this;
+		} else {
+			return new this.constructor(this.turns - 1, points);
+		}
 	},
 
 	// ## Utility methods ##########################################################################

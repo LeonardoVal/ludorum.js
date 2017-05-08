@@ -33,13 +33,14 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 		raiseIf(game.isContingent, "MonteCarloPlayer cannot evaluate root contingent states!"); //FIXME
 		var monteCarloPlayer = this,
 			endTime = Date.now() + this.timeCap,
-			gameNext = game.next.bind(game),
 			options = this.possibleMoves(game, player).map(function (move) {
 				return { 
 					move: move, 
 					nexts: (Object.keys(move).length < 2 ? 
 						[game.next(move)] :
-						game.possibleMoves(copy(obj(player, [move[player]]), move)).map(gameNext)
+						game.possibleMoves(copy(obj(player, [move[player]]), move)).map(function (moves) {
+							return game.next(moves);
+						})
 					),
 					sum: 0, 
 					count: 0 
@@ -91,16 +92,24 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 			} else {
 				moves = game.moves();
 				if (!moves) { // If game state is final ...
-					return { game: game, result: game.result(), plies: plies };
+					return { 
+						game: game, 
+						result: game.result(), 
+						plies: plies 
+					};
 				} else if (plies > this.horizon) { // If past horizon ...
-					return { game: game, result: obj(player, this.heuristic(game, player)), plies: plies };
+					return { 
+						game: game,
+						result: obj(player, this.heuristic(game, player)),
+						plies: plies
+					};
 				} else { // ... else advance.
 					move = {};
 					game.activePlayers.forEach(function (activePlayer) {
 						move[activePlayer] = mc.agent ? mc.agent.decision(game, activePlayer) 
 							: mc.random.choice(moves[activePlayer]);
 					});
-					game = game.next(move);
+					game = game.next(move, null, plies > 0); // The original `game` argument must not be changed.
 				}
 			}
 		}

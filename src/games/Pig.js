@@ -4,6 +4,8 @@
 example of a game with random variables.
 */
 games.Pig = declare(Game, {
+	name: 'Pig',
+	
 	/** The constructor takes:
 	
 		+ `activePlayer='One'`: The active player.
@@ -17,8 +19,6 @@ games.Pig = declare(Game, {
 		this.__scores__ = scores || iterable(this.players).zip([0, 0]).toObject();
 		this.__rolls__ = rolls || [];
 	},
-	
-	name: 'Pig',
 	
 	/** Players for Pig are named `One`, `Two`.
 	*/
@@ -59,22 +59,34 @@ games.Pig = declare(Game, {
 	method again with the same moves and the values of the random variables, and then the match will
 	continue.
 	*/
-	next: function next(moves, haps) {
+	next: function next(moves, haps, update) {
 		var activePlayer = this.activePlayer(),
 			move = moves && moves[activePlayer];
 		raiseIf(!move, 'No move for active player ', activePlayer, ' at ', this, '!');
-		if (move === 'hold') {
-			var scores = copy(this.__scores__);
-			scores[activePlayer] += iterable(this.__rolls__).sum();
-			return new this.constructor(this.opponent(), this.goal, scores, []);
-		} else if (move === 'roll') {
-			var roll = (haps && haps.die)|0;
-			if (!roll) { // Dice has not been rolled.
-				return new Contingent({ die: aleatories.dice.D6 }, this, moves);
-			} else { // Dice has been rolled.
-				return (roll > 1) ? 
-					new this.constructor(activePlayer,  this.goal, this.__scores__, this.__rolls__.concat(roll)) :
-					new this.constructor(this.opponent(), this.goal, this.__scores__, []);
+		var nextPlayer = this.opponent(),
+			nextScores = this.__scores__,
+			nextRolls = [];
+		if (move === 'hold' || move === 'roll') {
+			if (move === 'hold') {
+				nextScores = copy(nextScores);
+				nextScores[activePlayer] += iterable(this.__rolls__).sum();
+			} else { // if (move === 'roll') {
+				var roll = (haps && haps.die)|0;
+				if (!roll) { // Dice has not been rolled.
+					return new Contingent(this, moves, { die: aleatories.dice.D6 }, update);
+				} else if (roll > 1) { // Dice has been rolled.
+					nextPlayer = activePlayer;
+					nextRolls = this.__rolls__.concat(roll);
+					return new this.constructor(activePlayer,  this.goal, this.__scores__, this.__rolls__.concat(roll));
+				}
+			}
+			if (update) {
+				this.activatePlayers(nextPlayer);
+				this.__scores__ = nextScores;
+				this.__rolls__ = nextRolls;
+				return this;
+			} else {
+				return new this.constructor(nextPlayer, this.goal, nextScores, nextRolls);
 			}
 		} else {
 			raise("Invalid moves ", JSON.stringify(moves), " at ", this, "!");

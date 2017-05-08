@@ -33,7 +33,8 @@ var GameTree = declare({
 	*/
 	expand: function expand(transition) {
 		var key = this.__childSerialization__(transition),
-			child = this.children[key], nextState;
+			child = this.children[key],
+			nextState;
 		if (!child) {
 			try {
 				nextState = this.state.next(transition); 

@@ -50,20 +50,26 @@ games.TicTacToe = declare(Game, {
 		}		
 	},
 	
-	/** The `next(moves)` game state puts the mark of the active player in the square indicated by 
-	the move. 
+	/** The `next` game state is calculated by putting the mark of the active player in the square 
+	indicated by the given move.
 	*/
-	next: function next(moves) {
+	next: function next(moves, haps, update) {
 		var activePlayer = this.activePlayer(), 
 			move = +moves[activePlayer];
 		if (isNaN(move) || this.board.charAt(move) !== '_') {
 			throw new Error('Invalid move '+ JSON.stringify(moves) +' for board '+ this.board +
 				' (moves= '+ JSON.stringify(moves) +').');
 		}
-		var newBoard = this.board.substring(0, move) + activePlayer.charAt(0) + this.board.substring(move + 1);
-		return new this.constructor(this.opponent(activePlayer), newBoard);
+		var nextBoard = this.board.substring(0, move) + activePlayer.charAt(0) + this.board.substring(move + 1);
+		if (update) {
+			this.activatePlayers(this.opponent(activePlayer));
+			this.board = nextBoard;
+			return this;
+		} else {
+			return new this.constructor(this.opponent(activePlayer), nextBoard);
+		}
 	},
-	
+
 	// ## Utility methods ##########################################################################
 	
 	/** Serialization and materialization using Sermat.

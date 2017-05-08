@@ -97,13 +97,19 @@ games.ConnectionGame = declare(Game, {
 	/** To get from one game state to the next, an active player's piece in the square indicated by 
 	its move.
 	*/
-	next: function next(moves) {
+	next: function next(moves, haps, update) {
 		var activePlayer = this.activePlayer(),
 			playerIndex = this.players.indexOf(activePlayer),
-			coord = moves[activePlayer];
-		return new this.constructor((playerIndex + 1) % this.players.length,
-			this.board.place(coord, playerIndex.toString(36))
-		);
+			coord = moves[activePlayer],
+			nextPlayer = (playerIndex + 1) % this.players.length,
+			nextBoard = this.board.place(coord, playerIndex.toString(36));
+		if (update) {
+			this.activatePlayers(nextPlayer);
+			this.board = nextBoard;
+			return this;
+		} else {
+			return new this.constructor(nextPlayer, nextBoard);
+		}
 	},
 	
 	// ## User intefaces ###########################################################################

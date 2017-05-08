@@ -1,11 +1,15 @@
-﻿/** Simple reference games with a predefined outcome, mostly for testing 
-	purposes.
+﻿/** # Predefined
+
+Simple reference games with a predefined outcome, mostly for testing purposes.
 */
 games.Predefined = declare(Game, {
-	/** new games.Predefined(activePlayer, results, height=5, width=5):
-		A pseudogame used for testing purposes. It will give width amount of 
-		moves for each player until height moves pass. Then the match is 
-		finished with the given results, or a tie as default.
+	name: 'Predefined',
+	height: 5,
+	width: 5,
+	
+	/** `Predefined` is a pseudogame used for testing purposes. It will give `width` amount of 
+	moves for each player until `height` moves pass. Then the match is finished with the given 
+	`results`, or a tie as default.
 	*/
 	constructor: function Predefined(activePlayer, results, height, width) {
 		if (results) {
@@ -13,24 +17,23 @@ games.Predefined = declare(Game, {
 			this.players = Object.keys(results);
 		}
 		Game.call(this, activePlayer);
-		this.height = isNaN(height) ? 5 : +height;
-		this.width = isNaN(width) ? 5 : +width;
+		if (!isNaN(height)) {
+			this.height = +height;
+		}
+		if (!isNaN(width)) {
+			this.width = +width;
+		}
 	},
-
-	name: 'Predefined',
 	
-	/** games.Predefined.players:
-		Default players for Predefined: A and B.
+	/** Default players for `Predefined`: A and B.
 	*/
 	players: ['A', 'B'],
 
-	/** games.Predefined.__results__:
-		Default results for Predefined: a tie between A and B.
+	/** Default results for Predefined: a tie between A and B.
 	*/
 	__results__: {'A': 0, 'B': 0},
 
-	/** games.Predefined.moves():
-		Moves for a Predefined are numbers from 1 to this.width. 
+	/** Moves for a `Predefined` are numbers from 1 to this.width. 
 	*/
 	moves: function moves() {
 		if (this.height > 0) {
@@ -40,18 +43,22 @@ games.Predefined = declare(Game, {
 		}
 	},
 
-	/** games.Predefined.result():
-		Returned the predefined results if height is zero or less.
+	/** Returned the predefined results if height is zero or less.
 	*/
 	result: function result() {
 		return this.height > 0 ? null : this.__results__;
 	},
 
-	/** games.Predefined.next(moves):
-		Moves are completely irrelevant. They only advance in the match.
+	/** Moves are completely irrelevant. They only advance in the match.
 	*/
-	next: function next() {
-		return new this.constructor(this.opponent(), this.__results__, this.height - 1, this.width);
+	next: function next(moves, haps, update) {
+		if (update) {
+			this.height--;
+			this.activatePlayers(this.opponent());
+			return this;
+		} else {
+			return new this.constructor(this.opponent(), this.__results__, this.height - 1, this.width);
+		}
 	},
 	
 	// ## Utility methods ##########################################################################
