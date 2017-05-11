@@ -3216,6 +3216,7 @@ games.Predefined = declare(Game, {
 	/** Moves are completely irrelevant. They only advance in the match.
 	*/
 	next: function next(moves, haps, update) {
+		raiseIf(haps, 'Haps are not required (given ', haps, ')!');
 		if (update) {
 			this.height--;
 			this.activatePlayers(this.opponent());
@@ -3283,6 +3284,7 @@ games.Choose2Win = declare(Game, {
 			opponent = this.opponent(activePlayer);
 		raiseIf(!moves.hasOwnProperty(activePlayer), 
 			'No move for active player ', activePlayer, ' at ', this, '!');
+		raiseIf(haps, 'Haps are not required (given ', haps, ')!');
 		var winner = { win: activePlayer, lose: opponent, pass: undefined },
 			move = moves[activePlayer];
 		if (!winner.hasOwnProperty(move)) {
@@ -3591,6 +3593,7 @@ games.TicTacToe = declare(Game, {
 	indicated by the given move.
 	*/
 	next: function next(moves, haps, update) {
+		raiseIf(haps, 'Haps are not required (given ', haps, ')!');
 		var activePlayer = this.activePlayer(), 
 			move = +moves[activePlayer];
 		if (isNaN(move) || this.board.charAt(move) !== '_') {
@@ -3999,7 +4002,8 @@ games.Mutropas = declare(Game, {
 	/** Each turn all players play a piece, and the player who plays the greatest piece wins a 
 	point.
 	*/
-	next: function next(moves) {
+	next: function next(moves, haps, update) {
+		raiseIf(haps, 'Haps are not required (given ', haps, ')!');
 		var player0 = this.players[0], player1 = this.players[1],
 			move0 = moves[player0], move1 = moves[player1],
 			pieces = this.pieces;
@@ -4007,11 +4011,9 @@ games.Mutropas = declare(Game, {
 			" for player ", player0, "! (moves= ", JSON.stringify(moves), ")");
 		raiseIf(pieces[player1].indexOf(move1) < 0, "Invalid move ", JSON.stringify(move1),
 			" for player ", player1, "! (moves= ", JSON.stringify(moves), ")");
-		var moveResult = this.moveResult(move0, move1);
-		return new this.constructor({
-			random: this.random,
-			playedPieces: this.playedPieces.concat([move0, move1]),
-			pieces: obj(
+		var moveResult = this.moveResult(move0, move1),
+			nextPlayedPieces = this.playedPieces.concat([move0, move1]),
+			nextPieces = obj(
 				player0, pieces[player0].filter(function (p) { 
 					return p !== move0; 
 				}), 
@@ -4019,11 +4021,23 @@ games.Mutropas = declare(Game, {
 					return p !== move1;
 				})
 			),
-			scores: obj(
+			nextScores = obj(
 				player0, this.__scores__[player0] + moveResult,
 				player1, this.__scores__[player1] - moveResult
-			)
-		});
+			);
+		if (update) {
+			this.playedPieces = nextPlayedPieces;
+			this.pieces = nextPieces;
+			this.__scores__ = nextScores;
+			return this;
+		} else {
+			return new this.constructor({
+				random: this.random,
+				playedPieces: nextPlayedPieces,
+				pieces: nextPieces,
+				scores: nextScores
+			});
+		}
 	},
 	
 	/** The game's `score` is simply the sum of the move results for each player.
@@ -4291,6 +4305,7 @@ games.Puzzle15 = declare(Game, {
 	the given position in the board.
 	*/
 	next: function next(move, haps, update) {
+		raiseIf(haps, 'Haps are not required (given ', haps, ')!');
 		var nextBoard = this.board.swap(this.emptyCoord(), move.Player);
 		if (update) {
 			this.board = nextBoard;
