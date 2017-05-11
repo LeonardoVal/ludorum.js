@@ -43,6 +43,7 @@ games.Choose2Win = declare(Game, {
 			opponent = this.opponent(activePlayer);
 		raiseIf(!moves.hasOwnProperty(activePlayer), 
 			'No move for active player ', activePlayer, ' at ', this, '!');
+		raiseIf(haps, 'Haps are not required (given ', haps, ')!');
 		var winner = { win: activePlayer, lose: opponent, pass: undefined },
 			move = moves[activePlayer];
 		if (!winner.hasOwnProperty(move)) {

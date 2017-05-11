@@ -52,6 +52,7 @@ games.Predefined = declare(Game, {
 	/** Moves are completely irrelevant. They only advance in the match.
 	*/
 	next: function next(moves, haps, update) {
+		raiseIf(haps, 'Haps are not required (given ', haps, ')!');
 		if (update) {
 			this.height--;
 			this.activatePlayers(this.opponent());

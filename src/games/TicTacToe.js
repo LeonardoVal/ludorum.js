@@ -54,6 +54,7 @@ games.TicTacToe = declare(Game, {
 	indicated by the given move.
 	*/
 	next: function next(moves, haps, update) {
+		raiseIf(haps, 'Haps are not required (given ', haps, ')!');
 		var activePlayer = this.activePlayer(), 
 			move = +moves[activePlayer];
 		if (isNaN(move) || this.board.charAt(move) !== '_') {

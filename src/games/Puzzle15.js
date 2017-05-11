@@ -81,6 +81,7 @@ games.Puzzle15 = declare(Game, {
 	the given position in the board.
 	*/
 	next: function next(move, haps, update) {
+		raiseIf(haps, 'Haps are not required (given ', haps, ')!');
 		var nextBoard = this.board.swap(this.emptyCoord(), move.Player);
 		if (update) {
 			this.board = nextBoard;
