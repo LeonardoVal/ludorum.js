@@ -41,6 +41,10 @@
 			expect(moves[activePlayer]).toBeOfType(Array);
 			expect(moves[activePlayer].length).toBeGreaterThan(0);
 		});
+		if (options.deterministic) {
+			var haps = { dice: base.Randomness.DEFAULT.randomInt(1, 7) };
+			expect(game.next.bind(game, game.possibleMoves()[0], haps)).toThrow();
+		}
 	}
 	
 	function itWorksLikeGame(game, options) {
@@ -48,6 +52,8 @@
 			var MAX_PLIES = 500, moves, decisions;
 			for (var i = 0; i < MAX_PLIES; i++) {
 				while (game && game.isContingent) {
+					// Deterministic games should not use Contingent states.
+					expect(!!options.deterministic).toBe(false);
 					game = game.randomNext();
 				}
 				expect(game).toBeOfType(ludorum.Game);
@@ -72,27 +78,24 @@
 		});
 	}
 	
-	["Predefined", "Choose2Win", "TicTacToe", "ToadsAndFrogs", "Pig", "ConnectionGame", "Bahab",
-	].forEach(function (name) { // Zerosum games for 2 players with one active player per turn.
-		describe("games."+ name, function () {
-			var game = new ludorum.games[name](),
-				options = { zeroSum: true, oneActivePlayerPerTurn: true };
+	[{ game: "Predefined",     zeroSum: 1, oneActivePlayerPerTurn: 1, deterministic: 1 },
+	 { game: "Choose2Win",     zeroSum: 1, oneActivePlayerPerTurn: 1, deterministic: 1 },
+	 { game: "TicTacToe",      zeroSum: 1, oneActivePlayerPerTurn: 1, deterministic: 1 },
+	 { game: "ToadsAndFrogs",  zeroSum: 1, oneActivePlayerPerTurn: 1, deterministic: 1 },
+	 { game: "Pig",            zeroSum: 1, oneActivePlayerPerTurn: 1, deterministic: 0 },
+	 { game: "ConnectionGame", zeroSum: 1, oneActivePlayerPerTurn: 1, deterministic: 1 },
+	 { game: "Bahab",          zeroSum: 1, oneActivePlayerPerTurn: 1, deterministic: 1 },
+	 { game: "OddsAndEvens",   zeroSum: 1, oneActivePlayerPerTurn: 0, deterministic: 1 },
+	 { game: "Mutropas",       zeroSum: 1, oneActivePlayerPerTurn: 0, deterministic: 1 }
+	].forEach(function (options) {
+		describe("games."+ options.game, function () {
+			var game = new ludorum.games[options.game]();
 			itIsGameInstance(game, options);
 			itWorksLikeGame(game, options);
 		});
 	});
 	
-	["OddsAndEvens", "Mutropas"
-	].forEach(function (name) { // Zerosum simultaneous games for 2 players.
-		describe("games."+ name, function () {
-			var game = new ludorum.games[name](),
-				options = { zeroSum: true };
-			itIsGameInstance(game, options);
-			itWorksLikeGame(game, options);
-		});
-	});
-	
-//// Specific tests. ///////////////////////////////////////////////////////////
+//// Game specific tests. //////////////////////////////////////////////////////////////////////////
 
 	describe("games.Predefined()", function () {
 		it("works like a game", function () {
@@ -122,7 +125,7 @@
 		});
 	}); // games.Predefined()
 	
-	describe("games.Choose2Win()", function () { //////////////////////////
+	describe("games.Choose2Win()", function () { ///////////////////////////////////////////////////
 		var game = new ludorum.games.Choose2Win();
 		it("must enable to choose to win or lose", function () {
 			expect(game.activePlayer()).toBe('This');
