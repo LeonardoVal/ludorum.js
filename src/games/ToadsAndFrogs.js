@@ -50,6 +50,7 @@ games.ToadsAndFrogs = declare(Game, {
 	/** The board of the next game state is calculated by applying the given move.
 	*/
 	next: function next(moves, haps, update) {
+		raiseIf(haps, 'Haps are not required (given ', haps, ')!');
 		var activePlayer = this.activePlayer(), 
 			move = moves[activePlayer], 
 			chip = activePlayer.charAt(0),

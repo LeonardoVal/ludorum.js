@@ -87,14 +87,11 @@ games.Bahab = declare(Game, {
 	where the moving piece starts, and the second one being where the moving piece ends.	
 	*/
 	next: function next(moves, haps, update) {
-		if (!moves) {
-			throw new Error("Invalid moves "+ moves +"!");
-		}
+		raiseIf(haps, "Haps are not required (given ", haps, ")!");
+		raiseIf(!moves, "Invalid moves ", moves, "!");
 		var activePlayer = this.activePlayer(),
 			move = moves[activePlayer];
-		if (!Array.isArray(moves[activePlayer])) {
-			throw new Error("Invalid moves "+ JSON.stringify(moves) +"!");
-		}
+		raiseIf(!Array.isArray(moves[activePlayer]), "Invalid moves ", moves, "!");
 		var nextBoard = this.board.move(move[0], move[1]);
 		if (update) {
 			this.activatePlayers(this.opponent());

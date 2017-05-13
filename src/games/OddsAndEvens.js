@@ -41,7 +41,8 @@ games.OddsAndEvens = declare(Game, {
 	*/
 	next: function next(moves, haps, update) {
 		raiseIf(typeof moves.Evens !== 'number' || typeof moves.Odds !== 'number',
-			'Invalid moves '+ (JSON.stringify(moves) || moves) +'!');
+			"Invalid moves ", moves, "!");
+		raiseIf(haps, "Haps are not required (given ", haps, ")!");
 		var parity = (moves.Evens + moves.Odds) % 2 === 0,
 			points = {
 				Evens: this.points.Evens + (parity ? 1 : 0),

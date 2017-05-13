@@ -98,6 +98,7 @@ games.ConnectionGame = declare(Game, {
 	its move.
 	*/
 	next: function next(moves, haps, update) {
+		raiseIf(haps, "Haps are not required (given ", haps, ")!");
 		var activePlayer = this.activePlayer(),
 			playerIndex = this.players.indexOf(activePlayer),
 			coord = moves[activePlayer],
