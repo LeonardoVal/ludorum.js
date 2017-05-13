@@ -3415,6 +3415,7 @@ games.ConnectionGame = declare(Game, {
 	its move.
 	*/
 	next: function next(moves, haps, update) {
+		raiseIf(haps, "Haps are not required (given ", haps, ")!");
 		var activePlayer = this.activePlayer(),
 			playerIndex = this.players.indexOf(activePlayer),
 			coord = moves[activePlayer],
@@ -3509,7 +3510,8 @@ games.OddsAndEvens = declare(Game, {
 	*/
 	next: function next(moves, haps, update) {
 		raiseIf(typeof moves.Evens !== 'number' || typeof moves.Odds !== 'number',
-			'Invalid moves '+ (JSON.stringify(moves) || moves) +'!');
+			"Invalid moves ", moves, "!");
+		raiseIf(haps, "Haps are not required (given ", haps, ")!");
 		var parity = (moves.Evens + moves.Odds) % 2 === 0,
 			points = {
 				Evens: this.points.Evens + (parity ? 1 : 0),
@@ -3762,6 +3764,7 @@ games.ToadsAndFrogs = declare(Game, {
 	/** The board of the next game state is calculated by applying the given move.
 	*/
 	next: function next(moves, haps, update) {
+		raiseIf(haps, 'Haps are not required (given ', haps, ')!');
 		var activePlayer = this.activePlayer(), 
 			move = moves[activePlayer], 
 			chip = activePlayer.charAt(0),
@@ -4192,14 +4195,11 @@ games.Bahab = declare(Game, {
 	where the moving piece starts, and the second one being where the moving piece ends.	
 	*/
 	next: function next(moves, haps, update) {
-		if (!moves) {
-			throw new Error("Invalid moves "+ moves +"!");
-		}
+		raiseIf(haps, "Haps are not required (given ", haps, ")!");
+		raiseIf(!moves, "Invalid moves ", moves, "!");
 		var activePlayer = this.activePlayer(),
 			move = moves[activePlayer];
-		if (!Array.isArray(moves[activePlayer])) {
-			throw new Error("Invalid moves "+ JSON.stringify(moves) +"!");
-		}
+		raiseIf(!Array.isArray(moves[activePlayer]), "Invalid moves ", moves, "!");
 		var nextBoard = this.board.move(move[0], move[1]);
 		if (update) {
 			this.activatePlayers(this.opponent());
