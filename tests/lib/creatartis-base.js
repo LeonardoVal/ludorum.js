@@ -3487,19 +3487,20 @@ var Statistic = exports.Statistic = declare({
 	each element with the center, which is equal to the average by default. Returns zero if values 
 	have not been added.
 	*/
-	variance: function variance(center) {
+	variance: function variance(biased, center) {
 		if (isNaN(center)) {
 			center = this.average();
 		}
-		var count = this.count();
-		return count > 0 ? center * center + (this.squareSum() - 2 * center * this.sum()) / count : 0.0;
+		var count = this.count(),
+			v = count > 1 ? center * center + (this.squareSum() - 2 * center * this.sum()) / count : 0.0;
+		return biased || count < 2 ? v : v * count / (count - 1);
 	},
 
 	/** `standardDeviation(center=average)` calculates current standard deviation, as the square 
 	root of the current variance.
 	*/
-	standardDeviation: function standardDeviation(center) {
-		return Math.sqrt(this.variance(center));
+	standardDeviation: function standardDeviation(biased, center) {
+		return Math.sqrt(this.variance(center), biased);
 	},
 	
 	// ## Updating statistics ######################################################################
@@ -3628,23 +3629,23 @@ var Statistic = exports.Statistic = declare({
 	
 	/** The static `t_test1` method returns the mean statistic for 
 	[Student's one-sample t-tests](http://en.wikipedia.org/wiki/Student%27s_t-test#One-sample_t-test) 
-	given: `mean`, `sampleCount`, `sampleMean` and `sampleVariance`.
+	given: `mean`, `sampleCount`, `sampleMean` and `sampleStandardDeviation`.
 	*/
-	'static t_test1': function t_test1(mean, sampleCount, sampleMean, sampleVariance) {
+	'static t_test1': function t_test1(mean, sampleCount, sampleMean, sampleStandardDeviation) {
 		return { 
-			t: (sampleMean - mean) / (sampleVariance / Math.sqrt(sampleCount))
+			t: (sampleMean - mean) / sampleStandardDeviation * Math.sqrt(sampleCount)
 		};
 	},
 	
 	/** The instance `t_test1` method is analogue to the static one, using this object's data. The 
 	`mean` is assumed to be zero by default.
 	*/
-	t_test1: function t_test1(mean, sampleCount, sampleMean, sampleVariance) {
+	t_test1: function t_test1(mean, sampleCount, sampleMean, sampleStandardDeviation) {
 		return Statistic.t_test1(
 			isNaN(mean) ? 0.0 : +mean,
 			isNaN(sampleCount) ? this.count() : +sampleCount,
 			isNaN(sampleMean) ? this.average() : +sampleMean,
-			isNaN(sampleVariance) ? this.variance() : +sampleVariance
+			isNaN(sampleStandardDeviation) ? this.standardDeviation() : +sampleStandardDeviation
 		);
 	},
 	
