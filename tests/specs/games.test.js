@@ -42,7 +42,7 @@
 			expect(moves[activePlayer].length).toBeGreaterThan(0);
 		});
 		if (options.deterministic) {
-			var haps = { dice: base.Randomness.DEFAULT.randomInt(1, 7) };
+			var haps = { dice: RANDOM.randomInt(1, 7) };
 			expect(game.next.bind(game, game.possibleMoves()[0], haps)).toThrow();
 		}
 	}
@@ -71,8 +71,8 @@
 				}
 			}
 			if (i >= MAX_PLIES) {
-				throw new Error('Match of game '+ game.name +' did not end after '+ 
-					MAX_PLIES +' plies (final state: '+ game +')!');
+				throw new Error("Match of game "+ game.name +" did not end after "+ 
+					MAX_PLIES +" plies (final state: "+ game +")!");
 			}
 			//expect(i).toBeLessThan(MAX_PLIES);
 		});
@@ -86,7 +86,8 @@
 	 { game: "ConnectionGame", zeroSum: 1, oneActivePlayerPerTurn: 1, deterministic: 1 },
 	 { game: "Bahab",          zeroSum: 1, oneActivePlayerPerTurn: 1, deterministic: 1 },
 	 { game: "OddsAndEvens",   zeroSum: 1, oneActivePlayerPerTurn: 0, deterministic: 1 },
-	 { game: "Mutropas",       zeroSum: 1, oneActivePlayerPerTurn: 0, deterministic: 1 }
+	 { game: "Mutropas",       zeroSum: 1, oneActivePlayerPerTurn: 0, deterministic: 1 },
+	 { game: "Puzzle15",       zeroSum: 0, oneActivePlayerPerTurn: 1, deterministic: 1 }
 	].forEach(function (options) {
 		describe("games."+ options.game, function () {
 			var game = new ludorum.games[options.game]();
