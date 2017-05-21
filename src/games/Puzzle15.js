@@ -7,16 +7,22 @@ It is included here as a test of the support in Ludorum for singleplayer games. 
 this game is `'Player'`.
 */
 games.Puzzle15 = declare(Game, {
+	name: "Puzzle15",
+	players: ['Player'],
+	
 	width: 4,
 	height: 4,
 	target: '0123456789ABCDE ',
-	players: ['Player'],
+	maxMoves: 81,
 	
-	/** The constructor takes the `board`, or builds one at random by default.	
+	/** The constructor takes a `board` or builds one at random by default.	Also takes a 
+	`moveNumber`, or 0 by default.
 	*/
-	constructor: function Puzzle15(board) {
+	constructor: function Puzzle15(args) {
 		Game.call(this, this.players[0]);
-		this.board = board || this.randomBoard();
+		args = args || {};
+		this.board = args.board || this.randomBoard();
+		this.moveNumber = args.moveNumber |0;
 	},
 	
 	/** The puzzle usually starts with a `randomBoard`.
@@ -43,14 +49,17 @@ games.Puzzle15 = declare(Game, {
 		}).sum();
 	},
 	
-	isFinished: function isFinished() {
-		return this.differences() === 0;
+	/** The score of the player is the number of remaining moves.
+	*/
+	scores: function scores() {
+		return obj(this.players[0], this.maxMoves - this.moveNumber);	
 	},
 	
 	/** The puzzle can only end in victory, or remain unsolved.
 	*/
 	result: function result() {
-		return this.isFinished() ? this.victory() : null;
+		return this.differences() === 0 ? this.victory() : 
+			this.moveNumber >= this.maxMoves ? this.defeat() : null;
 	},
 	
 	/** The moves of the player are defined by the position of the empty square.
@@ -67,7 +76,7 @@ games.Puzzle15 = declare(Game, {
 	moves: function moves() {
 		var pos = this.emptyCoord(),
 			board = this.board;
-		if (this.isFinished()) {
+		if (this.result()) {
 			return null;
 		} else {
 			return { Player: iterable(Checkerboard.DIRECTIONS.ORTHOGONAL).mapApply(function (dr, dc) {
@@ -81,13 +90,14 @@ games.Puzzle15 = declare(Game, {
 	the given position in the board.
 	*/
 	next: function next(move, haps, update) {
-		raiseIf(haps, 'Haps are not required (given ', haps, ')!');
+		raiseIf(haps, "Haps are not required (given ", haps, ")!");
 		var nextBoard = this.board.swap(this.emptyCoord(), move.Player);
 		if (update) {
 			this.board = nextBoard;
+			this.moveNumber++;
 			return this;
 		} else {
-			return new this.constructor(nextBoard);
+			return new this.constructor({ board: nextBoard, moveNumber: this.moveNumber + 1 });
 		}
 	},
 	
@@ -96,7 +106,7 @@ games.Puzzle15 = declare(Game, {
 	'static __SERMAT__': {
 		identifier: 'Puzzle15',
 		serializer: function serialize_Puzzle15(obj) {
-			return [obj.board];
+			return [{ board: obj.board, moveNumber: obj.moveNumber }];
 		}
 	}	
 }); // declare Puzzle15
