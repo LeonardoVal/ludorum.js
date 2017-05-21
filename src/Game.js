@@ -226,13 +226,10 @@ var Game = exports.Game = declare({
 	zerosumResult: function zerosumResult(score, players) {
 		players = !players ? this.activePlayers : (!Array.isArray(players) ? [players] : players);
 		score = (+score) / (players.length || 1);
-		var result = ({}), player,
-			opponentScore = -score / (this.players.length - players.length || 1);
-		for (var i = 0; i < this.players.length; i++) {
-			player = this.players[i];
-			result[player] = players.indexOf(player) < 0 ? opponentScore : score;
-		}
-		return result;
+		var opponentScore = -score / (this.players.length - players.length || 1);
+		return iterable(this.players).map(function (player) {
+			return [player, players.indexOf(player) < 0 ? opponentScore : score];
+		}).toObject();
 	},
 
 	/** There are two shortcuts for `zerosumResult()`. First `victory(players=activePlayers, score=1)`
@@ -250,27 +247,25 @@ var Game = exports.Game = declare({
 		return this.zerosumResult(score || -1, players);
 	},
 
-	/** Finally `draw(players=this.players, score=0)` returns the game result of a tied game with 
+	/** Finally `tied(players=this.players, score=0)` returns the game result of a tied game with 
 	the given players (or the active players by default) all with the same score (zero by default).
 	A tied game must always have the same result for all players.
 	*/
-	draw: function draw(players, score) {
+	tied: function tied(players, score) {
 		score = +(score || 0);
-		players = players || this.players;
-		var result = ({});
-		for (var player in players) {
-			result[players[player]] = score;
-		}
-		return result;
+		return iterable(players || this.players).map(function (p) {
+			return [p, score];
+		}).toObject();
 	},
 
 	// ## Conversions & presentations ##############################################################
 
-	/** Some algorithms require an `identifier()` for each game state, in order to store them in 
-	caches or hashes. This method calculates a string that uniquely identifies this game state,
-	based on the game's serialization.
+	/** Some algorithms require a `__hash__()` for each game state, in order to store them in caches 
+	or hash tables. The default implementation uses the hash code of the string representation.
 	*/
-	identifier: unimplemented("Game", "identifier"),
+	__hash__: function __hash__() {
+		return base.Text.hashCode(this +'');
+	},
 
 	/** Based on the game's serialization, `clone()` creates a copy of this game state.
 	*/
@@ -278,50 +273,37 @@ var Game = exports.Game = declare({
 		return Sermat.sermat(this);
 	},
 
-	/** The default string representation of a game is equal to the result of `toJSON`.
+	/** The default string representation of a game is equal to its serialization with Sermat.
 	*/
 	toString: function toString() {
 		return Sermat.ser(this);
 	},
 		
-	/** ## Cached games ############################################################################
+	// ## Modified games ###########################################################################
 
-	A `cached(game)` has modified `moves()` and `result()` methods that cache the calls of the base
-	game. The `next()` method is not cached because it may lead to memory leaks or overload.
+	/** `cacheProperties` modifies getter methods (like `moves()` or `result()`) to cache its 
+	results. Warning! Caching the results of the `next()` method may lead to memory leaks or 
+	overload.
 	*/
-	'static cached': function cached(game) {
-		var baseMoves = game.prototype.moves,
-			baseResult = game.prototype.result;
-		return declare(game, {
-			/** The first time `moves()` is called, it is delegated to the base game's `moves()`,
-			and keeps the value for future calls.
-			*/
-			moves: function moves() {
-				var result = baseMoves.call(this);
-				this.moves = function cachedMoves() { // Replace moves() method with cached version.
-					return result;
-				};
-				return result;
-			},
-			
-			/** The first time `result()` is called, it is delegated to the base game's `result()`,
-			and keeps the value for future calls.
-			*/
-			result: function result() {
-				var r = game.result.call(this);
-				this.result = function cachedResult() { // Replace result() method with cached version.
-					return r;
-				};
-				return r;
-			}
+	'static cacheProperties': function cacheProperties() {
+		var clazz = this;
+		Array.prototype.slice.call(arguments).forEach(function (propertyName) {
+			var cacheName = '__'+ propertyName +'$cache__',
+				originalGetter = clazz.prototype[propertyName];
+			clazz.prototype[propertyName] = function () {
+				if (arguments.length > 0) {
+					return originalGetter.apply(this, arguments);
+				} else if (!this.hasOwnProperty(cacheName)) {
+					this[cacheName] = originalGetter.call(this);
+				}
+				return this[cacheName];
+			};
 		});
-	}, // static cached
-
+		return clazz;
+	}, // static cacheProperties
 	
-	/** ## Serialized simultaneous games. ##########################################################
-	
-	`serialized(game)` builds a serialized version of a simultaneous game, i.e. one in which two or
-	more players may be active in the same turn. It converts a simultaneous game to an alternated
+	/** `serialized(game)` builds a serialized version of a simultaneous game, i.e. one in which two
+	or more players may be active in the same turn. It converts a simultaneous game to an alternated
 	turn based game. This may be useful for using algorithms like MiniMax to build AIs for
 	simultaneous games.
 	*/

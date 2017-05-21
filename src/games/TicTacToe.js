@@ -27,7 +27,7 @@ games.TicTacToe = declare(Game, {
 			} else if (this.board.match(this.WIN_O)) { // Os wins.
 				return this.victory(["Os"]);
 			} else if (this.board.indexOf('_') < 0) { // No empty squares means a tie.
-				return this.draw();
+				return this.tied();
 			} else {
 				return null; // The game continues.
 			}
