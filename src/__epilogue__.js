@@ -19,4 +19,4 @@
 	Sermat.include(exports); // Ludorum uses Sermat internally.
 
 	return exports;
-});
+}

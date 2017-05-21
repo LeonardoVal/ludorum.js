@@ -25,7 +25,16 @@ module.exports = function(grunt) {
 		'__epilogue__'].map(function (path) { 
 			return 'src/'+ path +'.js';
 		});
-
+	var UMDWrapper = function (init) { "use strict";
+		if (typeof define === 'function' && define.amd) {
+			define(['creatartis-base', 'sermat'], init); // AMD module.
+		} else if (typeof exports === 'object' && module.exports) {
+			module.exports = init(require('creatartis-base'), require('sermat')); // CommonJS module.
+		} else {
+			this.Sermat = init(this.base, this.Sermat); // Browser.
+		}
+	};		
+		
 	grunt.file.defaultEncoding = 'utf8';
 // Init config. ////////////////////////////////////////////////////////////////////////////////////
 	grunt.initConfig({
@@ -36,6 +45,10 @@ module.exports = function(grunt) {
 				sourceMap: true
 			},
 			build: {
+				options: {
+					banner: '('+ UMDWrapper +').call(this,',
+					footer: ');'
+				},
 				src: SOURCE_FILES,
 				dest: 'build/<%= pkg.name %>.js'
 			},

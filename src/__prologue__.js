@@ -1,14 +1,6 @@
-﻿/** Package wrapper and layout.
+﻿/** Library wrapper and layout.
 */
-(function (global, init) { "use strict"; // Universal Module Definition.
-	if (typeof define === 'function' && define.amd) {
-		define(['creatartis-base', 'sermat'], init); // AMD module.
-	} else if (typeof module === 'object' && module.exports) {
-		module.exports = init(require('creatartis-base'), require('sermat')); // CommonJS module.
-	} else { // Browser or web worker (probably).
-		global.ludorum = init(global.base, global.Sermat); // Assumes base is loaded.
-	}
-})(this, function __init__(base, Sermat) { "use strict";
+function __init__(base, Sermat) { "use strict";
 // Import synonyms. ////////////////////////////////////////////////////////////////////////////////
 	var unimplemented = base.objects.unimplemented,
 		obj = base.obj,
