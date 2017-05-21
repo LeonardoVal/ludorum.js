@@ -1,14 +1,14 @@
-/** Package wrapper and layout.
+(function (init) { "use strict";
+		if (typeof define === 'function' && define.amd) {
+			define(['creatartis-base', 'sermat'], init); // AMD module.
+		} else if (typeof exports === 'object' && module.exports) {
+			module.exports = init(require('creatartis-base'), require('sermat')); // CommonJS module.
+		} else {
+			this.Sermat = init(this.base, this.Sermat); // Browser.
+		}
+	}).call(this,/** Library wrapper and layout.
 */
-(function (global, init) { "use strict"; // Universal Module Definition.
-	if (typeof define === 'function' && define.amd) {
-		define(['creatartis-base', 'sermat'], init); // AMD module.
-	} else if (typeof module === 'object' && module.exports) {
-		module.exports = init(require('creatartis-base'), require('sermat')); // CommonJS module.
-	} else { // Browser or web worker (probably).
-		global.ludorum = init(global.base, global.Sermat); // Assumes base is loaded.
-	}
-})(this, function __init__(base, Sermat) { "use strict";
+function __init__(base, Sermat) { "use strict";
 // Import synonyms. ////////////////////////////////////////////////////////////////////////////////
 	var unimplemented = base.objects.unimplemented,
 		obj = base.obj,
@@ -269,13 +269,10 @@ var Game = exports.Game = declare({
 	zerosumResult: function zerosumResult(score, players) {
 		players = !players ? this.activePlayers : (!Array.isArray(players) ? [players] : players);
 		score = (+score) / (players.length || 1);
-		var result = ({}), player,
-			opponentScore = -score / (this.players.length - players.length || 1);
-		for (var i = 0; i < this.players.length; i++) {
-			player = this.players[i];
-			result[player] = players.indexOf(player) < 0 ? opponentScore : score;
-		}
-		return result;
+		var opponentScore = -score / (this.players.length - players.length || 1);
+		return iterable(this.players).map(function (player) {
+			return [player, players.indexOf(player) < 0 ? opponentScore : score];
+		}).toObject();
 	},
 
 	/** There are two shortcuts for `zerosumResult()`. First `victory(players=activePlayers, score=1)`
@@ -293,27 +290,25 @@ var Game = exports.Game = declare({
 		return this.zerosumResult(score || -1, players);
 	},
 
-	/** Finally `draw(players=this.players, score=0)` returns the game result of a tied game with 
+	/** Finally `tied(players=this.players, score=0)` returns the game result of a tied game with 
 	the given players (or the active players by default) all with the same score (zero by default).
 	A tied game must always have the same result for all players.
 	*/
-	draw: function draw(players, score) {
+	tied: function tied(players, score) {
 		score = +(score || 0);
-		players = players || this.players;
-		var result = ({});
-		for (var player in players) {
-			result[players[player]] = score;
-		}
-		return result;
+		return iterable(players || this.players).map(function (p) {
+			return [p, score];
+		}).toObject();
 	},
 
 	// ## Conversions & presentations ##############################################################
 
-	/** Some algorithms require an `identifier()` for each game state, in order to store them in 
-	caches or hashes. This method calculates a string that uniquely identifies this game state,
-	based on the game's serialization.
+	/** Some algorithms require a `__hash__()` for each game state, in order to store them in caches 
+	or hash tables. The default implementation uses the hash code of the string representation.
 	*/
-	identifier: unimplemented("Game", "identifier"),
+	__hash__: function __hash__() {
+		return base.Text.hashCode(this +'');
+	},
 
 	/** Based on the game's serialization, `clone()` creates a copy of this game state.
 	*/
@@ -321,50 +316,37 @@ var Game = exports.Game = declare({
 		return Sermat.sermat(this);
 	},
 
-	/** The default string representation of a game is equal to the result of `toJSON`.
+	/** The default string representation of a game is equal to its serialization with Sermat.
 	*/
 	toString: function toString() {
 		return Sermat.ser(this);
 	},
 		
-	/** ## Cached games ############################################################################
+	// ## Modified games ###########################################################################
 
-	A `cached(game)` has modified `moves()` and `result()` methods that cache the calls of the base
-	game. The `next()` method is not cached because it may lead to memory leaks or overload.
+	/** `cacheProperties` modifies getter methods (like `moves()` or `result()`) to cache its 
+	results. Warning! Caching the results of the `next()` method may lead to memory leaks or 
+	overload.
 	*/
-	'static cached': function cached(game) {
-		var baseMoves = game.prototype.moves,
-			baseResult = game.prototype.result;
-		return declare(game, {
-			/** The first time `moves()` is called, it is delegated to the base game's `moves()`,
-			and keeps the value for future calls.
-			*/
-			moves: function moves() {
-				var result = baseMoves.call(this);
-				this.moves = function cachedMoves() { // Replace moves() method with cached version.
-					return result;
-				};
-				return result;
-			},
-			
-			/** The first time `result()` is called, it is delegated to the base game's `result()`,
-			and keeps the value for future calls.
-			*/
-			result: function result() {
-				var r = game.result.call(this);
-				this.result = function cachedResult() { // Replace result() method with cached version.
-					return r;
-				};
-				return r;
-			}
+	'static cacheProperties': function cacheProperties() {
+		var clazz = this;
+		Array.prototype.slice.call(arguments).forEach(function (propertyName) {
+			var cacheName = '__'+ propertyName +'$cache__',
+				originalGetter = clazz.prototype[propertyName];
+			clazz.prototype[propertyName] = function () {
+				if (arguments.length > 0) {
+					return originalGetter.apply(this, arguments);
+				} else if (!this.hasOwnProperty(cacheName)) {
+					this[cacheName] = originalGetter.call(this);
+				}
+				return this[cacheName];
+			};
 		});
-	}, // static cached
-
+		return clazz;
+	}, // static cacheProperties
 	
-	/** ## Serialized simultaneous games. ##########################################################
-	
-	`serialized(game)` builds a serialized version of a simultaneous game, i.e. one in which two or
-	more players may be active in the same turn. It converts a simultaneous game to an alternated
+	/** `serialized(game)` builds a serialized version of a simultaneous game, i.e. one in which two
+	or more players may be active in the same turn. It converts a simultaneous game to an alternated
 	turn based game. This may be useful for using algorithms like MiniMax to build AIs for
 	simultaneous games.
 	*/
@@ -3568,7 +3550,7 @@ games.TicTacToe = declare(Game, {
 			} else if (this.board.match(this.WIN_O)) { // Os wins.
 				return this.victory(["Os"]);
 			} else if (this.board.indexOf('_') < 0) { // No empty squares means a tie.
-				return this.draw();
+				return this.tied();
 			} else {
 				return null; // The game continues.
 			}
@@ -4231,16 +4213,22 @@ It is included here as a test of the support in Ludorum for singleplayer games. 
 this game is `'Player'`.
 */
 games.Puzzle15 = declare(Game, {
+	name: "Puzzle15",
+	players: ['Player'],
+	
 	width: 4,
 	height: 4,
 	target: '0123456789ABCDE ',
-	players: ['Player'],
+	maxMoves: 81,
 	
-	/** The constructor takes the `board`, or builds one at random by default.	
+	/** The constructor takes a `board` or builds one at random by default.	Also takes a 
+	`moveNumber`, or 0 by default.
 	*/
-	constructor: function Puzzle15(board) {
+	constructor: function Puzzle15(args) {
 		Game.call(this, this.players[0]);
-		this.board = board || this.randomBoard();
+		args = args || {};
+		this.board = args.board || this.randomBoard();
+		this.moveNumber = args.moveNumber |0;
 	},
 	
 	/** The puzzle usually starts with a `randomBoard`.
@@ -4267,14 +4255,17 @@ games.Puzzle15 = declare(Game, {
 		}).sum();
 	},
 	
-	isFinished: function isFinished() {
-		return this.differences() === 0;
+	/** The score of the player is the number of remaining moves.
+	*/
+	scores: function scores() {
+		return obj(this.players[0], this.maxMoves - this.moveNumber);	
 	},
 	
 	/** The puzzle can only end in victory, or remain unsolved.
 	*/
 	result: function result() {
-		return this.isFinished() ? this.victory() : null;
+		return this.differences() === 0 ? this.victory() : 
+			this.moveNumber >= this.maxMoves ? this.defeat() : null;
 	},
 	
 	/** The moves of the player are defined by the position of the empty square.
@@ -4291,7 +4282,7 @@ games.Puzzle15 = declare(Game, {
 	moves: function moves() {
 		var pos = this.emptyCoord(),
 			board = this.board;
-		if (this.isFinished()) {
+		if (this.result()) {
 			return null;
 		} else {
 			return { Player: iterable(Checkerboard.DIRECTIONS.ORTHOGONAL).mapApply(function (dr, dc) {
@@ -4305,13 +4296,14 @@ games.Puzzle15 = declare(Game, {
 	the given position in the board.
 	*/
 	next: function next(move, haps, update) {
-		raiseIf(haps, 'Haps are not required (given ', haps, ')!');
+		raiseIf(haps, "Haps are not required (given ", haps, ")!");
 		var nextBoard = this.board.swap(this.emptyCoord(), move.Player);
 		if (update) {
 			this.board = nextBoard;
+			this.moveNumber++;
 			return this;
 		} else {
-			return new this.constructor(nextBoard);
+			return new this.constructor({ board: nextBoard, moveNumber: this.moveNumber + 1 });
 		}
 	},
 	
@@ -4320,7 +4312,7 @@ games.Puzzle15 = declare(Game, {
 	'static __SERMAT__': {
 		identifier: 'Puzzle15',
 		serializer: function serialize_Puzzle15(obj) {
-			return [obj.board];
+			return [{ board: obj.board, moveNumber: obj.moveNumber }];
 		}
 	}	
 }); // declare Puzzle15
