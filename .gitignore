@@ -1,3 +1,11 @@
-﻿node_modules/
+﻿# Repo files
+.svn/
+.git/
+
+# Dependencies
+node_modules/
 bower_components/
+
+# Generated files
 docs/docker/
+npm-debug.log
