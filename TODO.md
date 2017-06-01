@@ -1,4 +1,4 @@
-# TODOs for [ludorum](https://github.com/LeonardoVal/ludorum).
+# Pending for [ludorum](https://github.com/LeonardoVal/ludorum.js).
 
 ## Matches
 
