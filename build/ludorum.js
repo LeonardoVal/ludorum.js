@@ -313,7 +313,7 @@ var Game = exports.Game = declare({
 	/** Based on the game's serialization, `clone()` creates a copy of this game state.
 	*/
 	clone: function clone() {
-		return Sermat.sermat(this);
+		return Sermat.clone(this);
 	},
 
 	/** The default string representation of a game is equal to its serialization with Sermat.
@@ -3369,7 +3369,7 @@ games.ConnectionGame = declare(Game, {
 			}
 		}
 		if (lines.indexOf('.') < 0) { // No empty squares means a tie.
-			return this.__result__ = this.draw();
+			return this.__result__ = this.tied();
 		}
 		return this.__result__ = null; // The game continues.
 	},
