@@ -270,7 +270,7 @@ var Game = exports.Game = declare({
 	/** Based on the game's serialization, `clone()` creates a copy of this game state.
 	*/
 	clone: function clone() {
-		return Sermat.sermat(this);
+		return Sermat.clone(this);
 	},
 
 	/** The default string representation of a game is equal to its serialization with Sermat.
