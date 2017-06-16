@@ -70,7 +70,7 @@ games.ConnectionGame = declare(Game, {
 			}
 		}
 		if (lines.indexOf('.') < 0) { // No empty squares means a tie.
-			return this.__result__ = this.draw();
+			return this.__result__ = this.tied();
 		}
 		return this.__result__ = null; // The game continues.
 	},
