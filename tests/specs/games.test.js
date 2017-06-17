@@ -58,6 +58,7 @@
 				}
 				expect(game).toBeOfType(ludorum.Game);
 				moves = game.moves();
+				expect(Sermat.ser(game)).toEqual(Sermat.ser(game.clone()));
 				if (!moves) {
 					checkFinishedGame(game, options);
 					break;
