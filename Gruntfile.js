@@ -94,6 +94,12 @@ module.exports = function(grunt) {
 			test_chrome: { browsers: ['Chrome'] },
 			test_firefox: { browsers: ['Firefox'] }
 		},
+		benchmark: { ///////////////////////////////////////////////////////////////////////////////
+			build: {
+				src: ['tests/perf/*.perf.js'],
+				//dest: 'tests/benchmarks/benchmarks.csv'
+			}
+		},
 		docker: { //////////////////////////////////////////////////////////////////////////////////
 			build: {
 				src: ['src/**/*.js', 'README.md', 'docs/*.md'],
@@ -112,12 +118,14 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-jshint');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-karma');
+	grunt.loadNpmTasks('grunt-benchmark');
 	grunt.loadNpmTasks('grunt-docker');
 	
 // Register tasks. /////////////////////////////////////////////////////////////////////////////////
 	grunt.registerTask('compile', ['concat:build', 'jshint:build', 'uglify:build', 'copy:test']); 
 	grunt.registerTask('test', ['compile', 'karma:test_firefox']);
 	grunt.registerTask('full-test', ['test', 'karma:test_chrome']);
+	grunt.registerTask('perf', ['compile', 'benchmark:build']);
 	grunt.registerTask('build', ['test', 'docker:build']);
 	grunt.registerTask('default', ['build']);
 };
