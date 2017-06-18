@@ -301,13 +301,31 @@ var Game = exports.Game = declare({
 		}).toObject();
 	},
 
+	// ## Game information #########################################################################
+	
+	/** Some AI algorithms have constraints on which games they can support. A game can provide some
+	information to assess its compatibility with an artificial player automaticaly. Properties may
+	include:
+	
+	+ `isZeroSum`: The sum of all results in every match is zero. True by default.
+	*/
+	isZeroSum: true,
+		
+	/** + `isDeterministic`: Perfect information game without random variables. False by default.
+	*/
+	isDeterministic: false,
+		
+	/** + `isSimultaneous`: In some or all turns more than one player is active. False by default.
+	*/
+	isSimultaneous: false,
+	
 	// ## Conversions & presentations ##############################################################
 
 	/** Some algorithms require a `__hash__()` for each game state, in order to store them in caches 
-	or hash tables. The default implementation uses the hash code of the string representation.
+	or hash tables. The default implementation uses `Sermat.hashCode`.
 	*/
 	__hash__: function __hash__() {
-		return base.Text.hashCode(this +'');
+		return Sermat.hashCode(this).toString(36);
 	},
 
 	/** Based on the game's serialization, `clone()` creates a copy of this game state.
@@ -427,6 +445,13 @@ var Player = exports.Player = declare({
 		raiseIf(!moves || !moves[role] || moves[role].length < 1, 
 			"Player ", role, " has no moves for game ", game, ".");
 		return moves[role];
+	},
+	
+	/** Not all players can be used to play with all games. Still, by default the result of 
+	`isCompatibleWith` is `true`.
+	*/
+	isCompatibleWith: function isCompatibleWith(game) {
+		return true;
 	},
 	
 	/** Before starting a [match](Match.js.html), all players are asked to join by calling 
@@ -2136,6 +2161,12 @@ var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
 			.integer('horizon', { defaultValue: 3, coerce: true });
 	},
 
+	/** MaxN players cannot be used with simultaneous or non-deterministic games.
+	*/
+	isCompatibleWith: function isCompatibleWith(game) {
+		return !game.isSimultaneous && game.isDeterministic;
+	},
+	
 	/** This player evaluates each state using the `maxn` method, taking the evaluation for the 
 	given `player`.
 	*/
@@ -2229,6 +2260,12 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 			.integer('horizon', { defaultValue: 4, coerce: true });
 	},
 
+	/** MiniMax players cannot be used with simultaneous games.
+	*/
+	isCompatibleWith: function isCompatibleWith(game) {
+		return !game.isSimultaneous;
+	},
+	
 	/** Every state's evaluation is the minimax value for the given game and player.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
@@ -3468,6 +3505,10 @@ games.OddsAndEvens = declare(Game, {
 		this.points = points || { Evens: 0, Odds: 0 };
 	},
 	
+	/** Odds and evens is a simple exemplar of a simultaneous game.
+	*/
+	isSimultaneous: true,
+	
 	/** Players for odds and evens are called like that: Evens and Odds.
 	*/
 	players: ['Evens', 'Odds'],
@@ -3819,6 +3860,10 @@ games.Pig = declare(Game, {
 		this.__rolls__ = rolls || [];
 	},
 	
+	/** Since it involves dice, Pig is not a deterministic game. 
+	*/
+	isDeterministic: false,
+	
 	/** Players for Pig are named `One`, `Two`.
 	*/
 	players: ['One', 'Two'],
@@ -3940,6 +3985,10 @@ games.Mutropas = declare(Game, {
 		this.__scores__ = args.scores || obj(this.players[0], 0, this.players[1], 0);
 	},
 	
+	/** Mutropas was invented to be an example of a simultaneous non-deterministic game.
+	*/
+	isDeterministic: false,
+	isSimultaneous: true,
 	
 	/** All the pieces to be used in a match of Mutropas are stored in `allPieces`, which by default
 	has the numbers from 0 to 8.
