@@ -27,6 +27,10 @@ games.Mutropas = declare(Game, {
 		this.__scores__ = args.scores || obj(this.players[0], 0, this.players[1], 0);
 	},
 	
+	/** Mutropas was invented to be an example of a simultaneous non-deterministic game.
+	*/
+	isDeterministic: false,
+	isSimultaneous: true,
 	
 	/** All the pieces to be used in a match of Mutropas are stored in `allPieces`, which by default
 	has the numbers from 0 to 8.

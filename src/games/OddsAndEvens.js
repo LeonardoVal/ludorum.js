@@ -17,6 +17,10 @@ games.OddsAndEvens = declare(Game, {
 		this.points = points || { Evens: 0, Odds: 0 };
 	},
 	
+	/** Odds and evens is a simple exemplar of a simultaneous game.
+	*/
+	isSimultaneous: true,
+	
 	/** Players for odds and evens are called like that: Evens and Odds.
 	*/
 	players: ['Evens', 'Odds'],

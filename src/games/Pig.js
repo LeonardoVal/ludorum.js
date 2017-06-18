@@ -20,6 +20,10 @@ games.Pig = declare(Game, {
 		this.__rolls__ = rolls || [];
 	},
 	
+	/** Since it involves dice, Pig is not a deterministic game. 
+	*/
+	isDeterministic: false,
+	
 	/** Players for Pig are named `One`, `Two`.
 	*/
 	players: ['One', 'Two'],

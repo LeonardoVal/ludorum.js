@@ -258,13 +258,31 @@ var Game = exports.Game = declare({
 		}).toObject();
 	},
 
+	// ## Game information #########################################################################
+	
+	/** Some AI algorithms have constraints on which games they can support. A game can provide some
+	information to assess its compatibility with an artificial player automaticaly. Properties may
+	include:
+	
+	+ `isZeroSum`: The sum of all results in every match is zero. True by default.
+	*/
+	isZeroSum: true,
+		
+	/** + `isDeterministic`: Perfect information game without random variables. False by default.
+	*/
+	isDeterministic: false,
+		
+	/** + `isSimultaneous`: In some or all turns more than one player is active. False by default.
+	*/
+	isSimultaneous: false,
+	
 	// ## Conversions & presentations ##############################################################
 
 	/** Some algorithms require a `__hash__()` for each game state, in order to store them in caches 
-	or hash tables. The default implementation uses the hash code of the string representation.
+	or hash tables. The default implementation uses `Sermat.hashCode`.
 	*/
 	__hash__: function __hash__() {
-		return base.Text.hashCode(this +'');
+		return Sermat.hashCode(this).toString(36);
 	},
 
 	/** Based on the game's serialization, `clone()` creates a copy of this game state.
