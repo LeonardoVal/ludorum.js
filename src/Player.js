@@ -32,6 +32,13 @@ var Player = exports.Player = declare({
 		return moves[role];
 	},
 	
+	/** Not all players can be used to play with all games. Still, by default the result of 
+	`isCompatibleWith` is `true`.
+	*/
+	isCompatibleWith: function isCompatibleWith(game) {
+		return true;
+	},
+	
 	/** Before starting a [match](Match.js.html), all players are asked to join by calling 
 	`Player.participate(match, role)`. This allows the player to prepare properly. If this implies 
 	building another instance of the player object, it must be returned in order to participate in 

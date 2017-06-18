@@ -12,6 +12,12 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 			.integer('horizon', { defaultValue: 4, coerce: true });
 	},
 
+	/** MiniMax players cannot be used with simultaneous games.
+	*/
+	isCompatibleWith: function isCompatibleWith(game) {
+		return !game.isSimultaneous;
+	},
+	
 	/** Every state's evaluation is the minimax value for the given game and player.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {

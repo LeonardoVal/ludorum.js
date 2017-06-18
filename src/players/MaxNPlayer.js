@@ -13,6 +13,12 @@ var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
 			.integer('horizon', { defaultValue: 3, coerce: true });
 	},
 
+	/** MaxN players cannot be used with simultaneous or non-deterministic games.
+	*/
+	isCompatibleWith: function isCompatibleWith(game) {
+		return !game.isSimultaneous && game.isDeterministic;
+	},
+	
 	/** This player evaluates each state using the `maxn` method, taking the evaluation for the 
 	given `player`.
 	*/
