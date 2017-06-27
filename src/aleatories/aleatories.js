@@ -2,18 +2,43 @@
 
 Implementations of common dice and related functions.
 */
-aleatories.dice = {
-	/** Common dice variants.
-	*/
-	D4: new Aleatory(1, 4),
-	D6: new Aleatory(1, 6),
-	D8: new Aleatory(1, 8),
-	D10: new Aleatory(1, 10),
-	D12: new Aleatory(1, 12),
-	D20: new Aleatory(1, 20),
-}; // dice.
 
-/** The `sumProbability` that rolling `n` dice of `s` sides yields a sum equal to `p`. Check the 
+/** An uniform aleatory is a usual case, where each value in the range of the random variable has
+the same probability.
+*/
+aleatories.uniformAleatory = function uniformAleatory(values) {
+	values = iterable(values).toArray();
+	var probability = 1 / values.length;
+	return new Aleatory(values.map(function (value) {
+		return [value, probability];
+	}));
+};
+
+/** The `normalization` of a distribution forces all probabilities to add up to one.
+*/
+aleatories.normalization = function normalization(distribution) {
+	var probSum = 0,
+		result = [];
+	iterable(distribution).forEachApply(function (v, p) {
+		raiseIf(p < 0, "aleatories.normalization: probabilities cannot be negative ("+ p +")!");
+		probSum += p;
+		for (var i = 0; i < result.length; i++) {
+			if (result[i][0] === v) {
+				result[i][1] += p;
+				return;
+			}
+		}
+		result.push([v, p]);
+	});
+	if (probSum > 0) {
+		result.forEach(function (t) {
+			t[1] /= probSum;
+		});
+	}
+	return result;
+};
+
+/** The `sumProbability` that rolling `n` dice of `s` sides yields a sum equal to `p`. Check the
 article at [Mathworld](http://mathworld.wolfram.com/Dice.html).
 */
 aleatories.sumProbability = function sumProbability(p, n, s) {

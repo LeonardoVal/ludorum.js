@@ -4,17 +4,17 @@ var path = require('path');
 
 module.exports = function(grunt) {
 	var SOURCE_FILES = [ '__prologue__',
-		'Game', 'Player', 'Match', 'Contingent', 'Tournament', 
+		'Game', 'Player', 'Match', 'Contingent', 'Tournament',
 		// utils.
 			'utils/Checkerboard', 'utils/CheckerboardFromString', 'utils/CheckerboardFromPieces',
 			'utils/Scanner', 'utils/Cache', 'utils/GameTree',
 		// players.
 		'players/RandomPlayer', 'players/TracePlayer', 'players/HeuristicPlayer', 'players/MaxNPlayer',
-			'players/MiniMaxPlayer', 'players/AlphaBetaPlayer', 'players/MonteCarloPlayer', 
-			'players/UCTPlayer', 'players/RuleBasedPlayer', 
+			'players/MiniMaxPlayer', 'players/AlphaBetaPlayer', 'players/MonteCarloPlayer',
+			'players/UCTPlayer', 'players/RuleBasedPlayer',
 			'players/UserInterfacePlayer', 'players/WebWorkerPlayer',
 		// aleatories.
-			'aleatories/Aleatory', 'aleatories/UniformAleatory', 'aleatories/CustomAleatory', 'aleatories/aleatories',
+			'aleatories/Aleatory', 'aleatories/DieAleatory', 'aleatories/aleatories',
 		// games.
 		'games/Predefined', 'games/Choose2Win', 'games/ConnectionGame', 'games/OddsAndEvens',
 			'games/TicTacToe', 'games/ToadsAndFrogs', 'games/Pig', 'games/Mutropas',
@@ -22,7 +22,7 @@ module.exports = function(grunt) {
 		// tournaments.
 		'tournaments/RoundRobin', 'tournaments/Measurement', 'tournaments/Elimination',
 	// end
-		'__epilogue__'].map(function (path) { 
+		'__epilogue__'].map(function (path) {
 			return 'src/'+ path +'.js';
 		});
 	var UMDWrapper = function (init) { "use strict";
@@ -33,8 +33,8 @@ module.exports = function(grunt) {
 		} else {
 			this.Sermat = init(this.base, this.Sermat); // Browser.
 		}
-	};		
-		
+	};
+
 	grunt.file.defaultEncoding = 'utf8';
 // Init config. ////////////////////////////////////////////////////////////////////////////////////
 	grunt.initConfig({
@@ -120,9 +120,9 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-karma');
 	grunt.loadNpmTasks('grunt-benchmark');
 	grunt.loadNpmTasks('grunt-docker');
-	
+
 // Register tasks. /////////////////////////////////////////////////////////////////////////////////
-	grunt.registerTask('compile', ['concat:build', 'jshint:build', 'uglify:build', 'copy:test']); 
+	grunt.registerTask('compile', ['concat:build', 'jshint:build', 'uglify:build', 'copy:test']);
 	grunt.registerTask('test', ['compile', 'karma:test_firefox']);
 	grunt.registerTask('full-test', ['test', 'karma:test_chrome']);
 	grunt.registerTask('perf', ['compile', 'benchmark:build']);
