@@ -714,44 +714,44 @@ var Contingent = exports.Contingent = declare({
 	/** Flag to distinguish contingent states from normal game states.
 	*/
 	isContingent: true,
-	
+
 	/** The default implementation takes a set of `haps`, a game `state` and a set of `moves`. See
 	the `next` method for further details.
 	*/
 	constructor: function Contingent(state, moves, haps, update) {
 		this.state = state;
 		this.moves = moves;
-		/** A contingent state's `haps` are the equivalent of `moves` in normal game states. The 
-		method returns an object with the random variables on which this node depends, e.g.: 
+		/** A contingent state's `haps` are the equivalent of `moves` in normal game states. The
+		method returns an object with the random variables on which this node depends, e.g.:
 		`{ die: aleatories.dice.D6 }`.
 		*/
 		this.haps = haps;
 		this.update = !!update;
 	},
-		
-	/** Contingent game states' `next` and `advance` methods delegate to the corresponding game 
-	`__state__` methods. The `haps` provided must be in the form `{die1: 4, die2: 2}`. If no `haps` 
+
+	/** Contingent game states' `next` and `advance` methods delegate to the corresponding game
+	`__state__` methods. The `haps` provided must be in the form `{die1: 4, die2: 2}`. If no `haps`
 	are given, they are resolved randonmly (using `randomHaps()`).
 	*/
 	next: function next(haps) {
 		return this.state.next(this.moves, haps || this.randomHaps(), this.update);
 	},
-	
+
 	/** Method `randomHaps` calculates a random set of haps.
 	*/
 	randomHaps: function randomHaps(random) {
 		return iterable(this.haps).mapApply(function (n, h) {
-			return [n, h.value(random)];
+			return [n, h.randomValue(random)];
 		}).toObject();
 	},
-	
+
 	/** A `randomNext` picks one of the next states at random.
 	*/
 	randomNext: function randomNext(random) {
 		return this.next(this.randomHaps(random));
 	},
-	
-	/** The method `possibleHaps` is analogous to `Game.possibleMoves`. It calculates all possible 
+
+	/** The method `possibleHaps` is analogous to `Game.possibleMoves`. It calculates all possible
 	combinations of haps.
 	*/
 	possibleHaps: function possibleHaps() {
@@ -769,14 +769,14 @@ var Contingent = exports.Contingent = declare({
 			}).toObject(), prob];
 		}).toArray();
 	},
-	
-	/** The `expectedEvaluation` method explores al possible resulting game states from this 
-	contingent state and applies an evaluation function. This state evaluation function must have 
+
+	/** The `expectedEvaluation` method explores al possible resulting game states from this
+	contingent state and applies an evaluation function. This state evaluation function must have
 	the signature `stateEvaluation(game, player)`. Asynchronous evaluations are supported, in which
 	case a `Future` will be returned.
-	
+
 	By default the aggregated result is the sum of the evaluations weighted by the probability of
-	each possible resulting game state. The `aggregation` function may be specified to override this 
+	each possible resulting game state. The `aggregation` function may be specified to override this
 	behaviour and process the results in another way. If given, it will be called with an array of
 	triples `[haps, probability, evaluation]`.
 	*/
@@ -785,7 +785,7 @@ var Contingent = exports.Contingent = declare({
 			isAsync = false,
 			possible = this.possibleHaps().map(function (args) {
 				var game2 = game.next(args[0]),
-					ev = !game2.isContingent ? stateEvaluation(game2, player) : 
+					ev = !game2.isContingent ? stateEvaluation(game2, player) :
 						game2.expectedEvaluation(player, stateEvaluation, aggregation);
 				isAsync = isAsync || Future.__isFuture__(ev);
 				return Future.then(ev, function (ev) {
@@ -801,9 +801,9 @@ var Contingent = exports.Contingent = declare({
 			return r;
 		});
 	},
-	
+
 	// ## Utilities ################################################################################
-	
+
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
@@ -813,6 +813,7 @@ var Contingent = exports.Contingent = declare({
 		}
 	}
 });
+
 
 /** # Tournament
 
@@ -2989,44 +2990,58 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 
 /** # Aleatory
 
-Aleatories are different means of non determinism that games can use, like: dice, card decks, 
+Aleatories are different means of non determinism that games can use, like: dice, card decks,
 roulettes, etc. They are used by `Contingent` game states.
 */
+
 var Aleatory = exports.aleatories.Aleatory = declare({
-	/** The base class implements an integer uniform random variable between a minimum and maximum
-	value (inclusively).
+	/** The base class implements a generic random variable given by a histogram or `distribution`,
+	i.e. a list of `[value,probability]` pairs.
 	*/
-	constructor: function Aleatory(min, max) {
-		switch (arguments.length) {
-			case 1: this.range = [1, min]; break;
-			case 2: this.range = [min, max]; break;
-		}
+	constructor: function Aleatory(distribution) {
+		this.__distribution__ = iterable(distribution).toArray();
+		raiseIf(this.__distribution__.length < 1, "Aleatories must have at least one value!");
 	},
-	
-	/** The `Aleatory.value()` can be used to obtain a valid random value for the random variable.
+
+	/** The `count` of an aleatory is the amount of different values it can have.
 	*/
-	value: function value(random) {
-		return (random || Randomness.DEFAULT).randomInt(this.range[0], this.range[1] + 1);
+	count: function count() {
+		return this.__distribution__.length;
 	},
-		
-	/** In order to properly search a game tree with aleatory nodes, the random variables' 
-	distribution has to be known. `Aleatory.distribution()` computes the histogram for the random 
+
+	/** The `value` and `probability` methods define the aleatory variable's distribution. Both
+	take an index from 0 to `this.length()-1`.
+	*/
+	value: function value(i) {
+		return this.__distribution__[i][0];
+	},
+
+	probability: function probability(i) {
+		return +this.__distribution__[i][1];
+	},
+
+	/** The `Aleatory.randomValue()` can be used to obtain a valid random value for the random
+	variable.
+	*/
+	randomValue: function randomValue(random) {
+		random = random || Randomness.DEFAULT;
+		return random.weightedChoice(this.__distribution__);
+	},
+
+	/** In order to properly search a game tree with aleatory nodes, the random variables'
+	distribution has to be known. `Aleatory.distribution()` computes the histogram for the random
 	variables on which this aleatory depends, as a sequence of pairs `[value, probability]`.
-	
-	By default it returns a flat histogram, assuming the random variable is uniform.
 	*/
 	distribution: function () {
-		var min = this.range[0], 
-			max = this.range[1],
-			probability = 1 / (max - min + 1);
-		return Iterable.range(min, max + 1).map(function (value) {
-			return [value, probability];
+		var alea = this;
+		return Iterable.range(this.count()).map(function (i) {
+			return [alea.value(i), alea.probability(i)];
 		});
 	},
-	
-	// ## Utility methods ##########################################################################
 
-	/** The `tries` function calculates the distribution of the number of successes, trying `n` 
+	// ## Utility methods #########################################################################
+
+	/** The `tries` function calculates the distribution of the number of successes, trying `n`
 	times with a chance of `p`.
 	*/
 	'static tries': function tries(p, n) {
@@ -3035,17 +3050,23 @@ var Aleatory = exports.aleatories.Aleatory = declare({
 			return [i, Math.pow(p, i) * Math.pow(1 - p, n - i) * combinations(n, i)];
 		}).toArray();
 	},
-	
+
 	/** Two `aggregate`d distributions make a new distribution with a combination of the domains. By
 	default the value combination function `comb` is the sum. An equality test `eq` can be provided
 	if the combinations cannot be compared with `===`.
 	*/
 	'static aggregate': function aggregate(dist1, dist2, comb, eq) {
 		var distR = [];
+		comb = comb || function (v1, v2) {
+				return v1 + v2;
+			};
+		eq = eq || function (v1, v2) {
+				return v1 === v2;
+			};
 		Iterable.product(dist1, dist2).forEachApply(function (p1, p2) {
-			var v = comb ? comb(p1[0], p2[0]) : p1[0] + p2[0];
+			var v = comb(p1[0], p2[0]);
 			for (var i = 0; i < distR.length; i++) {
-				if (eq ? eq(distR[i][0], v) : distR[i][0] === v) {
+				if (eq(distR[i][0], v)) {
 					distR[i][1] += p1[1] * p2[1];
 					return;
 				}
@@ -3054,109 +3075,117 @@ var Aleatory = exports.aleatories.Aleatory = declare({
 		});
 		return distR;
 	},
-	
+
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
 		identifier: 'Aleatory',
 		serializer: function serialize_Aleatory(obj) {
-			return [obj.range[0], obj.range[1]];
+			return [obj.distribution().toArray()];
 		}
 	}
 }); // declare Aleatory.
 
 
-/** # UniformAleatory
+/** # DieAleatory
 
-An uniform aleatory is one that ranges over a set of values, all of which have the same probability
-of occurrence.
+An aleatory with a uniform distribution ranging over integer values.
 */
-var UniformAleatory = exports.aleatories.UniformAleatory = declare(Aleatory, {
-	/** An uniform aleatory is defined by a sequence of `values`. The sequence cannot be empty, but
-	one value is supported as weird as it may be.
+var DieAleatory = exports.aleatories.DieAleatory = declare(Aleatory, {
+	/** A die aleatory is defined by the number of values.
 	*/
-	constructor: function UniformAleatory(values) {
-		this.__values__ = iterable(values).toArray();
-		raiseIf(this.__values__.length < 1, "No values for aleatory!");
+	constructor: function DieAleatory(min, max) {
+		if (arguments.length === 1) {
+			max = min;
+			min = 1;
+		}
+		this.min = min |0;
+		this.max = max |0;
 	},
 
-	/** The `value` is one of the `values` used to build this aleatory, picked at random.
+	/** The methods of `Aleatory` have been optimized for this particular case.
 	*/
-	value: function value(random) {
-		return (random || Randomness.DEFAULT).choice(this.__values__);
+	count: function count() {
+		return this.max - this.min + 1;
 	},
-	
-	/** The `distribution` of an uniform aleatory is a sequence of pairs `[value, probability]`.
-	*/
-	distribution: function distribution() {
-		var prob = 1 / this.__values__.length;
-		return this.__values__.map(function (v) {
-			return [v, prob];
-		});
+
+	value: function value(i) {
+		return i > (this.max - this.min) ? undefined : i + this.min;
 	},
-	
-	// ## Utilities ################################################################################
-	
+
+	probability: function probability(i) {
+		return i > (this.max - this.min) ? NaN : 1 / (this.max - this.min + 1);
+	},
+
+	randomValue: function randomValue(random) {
+		return (random || Randomness.DEFAULT).randomInt(this.min, this.max + 1);
+	},
+
+	// ## Utilities ###############################################################################
+
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
-		identifier: 'UniformAleatory',
-		serializer: function serialize_UniformAleatory(obj) {
-			return [obj.__values__];
+		identifier: 'DiceAleatory',
+		serializer: function serialize_DiceAleatory(obj) {
+			return [obj.min, obj.max];
 		}
 	}
 });
 
-/** # CustomAleatory
+// ## Common dice variants #########################################################################
 
-An custom aleatory is defined by its own distribution.
-*/
-var CustomAleatory = exports.aleatories.CustomAleatory = declare(Aleatory, {
-	/** An uniform aleatory is defined by a sequence of `values`. The sequence cannot be empty, but
-	one value is supported as weird as it may be.
-	*/
-	constructor: function CustomAleatory(distribution) {
-		this.__distribution__ = iterable(distribution).toArray();
-	},
+aleatories.dice = {
+	D4: new DieAleatory(4),
+	D6: new DieAleatory(6),
+	D8: new DieAleatory(8),
+	D10: new DieAleatory(10),
+	D12: new DieAleatory(12),
+	D20: new DieAleatory(20)
+};
 
-	/** The `value` is picked at random respecting the distribution's probabilities.
-	*/
-	value: function value(random) {
-		return (random || Randomness.DEFAULT).weightedChoice(this.__distribution__);
-	},
-	
-	distribution: function distribution() {
-		return this.__distribution__;
-	},
-	
-	// ## Utilities ################################################################################
-	
-	/** Serialization and materialization using Sermat.
-	*/
-	'static __SERMAT__': {
-		identifier: 'CustomAleatory',
-		serializer: function serialize_CustomAleatory(obj) {
-			return [obj.__distribution__];
-		}
-	}
-});
 
 /** # Dice aleatories
 
 Implementations of common dice and related functions.
 */
-aleatories.dice = {
-	/** Common dice variants.
-	*/
-	D4: new Aleatory(1, 4),
-	D6: new Aleatory(1, 6),
-	D8: new Aleatory(1, 8),
-	D10: new Aleatory(1, 10),
-	D12: new Aleatory(1, 12),
-	D20: new Aleatory(1, 20),
-}; // dice.
 
-/** The `sumProbability` that rolling `n` dice of `s` sides yields a sum equal to `p`. Check the 
+/** An uniform aleatory is a usual case, where each value in the range of the random variable has
+the same probability.
+*/
+aleatories.uniformAleatory = function uniformAleatory(values) {
+	values = iterable(values).toArray();
+	var probability = 1 / values.length;
+	return new Aleatory(values.map(function (value) {
+		return [value, probability];
+	}));
+};
+
+/** The `normalization` of a distribution forces all probabilities to add up to one.
+*/
+aleatories.normalization = function normalization(distribution) {
+	var probSum = 0,
+		result = [];
+	iterable(distribution).forEachApply(function (v, p) {
+		raiseIf(p < 0, "aleatories.normalization: probabilities cannot be negative ("+ p +")!");
+		probSum += p;
+		for (var i = 0; i < result.length; i++) {
+			if (result[i][0] === v) {
+				result[i][1] += p;
+				return;
+			}
+		}
+		result.push([v, p]);
+	});
+	if (probSum > 0) {
+		result.forEach(function (t) {
+			t[1] /= probSum;
+		});
+	}
+	return result;
+};
+
+/** The `sumProbability` that rolling `n` dice of `s` sides yields a sum equal to `p`. Check the
 article at [Mathworld](http://mathworld.wolfram.com/Dice.html).
 */
 aleatories.sumProbability = function sumProbability(p, n, s) {
@@ -3180,6 +3209,7 @@ aleatories.sumProbability = function sumProbability(p, n, s) {
 			}).sum();
 	}
 };
+
 
 /** # Predefined
 
@@ -4563,12 +4593,12 @@ tournaments.Elimination = declare(Tournament, {
 		games.Bahab, games.Choose2Win, games.ConnectionGame, games.Mutropas, games.OddsAndEvens,
 			games.Pig, games.Predefined, games.TicTacToe, games.ToadsAndFrogs, games.Puzzle15,
 	// Players.
-		Player, players.AlphaBetaPlayer, players.MaxNPlayer, players.MiniMaxPlayer, 
+		Player, players.AlphaBetaPlayer, players.MaxNPlayer, players.MiniMaxPlayer,
 			players.MonteCarloPlayer, players.RandomPlayer, players.TracePlayer, players.UCTPlayer,
 	// Tournaments.
-		Tournament, tournaments.Elimination, tournaments.Measurement, tournaments.RoundRobin, 
+		Tournament, tournaments.Elimination, tournaments.Measurement, tournaments.RoundRobin,
 	// Aleatories.
-		aleatories.Aleatory, aleatories.UniformAleatory, aleatories.CustomAleatory,
+		aleatories.Aleatory, aleatories.DieAleatory,
 	// Utilities.
 		utils.CheckerboardFromString
 	].forEach(function (type) {
@@ -4578,5 +4608,6 @@ tournaments.Elimination = declare(Tournament, {
 	Sermat.include(exports); // Ludorum uses Sermat internally.
 
 	return exports;
-});
+}
+);
 //# sourceMappingURL=ludorum.js.map
