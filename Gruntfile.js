@@ -59,7 +59,7 @@ module.exports = function(grunt) {
 					loopfunc: true,
 					boss: true
 				},
-				src: ['build/<%= pkg.name %>.js', 'tests/specs/*.js'],
+				src: ['build/<%= pkg.name %>.js', 'src/playtester-common.js', 'tests/specs/*.js'],
 			},
 		},
 		copy: { ////////////////////////////////////////////////////////////////////////////////////
@@ -68,10 +68,13 @@ module.exports = function(grunt) {
 					'node_modules/requirejs/require.js',
 					'node_modules/creatartis-base/build/creatartis-base.js', 'node_modules/creatartis-base/build/creatartis-base.js.map',
 					'node_modules/sermat/build/sermat-umd.js', 'node_modules/sermat/build/sermat-umd.js.map',
-					'build/<%= pkg.name %>.js', 'build/<%= pkg.name %>.js.map'
+					'build/<%= pkg.name %>.js', 'build/<%= pkg.name %>.js.map',
+					'src/playtester-common.js'
 					].map(function (f) {
 						return { nonull: true, src: f, dest: 'tests/lib/'+ path.basename(f) };
-					})
+					}).concat([
+						{ nonull: true, src: 'src/playtester-common.js', dest: 'build/playtester-common.js' }
+					])
 			}
 		},
 		uglify: { //////////////////////////////////////////////////////////////////////////////////
