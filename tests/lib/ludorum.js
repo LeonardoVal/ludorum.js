@@ -484,12 +484,12 @@ var Player = exports.Player = declare({
 
 /** # Match
 
-A match is a controller for a game, managing player decisions, handling the flow of the turns 
+A match is a controller for a game, managing player decisions, handling the flow of the turns
 between the players by following the game's logic.
 */
 var Match = exports.Match = declare({
-	/** `Match` objects are build with the [game's](Game.html) starting state and the players that 
-	participate. The players argument must be either an array of [`Player`](Player.html) objects or 
+	/** `Match` objects are build with the [game's](Game.html) starting state and the players that
+	participate. The players argument must be either an array of [`Player`](Player.html) objects or
 	an object with a member for each of the game's players with a Player object as value.
 	*/
 	constructor: function Match(game, players) {
@@ -498,7 +498,7 @@ var Match = exports.Match = declare({
 		/** The match records the sequence of game state in `Match.history`.
 		*/
 		this.history = [game];
-		this.events = new Events({ 
+		this.events = new Events({
 			events: ['begin', 'move', 'next', 'end', 'quit']
 		});
 		for (var p in this.players) { // Participate the players.
@@ -506,14 +506,14 @@ var Match = exports.Match = declare({
 		}
 	},
 
-	/** Each step in the match's history is called a ply. `Match.ply()` indicates the current ply 
+	/** Each step in the match's history is called a ply. `Match.ply()` indicates the current ply
 	number.
 	*/
 	ply: function ply() {
 		return this.history.length - 1;
 	},
-	
-	/** Each ply has a game state. `Match.state(ply=last)` retrieves the game state for the given 
+
+	/** Each ply has a game state. `Match.state(ply=last)` retrieves the game state for the given
 	ply, or the last one by default.
 	*/
 	state: function state(ply) {
@@ -521,15 +521,15 @@ var Match = exports.Match = declare({
 		return this.history[ply | 0];
 	},
 
-	/** If the last game state is finished, then the whole match is finished. If so, 
+	/** If the last game state is finished, then the whole match is finished. If so,
 	`Match.result()` returns the match result, which is the result of the last game state.
 	*/
 	result: function result() {
 		return this.state().result();
 	},
 
-	/** If the last game state is not finished, then the match continues. To move the play on, 
-	`Match.decisions(game=state())` asks the active players in the game to choose their moves. 
+	/** If the last game state is not finished, then the match continues. To move the play on,
+	`Match.decisions(game=state())` asks the active players in the game to choose their moves.
 	Returns a future that is resolved when all players have decided.
 	*/
 	decisions: function decisions(game) {
@@ -546,7 +546,7 @@ var Match = exports.Match = declare({
 		});
 	},
 
-	/** `Match.run(plys=Infinity)` runs the match the given number of plys, or until the game 
+	/** `Match.run(plys=Infinity)` runs the match the given number of plys, or until the game
 	finishes. The result is a future that gets resolved when the game ends.
 	*/
 	run: function run(plys) {
@@ -554,7 +554,9 @@ var Match = exports.Match = declare({
 		if (plys < 1) { // If the run must stop...
 			return Future.when(this);
 		}
-		var ply = this.ply(), game = this.state(), results, next;
+		var ply = this.ply(),
+			game = this.state(),
+			results, next;
 		if (ply < 1) {
 			this.onBegin(game);
 		}
@@ -570,11 +572,11 @@ var Match = exports.Match = declare({
 					return match.run(plys - 1);
 				} else {
 					return match;
-				}				
+				}
 			});
 		}
 	},
-	
+
 	__advanceContingents__: function __advanceContingents__(game, moves) {
 		for (var next; game.isContingent; game = next) {
 			next = game.randomNext();
@@ -583,7 +585,7 @@ var Match = exports.Match = declare({
 		}
 		return game;
 	},
-	
+
 	__advance__: function __advance__(game, moves) {
 		var match = this,
 			abortMatch = !iterable(game.activePlayers).all(function (player) {
@@ -598,16 +600,16 @@ var Match = exports.Match = declare({
 		this.onNext(game, next);
 		return true;
 	},
-	
+
 	/** ## Commands ################################################################################
-	
-	Commands are pseudo-moves, which can be returned by the players instead of valid moves for the 
+
+	Commands are pseudo-moves, which can be returned by the players instead of valid moves for the
 	game being played. Their intent is to control the match itself.
-	
+
 	The available commands are:
 	*/
 	"static commands": {
-		/** + `Quit`: A quit command means the player that issued it is leaving the match. The match 
+		/** + `Quit`: A quit command means the player that issued it is leaving the match. The match
 		is then aborted.
 		*/
 		Quit: declare({
@@ -617,14 +619,14 @@ var Match = exports.Match = declare({
 			}
 		})
 	},
-	
+
 	/** ## Events ##################################################################################
-	
-	Matches provide game events that players and spectators can be registered to. `Match.events` is 
+
+	Matches provide game events that players and spectators can be registered to. `Match.events` is
 	the event handler. Emitted events are:
 	*/
-	
-	/** + The `begin` event fired by `Match.onBegin(game)` when the match begins. The callbacks 
+
+	/** + The `begin` event fired by `Match.onBegin(game)` when the match begins. The callbacks
 	should have the signature `function (game, match)`.
 	*/
 	onBegin: function onBegin(game) {
@@ -635,8 +637,8 @@ var Match = exports.Match = declare({
 			}).join(', '), '; for ', game, '.');
 		}
 	},
-	
-	/** + The `move` event fired by `Match.onMove(game, moves)` every time the active players make 
+
+	/** + The `move` event fired by `Match.onMove(game, moves)` every time the active players make
 	moves. The callbacks should have the signature `function (game, moves, match)`.
 	*/
 	onMove: function onMove(game, moves) {
@@ -645,9 +647,9 @@ var Match = exports.Match = declare({
 			this.logger.info('Players move: ', JSON.stringify(moves), ' in ', game);
 		}
 	},
-	
-	/** + The `next` event fired by `Match.onNext(game, next)` signals when the match advances to 
-	the next game state. This may be due to moves or aleatory instantiation.  The callbacks should 
+
+	/** + The `next` event fired by `Match.onNext(game, next)` signals when the match advances to
+	the next game state. This may be due to moves or aleatory instantiation.  The callbacks should
 	have the signature `function (gameBefore, gameAfter, match)`.
 	*/
 	onNext: function onNext(game, next) {
@@ -656,8 +658,8 @@ var Match = exports.Match = declare({
 			this.logger.info('Match advances from ', game, ' to ', next);
 		}
 	},
-	
-	/** + The `end` event triggered by `Match.onEnd(game, results)` notifies when the match ends. 
+
+	/** + The `end` event triggered by `Match.onEnd(game, results)` notifies when the match ends.
 	The callbacks should have the signature `function (game, result, match)`.
 	*/
 	onEnd: function onEnd(game, results) {
@@ -666,9 +668,9 @@ var Match = exports.Match = declare({
 			this.logger.info('Match for ', game, 'ends with ', JSON.stringify(results));
 		}
 	},
-	
-	/** + The `quit` event triggered by `Match.onQuit(game, player)` is emitted when the match is 
-	aborted due to the given player leaving it. The callbacks should have the signature 
+
+	/** + The `quit` event triggered by `Match.onQuit(game, player)` is emitted when the match is
+	aborted due to the given player leaving it. The callbacks should have the signature
 	`function (game, quitter, match)`.
 	*/
 	onQuit: function onQuit(game, player) {
@@ -677,13 +679,13 @@ var Match = exports.Match = declare({
 			this.logger.info('Match for ', game, ' aborted because player '+ player +' quitted.');
 		}
 	},
-	
+
 	// ## Utilities ################################################################################
-	
+
 	toString: function toString() {
-		return 'Match('+ this.game +', '+ JSON.stringify(this.players) +')';
+		return Sermat.ser(this);
 	},
-	
+
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
@@ -817,13 +819,13 @@ var Contingent = exports.Contingent = declare({
 
 /** # Tournament
 
-A tournament is a set of matches played between many players. The whole contest 
-ranks the participants according to the result of the matches. This is an 
+A tournament is a set of matches played between many players. The whole contest
+ranks the participants according to the result of the matches. This is an
 abstract base class for many different types of contests.
 */
 var Tournament = exports.Tournament = declare({
 	constructor: function Tournament(game, players) {
-		/** The tournament always has one [`game`](Game.html) state from which 
+		/** The tournament always has one [`game`](Game.html) state from which
 		all matches start.
 		*/
 		this.game = game;
@@ -832,19 +834,19 @@ var Tournament = exports.Tournament = declare({
 		*/
 		this.players = Array.isArray(players) ? players : iterables.iterable(players).toArray();
 		this.statistics = new Statistics();
-		this.events = new Events({ 
+		this.events = new Events({
 			events: ['begin', 'beforeMatch', 'afterMatch', 'end']
 		});
 	},
 
-	/** The next match to be played is determined by `__advance__`, which 
-	returns a match instance, or null if the tournament has finished. It is not 
-	implemented in this base class. 
+	/** The next match to be played is determined by `__advance__`, which
+	returns a match instance, or null if the tournament has finished. It is not
+	implemented in this base class.
 	*/
 	__advance__: unimplemented("Tournament", "__advance__"),
-	
-	/** `Tournament.run()` plays all the tournament's matches. Since running a 
-	match is asynchronous, running a tournament is too. Hence the result is 
+
+	/** `Tournament.run()` plays all the tournament's matches. Since running a
+	match is asynchronous, running a tournament is too. Hence the result is
 	always a future, which will be resolved when all matches have been played.
 	*/
 	run: function run() {
@@ -865,19 +867,19 @@ var Tournament = exports.Tournament = declare({
 			});
 		}).then(this.onEnd.bind(this));
 	},
-	
-	/** The method `__runMatch__` runs a match. It is present so it can be 
+
+	/** The method `__runMatch__` runs a match. It is present so it can be
 	overridden, to implement some specific behaviour of the contest.
 	*/
 	__runMatch__: function __runMatch__(match) {
 		return match.run();
 	},
-	
+
 	/** Tournaments gather information from the played matches using their
-	`statistics` property (instance of `creatartis-base.Statistics`). The method 
-	`Tournament.account(match)` is called to accounts the results of each 
+	`statistics` property (instance of `creatartis-base.Statistics`). The method
+	`Tournament.account(match)` is called to accounts the results of each
 	finished match for the players' score.
-	
+
 	The match results are gathered in the `results` key. The keys `victories`,
 	`defeats` and `draws` count each result type. The length of each game is
 	recorded under `length`. The move count at each ply is aggregated under
@@ -885,7 +887,7 @@ var Tournament = exports.Tournament = declare({
 	*/
 	account: function account(match) {
 		var game = this.game,
-			results = match.result(), 
+			results = match.result(),
 			isDraw = false,
 			stats = this.statistics;
 		raiseIf(!results, "Match doesn't have results. Has it finished?");
@@ -893,43 +895,43 @@ var Tournament = exports.Tournament = declare({
 			var role = p[0],
 				player = p[1],
 				playerResult = results[p[0]];
-			stats.add({key:'results', game:game.name, role:role, player:player.name}, 
+			stats.add({key:'results', game:game.name, role:role, player:player.name},
 				playerResult);
 			stats.add({key:(playerResult > 0 ? 'victories' : playerResult < 0 ? 'defeats' : 'draws'),
 				game:game.name, role:role, player:player.name}, playerResult);
-			stats.add({key:'length', game:game.name, role:role, player:player.name}, 
+			stats.add({key:'length', game:game.name, role:role, player:player.name},
 				match.ply()); //FIXME This may not be accurate if the game has random variables.
 			match.history.forEach(function (entry) {
 				if (typeof entry.moves === 'function') {
-					var moves = entry.moves();	
+					var moves = entry.moves();
 					if (moves && moves.hasOwnProperty(role) && moves[role].length > 0) {
-						stats.add({key:'width', game:game.name, role:role, player:player.name}, 
+						stats.add({key:'width', game:game.name, role:role, player:player.name},
 							moves[role].length);
 					}
 				}
 			});
 		});
 	},
-	
+
 	/** ## Events #############################################################
-	
-	Tournaments provide events to enable further analysis and control over it. 
+
+	Tournaments provide events to enable further analysis and control over it.
 	`Tournament.events` is the event handler. The emitted events are:
 	*/
-	
-	/** + The `begin` event fired by `Tournament.onBegin()` when the whole 
-	contest begins. The callbacks should have the signature 
+
+	/** + The `begin` event fired by `Tournament.onBegin()` when the whole
+	contest begins. The callbacks should have the signature
 	`function (tournament)`.
-	*/	
+	*/
 	onBegin: function onBegin() {
 		this.events.emit('begin', this);
 		if (this.logger) {
 			this.logger.info('Tournament begins for game ', game.name, '.');
 		}
 	},
-	
-	/** + The `beforeMatch` event triggered by `Tournament.beforeMatch(match)` 
-	just before starting a match. The callbacks should have the signature 
+
+	/** + The `beforeMatch` event triggered by `Tournament.beforeMatch(match)`
+	just before starting a match. The callbacks should have the signature
 	`function (match, tournament)`.
 	*/
 	beforeMatch: function beforeMatch(match) {
@@ -938,9 +940,9 @@ var Tournament = exports.Tournament = declare({
 			this.logger.debug('Beginning match with ', JSON.stringify(match.players), '.');
 		}
 	},
-	
-	/** + The `afterMatch` event triggered by `Tournament.afterMatch(match)` 
-	just after a match ends. The callbacks should have the signature 
+
+	/** + The `afterMatch` event triggered by `Tournament.afterMatch(match)`
+	just after a match ends. The callbacks should have the signature
 	`function (match, tournament)`.
 	*/
 	afterMatch: function afterMatch(match) {
@@ -949,9 +951,9 @@ var Tournament = exports.Tournament = declare({
 			this.logger.debug('Finishing match with ', JSON.stringify(match.players), '.');
 		}
 	},
-	
-	/** + The `end` event triggered by `Tournament.onEnd()` when the whole 
-	contest is completed. The callbacks should have the signature 
+
+	/** + The `end` event triggered by `Tournament.onEnd()` when the whole
+	contest is completed. The callbacks should have the signature
 	`function (statistics, tournament)`.
 	*/
 	onEnd: function onEnd() {
@@ -960,9 +962,13 @@ var Tournament = exports.Tournament = declare({
 			this.logger.info('Tournament ends for game ', game.name, ':\n', this.statistics, '\n');
 		}
 	},
-	
+
 	// ## Utilities ################################################################################
-	
+
+	toString: function toString() {
+		return Sermat.ser(this);
+	},
+
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
