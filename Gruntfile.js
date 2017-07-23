@@ -31,7 +31,7 @@ module.exports = function(grunt) {
 		} else if (typeof exports === 'object' && module.exports) {
 			module.exports = init(require('creatartis-base'), require('sermat')); // CommonJS module.
 		} else {
-			this.Sermat = init(this.base, this.Sermat); // Browser.
+			this.ludorum = init(this.base, this.Sermat); // Browser.
 		}
 	};
 
