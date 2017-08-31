@@ -1,12 +1,12 @@
 (function (init) { "use strict";
-		if (typeof define === 'function' && define.amd) {
-			define(['creatartis-base', 'sermat'], init); // AMD module.
-		} else if (typeof exports === 'object' && module.exports) {
-			module.exports = init(require('creatartis-base'), require('sermat')); // CommonJS module.
-		} else {
-			this.ludorum = init(this.base, this.Sermat); // Browser.
-		}
-	}).call(this,/** Library wrapper and layout.
+			if (typeof define === 'function' && define.amd) {
+				define(["creatartis-base","sermat"], init); // AMD module.
+			} else if (typeof exports === 'object' && module.exports) {
+				module.exports = init(require("creatartis-base"),require("sermat")); // CommonJS module.
+			} else {
+				this.Sermat = init(this.base,this.Sermat); // Browser.
+			}
+		}).call(this,/** Library wrapper and layout.
 */
 function __init__(base, Sermat) { "use strict";
 // Import synonyms. ////////////////////////////////////////////////////////////////////////////////
