@@ -9,7 +9,7 @@ Ludorum is a board game framework. It is not focused on graphics or user interfa
 
 * Simple reference games, like [TicTacToe](http://en.wikipedia.org/wiki/Tic-tac-toe), [ToadsAndFrogs](http://en.wikipedia.org/wiki/Toads_and_Frogs_%28game%29), [Odds and evens](http://en.wikipedia.org/wiki/Odds_and_evens), [Pig](http://en.wikipedia.org/wiki/Pig_%28dice_game%29), [15 puzzle](https://en.wikipedia.org/wiki/15_puzzle) and more.
 
-It supports loading with AMD (with [RequireJS](http://requirejs.org/)) or a script tag (sets 'ludorum' in the global namespace). In order to work requires another library of mine called [creatartis-base](https://github.com/LeonardoVal/creatartis-base).
+It supports loading with AMD (with [RequireJS](http://requirejs.org/)) or a script tag (sets 'ludorum' in the global namespace).
 
 ## License
 
