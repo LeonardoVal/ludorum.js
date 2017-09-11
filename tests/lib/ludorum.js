@@ -46,90 +46,90 @@ function __init__(base, Sermat) { "use strict";
 The class `ludorum.Game` is the base type for all games.
 */
 var Game = exports.Game = declare({
-	/** Its constructor takes the active player/s. A player is active if and only if it can move. 
+	/** Its constructor takes the active player/s. A player is active if and only if it can move.
 	The argument may be either a player's name (string) or an array of players' names. It is used to
 	initialize `Game.activePlayers`, an array with the active players' names.
 	*/
 	constructor: function Game(activePlayers) {
 		this.activatePlayers(activePlayers);
 	},
-	
+
 	/** The game's `name` is used mainly for displaying purposes.
 	*/
 	name: '?',
-	
-	/** The game `players` are specified in an array of role names (strings), that the players can 
-	assume in a match of this game. For example: `"Xs"` and `"Os"` in TicTacToe, or `"Whites"` and 
+
+	/** The game `players` are specified in an array of role names (strings), that the players can
+	assume in a match of this game. For example: `"Xs"` and `"Os"` in TicTacToe, or `"Whites"` and
 	`"Blacks"` in Chess.
 	*/
 	players: [],
 
-	/** The moves of each active player are calculated by `moves()`. This method returns an object 
-	with every active player related to the moves each can make in this turn. For example: 
-	
+	/** The moves of each active player are calculated by `moves()`. This method returns an object
+	with every active player related to the moves each can make in this turn. For example:
+
 	+ `{ Player1: ['Rock', 'Paper', 'Scissors'], Player2: ['Rock', 'Paper', 'Scissors'] }`
-		
+
 	If the game has finished then a _falsy_ value must be returned (`null` is recommended).
 	*/
 	moves: unimplemented("Game", "moves()"),
 
-	/** Once the players have chosen their moves, the method `next` is used to perform the given 
-	moves. The first `moves` argument should be an object with a move for each active player. For 
+	/** Once the players have chosen their moves, the method `next` is used to perform the given
+	moves. The first `moves` argument should be an object with a move for each active player. For
 	example:
 
 	+ `{ Player1: 'Rock', Player2: 'Paper' }`
-	
+
 	A second argument `haps` may be added if the game has random variables. It must have the same
 	form as the `moves` argument, but instead of players as keys it will have random variables as
 	keys.
-	
+
 	+ `{ die1: 6, die2: 3 }`
-	
-	If the third argument `update` is true indicate that is not necessary to return a new game 
+
+	If the third argument `update` is true indicate that is not necessary to return a new game
 	instance. Else (and by default) the returned resulting state is always a new game instance.
-	
-	There isn't a default implementation of `next`, so it must be overriden. It is strongly advised 
+
+	There isn't a default implementation of `next`, so it must be overriden. It is strongly advised
 	to check if the arguments are valid.
 	*/
 	next: unimplemented("Game", "next(moves, haps, update)"),
 
-	/** If the game is finished the result of the game is calculated with `result()`. It returns an 
-	object with every player in the game related to a number. This number must be positive if the 
+	/** If the game is finished the result of the game is calculated with `result()`. It returns an
+	object with every player in the game related to a number. This number must be positive if the
 	player wins, negative if the player loses or zero if the game is a tie. For example:
-	
+
 	+ `{ Player1: -1, Player2: +1 }`
-	
+
 	If the game is not finished, this function must return a _falsy_ value (`null` is recommended).
 	*/
 	result: unimplemented("Game", "result()"),
 
 	/** Some games may assign scores to the players in a finished game. This may differ from the
 	result, since the score sign doesn't have to indicate victory or defeat. For example:
-	
+
 	+ result: `{ Player1: -1, Player2: +1 }`
 	+ scores: `{ Player1: 14, Player2: 15 }`
-	
+
 	The method `scores()` returns the scores if such is the case. Also the score may be defined for
 	unfinished games.
-	
+
 	By default, it return the same that `result()` does.
 	*/
 	scores: function scores() {
 		return this.results();
 	},
-	
+
 	/** In incomplete or imperfect information games players have different access to the game state
 	data. The method `view(player)` returns a modified version of this game, that shows only the
 	information from the perspective of the given player. The other information is modelled as
 	aleatory variables.
-	
-	In this way searches in the game tree can be performed without revealing to	the automatic player 
+
+	In this way searches in the game tree can be performed without revealing to	the automatic player
 	information it shouldn't have access to (a.k.a _cheating_).
 	*/
 	view: function view(player) {
 		return this;
 	},
-	
+
 	// ## Player information #######################################################################
 
 	/** Method `isActive(player...)` checks if the given players are all active.
@@ -143,7 +143,7 @@ var Game = exports.Game = declare({
 		return true;
 	},
 
-	/** In most games there is only one active player per turn. The method `activePlayer()` returns 
+	/** In most games there is only one active player per turn. The method `activePlayer()` returns
 	that active player's role if there is one and only one, else it raises an error.
 	*/
 	activePlayer: function activePlayer() {
@@ -153,16 +153,16 @@ var Game = exports.Game = declare({
 		return this.activePlayers[0];
 	},
 
-	/** Sets the `activePlayers` of this game state. Since this method changes the current game 
+	/** Sets the `activePlayers` of this game state. Since this method changes the current game
 	state, use with care.
 	*/
 	activatePlayers: function activatePlayers(activePlayers) {
-		return this.activePlayers = !activePlayers ? [this.players[0]] : 
+		return this.activePlayers = !activePlayers ? [this.players[0]] :
 			(!Array.isArray(activePlayers) ? [activePlayers] : activePlayers);
 	},
-	
-	/** All players in a game are assumed to be opponents. The method `opponents(players=activePlayers)` 
-	returns an array with the opponent roles of the given players, or of the active players by 
+
+	/** All players in a game are assumed to be opponents. The method `opponents(players=activePlayers)`
+	returns an array with the opponent roles of the given players, or of the active players by
 	default. If not all players are opponents this method can be overriden.
 	*/
 	opponents: function opponents(players) {
@@ -181,7 +181,7 @@ var Game = exports.Game = declare({
 	},
 
 	// ## Game flow ################################################################################
-	
+
 	/** Since `next()` expects a moves object, the method `perform(move, player=activePlayer, ...)`
 	pretends to simplify simpler game mechanics. It performs the given moves for the given players
 	(activePlayer by default) and returns the next game state.
@@ -202,9 +202,9 @@ var Game = exports.Game = declare({
 	as the `moves` objects that can be used with `next()` to obtain a next game state. Furthermore,
 	if there are more than one active player per turn, the possible decisions can be build with all
 	combinations for all active players.
-	
-	The method `possibleMoves(moves=this.moves())` calculates all possible `moves` objects based on 
-	the result of `moves()`. For example, if `moves()` returns `{A:[1,2], B:[3,4]}`, then 
+
+	The method `possibleMoves(moves=this.moves())` calculates all possible `moves` objects based on
+	the result of `moves()`. For example, if `moves()` returns `{A:[1,2], B:[3,4]}`, then
 	`possibleMoves()` would return `[{A:1, B:3}, {A:1, B:4}, {A:2, B:3}, {A:2, B:4}]`.
 	*/
 	possibleMoves: function possibleMoves(moves) {
@@ -219,7 +219,7 @@ var Game = exports.Game = declare({
 				return obj(activePlayer, move);
 			});
 		} else { // Simultaneous games.
-			return Iterable.product.apply(Iterable, 
+			return Iterable.product.apply(Iterable,
 				iterable(moves).mapApply(function (player, moves) {
 					return moves.map(function (move) {
 						return [player, move];
@@ -230,38 +230,42 @@ var Game = exports.Game = declare({
 			}).toArray();
 		}
 	},
-	
+
 	// ## Result functions #########################################################################
 
-	/** The maximum and minimum results may be useful and even required by some game search 
+	/** The maximum and minimum results may be useful and even required by some game search
 	algorithm. To expose these values, `resultBounds()` returns an array with first the minimum and
-	then the maximum. Most game have one type of victory (+1) and one type of defeat (-1). That's 
-	why `resultBounds()` returns [-1,+1] by default. Yet some games can define different bounds by 
+	then the maximum. Most game have one type of victory (+1) and one type of defeat (-1). That's
+	why `resultBounds()` returns [-1,+1] by default. Yet some games can define different bounds by
 	overriding it.
 	*/
 	resultBounds: function resultBounds() {
 		return [-1,+1];
 	},
-	
-	/** The `normalizedResult(result=this.result())` is the `result()` expressed so the minimum 
+
+	/** The `normalizedResult(result=this.result())` is the `result()` expressed so the minimum
 	defeat is equal to -1 and the maximum victory is equal to +1.
 	*/
 	normalizedResult: function normalizedResult(result) {
 		result = result || this.result();
-		if (result) {
-			var bounds = this.resultBounds();
+		var bounds;
+		if (result && typeof result === 'object') {
+			bounds = this.resultBounds();
 			result = base.copy(result);
 			for (var player in result) {
 				result[player] = (result[player] - bounds[0]) / (bounds[1] - bounds[0]) * 2 - 1;
 			}
 			return result;
+		} else if (typeof result === 'number') {
+			bounds = this.resultBounds();
+			return (+result - bounds[0]) / (bounds[1] - bounds[0]) * 2 - 1;
 		} else {
 			return null;
 		}
 	},
-	
+
 	/** Most games have victory and defeat results that cancel each other. It is said that all the
-	victors wins the defeated player loses. Those games are called _zerosum games_. The method 
+	victors wins the defeated player loses. Those games are called _zerosum games_. The method
 	`zerosumResult(score, players=activePlayers)` builds a game result object for a zerosum game.
 	The given score is split between the given players (the active players by default), and (-score)
 	is split between their opponents.
@@ -290,7 +294,7 @@ var Game = exports.Game = declare({
 		return this.zerosumResult(score || -1, players);
 	},
 
-	/** Finally `tied(players=this.players, score=0)` returns the game result of a tied game with 
+	/** Finally `tied(players=this.players, score=0)` returns the game result of a tied game with
 	the given players (or the active players by default) all with the same score (zero by default).
 	A tied game must always have the same result for all players.
 	*/
@@ -302,26 +306,26 @@ var Game = exports.Game = declare({
 	},
 
 	// ## Game information #########################################################################
-	
+
 	/** Some AI algorithms have constraints on which games they can support. A game can provide some
 	information to assess its compatibility with an artificial player automaticaly. Properties may
 	include:
-	
+
 	+ `isZeroSum`: The sum of all results in every match is zero. True by default.
 	*/
 	isZeroSum: true,
-		
+
 	/** + `isDeterministic`: Perfect information game without random variables. False by default.
 	*/
 	isDeterministic: false,
-		
+
 	/** + `isSimultaneous`: In some or all turns more than one player is active. False by default.
 	*/
 	isSimultaneous: false,
-	
+
 	// ## Conversions & presentations ##############################################################
 
-	/** Some algorithms require a `__hash__()` for each game state, in order to store them in caches 
+	/** Some algorithms require a `__hash__()` for each game state, in order to store them in caches
 	or hash tables. The default implementation uses `Sermat.hashCode`.
 	*/
 	__hash__: function __hash__() {
@@ -339,11 +343,11 @@ var Game = exports.Game = declare({
 	toString: function toString() {
 		return Sermat.ser(this);
 	},
-		
+
 	// ## Modified games ###########################################################################
 
-	/** `cacheProperties` modifies getter methods (like `moves()` or `result()`) to cache its 
-	results. Warning! Caching the results of the `next()` method may lead to memory leaks or 
+	/** `cacheProperties` modifies getter methods (like `moves()` or `result()`) to cache its
+	results. Warning! Caching the results of the `next()` method may lead to memory leaks or
 	overload.
 	*/
 	'static cacheProperties': function cacheProperties() {
@@ -362,7 +366,7 @@ var Game = exports.Game = declare({
 		});
 		return clazz;
 	}, // static cacheProperties
-	
+
 	/** `serialized(game)` builds a serialized version of a simultaneous game, i.e. one in which two
 	or more players may be active in the same turn. It converts a simultaneous game to an alternated
 	turn based game. This may be useful for using algorithms like MiniMax to build AIs for
@@ -387,7 +391,7 @@ var Game = exports.Game = declare({
 				}
 				return activePlayer && allMoves ? obj(activePlayer, allMoves[activePlayer]) : null;
 			},
-		
+
 			/** The `next(moves)` of a serialized game advances the actual game if with the given
 			move all active players in the real game state have moved. Else the next player that has
 			to move becomes active.
@@ -409,7 +413,7 @@ var Game = exports.Game = declare({
 			}
 		});
 	} // static serialized
-	
+
 }); // declare Game.
 
 
@@ -2450,15 +2454,15 @@ players.AlphaBetaPlayer = declare(MiniMaxPlayer, {
 Automatic player based on flat Monte Carlo tree search.
 */
 var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
-	/** The constructor builds a player that chooses its moves using the 
-	[flat Monte Carlo game tree search method](http://en.wikipedia.org/wiki/Monte-Carlo_tree_search). 
+	/** The constructor builds a player that chooses its moves using the
+	[flat Monte Carlo game tree search method](http://en.wikipedia.org/wiki/Monte-Carlo_tree_search).
 	The parameters may include:
-	
-	+ `simulationCount=30`: Maximum amount of simulations performed for each available move at each 
+
+	+ `simulationCount=30`: Maximum amount of simulations performed for each available move at each
 		decision.
 	+ `timeCap=1000ms`: Time limit for the player to decide.
 	+ `horizon=500`: Maximum amount of moves performed in simulations.
-	+ `agent`: Player instance used in the simulations. If undefined moves are chosen at random. 
+	+ `agent`: Player instance used in the simulations. If undefined moves are chosen at random.
 		Agents with asynchronous decisions are not supported.
 	*/
 	constructor: function MonteCarloPlayer(params) {
@@ -2473,7 +2477,7 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 			default: this.agent = null;
 		}
 	},
-	
+
 	/** `evaluatedMoves(game, player)` returns a sequence with the evaluated moves.
 	*/
 	evaluatedMoves: function evaluatedMoves(game, player) {
@@ -2481,23 +2485,23 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 		var monteCarloPlayer = this,
 			endTime = Date.now() + this.timeCap,
 			options = this.possibleMoves(game, player).map(function (move) {
-				return { 
-					move: move, 
-					nexts: (Object.keys(move).length < 2 ? 
+				return {
+					move: move,
+					nexts: (Object.keys(move).length < 2 ?
 						[game.next(move)] :
 						game.possibleMoves(copy(obj(player, [move[player]]), move)).map(function (moves) {
 							return game.next(moves);
 						})
 					),
-					sum: 0, 
-					count: 0 
+					sum: 0,
+					count: 0
 				};
 			}); // Else the following updates won't work.
 		for (var i = 0; i < this.simulationCount && Date.now() < endTime; ++i) {
 			options.forEach(function (option) {
 				option.nexts = option.nexts.filter(function (next) {
 					var sim = monteCarloPlayer.simulation(next, player);
-					option.sum += sim.result[player];
+					option.sum += sim.result;
 					++option.count;
 					return sim.plies > 0;
 				});
@@ -2508,12 +2512,12 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 			return [option.move, option.count > 0 ? option.sum / option.count : 0];
 		});
 	},
-	
-	/** This player's `stateEvaluation(game, player)` runs `simulationCount` simulations and returns 
+
+	/** This player's `stateEvaluation(game, player)` runs `simulationCount` simulations and returns
 	the average result. It is provided for compatibility, since `evaluatedMoves` does not call it.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
-		var resultSum = 0, 
+		var resultSum = 0,
 			simulationCount = this.simulationCount,
 			sim;
 		for (var i = 0; i < simulationCount; ++i) {
@@ -2525,46 +2529,53 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 		}
 		return simulationCount > 0 ? resultSum / simulationCount : 0;
 	},
-	
-	/** A `simulation(game, player)` plays a random match from the given `game` state and returns an 
-	object with the final state (`game`), its result (`result`) and the number of plies simulated 
+
+	/**TODO
+	*/
+	quiescence: function quiescence(game, player, depth) {
+		var result = game.result();
+		if (result) {
+			return result[player];
+		} else if (depth >= this.horizon) {
+			return this.heuristic(game, player);
+		} else {
+			return NaN;
+		}
+	},
+
+	/** A `simulation(game, player)` plays a random match from the given `game` state and returns an
+	object with the final state (`game`), its result (`result`) and the number of plies simulated
 	(`plies`).
 	*/
 	simulation: function simulation(game, player) {
 		var mc = this,
+			result = { game: game },
 			plies, move, moves;
 		for (plies = 0; true; ++plies) {
 			if (game.isContingent) {
 				game = game.randomNext(this.random);
 			} else {
 				moves = game.moves();
-				if (!moves) { // If game state is final ...
-					return { 
-						game: game, 
-						result: game.result(), 
-						plies: plies 
-					};
-				} else if (plies > this.horizon) { // If past horizon ...
-					return { 
-						game: game,
-						result: obj(player, this.heuristic(game, player)),
-						plies: plies
-					};
-				} else { // ... else advance.
+				var q = this.quiescence(game, player, plies + 1);
+				if (isNaN(q)) { // The simulation continues.
 					move = {};
 					game.activePlayers.forEach(function (activePlayer) {
-						move[activePlayer] = mc.agent ? mc.agent.decision(game, activePlayer) 
+						move[activePlayer] = mc.agent ? mc.agent.decision(game, activePlayer)
 							: mc.random.choice(moves[activePlayer]);
 					});
 					game = game.next(move, null, plies > 0); // The original `game` argument must not be changed.
+				} else { // The simulation has a result and ends.
+					result.result = q;
+					result.plies = plies;
+					return result;
 				}
 			}
 		}
 		raise("Simulation ended unexpectedly for player ", player, " in game ", game, "!");
 	},
-	
+
 	// ## Utilities ################################################################################
-	
+
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
@@ -2590,7 +2601,7 @@ Automatic player based on Upper Confidence Bound Monte Carlo tree search.
 */
 players.UCTPlayer = declare(MonteCarloPlayer, {
 	/** The constructor parameters may include:
-	
+
 	+ `simulationCount=30`: Maximum amount of simulations performed at each decision.
 	+ `timeCap=1000ms`: Time limit for the player to decide.
 	*/
@@ -2602,19 +2613,19 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 			.number('explorationConstant', { defaultValue: Math.sqrt(2), coerce: true })
 		;
 	},
-	
+
 	/** Evaluate all child nodes of the given `gameTree` according to the [Upper Confidence Bound
-	formula by L. Kocsis and Cs. Szepesvári](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.102.1296). 
+	formula by L. Kocsis and Cs. Szepesvári](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.102.1296).
 	Returns one of the greatest evaluated, chosen at random.
 	*/
 	selectNode: function selectNode(gameTree, totalSimulationCount, explorationConstant) {
 		explorationConstant = isNaN(explorationConstant) ? this.explorationConstant : +explorationConstant;
 		return this.random.choice(iterable(gameTree.children).select(1).greater(function (n) {
-			return n.uct.rewards / n.uct.visits + 
+			return n.uct.rewards / n.uct.visits +
 				explorationConstant * Math.sqrt(Math.log(totalSimulationCount) / n.uct.visits);
 		}));
 	},
-	
+
 	/** `evaluatedMoves(game, player)` return a sequence with the evaluated moves.
 	*/
 	evaluatedMoves: function evaluatedMoves(game, player) {
@@ -2622,8 +2633,8 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 			endTime = Date.now() + this.timeCap,
 			node, simulationResult;
 		root.uct = {
-			pending: this.random.shuffle(root.possibleTransitions()), 
-			visits: 0, 
+			pending: this.random.shuffle(root.possibleTransitions()),
+			visits: 0,
 			rewards: 0
 		};
 		for (var i = 0; i < this.simulationCount && Date.now() < endTime; ++i) {
@@ -2642,16 +2653,16 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 			simulationResult = this.simulation(node.state, player); // Simulation
 			for (; node; node = node.parent) { // Backpropagation
 				++node.uct.visits;
-				node.uct.rewards += (game.normalizedResult(simulationResult.result)[player] + 1) / 2;
+				node.uct.rewards += (game.normalizedResult(simulationResult.result) + 1) / 2;
 			}
 		}
 		return iterable(root.children).select(1).map(function (n) {
 			return [n.transition, n.uct.visits];
 		});
 	},
-	
+
 	// ## Utilities ################################################################################
-	
+
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
