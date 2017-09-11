@@ -4,7 +4,7 @@ Automatic player based on Upper Confidence Bound Monte Carlo tree search.
 */
 players.UCTPlayer = declare(MonteCarloPlayer, {
 	/** The constructor parameters may include:
-	
+
 	+ `simulationCount=30`: Maximum amount of simulations performed at each decision.
 	+ `timeCap=1000ms`: Time limit for the player to decide.
 	*/
@@ -16,19 +16,19 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 			.number('explorationConstant', { defaultValue: Math.sqrt(2), coerce: true })
 		;
 	},
-	
+
 	/** Evaluate all child nodes of the given `gameTree` according to the [Upper Confidence Bound
-	formula by L. Kocsis and Cs. Szepesvári](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.102.1296). 
+	formula by L. Kocsis and Cs. Szepesvári](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.102.1296).
 	Returns one of the greatest evaluated, chosen at random.
 	*/
 	selectNode: function selectNode(gameTree, totalSimulationCount, explorationConstant) {
 		explorationConstant = isNaN(explorationConstant) ? this.explorationConstant : +explorationConstant;
 		return this.random.choice(iterable(gameTree.children).select(1).greater(function (n) {
-			return n.uct.rewards / n.uct.visits + 
+			return n.uct.rewards / n.uct.visits +
 				explorationConstant * Math.sqrt(Math.log(totalSimulationCount) / n.uct.visits);
 		}));
 	},
-	
+
 	/** `evaluatedMoves(game, player)` return a sequence with the evaluated moves.
 	*/
 	evaluatedMoves: function evaluatedMoves(game, player) {
@@ -36,8 +36,8 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 			endTime = Date.now() + this.timeCap,
 			node, simulationResult;
 		root.uct = {
-			pending: this.random.shuffle(root.possibleTransitions()), 
-			visits: 0, 
+			pending: this.random.shuffle(root.possibleTransitions()),
+			visits: 0,
 			rewards: 0
 		};
 		for (var i = 0; i < this.simulationCount && Date.now() < endTime; ++i) {
@@ -56,16 +56,16 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 			simulationResult = this.simulation(node.state, player); // Simulation
 			for (; node; node = node.parent) { // Backpropagation
 				++node.uct.visits;
-				node.uct.rewards += (game.normalizedResult(simulationResult.result)[player] + 1) / 2;
+				node.uct.rewards += (game.normalizedResult(simulationResult.result) + 1) / 2;
 			}
 		}
 		return iterable(root.children).select(1).map(function (n) {
 			return [n.transition, n.uct.visits];
 		});
 	},
-	
+
 	// ## Utilities ################################################################################
-	
+
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
