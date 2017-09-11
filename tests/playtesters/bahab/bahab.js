@@ -1,9 +1,12 @@
-﻿require.config({ paths: {
-	'creatartis-base': '../../lib/creatartis-base', 
-	'sermat': '../../lib/sermat-umd',
-	'ludorum': '../../lib/ludorum',
-	'playtester': '../../lib/playtester-common'
-}});
+﻿require.config({
+	baseUrl: '../../../',
+	paths: {
+		'creatartis-base': 'node_modules/creatartis-base/build/creatartis-base',
+		'sermat': 'node_modules/sermat/build/sermat-umd',
+		'ludorum': 'build/ludorum',
+		'playtester': 'build/playtester-common'
+	}
+});
 require(['ludorum', 'creatartis-base', 'sermat', 'playtester'], function (ludorum, base, Sermat, PlayTesterApp) {
 	var iterable = base.iterable,
 		CheckerboardFromString = ludorum.utils.CheckerboardFromString;
@@ -16,15 +19,15 @@ require(['ludorum', 'creatartis-base', 'sermat', 'playtester'], function (ludoru
 				document: document, container: document.getElementById('board')
 			});
 		},
-	
+
 		/** Each of the board's squares looks are customized via CSS.
 		*/
-		classNames: { 
+		classNames: {
 			'A': "ludorum-square-Uppercase-A", 'B': "ludorum-square-Uppercase-B",
 			'a': "ludorum-square-Lowercase-A", 'b': "ludorum-square-Lowercase-B",
 			'.': "ludorum-square-empty"
 		},
-		
+
 		/** This is a mapping from the board to HTML for each of the board's squares.
 		*/
 		squareHTML: {
@@ -32,7 +35,7 @@ require(['ludorum', 'creatartis-base', 'sermat', 'playtester'], function (ludoru
 			'O': "O",
 			'_': "&nbsp;"
 		},
-	
+
 		display: function display(game) {
 			this.container.innerHTML = ''; // empty the board's DOM.
 			var ui = this,
@@ -43,7 +46,7 @@ require(['ludorum', 'creatartis-base', 'sermat', 'playtester'], function (ludoru
 				movesByFrom = moves ? iterable(moves[activePlayer]).groupAll(function (m) {
 					return JSON.stringify(m[0]);
 				}) : {},
-				selectedMoves = ui.selectedPiece && 
+				selectedMoves = ui.selectedPiece &&
 					movesByFrom[JSON.stringify(ui.selectedPiece)].map(function (m) {
 						return JSON.stringify(m[1]);
 					});
@@ -63,27 +66,29 @@ require(['ludorum', 'creatartis-base', 'sermat', 'playtester'], function (ludoru
 				if (movesByFrom.hasOwnProperty(JSON.stringify(data.coord))) {
 					data.onclick = function () {
 						ui.selectedPiece = data.coord;
-						ui.display(game); // Redraw the game state.			
+						ui.display(game); // Redraw the game state.
 					};
 				}
 			});
 			return ui;
 		}
 	});
-	
+
 	/** PlayTesterApp initialization.
 	*/
 	base.global.APP = new PlayTesterApp(
 		new ludorum.games.Bahab(), new BahabHTMLInterface(),
-		//new ludorum.players.UserInterface.BasicHTMLInterface({ container: document.getElementById('board') }), 
+		//new ludorum.players.UserInterface.BasicHTMLInterface({ container: document.getElementById('board') }),
 		{ bar: document.getElementsByTagName('footer')[0] });
 	APP.playerUI("You")
 		.playerRandom()
-		.playerMonteCarlo("MCTS (50 sims)", 50, true)
-		.playerMonteCarlo("MCTS (100 sims)", 100, true)
-		.playerAlfaBeta("MiniMax-\u03b1\u03b2 (4 plies)", 3, true)
-		.playerAlfaBeta("MiniMax-\u03b1\u03b2 (6 plies)", 5, true)
-		.playerMaxN("MaxN (6 plies)", 5, true)
+		.playerMonteCarlo("MCTS (50 sims)", true, 50)
+		.playerMonteCarlo("MCTS (100 sims)", true, 100)
+		.playerUCT("UCT (50 sims)", true, 50)
+		.playerUCT("UCT (100 sims)", true, 100)
+		.playerAlfaBeta("MiniMax-\u03b1\u03b2 (4 plies)", true, 3)
+		.playerAlfaBeta("MiniMax-\u03b1\u03b2 (6 plies)", true, 5)
+		.playerMaxN("MaxN (6 plies)", true, 5)
 		.selects(['playerUppercase', 'playerLowercase'])
 		.button('resetButton', document.getElementById('reset'), APP.reset.bind(APP))
 		.reset();
