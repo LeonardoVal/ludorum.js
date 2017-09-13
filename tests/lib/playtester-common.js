@@ -17,47 +17,69 @@ define(['ludorum', 'creatartis-base', 'sermat'], function (ludorum, base, Sermat
 			this.players = [];
 			this.currentPlayers = [];
 		},
-		
+
 		player: function addPlayer(title, builder, runOnWorker) {
 			this.players.push({title: title, builder: builder, runOnWorker: runOnWorker });
 			return this; // for chaining.
 		},
-		
+
 		playerUI: function playerUI(title, runOnWorker) {
-			this.player(title || "UI", function () { 
-				return new ludorum.players.UserInterfacePlayer(); 
+			this.player(title || "UI", function () {
+				return new ludorum.players.UserInterfacePlayer();
 			}, !!runOnWorker);
 			return this; // for chaining.
 		},
-		
+
 		playerRandom: function playerRandom(title, runOnWorker) {
-			this.player(title || "Random", function () { 
-				return new ludorum.players.RandomPlayer(); 
+			this.player(title || "Random", function () {
+				return new ludorum.players.RandomPlayer();
 			}, !!runOnWorker);
 			return this; // for chaining.
 		},
-		
-		playerMonteCarlo: function playerMonteCarlo(title, simulationCount, runOnWorker) {
-			this.player(title || "MonteCarlo (s="+ simulationCount +")", 
-				new Function('return new ludorum.players.MonteCarloPlayer({ simulationCount:'+ simulationCount +'});'), 
+
+		playerMonteCarlo: function playerMonteCarlo(title, runOnWorker, simulationCount, timeCap) {
+			timeCap = timeCap || Infinity;
+			title = title || "MonteCarlo ("
+				+ (simulationCount ? "s="+ simulationCount : "t="+ timeCap)
+				+")";
+			this.player(title,
+				new Function('return new ludorum.players.MonteCarloPlayer({'
+					+'simulationCount:'+ simulationCount +','
+					+'timeCap:'+ timeCap +'});'),
 				!!runOnWorker);
 			return this; // for chaining.
 		},
-		
-		playerAlfaBeta: function playerAlfaBeta(title, horizon, runOnWorker) {
-			this.player(title || "AlfaBeta (h="+ horizon +")", 
-				new Function('return new ludorum.players.AlphaBetaPlayer({ horizon:'+ horizon +'});'), 
+
+		playerUCT: function playerUCT(title, runOnWorker, simulationCount, timeCap) {
+			timeCap = timeCap || Infinity;
+			title = title || "UCT ("
+				+ (simulationCount ? "s="+ simulationCount : "t="+ timeCap)
+				+")";
+			this.player(title,
+				new Function('return new ludorum.players.UCTPlayer({'
+					+'simulationCount:'+ simulationCount +','
+					+'timeCap:'+ timeCap +'});'),
 				!!runOnWorker);
 			return this; // for chaining.
 		},
-		
-		playerMaxN: function playerMaxN(title, horizon, runOnWorker) {
-			this.player(title || "MaxN (h="+ horizon +")", 
-				new Function('return new ludorum.players.MaxNPlayer({ horizon: '+ horizon +'});'),
+
+		playerAlfaBeta: function playerAlfaBeta(title, runOnWorker, horizon, heuristic) {
+			this.player(title || "AlfaBeta (h="+ horizon +")",
+				new Function('return new ludorum.players.AlphaBetaPlayer({'
+					+'horizon:'+ horizon +','
+					+'heuristic:'+ (heuristic ? heuristic.name : heuristic) +'});'),
 				!!runOnWorker);
 			return this; // for chaining.
 		},
-		
+
+		playerMaxN: function playerMaxN(title, runOnWorker, horizon) {
+			this.player(title || "MaxN (h="+ horizon +")",
+				new Function('return new ludorum.players.MaxNPlayer({'
+					+'horizon: '+ horizon +'});'),
+				!!runOnWorker);
+			return this; // for chaining.
+		},
+
 		selects: function selects(selectElems) {
 			selectElems = selectElems ? selectElems.map(domElemOrId) : document.getElementsByTagName('select');
 			this.elements.selects = selectElems;
@@ -85,13 +107,13 @@ define(['ludorum', 'creatartis-base', 'sermat'], function (ludorum, base, Sermat
 			});
 			return this; // for chaining.
 		},
-		
+
 		button: function button(name, elem, onclick) {
 			this.elements[name] = elem;
 			elem.onclick = onclick;
 			return this;
 		},
-		
+
 		reset: function reset() {
 			var match = new ludorum.Match(this.game, this.currentPlayers);
 			this.currentMatch = match;
@@ -115,6 +137,6 @@ define(['ludorum', 'creatartis-base', 'sermat'], function (ludorum, base, Sermat
 			return this; // for chaining.
 		}
 	});
-	
+
 	return PlayTesterApp;
 }); // define
