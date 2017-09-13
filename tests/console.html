@@ -10,7 +10,7 @@ a { color: black; text-decoration: none; }
 #reference tr td:nth-child(1) { font-family: "Courier New", Courier, monospace; background-color: black; color: white; }
 #reference tr td:nth-child(1) a { color: white; }
 	</style>
-	<script src="lib/require.js"></script>
+	<script src="../node_modules/requirejs/require.js"></script>
 </head><body onload="main();">
 	<h1><a href="http://github.com/LeonardoVal/ludorum.js" target="_blank">Ludorum</a> tester</h1>
 	<p>Open your browser Javascript console. In Windows use: Ctrl+Shift+J in Chrome, Ctrl+Shift+K in Firefox, F12 in Internet Explorer, Ctrl+Shift+I in Opera.</p>
@@ -22,9 +22,9 @@ a { color: black; text-decoration: none; }
 			<a href="javascript:" data-code="game = new ludorum.games.ToadsAndFrogs()">ludorum.games.ToadsAndFrogs</a><br/>
 			<a href="javascript:" data-code="game = new ludorum.games.OddsAndEvens()">ludorum.games.OddsAndEvens</a><br/>
 			<a href="javascript:" data-code="game = new ludorum.games.Pig()">ludorum.games.Pig</a></td>
-		<td>This library includes implementations of some simple game for testing purposes: 
-			<a href="http://en.wikipedia.org/wiki/Tic-tac-toe" target="_blank">Tic-tac-toe</a>, 
-			<a href="http://en.wikipedia.org/wiki/Toads_and_Frogs" target="_blank">Toads & frogs</a>, 
+		<td>This library includes implementations of some simple game for testing purposes:
+			<a href="http://en.wikipedia.org/wiki/Tic-tac-toe" target="_blank">Tic-tac-toe</a>,
+			<a href="http://en.wikipedia.org/wiki/Toads_and_Frogs" target="_blank">Toads & frogs</a>,
 			<a href="http://en.wikipedia.org/wiki/Odds_and_evens" target="_blank">Odds & evens</a> and
 			<a href="http://en.wikipedia.org/wiki/Pig_(dice_game)" target="_blank">the Pig dice game</a>.</td>
 	</tr><tr>
@@ -45,16 +45,16 @@ a { color: black; text-decoration: none; }
 			<a href="javascript:" data-code="tournament = new ludorum.tournaments.RoundRobin(game, [randomPlayer, randomPlayer], 5)">ludorum.tournaments.RoundRobin</a></td>
 		<td>Tournaments represent a sequence of matches played by many players. One example is a <a href="https://en.wikipedia.org/wiki/Round-robin_tournament" target="_blank"><i>round-robin</i></a> tournament, where every player play against every other player a certain number of times. In order to play all matches, call the <a href="javascript:" data-code="tournament.run().then(function () { console.log('Finished!'); })"><code>run()</code></a> method (returns a promise). The component has many events to hook in order to monitor the execution of the tournament, like <a href="javascript:" data-code="tournament.events.on('afterMatch', function (m) { console.log(m.result()); })"><code>events.on('afterMatch', <i>callback</i>)</code></a>. Statistics gathered from all matches can be found at the <a href="javascript:" data-code="tournament.statistics"><code>statistics</code></a> property.</td>
 	</tr></table>
-	<p style="text-align:center;"><a href="mailto:leonardo.val@creatartis.com">&copy; 2015-2016 Leonardo Val</a> - 
+	<p style="text-align:center;"><a href="mailto:leonardo.val@creatartis.com">&copy; 2015-2016 Leonardo Val</a> -
 		<a href="http://github.com/LeonardoVal/ludorum.js" target="_blank">ludorum.js@GitHub</a>
 	</p>
 	<script type="text/javascript"> "use strict";
 function main() {
-	require.config({ 
+	require.config({
 		paths: {
-			"ludorum": "lib/ludorum",
-			"creatartis-base": "lib/creatartis-base",
-			"sermat": "lib/sermat-umd",
+			"ludorum": "../build/ludorum",
+			"creatartis-base": "../node_modules/creatartis-base/build/creatartis-base.min",
+			"sermat": "../node_modules/sermat/build/sermat-umd-min",
 		},
 	});
 	require(['ludorum', 'creatartis-base', 'sermat'], function (ludorum, base, Sermat) {
