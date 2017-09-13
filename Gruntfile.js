@@ -26,19 +26,14 @@ module.exports = function(grunt) {
 			'tournaments/RoundRobin', 'tournaments/Measurement', 'tournaments/Elimination',
 			'__epilogue__'],
 		deps: [
-			{	name: 'creatartis-base',
-				path: 'node_modules/creatartis-base/build/creatartis-base.js',
-				id: 'base'
-			},
-			{	name: 'sermat',
-				path: 'node_modules/sermat/build/sermat-umd.js',
-				id: 'Sermat'
-			}
+			{ id: 'creatartis-base', name: 'base' },
+			{ id: 'sermat', name: 'Sermat', path: 'node_modules/sermat/build/sermat-umd-min.js' }
 		],
 		otherCopy: [
-			{ nonull: true, src: 'src/playtester-common.js', dest: 'build/playtester-common.js' }
+			{ nonull: true, src: 'src/playtester-common.js', dest: 'build/playtester-common.js' },
+			{ nonull: true, src: 'src/playtester-common.js', dest: 'tests/lib/playtester-common.js' },
 		],
-		perf: 'tests/perf/*.perf.js'
+		perf: true
 	});
 
 	grunt.registerTask('default', ['build']);
