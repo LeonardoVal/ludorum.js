@@ -1,12 +1,3 @@
-﻿require.config({
-	baseUrl: '../../../',
-	paths: {
-		'creatartis-base': 'node_modules/creatartis-base/build/creatartis-base',
-		'sermat': 'node_modules/sermat/build/sermat-umd',
-		'ludorum': 'build/ludorum',
-		'playtester': 'build/playtester-common'
-	}
-});
 require(['ludorum', 'creatartis-base', 'sermat', 'playtester'], function (ludorum, base, Sermat, PlayTesterApp) {
 	var iterable = base.iterable,
 		CheckerboardFromString = ludorum.utils.CheckerboardFromString;
