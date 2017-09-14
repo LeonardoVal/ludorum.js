@@ -10,7 +10,7 @@ a { color: black; text-decoration: none; }
 #reference tr td:nth-child(1) { font-family: "Courier New", Courier, monospace; background-color: black; color: white; }
 #reference tr td:nth-child(1) a { color: white; }
 	</style>
-	<script src="../node_modules/requirejs/require.js"></script>
+	<script src="../node_modules/requirejs/require.js" data-main="require-config"></script>
 </head><body onload="main();">
 	<h1><a href="http://github.com/LeonardoVal/ludorum.js" target="_blank">Ludorum</a> tester</h1>
 	<p>Open your browser Javascript console. In Windows use: Ctrl+Shift+J in Chrome, Ctrl+Shift+K in Firefox, F12 in Internet Explorer, Ctrl+Shift+I in Opera.</p>
@@ -50,13 +50,6 @@ a { color: black; text-decoration: none; }
 	</p>
 	<script type="text/javascript"> "use strict";
 function main() {
-	require.config({
-		paths: {
-			"ludorum": "../build/ludorum",
-			"creatartis-base": "../node_modules/creatartis-base/build/creatartis-base.min",
-			"sermat": "../node_modules/sermat/build/sermat-umd-min",
-		},
-	});
 	require(['ludorum', 'creatartis-base', 'sermat'], function (ludorum, base, Sermat) {
 		window.base = base;
 		window.Sermat = Sermat;
