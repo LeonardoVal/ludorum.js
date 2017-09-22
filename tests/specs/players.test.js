@@ -1,8 +1,9 @@
 ﻿define(['creatartis-base', 'sermat', 'ludorum'], function (base, Sermat, ludorum) {
 	var RANDOM = base.Randomness.DEFAULT,
-		autonomousPlayers = ["RandomPlayer", "HeuristicPlayer", "MiniMaxPlayer", 
+		MATCH_COUNT = 5,
+		autonomousPlayers = ["RandomPlayer", "HeuristicPlayer", "MiniMaxPlayer",
 			"AlphaBetaPlayer", "MaxNPlayer", "MonteCarloPlayer", "UCTPlayer"];
-		
+
 	describe('Module players', function () { ///////////////////////////////////////////////////////
 		it('must exist', function () {
 			expect(ludorum.players).toBeDefined();
@@ -19,8 +20,7 @@
 	});
 
 	describe("games.Predefined", function () { /////////////////////////////////////////////////////
-		var MATCH_COUNT = 10,
-			MATCH_LENGTH = 5,
+		var MATCH_LENGTH = 5,
 			MATCH_WIDTH = 6;
 		autonomousPlayers.forEach(function (playerName) {
 			it('can be played by '+ playerName, function (done) {
@@ -42,24 +42,28 @@
 					});
 				}));
 			});
-		}); 
+		});
 	}); //// games.Predefined can be played by autonomousPlayers.
-	
+
+	function zeroSumCheck(done) {
+		return function (match) {
+			var result = match.result(),
+				game = match.history[0];
+			expect(result).toBeTruthy();
+			expect(result[game.players[0]] + result[game.players[1]]).toBe(0);
+			done();
+		};
+	}
+
 	describe("games.Choose2Win", function () { /////////////////////////////////////////////////////
-		var MATCH_COUNT = 10,
-			game = new ludorum.games.Choose2Win(),
+		var game = new ludorum.games.Choose2Win(),
 			passer = new ludorum.players.TracePlayer({trace: ['pass']});
 		autonomousPlayers.forEach(function (playerName) {
 			var Player = ludorum.players[playerName];
 			it('can be played by '+ playerName, function (done) {
 				return base.Future.all(base.Iterable.range(MATCH_COUNT).map(function (i) {
 					var match = new ludorum.Match(game, [new Player(), new Player()]);
-					return match.run().then(function (match) {
-						var result = match.result();
-						expect(result).toBeTruthy();
-						expect(result[game.players[0]] + result[game.players[1]]).toBe(0);
-						done();
-					});
+					return match.run().then(zeroSumCheck(done));
 				}));
 			});
 			if (Player !== ludorum.players.RandomPlayer) { // RandomPlayer does not try to win. The others must.
@@ -79,27 +83,21 @@
 			}
 		});
 	}); //// games.Choose2Win can be played/won by autonomous players.
-	
+
 	describe("games.Pig", function () { ////////////////////////////////////////////////////////////
 		["RandomPlayer", "HeuristicPlayer", "MiniMaxPlayer", "AlphaBetaPlayer",
 				"MonteCarloPlayer", "UCTPlayer"].forEach(function (playerName) {
-			var MATCH_COUNT = 10,
-				game = new ludorum.games.Pig('One', 15),
+			var game = new ludorum.games.Pig('One', 15),
 				Player = ludorum.players[playerName];
 			it("can be played by "+ playerName, function (done) {
 				return base.Future.all(base.Iterable.range(MATCH_COUNT).map(function (i) {
 					var match = new ludorum.Match(game, [new Player(), new Player()]);
-					return match.run().then(function (match) {
-						var result = match.result();
-						expect(result).toBeTruthy();
-						expect(result[game.players[0]] + result[game.players[1]]).toEqual(0);
-						done();
-					});
+					return match.run().then(zeroSumCheck(done));
 				}));
 			});
 		});
 	}); //// games.Pig can be played/won by some autonomous players.
-	
+
 	describe("games.OddsAndEvens", function () { ///////////////////////////////////////////////////
 		["RandomPlayer", "HeuristicPlayer", "MonteCarloPlayer", "UCTPlayer"
 		].forEach(function (playerName) {
@@ -109,33 +107,28 @@
 			it("can be played by "+ playerName, function (done) {
 				return base.Future.all(base.Iterable.range(MATCH_COUNT).map(function (i) {
 					var match = new ludorum.Match(game, [new Player(), new Player()]);
-					return match.run().then(function (match) {
-						var result = match.result();
-						expect(result).toBeTruthy();
-						expect(result[game.players[0]] + result[game.players[1]]).toEqual(0);
-						done();
-					});
+					return match.run().then(zeroSumCheck(done));
 				}));
 			});
 		});
 	}); //// games.OddsAndEvens can be played/won by some autonomous players.
-	
+
 	describe("games.TicTacToe", function () { //////////////////////////////////////////////////////
+		var game = new ludorum.games.TicTacToe();
+
 		it("can be played by a rule based player", function (done) {
 			function makeRule(re, move) {
 				return function (board) {
 					return re.test(board) ? move : null;
 				};
 			}
-			var MATCH_COUNT = 10,
-				player = new ludorum.players.RuleBasedPlayer({
+			var player = new ludorum.players.RuleBasedPlayer({
 					features: function (game, role) {
 						return game.board.split('').map(function (chr) {
 							return chr === '_' ? '_' : chr === role.charAt(0) ? 'A' : 'a';
 						}).join('');
 					}
-				}),
-				game = new ludorum.games.TicTacToe();
+				});
 			player
 				.regExpRule(/...._..../, 4)
 				.regExpRule(/_......../, 0)
@@ -144,13 +137,37 @@
 				.regExpRule(/........_/, 8);
 			return base.Future.all(base.Iterable.range(MATCH_COUNT).map(function (i) {
 				var match = new ludorum.Match(game, [player, player]);
-				return match.run().then(function (match) {
-					var result = match.result();
-					expect(result).toBeTruthy();
-					expect(result[game.players[0]] + result[game.players[1]]).toEqual(0);
-					done();
+				return match.run().then(zeroSumCheck(done));
+			}));
+		}); //// can be played by a rule based player.
+
+		it("can be played by a simple ensemble player", function (done) {
+			var player = new ludorum.players.EnsemblePlayer({
+					players: [
+						new ludorum.players.RandomPlayer(),
+						new ludorum.players.AlphaBetaPlayer({ horizon: 1 })
+					]
 				});
+			return base.Future.all(base.Iterable.range(MATCH_COUNT).map(function (i) {
+				var match = new ludorum.Match(game, [player, player]);
+				return match.run().then(zeroSumCheck(done));
 			}));
 		});
-	}); //// games.TicTacToe can be played by a rule based player.
+
+		it("can be played by an heuristic ensemble player", function (done) {
+			var player = new ludorum.players.EnsemblePlayer({
+					players: [
+						new ludorum.players.MonteCarloPlayer({ simulationCount: 10,
+							timeCap: Infinity }),
+						new ludorum.players.AlphaBetaPlayer({ horizon: 1 })
+					]
+				});
+			player.decision = player.heuristicCombination();
+			return base.Future.all(base.Iterable.range(MATCH_COUNT).map(function (i) {
+				var match = new ludorum.Match(game, [player, player]);
+				return match.run().then(zeroSumCheck(done));
+			}));
+		});
+	}); //// games.TicTacToe
+
 }); //// define.

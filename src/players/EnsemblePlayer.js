@@ -40,6 +40,59 @@ players.EnsemblePlayer = declare(Player, {
 			.decision(game, role);
 	},
 
+	__aggregateEvaluatedMoves__: function __aggregateEvaluatedMoves__(game, role, aggregation, evaluatedMoves) {
+		var grouped = iterable(evaluatedMoves).flatten().groupAll(function (evm) {
+			return JSON.stringify(evm[0]); //TODO Allow to customize
+		}, function (evs, evm) {
+			if (evs) {
+				evs[1].push(evm[1]);
+				return evs;
+			} else {
+				return [evm[0], [evm[1]]];
+			}
+		});
+		return iterable(grouped).mapApply(function (k, v) {
+			return [v[0], aggregation(v[0], v[1], game, role)];
+		});
+	},
+
+	__bestAggregatedEvaluationMove__: function __bestAggregatedEvaluationMove__(game, role, aggregation, evaluatedMoves) {
+		var aggregated = this.__aggregateEvaluatedMoves__(game, role, aggregation,
+			evaluatedMoves);
+		var bestMoves = HeuristicPlayer.prototype.bestMoves(aggregated);
+		return this.random.choice(bestMoves)[role];
+	},
+
+	/**TODO
+	*/
+	heuristicCombination: (function () {
+		function average(move, evals, game, role) {
+			return iterable(evals).sum() / evals.length;
+		}
+
+		return function heuristicCombination(aggregation) {
+			aggregation = aggregation || average;
+
+			return function combinedHeuristicDecision(game, role) {
+				var isAsync = false,
+					ds = this.players.map(function (player) {
+						raiseIf(!player.evaluatedMoves,
+							"Cannot call `evaluatedMoves()` on player ", player.name, "!");
+						var d = player.evaluatedMoves(game, role);
+						isAsync = isAsync || Future.__isFuture__(d);
+						return d;
+					});
+				if (isAsync) {
+					return Future.all(ds).then(
+						this.__bestAggregatedEvaluationMove__.bind(game, role, aggregation)
+					);
+				} else {
+					return this.__bestAggregatedEvaluationMove__(game, role, aggregation, ds);
+				}
+			};
+		};
+	})(),
+
 	// ## Utilities ################################################################################
 
 	/** Serialization and materialization using Sermat.
