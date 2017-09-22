@@ -27,12 +27,11 @@ module.exports = function(grunt) {
 			'__epilogue__'],
 		deps: [
 			{ id: 'creatartis-base', name: 'base' },
-			{ id: 'sermat', name: 'Sermat', path: 'node_modules/sermat/build/sermat-umd-min.js' }
+			{ id: 'sermat', name: 'Sermat', path: 'node_modules/sermat/build/sermat-umd-min.js' },
+			{ id: 'playtester', path: 'build/playtester-common.js',
+				dev: true, module: false }
 		],
-		otherCopy: [
-			{ nonull: true, src: 'src/playtester-common.js', dest: 'build/playtester-common.js' },
-			{ nonull: true, src: 'src/playtester-common.js', dest: 'tests/lib/playtester-common.js' },
-		],
+		bundled: ['src/playtester-common.js'],
 		perf: true
 	});
 
