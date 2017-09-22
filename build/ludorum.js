@@ -2768,6 +2768,114 @@ players.RuleBasedPlayer = declare(Player, {
 	}
 }); // declare RulePlayer.
 
+/** # EnsemblePlayer
+
+Players defined as a combination of other players.
+*/
+players.EnsemblePlayer = declare(Player, {
+	/** The constructor takes the player's `name`, a `random` number generator
+	(`base.Randomness.DEFAULT` by default), and (optionally) an array of `players`.
+	*/
+	constructor: function EnsemblePlayer(params) {
+		Player.call(this, params);
+		initialize(this, params)
+			.object('random', { defaultValue: Randomness.DEFAULT })
+			.array('players', { ignore: true });
+	},
+
+	players: [],
+
+	/** The `playerSelection` returns a subset of all `players` which can be used to decide on the
+	given `game` state. By default all players are selected.
+	*/
+	playerSelection: function playerSelection(game, role) {
+		return this.players;
+	},
+
+	/** By default one of the selected players is chosen at random.
+	*/
+	decision: function(game, role) {
+		return this.randomDecision(game, role);
+	},
+
+	// ## Posible combinations ####################################################################
+
+	/** A `randomDecision` delegates the decision to one of the available `players` chosen at
+	random.
+	*/
+	randomDecision: function randomDecision(game, role, players) {
+		players = players || this.playerSelection(game, role);
+		raiseIf(players.length < 1, "No player was selected!");
+		return (players.length == 1 ? players[0] : this.random.choice(players))
+			.decision(game, role);
+	},
+
+	__aggregateEvaluatedMoves__: function __aggregateEvaluatedMoves__(game, role, aggregation, evaluatedMoves) {
+		var grouped = iterable(evaluatedMoves).flatten().groupAll(function (evm) {
+			return JSON.stringify(evm[0]); //TODO Allow to customize
+		}, function (evs, evm) {
+			if (evs) {
+				evs[1].push(evm[1]);
+				return evs;
+			} else {
+				return [evm[0], [evm[1]]];
+			}
+		});
+		return iterable(grouped).mapApply(function (k, v) {
+			return [v[0], aggregation(v[0], v[1], game, role)];
+		});
+	},
+
+	__bestAggregatedEvaluationMove__: function __bestAggregatedEvaluationMove__(game, role, aggregation, evaluatedMoves) {
+		var aggregated = this.__aggregateEvaluatedMoves__(game, role, aggregation,
+			evaluatedMoves);
+		var bestMoves = HeuristicPlayer.prototype.bestMoves(aggregated);
+		return this.random.choice(bestMoves)[role];
+	},
+
+	/**TODO
+	*/
+	heuristicCombination: (function () {
+		function average(move, evals, game, role) {
+			return iterable(evals).sum() / evals.length;
+		}
+
+		return function heuristicCombination(aggregation) {
+			aggregation = aggregation || average;
+
+			return function combinedHeuristicDecision(game, role) {
+				var isAsync = false,
+					ds = this.players.map(function (player) {
+						raiseIf(!player.evaluatedMoves,
+							"Cannot call `evaluatedMoves()` on player ", player.name, "!");
+						var d = player.evaluatedMoves(game, role);
+						isAsync = isAsync || Future.__isFuture__(d);
+						return d;
+					});
+				if (isAsync) {
+					return Future.all(ds).then(
+						this.__bestAggregatedEvaluationMove__.bind(game, role, aggregation)
+					);
+				} else {
+					return this.__bestAggregatedEvaluationMove__(game, role, aggregation, ds);
+				}
+			};
+		};
+	})(),
+
+	// ## Utilities ################################################################################
+
+	/** Serialization and materialization using Sermat.
+	*/
+	'static __SERMAT__': {
+		identifier: 'EnsemblePlayer',
+		serializer: function serialize_EnsemblePlayer(obj) {
+			return this.serializeAsProperties(obj, ['name', 'random', 'players']);
+		}
+	},
+}); // declare RandomPlayer.
+
+
 /** # UserInterfacePlayer
 
 Implementation of player user interfaces and proxies.
@@ -2943,7 +3051,7 @@ UserInterface.BasicHTMLInterface = declare(UserInterface, {
 A proxy for another player executing inside a webworker.
 */
 var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
-	/** The constructor builds a player that is a proxy for another player executing in a webworker. 
+	/** The constructor builds a player that is a proxy for another player executing in a webworker.
 	The parameters must include:
 	*/
 	constructor: function WebWorkerPlayer(params) {
@@ -2954,10 +3062,10 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 			.object('worker');
 		this.worker.onmessage = base.Parallel.prototype.__onmessage__.bind(this);
 	},
-	
-	/** The static `createWorker(playerBuilder)` method creates (asynchronously) and initializes a 
-	web worker. The modules `creatartis-base` and `ludorum` are loaded in the webworker's root 
-	namespace (`self`). If a `workerSetup` function is given, it is also run. After that, the 
+
+	/** The static `createWorker(playerBuilder)` method creates (asynchronously) and initializes a
+	web worker. The modules `creatartis-base` and `ludorum` are loaded in the webworker's root
+	namespace (`self`). If a `workerSetup` function is given, it is also run. After that, the
 	`playerBuilder` function is called and its results stored in the variable `self.PLAYER`.
 	*/
 	'static createWorker': function createWorker(params) {
@@ -2977,33 +3085,47 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 			return parallel.worker;
 		});
 	},
-	
-	/** The static `create(params)` method creates (asynchronously) and initializes a 
-	`WebWorkerPlayer`, with a web worker ready to play. The `params` must include the 
+
+	/** The static `create(params)` method creates (asynchronously) and initializes a
+	`WebWorkerPlayer`, with a web worker ready to play. The `params` must include the
 	`playerBuilder` function to execute on the web worker's environment.
 	*/
 	'static create': function create(params) {
 		var WebWorkerPlayer = this;
 		return WebWorkerPlayer.createWorker(params).then(function (worker) {
-			return new WebWorkerPlayer({name: name, worker: worker}); 
+			return new WebWorkerPlayer({name: name, worker: worker});
 		});
 	},
-	
-	/** This player's `decision(game, player)` is delegated to this player's webworker, returning a 
+
+	/** This player's `decision(game, player)` is delegated to this player's webworker, returning a
 	future that will be resolved when the parallel execution is over.
-	
-	Warning! If this method is called while another decision is pending, the player will assume the 
+
+	Warning! If this method is called while another decision is pending, the player will assume the
 	previous match was aborted, issuing a quit command.
 	*/
 	decision: function decision(game, player) {
-		if (this.__future__ && this.__future__.isPending()) {
-			this.__future__.resolve(Match.commandQuit);
+		if (this.__decision_future__ && this.__decision_future__.isPending()) {
+			this.__decision_future__.resolve(Match.commandQuit);
 		}
-		this.__future__ = new Future();
-		this.worker.postMessage('PLAYER.decision(Sermat.mat('+ JSON.stringify(Sermat.ser(game)) +'), '+ JSON.stringify(player) +')');
-		return this.__future__;
+		this.__decision_future__ = new Future();
+		this.worker.postMessage('PLAYER.decision(Sermat.mat('+ JSON.stringify(Sermat.ser(game)) +
+			'), '+ JSON.stringify(player) +')');
+		return this.__decision_future__;
+	},
+
+	/**TODO
+	*/
+	evaluatedMoves: function evaluatedMoves(game, player) {
+		if (this.__evaluatedMoves_future__ && this.__evaluatedMoves_future__.isPending()) {
+			this.__evaluatedMoves_future__.resolve(null);
+		}
+		this.__evaluatedMoves_future__ = new Future();
+		this.worker.postMessage('PLAYER.evaluatedMoves(Sermat.mat('+
+			JSON.stringify(Sermat.ser(game)) +'), '+ JSON.stringify(player) +')');
+		return this.__evaluatedMoves_future__;
 	}
 }); // declare WebWorkerPlayer
+
 
 /** # Aleatory
 
