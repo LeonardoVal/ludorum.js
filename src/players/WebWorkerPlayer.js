@@ -3,7 +3,7 @@
 A proxy for another player executing inside a webworker.
 */
 var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
-	/** The constructor builds a player that is a proxy for another player executing in a webworker. 
+	/** The constructor builds a player that is a proxy for another player executing in a webworker.
 	The parameters must include:
 	*/
 	constructor: function WebWorkerPlayer(params) {
@@ -14,10 +14,10 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 			.object('worker');
 		this.worker.onmessage = base.Parallel.prototype.__onmessage__.bind(this);
 	},
-	
-	/** The static `createWorker(playerBuilder)` method creates (asynchronously) and initializes a 
-	web worker. The modules `creatartis-base` and `ludorum` are loaded in the webworker's root 
-	namespace (`self`). If a `workerSetup` function is given, it is also run. After that, the 
+
+	/** The static `createWorker(playerBuilder)` method creates (asynchronously) and initializes a
+	web worker. The modules `creatartis-base` and `ludorum` are loaded in the webworker's root
+	namespace (`self`). If a `workerSetup` function is given, it is also run. After that, the
 	`playerBuilder` function is called and its results stored in the variable `self.PLAYER`.
 	*/
 	'static createWorker': function createWorker(params) {
@@ -37,30 +37,43 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 			return parallel.worker;
 		});
 	},
-	
-	/** The static `create(params)` method creates (asynchronously) and initializes a 
-	`WebWorkerPlayer`, with a web worker ready to play. The `params` must include the 
+
+	/** The static `create(params)` method creates (asynchronously) and initializes a
+	`WebWorkerPlayer`, with a web worker ready to play. The `params` must include the
 	`playerBuilder` function to execute on the web worker's environment.
 	*/
 	'static create': function create(params) {
 		var WebWorkerPlayer = this;
 		return WebWorkerPlayer.createWorker(params).then(function (worker) {
-			return new WebWorkerPlayer({name: name, worker: worker}); 
+			return new WebWorkerPlayer({name: name, worker: worker});
 		});
 	},
-	
-	/** This player's `decision(game, player)` is delegated to this player's webworker, returning a 
+
+	/** This player's `decision(game, player)` is delegated to this player's webworker, returning a
 	future that will be resolved when the parallel execution is over.
-	
-	Warning! If this method is called while another decision is pending, the player will assume the 
+
+	Warning! If this method is called while another decision is pending, the player will assume the
 	previous match was aborted, issuing a quit command.
 	*/
 	decision: function decision(game, player) {
-		if (this.__future__ && this.__future__.isPending()) {
-			this.__future__.resolve(Match.commandQuit);
+		if (this.__decision_future__ && this.__decision_future__.isPending()) {
+			this.__decision_future__.resolve(Match.commandQuit);
 		}
-		this.__future__ = new Future();
-		this.worker.postMessage('PLAYER.decision(Sermat.mat('+ JSON.stringify(Sermat.ser(game)) +'), '+ JSON.stringify(player) +')');
-		return this.__future__;
+		this.__decision_future__ = new Future();
+		this.worker.postMessage('PLAYER.decision(Sermat.mat('+ JSON.stringify(Sermat.ser(game)) +
+			'), '+ JSON.stringify(player) +')');
+		return this.__decision_future__;
+	},
+
+	/**TODO
+	*/
+	evaluatedMoves: function evaluatedMoves(game, player) {
+		if (this.__evaluatedMoves_future__ && this.__evaluatedMoves_future__.isPending()) {
+			this.__evaluatedMoves_future__.resolve(null);
+		}
+		this.__evaluatedMoves_future__ = new Future();
+		this.worker.postMessage('PLAYER.evaluatedMoves(Sermat.mat('+
+			JSON.stringify(Sermat.ser(game)) +'), '+ JSON.stringify(player) +')');
+		return this.__evaluatedMoves_future__;
 	}
 }); // declare WebWorkerPlayer
