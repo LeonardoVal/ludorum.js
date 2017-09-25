@@ -73,9 +73,9 @@ require(['ludorum', 'creatartis-base', 'sermat', 'playtester'], function (ludoru
 		{ bar: document.getElementsByTagName('footer')[0] });
 	APP.playerUI("You")
 		.playerRandom()
-		.playerMonteCarlo("MCTS (50 sims)", true, 50)
+		.playerMonteCarlo("MCTS (10 sims)", true, 10)
 		.playerMonteCarlo("MCTS (100 sims)", true, 100)
-		.playerUCT("UCT (50 sims)", true, 50)
+		.playerUCT("UCT (10 sims)", true, 10)
 		.playerUCT("UCT (100 sims)", true, 100)
 		.playerAlfaBeta("MiniMax-\u03b1\u03b2 (4 plies)", true, 3)
 		.playerAlfaBeta("MiniMax-\u03b1\u03b2 (6 plies)", true, 5)
