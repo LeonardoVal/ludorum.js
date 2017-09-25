@@ -3104,25 +3104,29 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 	previous match was aborted, issuing a quit command.
 	*/
 	decision: function decision(game, player) {
-		if (this.__decision_future__ && this.__decision_future__.isPending()) {
-			this.__decision_future__.resolve(Match.commandQuit);
+		var future = this.__future__;
+		if (future && future.isPending()) {
+			future.resolve(future.__cancelValue__);
 		}
-		this.__decision_future__ = new Future();
+		future = this.__future__ = new Future();
+		future.__cancelValue__ = Match.commandQuit;
 		this.worker.postMessage('PLAYER.decision(Sermat.mat('+ JSON.stringify(Sermat.ser(game)) +
 			'), '+ JSON.stringify(player) +')');
-		return this.__decision_future__;
+		return future;
 	},
 
 	/**TODO
 	*/
 	evaluatedMoves: function evaluatedMoves(game, player) {
-		if (this.__evaluatedMoves_future__ && this.__evaluatedMoves_future__.isPending()) {
-			this.__evaluatedMoves_future__.resolve(null);
+		var future = this.__future__;
+		if (future && future.isPending()) {
+			future.resolve(future.__cancelValue__);
 		}
-		this.__evaluatedMoves_future__ = new Future();
+		future = this.__future__ = new Future();
+		future.__cancelValue__ = null;
 		this.worker.postMessage('PLAYER.evaluatedMoves(Sermat.mat('+
 			JSON.stringify(Sermat.ser(game)) +'), '+ JSON.stringify(player) +')');
-		return this.__evaluatedMoves_future__;
+		return future;
 	}
 }); // declare WebWorkerPlayer
 
