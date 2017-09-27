@@ -8,7 +8,7 @@ define(['ludorum', 'creatartis-base', 'sermat'], function (ludorum, base, Sermat
 	}
 
 	var PlayTesterApp = base.declare({
-		constructor: function PlayTesterApp(game, ui, elements) {
+		constructor: function PlayTesterApp(game, ui, elements, webWorkerDependencies) {
 			this.game = game;
 			this.ui = ui;
 			this.elements = base.iterable(elements).mapApply(function (id, elem) {
@@ -16,6 +16,7 @@ define(['ludorum', 'creatartis-base', 'sermat'], function (ludorum, base, Sermat
 			}).toObject();
 			this.players = [];
 			this.currentPlayers = [];
+			this.webWorkerDependencies = webWorkerDependencies || [];
 		},
 
 		player: function addPlayer(title, builder, runOnWorker) {
@@ -87,7 +88,10 @@ define(['ludorum', 'creatartis-base', 'sermat'], function (ludorum, base, Sermat
 				selectOnChange = function (playerNum) {
 					var option = app.players[+this.value];
 					(option.runOnWorker ?
-						ludorum.players.WebWorkerPlayer.create({ playerBuilder: option.builder }) :
+						ludorum.players.WebWorkerPlayer.create({
+							playerBuilder: option.builder,
+							dependencies: app.webWorkerDependencies
+						}) :
 						base.Future.when(option.builder())
 					).then(function (player) {
 						app.currentPlayers[playerNum] = player;
@@ -115,7 +119,7 @@ define(['ludorum', 'creatartis-base', 'sermat'], function (ludorum, base, Sermat
 		},
 
 		reset: function reset() {
-			var match = new ludorum.Match(this.game, this.currentPlayers);
+			var match = new ludorum.Match(this.game.clone(), this.currentPlayers);
 			this.currentMatch = match;
 			this.ui.show(match);
 			var bar = this.elements.bar;
