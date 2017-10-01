@@ -83,4 +83,6 @@ require(['ludorum', 'creatartis-base', 'sermat', 'playtester'], function (ludoru
 		.selects(['playerUppercase', 'playerLowercase'])
 		.button('resetButton', document.getElementById('reset'), APP.reset.bind(APP))
 		.reset();
+}, function (err) {
+	console.error(err);
 }); // require().

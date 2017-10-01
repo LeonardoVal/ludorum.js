@@ -74,4 +74,6 @@ require(['ludorum', 'creatartis-base', 'sermat', 'playtester'], function (ludoru
 		.selects(['playerXs', 'playerOs'])
 		.button('resetButton', document.getElementById('reset'), APP.reset.bind(APP))
 		.reset();
+}, function (err) {
+	console.error(err);
 }); // require().

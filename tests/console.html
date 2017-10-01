@@ -57,8 +57,8 @@ function main() {
 		// Used by the examples.
 		window.game = new ludorum.games.TicTacToe();
 		window.randomPlayer = new ludorum.players.RandomPlayer();
-	}, function (error) {
-		throw error;
+	}, function (err) {
+		console.error(err);
 	});
 	Array.prototype.slice.call(document.querySelectorAll('#reference tr td a')).forEach(function (jsLink) {
 		var label, code;
