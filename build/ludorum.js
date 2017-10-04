@@ -3082,7 +3082,9 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 				'self.PLAYER = ('+ params.playerBuilder +').call(self),\n'+
 				'"OK"');
 		}).then(function () {
-			return parallel.worker;
+			var worker = parallel.worker;
+			worker.__parallel__ = parallel;
+			return worker;
 		});
 	},
 
@@ -3097,6 +3099,51 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 		});
 	},
 
+	__newFuture__: function __newFuture__(cancelValue) {
+		var future = this.__future__;
+		if (future && future.isPending()) {
+			if (future.hasOwnProperty('__cancelValue__')) {
+				future.resolve(future.__cancelValue__);
+			} else {
+				future.reject("Canceled!");
+			}
+		}
+		future = new Future();
+		if (typeof cancelValue !== 'undefined') {
+			future.__cancelValue__ = cancelValue;
+		}
+		this.__future__ = future;
+		return future;
+	},
+
+	__onmessage__: function __onmessage__(msg) {
+		var future = this.__future__;
+		if (future) {
+			if (future.hasOwnProperty('__cancelValue__')) {
+				future.resolve(future.__cancelValue__);
+			} else {
+				future.reject("Canceled!");
+			}
+		}
+		this.__future__ = null;
+		try {
+			var data = JSON.parse(msg.data);
+			if (data.error) {
+				future.reject(data.error);
+			} else {
+				future.resolve(data.result);
+			}
+		} catch (err) {
+			future.reject(err);
+		}
+	},
+
+	__run__: function __run__(code) {
+		var future = this.__newFuture__(Match.commandQuit);
+		this.worker.postMessage(code);
+		return future;
+	},
+
 	/** This player's `decision(game, player)` is delegated to this player's webworker, returning a
 	future that will be resolved when the parallel execution is over.
 
@@ -3104,29 +3151,15 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 	previous match was aborted, issuing a quit command.
 	*/
 	decision: function decision(game, player) {
-		var future = this.__future__;
-		if (future && future.isPending()) {
-			future.resolve(future.__cancelValue__);
-		}
-		future = this.__future__ = new Future();
-		future.__cancelValue__ = Match.commandQuit;
-		this.worker.postMessage('PLAYER.decision(Sermat.mat('+ JSON.stringify(Sermat.ser(game)) +
-			'), '+ JSON.stringify(player) +')');
-		return future;
+		return this.__run__('PLAYER.decision(Sermat.mat('+ JSON.stringify(Sermat.ser(game)) +
+			'),'+ JSON.stringify(player) +')');
 	},
 
 	/**TODO
 	*/
 	evaluatedMoves: function evaluatedMoves(game, player) {
-		var future = this.__future__;
-		if (future && future.isPending()) {
-			future.resolve(future.__cancelValue__);
-		}
-		future = this.__future__ = new Future();
-		future.__cancelValue__ = null;
-		this.worker.postMessage('PLAYER.evaluatedMoves(Sermat.mat('+
-			JSON.stringify(Sermat.ser(game)) +'), '+ JSON.stringify(player) +')');
-		return future;
+		return this.__run__('PLAYER.evaluatedMoves(Sermat.mat('+
+			JSON.stringify(Sermat.ser(game)) +'),'+ JSON.stringify(player) +')');
 	}
 }); // declare WebWorkerPlayer
 
