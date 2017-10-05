@@ -51,6 +51,10 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 		});
 	},
 
+	/** The webworker player stores the future of the current computation in the `__future__`
+	property. If one code is executed in the webworker before a previous one ends, the previous one
+	gets resolved with a `cancelValue` or rejected.
+	*/
 	__newFuture__: function __newFuture__(cancelValue) {
 		var future = this.__future__;
 		if (future && future.isPending()) {
@@ -68,6 +72,8 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 		return future;
 	},
 
+	/** The `__onemessage__` method is the handler of the webworker messages to the calling thread.
+	*/
 	__onmessage__: function __onmessage__(msg) {
 		var future = this.__future__;
 		if (future) {
@@ -90,14 +96,18 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 		}
 	},
 
+	/** The method `__run__` executes the given `code` in the player's webworker. Returns a future
+	the will be fulfilled when the code execution ends. The returned future is also stored in the
+	player's `__future__` property.
+	*/
 	__run__: function __run__(code) {
 		var future = this.__newFuture__(Match.commandQuit);
 		this.worker.postMessage(code);
 		return future;
 	},
 
-	/** This player's `decision(game, player)` is delegated to this player's webworker, returning a
-	future that will be resolved when the parallel execution is over.
+	/** This player's `decision` method is delegated to this player's webworker, returning a future
+	that will be resolved when the parallel execution is over.
 
 	Warning! If this method is called while another decision is pending, the player will assume the
 	previous match was aborted, issuing a quit command.
@@ -107,7 +117,7 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 			'),'+ JSON.stringify(player) +')');
 	},
 
-	/**TODO
+	/** This player's `evaluatedMoves` method is delegated to this player's webworker.
 	*/
 	evaluatedMoves: function evaluatedMoves(game, player) {
 		return this.__run__('PLAYER.evaluatedMoves(Sermat.mat('+
