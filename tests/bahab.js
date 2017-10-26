@@ -1,4 +1,5 @@
-require(['ludorum', 'creatartis-base', 'sermat', 'playtester'], function (ludorum, base, Sermat, PlayTesterApp) {
+require(['require-config'], function (init) { "use strict";
+init(['ludorum', 'creatartis-base', 'sermat', 'playtester'], function (ludorum, base, Sermat, PlayTesterApp) {
 	var iterable = base.iterable,
 		CheckerboardFromString = ludorum.utils.CheckerboardFromString;
 
@@ -83,6 +84,5 @@ require(['ludorum', 'creatartis-base', 'sermat', 'playtester'], function (ludoru
 		.selects(['playerUppercase', 'playerLowercase'])
 		.button('resetButton', document.getElementById('reset'), APP.reset.bind(APP))
 		.reset();
-}, function (err) {
-	console.error(err);
+}); // init()
 }); // require().

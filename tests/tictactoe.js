@@ -1,4 +1,5 @@
-require(['ludorum', 'creatartis-base', 'sermat', 'playtester'], function (ludorum, base, Sermat, PlayTesterApp) {
+require(['require-config'], function (init) { "use strict";
+init(['ludorum', 'creatartis-base', 'sermat', 'playtester'], function (ludorum, base, Sermat, PlayTesterApp) {
 	var CheckerboardFromString = ludorum.utils.CheckerboardFromString;
 
 	/** Custom HTML interface for TicTacToe.
@@ -74,6 +75,5 @@ require(['ludorum', 'creatartis-base', 'sermat', 'playtester'], function (ludoru
 		.selects(['playerXs', 'playerOs'])
 		.button('resetButton', document.getElementById('reset'), APP.reset.bind(APP))
 		.reset();
-}, function (err) {
-	console.error(err);
+}); // init()
 }); // require().
