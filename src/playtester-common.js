@@ -125,10 +125,14 @@ define(['ludorum', 'creatartis-base', 'sermat'], function (ludorum, base, Sermat
 			var bar = this.elements.bar;
 			if (bar) {
 				match.events.on('begin', function (game) {
+					var msg = game.isContingent ? "Resolving contingency." : //FIXME Better message
+						"Turn "+ game.activePlayer() +".";
 					bar.innerHTML = escapeXML("Turn "+ game.activePlayer() +".");
 				});
 				match.events.on('next', function (game, next) {
-					bar.innerHTML = escapeXML("Turn "+ next.activePlayer() +".");
+					var msg = next.isContingent ? "Resolving contingency." : //FIXME Better message
+						"Turn "+ next.activePlayer() +".";
+					bar.innerHTML = escapeXML(msg);
 				});
 				match.events.on('end', function (game, results) {
 					var winner = game.players.filter(function (p) {
