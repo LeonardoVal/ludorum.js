@@ -30,7 +30,11 @@
 							name +"`.");
 					}
 				});
-				main.apply(window, args);
+				switch (typeof main) {
+					case 'undefined': break;
+					case 'function': main.apply(window, args); break;
+					default: throw new Error('Invalid main function '+ main +'!');
+				}
 				console.log("Ready.");
 			}, function (err) {
 				console.error(err);
