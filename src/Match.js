@@ -198,6 +198,12 @@ var Match = exports.Match = declare({
 
 	// ## Utilities ################################################################################
 
+	/** A `randomMatch` is a match for the given `game` played by random players (`RandomPlayer`).
+	*/
+	'static randomMatch': function randomMatch(game) {
+		return players.RandomPlayer.playTo(game);
+	},
+
 	toString: function toString() {
 		return Sermat.ser(this);
 	},

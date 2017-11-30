@@ -50,6 +50,17 @@ var Player = exports.Player = declare({
 	
 	// ## Utilities ################################################################################
 	
+	/** The `playTo` method makes a match for the given `game` where all roles are played by this
+	agent.
+	*/
+	'dual playTo': function playTo(game) {
+		var self = this,
+			players = game.players.map(function (role) {
+				return typeof self === 'function' ? new self() : self;
+			});
+		return new Match(game, players);
+	},
+
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
