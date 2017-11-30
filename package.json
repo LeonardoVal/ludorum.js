@@ -8,7 +8,7 @@
 		"artificial intelligence",
 		"game ai"
 	],
-	"version": "0.2.1-alpha",
+	"version": "0.2.1-beta",
 	"author": {
 		"name": "Leonardo Val",
 		"email": "leonardo.val@creatartis.com"
@@ -30,7 +30,7 @@
 		"sermat": "~0.0.9"
 	},
 	"devDependencies": {
-		"creatartis-grunt": "~0.0.11"
+		"creatartis-grunt": "~0.0.12"
 	},
 	"scripts": {}
 }

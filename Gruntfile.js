@@ -31,9 +31,19 @@ module.exports = function(grunt) {
 			{ id: 'playtester', path: 'build/playtester-common.js',
 				dev: true, module: false }
 		],
-		bundled: ['src/playtester-common.js'],
-		perf: true
+		copy: {
+			'build/': 'src/playtester-common.js'	
+		},
+		perf: true,
+		connect: {
+			console: 'tests/console.html',
+			bahab: 'tests/bahab.html',
+			tictactoe: 'tests/tictactoe.html'
+		}
 	});
 
 	grunt.registerTask('default', ['build']);
+	grunt.registerTask('console', ['compile', 'connect:console']);
+	grunt.registerTask('console', ['bahab', 'connect:bahab']);
+	grunt.registerTask('console', ['tictactoe', 'connect:tictactoe']);
 };
