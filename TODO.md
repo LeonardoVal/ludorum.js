@@ -2,7 +2,6 @@
 
 ## Matches
 
-+ Static shortcut method `randomMatch` to run a random match.
 + Match commands for the players to control the match.
 
 ## Tournaments
