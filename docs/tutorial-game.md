@@ -1,25 +1,27 @@
 ﻿Games in Ludorum
 ================
 
-This is a simple tutorial on how to implement a game in [Ludorum](https://github.com/LeonardoVal/ludorum.js), a board game framework focused not on graphics or user interfaces, but on artificial players design, implementation and testing. The example games used come already implemented in the library, though not in the same way as shown here.
+This is a simple tutorial on how to implement a game in [Ludorum](https://github.com/LeonardoVal/ludorum.js), a board game framework focused not on graphics or user interfaces, but on artificial players design, implementation and testing. The example games used in this tutorial come already implemented in the library, although maybe not in the same way as shown here.
 
 ## Introduction ####################################################################################
 
 A game in Ludorum is defined by a subclass of the `Game` class. Each object represents a game state, containing all the information necessary to:
 
-+ Decide if the game has finished or not, and if that is the case which player won or lost.
++ Decide if the game has finished or not, and if that is the case which player won and which player lost.
 
-+ Decide if which player can move (if the game has not finished) and what move he or she can perform. The players which can move are called _active or enabled players_.
++ Decide which player (or players) can move if the game has not finished. Players that can move are called  _active players_.
 
-+ Given a move, build the next game state resulting from perfoming it in the current state.
++ List which moves can the active player (or players) perform.
 
-For these functions the Game class has the following members that must be overriden:
++ Given a move, calculate the next game state resulting from perfoming this action in the current game state.
 
-+ `result()` returns an object with the game's result if the game is final. Otherwise it must return `null` or `undefined`. Results are always numbers: possitive means a victory, negative a defeat and zero a tied match.
+For these functions the `Game` class has the following members that must be defined:
+
++ `result()` returns an object with the game's result if the game is final. Otherwise it must return `null` or `undefined`. Results are always numbers: positive means a victory, negative a defeat and zero a tied match.
 	
-+ `moves()` returns an object with the possible moves for each active player in the game state, if the game is not finished. Otherwise it must return `null` or `undefined`. The moves must be arrays of objects which can be properly _"stringified"_ with [JSON](http://www.json.org/js.html).
++ `moves()` returns an object with the possible moves for each active player in the game state. If the game is finished, it must return `null` or `undefined`. Moves must be represented by values which can be properly _"stringified"_ with [JSON](http://www.json.org/js.html). E.g. numbers, strings or arrays of numbers and strings.
 	
-+ `next(moves)` returns the next game state given the moves for each active player. If these moves are invalid, an `Error` must be raised. Game states in Ludorum must be _unmodifiable_. Every time a move is performed a new object must be created. This is done to simplify AI implementation.
++ `next(moves)` returns the next game state given the moves for each active player. If these moves are not valid, an `Error` must be raised. In Ludorum we recommend to make game states _unmodifiable_. I.e. every time a move is performed a new object must be created. This is done to simplify AI implementation and debugging.
 
 Other members to be included are:
 
@@ -27,22 +29,21 @@ Other members to be included are:
 
 + `players` is an class property containing an array of strings, one for each player.
 
-+ `scores()` is like a relaxed version of `result()`. The sign of the scores don't have to represent victory or defeat, and they can be calculated for unfinished game states. If the game supports this notion, it may be useful for heuristic functions used in AI players, among other things.
++ `scores()` is a relaxed version of `result()`. The sign of the scores don't have to represent victory or defeat, and they can be calculated for unfinished game states. If the game supports this notion, it may be useful for heuristic functions used in AI players, among other things.
 
-+ `resultBounds()` calculates an array with the minimum and maximum possible results. By default `[-1, 1]` is returned, the usual for simple games. If the game has many different victories and defeats (better and worse), these numbers must be provided to some AI algorithms.
++ `resultBounds()` calculates an array with the minimum and maximum possible results. Bounds are `[-1, 1]` by default, which is the usual for simple games. If the game has many different victories and defeats (better and worse), these numbers must be provided to some AI algorithms.
 
-Displaying or rendering the game state in any way is not a concern for this framework. There is some really crude support for user interfaced based in HTML and CSS, but these are meant to be used for 
-little more than just testing.
+Displaying or rendering the game state in any way is not a concern for this framework. There is some support for user interfaced based in HTML and CSS, but these are meant to be used for little more than just testing.
 
 ## A simple deterministic turn-based game: _TicTacToe_ #############################################
 
-The classic game of [TicTacToe](http://en.wikipedia.org/wiki/Tic-tac-toe) is played by two players in a 3 by 3 grid, which starts empty. The first player plays as _Xs_, while the second plays as _Os_. Players take turns drawing an X or an O in any free location in the grid. The first player to align three of their letters wins, hence the other loses. If the board gets full before this happens, the game is drawed.
+The classic game of [TicTacToe](http://en.wikipedia.org/wiki/Tic-tac-toe) is played by two players in a 3 by 3 grid, which starts empty. The first player plays as _Xs_, while the second plays as _Os_. Players take turns drawing an X or an O in any free square in the grid. The first player to align three of their letters wins, and the other loses. If the board gets full before this happens, the game is a tie.
 
-The first decision to make is how to represent the game state's data. In this case a string of nine characters will be used to represent the board, each being either a `'X'`, an `'O'` or a space `' '`. The board's squared will be ordered first by column and then by row. The active player must be indicated in a separate property.
+The first decision to make is how to represent the game state's data. In this case a string of nine characters will be used to represent the board, each being either a `'X'`, an `'O'` or a space `' '`. The board's squares will be ordered first by column and then by row. The active player must be indicated in a separate property.
 
 The constructor of the new `TicTacToe` will receive the active player and the board. Its prototype will inherit from `Game`. If no arguments are given, it assumes default values which define the initial game state. The active player is set by the constructor of `Game`, and is assumed to be `'X'` by default.
 
-The following code examples will use the [object oriented JavaScript conventions recomended by Mozilla](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Introduction_to_Object-Oriented_JavaScript). Internally, Ludorum uses to this effect functions provided by [creatartis-base](https://github.com/LeonardoVal/creatartis-base).
+The following code examples will use the [object oriented JavaScript conventions recomended by Mozilla, used with ECMAScript 5](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Introduction_to_Object-Oriented_JavaScript). Internally, Ludorum uses to this effect functions provided by [creatartis-base](https://github.com/LeonardoVal/creatartis-base).
 
 ```javascript
 function TicTacToe(activePlayer, board) {
@@ -64,16 +65,16 @@ TicTacToe.prototype.name = 'TicTacToe';
 TicTacToe.prototype.players = ['X', 'O'];
 ```
 
-After that we add the game ending check. If the game has no empty squares, then we can say the match is drawn, and the result is `{X: 0, O: 0}`. Else we must look for three X or O aligned. Since the board is represented with a string, regular expressions can be used to easily and quickly check for this lines.
+After that we add the game ending check. First we must look for three X or O aligned. Since the board is represented with a string, regular expressions can be used to easily and quickly check for this lines. If no line is found, and the game has no empty squares, then we can say the match is drawn, and the result is `{X: 0, O: 0}`. Otherwise the game is not finished and hence it does not have a result, so we return `null`.
 
 ```javascript
 TicTacToe.prototype.result = function result() {
-	if (this.board.indexOf(' ') < 0) {
-		return this.draw();
-	} else if (/^(XXX......|...XXX...|......XXX|X..X..X..|.X..X..X.|..X..X..X|X...X...X|..X.X.X..)$/.test(this.board)) {
+	if (/^(XXX......|...XXX...|......XXX|X..X..X..|.X..X..X.|..X..X..X|X...X...X|..X.X.X..)$/.test(this.board)) {
 		return this.victory('X');
 	} else if (/^(OOO......|...OOO...|......OOO|O..O..O..|.O..O..O.|..O..O..O|O...O...O|..O.O.O..)$/.test(this.board)) {
 		return this.victory('O');
+	} else if (this.board.indexOf(' ') < 0) {
+		return this.tied();
 	} else {
 		return null; // Game continues.
 	}
@@ -122,11 +123,11 @@ TicTacToe.runTestMatch = function runTestMatch(showMoves) {
 		match = new ludorum.Match(new TicTacToe(), players);
 	if (showMoves) {
 		match.events.on('move', function (game, moves) {
-			console.log('['+ game.board +']\n\tmoves: '+ JSON.stringify(moves));
+			console.log('['+ game.board +']\tmoves: '+ JSON.stringify(moves));
 		});
 	}
 	match.events.on('end', function (game, result) {
-		console.log('['+ game.board +']\n\tresult: '+ JSON.stringify(result));
+		console.log('['+ game.board +']\tresult: '+ JSON.stringify(result));
 	});
 	return match.run();
 };
@@ -148,20 +149,20 @@ Running `TicTacToe.runTestMatch(true)` should output something like this in the 
 [X XOOOXXO] result: {"X":-1,"O":1}
 ```
 
-Tictactoe is a deterministic game, i.e. the flow of the game is only determined by the player's actions. Not all games are like so. Some games use dice, roulettes or shuffled card decks (among others) that also affect the match. Including random variables of these sorts is explained in the next section.
+Tictactoe is a deterministic game, i.e. the flow of the game is only determined by the player's actions. Not all games are like this. Some games use dice, roulettes or shuffled card decks. This _random variables_ also affect the game. Including random variables of these sorts is explained in the next section.
 
-## A simple stochastic turn-based game: _Pig_ ######################################################
+## A simple non deterministic turn-based game: _Pig_ ###############################################
 
-[Pig](http://en.wikipedia.org/wiki/Pig_%28dice_game%29) is a simple dice betting game. Each turn the active player rolls a die repeatedly, until rolling a 1 or choosing to hold. Players that hold add to their score the sum of the rolls made. Players that roll a 1 don't add any points. The game goes on until one player gets to 100 or some other predefined amount of points.
+[Pig](http://en.wikipedia.org/wiki/Pig_%28dice_game%29) is a simple dice betting game. Each turn the active player rolls a die repeatedly, until rolling a 1 or choosing to hold. Players that hold add to their score the sum of the rolls they got to make. Players that roll a 1 don't add any points. The game goes on until one player gets to 100 or some other predefined amount of points.
 
-Pig is a good exemplar of a game with random variables. Because of how artificial players work, game states of stochastic games have to be split in two types: the normal game states where players can decide and make moves, and the aleatory states where random variables are instantiated (i.e. given a value). The first type is represented as before, but for the second one the `Aleatory` class is used.
+Pig is a good exemplar of a game with random variables. Because of how artificial players work, game states of stochastic games have to be split in two types: the normal game states where players can decide and make moves, and the contingent states where random variables are instantiated (i.e. given a value). The first type is represented as before, but for the second one the `Aleatory` class is used.
 
-Lets start the game implementation with the `Pig` class to represent normal game states. The constructor receives the active player, the current scores for both players and the amount of points the active player has accumulated in previous rolls of the current turn.
+Lets start the game implementation with the `Pig` class to represent normal game states. The constructor receives the active player, the current scores for both players and the amount of points the active player has accumulated in previous rolls in the current turn.
 
 ```javascript
 function Pig(activePlayer, scores, points) {
 	ludorum.Game.call(this, activePlayer || 'One');
-	this._scores = scores || {One: 0, Two: 0};
+	this.__scores__ = scores || {One: 0, Two: 0};
 	this.points = points || 0;
 }
 
@@ -175,7 +176,7 @@ Pig.prototype.name = 'Pig';
 Pig.prototype.players = ['One', 'Two'];
 
 Pig.prototype.scores = function scores() {
-	return this._scores;
+	return this.__scores__;
 };
 ```
 
@@ -183,10 +184,11 @@ The ending of the game is easy to decide, by checking if any player has 100 poin
 
 ```javascript
 Pig.prototype.result = function result() {
-	var scores = this._scores;
-	if (scores.One >= 100) {
+	var scores = this.scores(),
+		goal = this.resultBounds()[1];
+	if (scores.One >= goal) {
 		return this.victory('One', Math.min(100, scores.One) - scores.Two);
-	} else if (scores.Two >= 100) {
+	} else if (scores.Two >= goal) {
 		return this.victory('Two', Math.min(100, scores.Two) - scores.One);
 	} else {
 		return null;
@@ -203,11 +205,12 @@ Moves are also fairly simple, since the player must only choose between rolling 
 ```javascript
 Pig.prototype.moves = function moves() {
 	var result = null,
-		activePlayer = this.activePlayer();
+		activePlayer = this.activePlayer(),
+		goal = this.resultBounds()[1];
 	if (!this.result()) {
 		result = {};
 		result[activePlayer] = this.points === 0 ? ['roll'] : 
-			this._scores[activePlayer] + this.points >= 100 ? ['hold'] : ['roll', 'hold'];
+			this.__scores__[activePlayer] + this.points >= goal ? ['hold'] : ['roll', 'hold'];
 	}
 	return result;
 };
@@ -225,17 +228,17 @@ Pig.prototype.next = function next(moves, haps) {
 		throw new Error('No move for active player '+ activePlayer +' at '+ this +'!');
 	}
 	if (move === 'hold') {
-		var scores = JSON.parse(JSON.stringify(this._scores)); // Copy scores object.
+		var scores = Object.assign({}, this.__scores__); // Copy scores object.
 		scores[activePlayer] += this.points; // Add points to the active player's score.
 		return new Pig(this.opponent(), scores, 0); // Pass the turn to the other player.
 	} else if (move === 'roll') {
 		var roll = (haps && haps.die)|0;
 		if (!roll) { // Dice has not been rolled.
-			return new Contingent({ die: ludorum.aleatories.dice.D6 }, this, moves);
+			return new ludorum.Contingent(this, moves, { die: ludorum.aleatories.dice.D6 });
 		} else { // Dice has been rolled.
 			return (roll > 1) ? 
-				new this.constructor(activePlayer,  this.goal, this.__scores__, this.__rolls__.concat(roll)) :
-				new this.constructor(this.opponent(), this.goal, this.__scores__, []);
+				new Pig(activePlayer,  this.__scores__, this.points + roll) :
+				new Pig(this.opponent(), this.__scores__, 0);
 		}
 	} else {
 		throw new Error("Invalid moves "+ JSON.stringify(moves) +" at "+ this +"!");
@@ -243,26 +246,25 @@ Pig.prototype.next = function next(moves, haps) {
 };
 ```
 
-Again, to test our implementation of Pig we set up a match between random players.
+Again, to test our implementation of Pig we set up a match between random players. This time we use the equivalent shortcut `randomMatch` method.
 
 ```javascript
 Pig.runTestMatch = function runTestMatch(showMoves) {
-	var players = [new ludorum.players.RandomPlayer(), new ludorum.players.RandomPlayer()],
-		match = new ludorum.Match(new Pig(), players);
+	var match = ludorum.Match.randomMatch(new Pig());
 	if (showMoves) {
 		match.events.on('move', function (game, moves) {
-			console.log(JSON.stringify(game._scores) +' '+ game.activePlayer() +' has '+ game.points +
-				'\n\tmoves: '+ JSON.stringify(moves));
+			console.log(JSON.stringify(game.__scores__) +' '+ game.activePlayer() +' has '+ game.points +
+				', moves: '+ JSON.stringify(moves));
 		});
 	}
 	match.events.on('end', function (game, result) {
-		console.log(JSON.stringify(game._scores) +'\n\tresult: '+ JSON.stringify(result));
+		console.log(JSON.stringify(game.__scores__) +', result: '+ JSON.stringify(result));
 	});
 	return match.run();
 };
 ```
 
-Running the test may leave something like this in the console:
+Running the test (`Pig.runTestMatch(true)`) may leave something like this in the console:
 
 ```
 {"One":0,"Two":0} One has 0, moves: {"One":"roll"}
@@ -277,9 +279,9 @@ Both games treated so far have been strictly turn-based, what is usually known a
 
 ## A simple deterministic simultaneous game: _Odds & Evens_ ########################################
 
-[Odds and evens](http://en.wikipedia.org/wiki/Odds_and_evens) is a classic child game. Each turn each of the two players will chose at the same time either to play a 1 or a 2. If the sum of both numbers is even, the Evens player earns a point. Otherwise the Odds players earns a point. The game is played until one of the players reaches a certain amount of points, winning the game. This is a simple example of a simultaneous game, i.e. a game in which more than one player can move at any given turn. Another simple example is [Rock-Paper-Scissors](https://en.wikipedia.org/wiki/Rock-Paper-Scissors), and a much more complicated example would be [Diplomacy](http://en.wikipedia.org/wiki/Diplomacy_%28game%29).
+[Odds and evens](http://en.wikipedia.org/wiki/Odds_and_evens) is a classic child game. Each turn each of the two players will chose at the same time either to play a 1 or a 2. If the sum of both numbers is even, the _Evens_ player earns a point. Otherwise the _Odds_ players earns a point. The game is played until one of the players reaches a certain amount of points, winning the game. This is a simple example of a simultaneous game, i.e. a game in which more than one player can move at any given turn. Another simple example is [Rock-Paper-Scissors](https://en.wikipedia.org/wiki/Rock-Paper-Scissors), and a much more complicated example would be [Diplomacy](http://en.wikipedia.org/wiki/Diplomacy_%28game%29).
 
-A game state of Odds & Evens is very simple, since it must include the current scores. Both players are active every turn.
+A game state of Odds & Evens is very simple, since it must only include the current scores. Both players are always active every turn.
 
 ```javascript
 function OddsAndEvens(scores) {
@@ -305,11 +307,12 @@ Game ends when the points goal is reached by either player. Here we use a goal o
 
 ```javascript
 OddsAndEvens.prototype.result = function result() {
-	var scores = this._scores;
-	if (scores.Odds >= 10) {
-		return this.victory('Odds', Math.min(10, scores.Odds) - scores.Evens);
-	} else if (scores.Evens >= 10) {
-		return this.victory('Evens', Math.min(10, scores.Evens) - scores.Odds);
+	var scores = this._scores,
+		goal = this.resultBounds()[1];
+	if (scores.Odds >= goal) {
+		return this.victory('Odds', Math.min(goal, scores.Odds) - scores.Evens);
+	} else if (scores.Evens >= goal) {
+		return this.victory('Evens', Math.min(goal, scores.Evens) - scores.Odds);
 	} else {
 		return null;
 	}
@@ -349,15 +352,14 @@ As we did in all cases before, to test our implementation of OddsAndEvens we mak
 
 ```javascript
 OddsAndEvens.runTestMatch = function runTestMatch(showMoves) {
-	var players = [new ludorum.players.RandomPlayer(), new ludorum.players.RandomPlayer()],
-		match = new ludorum.Match(new OddsAndEvens(), players);
+	var match = ludorum.Match.randomMatch(new OddsAndEvens());
 	if (showMoves) {
 		match.events.on('move', function (game, moves) {
-			console.log(JSON.stringify(game._scores) +'\n\tmoves: '+ JSON.stringify(moves));
+			console.log(JSON.stringify(game._scores) +'\tmoves: '+ JSON.stringify(moves));
 		});
 	}
 	match.events.on('end', function (game, result) {
-		console.log(JSON.stringify(game._scores) +'\n\tresult: '+ JSON.stringify(result));
+		console.log(JSON.stringify(game._scores) +'\tresult: '+ JSON.stringify(result));
 	});
 	return match.run();
 };
@@ -373,6 +375,6 @@ The test's output in the console may look as follows:
 {"Odds":9,"Evens":10} result: {"Odds":-1,"Evens":1}
 ```
 
-Making a stochastic simultaneous game implies the combination of the two schemes. Aleatory variables don't collide with more than one active player per turn.
+Making a stochastic simultaneous game implies the combination of the two schemes. Aleatory variables are compatible with more than one active player per turn.
 
 _By [Leonardo Val](http://github.com/LeonardoVal)_.
