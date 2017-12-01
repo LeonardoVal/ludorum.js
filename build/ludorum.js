@@ -231,6 +231,13 @@ var Game = exports.Game = declare({
 		}
 	},
 
+	/** Game states that depend on random variables are `Contingent` game states. The `contingent`
+	method is a shortcut to make such states based on the current game state.
+	*/
+	contingent: function contingent(moves, aleatories, update) {
+		return new Contingent(this, moves, aleatories, update);
+	},
+
 	// ## Result functions #########################################################################
 
 	/** The maximum and minimum results may be useful and even required by some game search
