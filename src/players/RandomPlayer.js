@@ -15,6 +15,7 @@ players.RandomPlayer = declare(Player, {
 	/** The `decision(game, player)` is made completely at random.
 	*/
 	decision: function(game, player) {
+		raiseIf(game.isContingent, "Contingent game state has no moves!");
 		return this.random.choice(this.movesFor(game, player));
 	},
 	

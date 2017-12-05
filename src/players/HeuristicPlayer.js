@@ -66,7 +66,7 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 	evaluatedMoves: function evaluatedMoves(game, player) {
 		var heuristicPlayer = this,
 			isAsync = false;
-		raiseIf(game.isContingent, "Contingent game state have no moves!");
+		raiseIf(game.isContingent, "Contingent game state has no moves!");
 		/** Every move is evaluated using `moveEvaluation`. This may be asynchronous and hence
 		result in a `Future`.
 		*/
