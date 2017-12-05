@@ -200,8 +200,18 @@ var Match = exports.Match = declare({
 
 	/** A `randomMatch` is a match for the given `game` played by random players (`RandomPlayer`).
 	*/
-	'static randomMatch': function randomMatch(game) {
-		return players.RandomPlayer.playTo(game);
+	'static randomMatch': function randomMatch(game, args) {
+		args = args || {};
+		var m = players.RandomPlayer.playTo(game);
+		if (args.log) {
+			if (typeof args.log ===  'object') {
+				m.logger = args.log;
+			} else {
+				m.logger = new base.Logger(typeof args.log === 'string' ? args.log : 'Match');
+				m.logger.appendToConsole();
+			}
+		}
+		return m;
 	},
 
 	toString: function toString() {
