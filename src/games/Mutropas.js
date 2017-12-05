@@ -23,7 +23,7 @@ games.Mutropas = declare(Game, {
 		Game.call(this, this.players);
 		args = args || {};
 		this.playedPieces = args.playedPieces || [];
-		this.pieces = args.pieces || this.dealPieces();
+		this.pieces = args.pieces || this.dealPieces(args.random);
 		this.__scores__ = args.scores || obj(this.players[0], 0, this.players[1], 0);
 	},
 	
@@ -79,9 +79,13 @@ games.Mutropas = declare(Game, {
 	point.
 	*/
 	next: function next(moves, haps, update) {
-		raiseIf(haps, 'Haps are not required (given ', haps, ')!');
-		var player0 = this.players[0], player1 = this.players[1],
-			move0 = moves[player0], move1 = moves[player1],
+		var player0 = this.players[0],
+			player1 = this.players[1];
+		if (!this.pieces[player0] || !this.pieces[player1]) { // This state is a view.
+			return this.__viewNext__(moves, haps, update);
+		}
+		var move0 = moves[player0],
+			move1 = moves[player1],
 			pieces = this.pieces;
 		raiseIf(pieces[player0].indexOf(move0) < 0, "Invalid move ", JSON.stringify(move0),
 			" for player ", player0, "! (moves= ", JSON.stringify(moves), ")");
@@ -97,10 +101,8 @@ games.Mutropas = declare(Game, {
 					return p !== move1;
 				})
 			),
-			nextScores = obj(
-				player0, this.__scores__[player0] + moveResult,
-				player1, this.__scores__[player1] - moveResult
-			);
+			nextScores = obj(player0, this.__scores__[player0] + moveResult,
+				player1, this.__scores__[player1] - moveResult);
 		if (update) {
 			this.playedPieces = nextPlayedPieces;
 			this.pieces = nextPieces;
@@ -108,7 +110,6 @@ games.Mutropas = declare(Game, {
 			return this;
 		} else {
 			return new this.constructor({
-				random: this.random,
 				playedPieces: nextPlayedPieces,
 				pieces: nextPieces,
 				scores: nextScores
@@ -116,6 +117,22 @@ games.Mutropas = declare(Game, {
 		}
 	},
 	
+	__viewNext__: function __viewNext__(moves, haps, update) {
+		var player = this.pieces[this.players[0]] ? this.players[0] : this.players[1],
+			opponent = this.opponent(player);
+		if (!haps) {
+			return this.contingent(moves, 
+				obj(player, aleatories.uniformAleatory(this.__possiblePieces__(opponent))), 
+				update);
+		} else {
+			return (new this.constructor({
+				pieces: obj(player, this.pieces[player], opponent, haps[opponent]), 
+				playedPieces: this.playedPieces,
+				scores: this.__scores__
+			})).next(moves, null, update);
+		}
+	},
+
 	/** The game's `score` is simply the sum of the move results for each player.
 	*/
 	scores: function scores() {
@@ -159,8 +176,11 @@ games.Mutropas = declare(Game, {
 	and hence it cannot cheat.
 	*/	
 	view: function view(player) {
-		var opponent = this.opponent(player);
-		return new Contingent({ pieces: new UniformAleatory(this.__possiblePieces__(opponent)) }, this);
+		return new this.constructor({
+			pieces: obj(player, this.pieces[player]), 
+			playedPieces: this.playedPieces,
+			scores: this.__scores__
+		});
 	},
 	
 	// ## Utility methods ##########################################################################

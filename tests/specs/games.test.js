@@ -87,7 +87,7 @@
 	 { game: "ConnectionGame", zeroSum: 1, oneActivePlayerPerTurn: 1, deterministic: 1 },
 	 { game: "Bahab",          zeroSum: 1, oneActivePlayerPerTurn: 1, deterministic: 1 },
 	 { game: "OddsAndEvens",   zeroSum: 1, oneActivePlayerPerTurn: 0, deterministic: 1 },
-	 { game: "Mutropas",       zeroSum: 1, oneActivePlayerPerTurn: 0, deterministic: 1 },
+	 { game: "Mutropas",       zeroSum: 1, oneActivePlayerPerTurn: 0, deterministic: 0 },
 	 { game: "Puzzle15",       zeroSum: 0, oneActivePlayerPerTurn: 1, deterministic: 1 }
 	].forEach(function (options) {
 		describe("games."+ options.game, function () {
