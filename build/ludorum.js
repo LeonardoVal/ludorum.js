@@ -351,7 +351,13 @@ var Game = exports.Game = declare({
 		return Sermat.ser(this);
 	},
 
-	// ## Modified games ###########################################################################
+	// ## Game implementation #####################################################################
+
+	/** `make` is a shortcut for making a subclass of `Game`.
+	*/
+	'static make': function make(members) {
+		return declare(this, members);
+	},
 
 	/** `cacheProperties` modifies getter methods (like `moves()` or `result()`) to cache its
 	results. Warning! Caching the results of the `next()` method may lead to memory leaks or
@@ -476,6 +482,12 @@ var Player = exports.Player = declare({
 	
 	// ## Utilities ################################################################################
 	
+	/** `make` is a shortcut for making a subclass of `Player`.
+	*/
+	'static make': function make(members) {
+		return declare(this, members);
+	},
+
 	/** The `playTo` method makes a match for the given `game` where all roles are played by this
 	agent.
 	*/
