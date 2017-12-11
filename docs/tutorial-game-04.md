@@ -1,5 +1,5 @@
-﻿A singleplayer game: _15 Puzzle_
-================================
+﻿A simple singleplayer game: _15 Puzzle_
+=======================================
 
 The [15 puzzle](https://en.wikipedia.org/wiki/15_puzzle) is a simple puzzle based on a picture split into 15 square tiles. This tiles are placed in a square frame, four times the size of the image tiles on both sides. Hence 16 tiles would fit in the frame. Since there are 15 tiles, one space remains empty. Tiles start in a random layout. The player must rearrange the tiles so that the image is formed. This is done by sliding the tiles using the empty space.
 

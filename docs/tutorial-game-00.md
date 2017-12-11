@@ -1,7 +1,7 @@
 ﻿Games in Ludorum
 ================
 
-This is a simple tutorial on how to implement a game in [Ludorum](https://github.com/LeonardoVal/ludorum.js), a board game framework focused not on graphics or user interfaces, but on artificial players design, implementation and testing. The example games used in this tutorial come already implemented in the library, although maybe not in the same way as shown here.
+This is a simple tutorial on how to implement a game in [Ludorum](https://github.com/LeonardoVal/ludorum.js). Ludorum is a board game framework focused on artificial players design, implementation and testing, rather than graphics or user interfaces. The example games used here are available in the library, although they may be simplified for this tutorial.
 
 ## Introduction ####################################################################################
 
@@ -39,19 +39,17 @@ Displaying or rendering the game state in any way is not a concern for this fram
 
 The first example game we will implement with Ludorum is probably the simplest game possible. We called it _Choose2Win_, because in their turn each of two player (called _This_ and _That_) must choose between winning the game or passing the turn to the other player.
 
-First, we declare the constructor function. The following code examples will use the [object oriented JavaScript conventions recomended by Mozilla, used with ECMAScript 5](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Introduction_to_Object-Oriented_JavaScript). Internally, Ludorum uses to this effect functions provided by [creatartis-base](https://github.com/LeonardoVal/creatartis-base).
+The following code examples will use the [object oriented JavaScript conventions recomended by Mozilla, used with ECMAScript 5](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Introduction_to_Object-Oriented_JavaScript). Internally, Ludorum uses to this effect functions provided by [creatartis-base](https://github.com/LeonardoVal/creatartis-base).
 
+First, we declare the constructor function, and set it as a subclass of `ludorum.Game` using its `make` method. 
 
 ```javascript
-function Choose2Win(activePlayer, winner) {
-	ludorum.Game.call(this, activePlayer || this.players[0]);
-	this.winner = winner || null;
-}
-Choose2Win.prototype = Object.create(ludorum.Game.prototype);
-Choose2Win.prototype.constructor = Choose2Win;
-(Object.setPrototypeOf || function (constructor, parent) {
-    constructor.__proto__ = parent; // ES5 polyfill for Object.setPrototypeOf.
-})(TicTacToe, ludorum.Game);
+var Choose2Win = ludorum.Game.make({
+	constructor: function Choose2Win(activePlayer, winner) {
+		ludorum.Game.call(this, activePlayer || this.players[0]);
+		this.winner = winner || null;
+	}
+});
 ```
 
 The game state only contains two data: which is the active player and which player won the game if the game is finished. The `winner` property is `null` if the game has not ended. The constructor by default builds a state for an unfinished game where the first player is active. It is conventional in Ludorum that game constructors must produce the initial game state when called with no arguments.
@@ -80,7 +78,9 @@ If the game has not a result, then the active player must be able to move. The `
 ```javascript
 Choose2Win.prototype.moves = function moves() {
 	if (!this.result()) {
-		return ['win', 'pass'];
+		var result = {};
+		result[this.activePlayer()] = ['win', 'pass'];
+		return result;
 	} else {
 		return null;
 	}
@@ -99,7 +99,66 @@ Choose2Win.prototype.next = function next(moves) {
 
 Our implementation for `next` always returns a new game state. The code shows to methods inherited from `ludorum.Game`. The `activePlayer` method returns the active player for the current game state. The `opponent` method returns the opponent for the given player, or for the active player by default.
 
-What we've seen is all the code necessary to implement this really simple game in Ludorum. The library bundles a similar (and slightly more complicated) version of this game. Of course, it is used only for testing purposes.
+```javascript
+Choose2Win.prototype.toString = function toString() {
+	return 'Choose2Win('+ JSON.stringify(this.activePlayer()) +','+ JSON.stringify(this.winner) +')';
+};
+```
+
+The `toString` method is used to get a string representation of any object. This is useful for debugging purposes.
+
+# Implementing a player ############################################################################
+
+In Ludorum the agents that play a game are called _players_. All the different types of players extend the base class `Player`. Here we declare a player for `Choose2Win`:
+
+```javascript
+var Choose2WinPlayer = ludorum.Player.make({
+	constructor: function Choose2WinPlayer(params) {
+		ludorum.Player.call(this, params);
+	}
+});
+```
+
+The minimal implementation of a player overrides the `decision` method. Given a game instance and a role in the game, the player must decide which action (move) to take. Making a good player for `Choose2Win` is simple: just choose to win. Still, it is good to check the arguments.
+
+```javascript
+Choose2WinPlayer.prototype.decision = function decision(game, player) {
+	var moves = game.moves();
+	if (!moves || !moves[player] || (moves[player]+'').indexOf('win') < 0) {
+		throw new Error('Cannot choose to win in game '+ game +'!');
+	} else {
+		return 'win';
+	}
+};
+```
+
+Players playing a game make a match. A `Match` instance is created with a `Game` instance and an array with the `Player` that will be playing the game. This object will control the game's flow, asking the active player to choose a move at each turn, until the game is over. Callbacks can be registered to be called on match events like: match's beginning or end, when a player takes an action, when the game advances by executing a player's action.
+
+Here we define a method `runTestMatch` that sets up a match to test the `Choose2Win` implementation. The match's events are used to log the match progress in the Javascript console. If no players are given, by default the first player is a `RandomPlayer` and the second player is a `Choose2WinPlayer`. A `RandomPlayer` is a player that chooses its moves completely at random. Hence, the match should not go further than two turns.
+
+```javascript
+Choose2Win.runTestMatch = function runTestMatch(players) {
+	players = players || [new ludorum.players.RandomPlayer(), new Choose2WinPlayer()];
+	var match = new ludorum.Match(new Choose2Win(), players);
+	match.events.on('move', function (game, moves) {
+		console.log(game +'\tmoves: '+ JSON.stringify(moves));
+	});
+	match.events.on('end', function (game, result) {
+		console.log(game +'\tresult: '+ JSON.stringify(result));
+	});
+	return match.run();
+};
+```
+
+Running `Choose2Win.runTestMatch()` should output something like this in the console:
+
+```
+Choose2Win("This",null)	moves: {"This":"pass"}
+Choose2Win("That",null)	moves: {"That":"win"}
+Choose2Win("This","That")	result: {"This":-1,"That":1}
+```
+
+What we've seen is all the code necessary to implement a really simple game and a really simple player in Ludorum. The library bundles a similar (and slightly more complicated) version of this game. Of course, it is used only for testing purposes. The next example is real yet still simple game: _TicTacToe_.
 
 [Next - A simple deterministic turn-based game: _TicTacToe_](tutorial-game-01.md.html)
 

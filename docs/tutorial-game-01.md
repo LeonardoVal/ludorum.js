@@ -7,26 +7,17 @@ The classic game of [TicTacToe](http://en.wikipedia.org/wiki/Tic-tac-toe) is pla
 
 The first decision to make is how to represent the game state's data. In this case a string of nine characters will be used to represent the board, each being either a `'X'`, an `'O'` or a space `' '`. The board's squares will be ordered first by column and then by row. The active player must be indicated in a separate property.
 
-The constructor of the new `TicTacToe` will receive the active player and the board. Its prototype will inherit from `Game`. If no arguments are given, it assumes default values which define the initial game state. The active player is set by the constructor of `Game`, and is assumed to be `'X'` by default.
+The constructor of the new `TicTacToe` will receive the active player and the board. Its prototype will inherit from `Game`. If no arguments are given, it assumes default values which define the initial game state. The active player is set by the constructor of `Game`, and is assumed to be `'X'` by default. Here we also add the simple class properties of `name` and `players`.
 
 ```javascript
-function TicTacToe(activePlayer, board) {
-	ludorum.Game.call(this, activePlayer || 'X');
-	this.board = board || '         '; // Nine spaces.
-}
-
-TicTacToe.prototype = Object.create(ludorum.Game.prototype);
-TicTacToe.prototype.constructor = TicTacToe;
-(Object.setPrototypeOf || function (constructor, parent) {
-    constructor.__proto__ = parent; // ES5 polyfill for Object.setPrototypeOf.
-})(TicTacToe, ludorum.Game);
-```
-
-First we add the simple class properties of `name` and `players`.
-
-```javascript
-TicTacToe.prototype.name = 'TicTacToe';
-TicTacToe.prototype.players = ['X', 'O'];
+var TicTacToe = ludorum.Game.make({
+	constructor: function TicTacToe(activePlayer, board) {
+		ludorum.Game.call(this, activePlayer || 'X');
+		this.board = board || '         '; // Nine spaces.
+	},
+	name: 'TicTacToe',
+	players: ['X', 'O']
+});
 ```
 
 After that we add the game ending check. First we must look for three X or O aligned. Since the board is represented with a string, regular expressions can be used to easily and quickly check for this lines. If no line is found, and the game has no empty squares, then we can say the match is drawn, and the result is `{X: 0, O: 0}`. Otherwise the game is not finished and hence it does not have a result, so we return `null`.
