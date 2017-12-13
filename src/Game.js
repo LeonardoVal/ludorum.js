@@ -313,6 +313,13 @@ var Game = exports.Game = declare({
 	/** `make` is a shortcut for making a subclass of `Game`.
 	*/
 	'static make': function make(members) {
+		members = copy({}, members);
+
+		if (!members.hasOwnProperty('name') && typeof members.constructor === 'function') {
+			members.name = members.constructor.name;
+		}
+		raiseIf(typeof members.name !== 'string' || !members.name, "A game must have a `name`!");
+		raiseIf(!Array.isArray(members.players), "A game must have `players`!");
 		return declare(this, members);
 	},
 

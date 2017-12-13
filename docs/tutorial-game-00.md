@@ -41,10 +41,13 @@ The first example game we will implement with Ludorum is probably the simplest g
 
 The following code examples will use the [object oriented JavaScript conventions recomended by Mozilla, used with ECMAScript 5](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Introduction_to_Object-Oriented_JavaScript). Internally, Ludorum uses to this effect functions provided by [creatartis-base](https://github.com/LeonardoVal/creatartis-base).
 
-First, we declare the constructor function, and set it as a subclass of `ludorum.Game` using its `make` method. 
+First, we declare the constructor function, and set it as a subclass of `ludorum.Game` using its `make` method. Two class properties are also added to the constructor's prototype: the `name` of the game and an array of `players`.
 
 ```javascript
 var Choose2Win = ludorum.Game.make({
+	name: 'Choose2Win',
+	players: ['This', 'That'],
+
 	constructor: function Choose2Win(activePlayer, winner) {
 		ludorum.Game.call(this, activePlayer || this.players[0]);
 		this.winner = winner || null;
@@ -53,13 +56,6 @@ var Choose2Win = ludorum.Game.make({
 ```
 
 The game state only contains two data: which is the active player and which player won the game if the game is finished. The `winner` property is `null` if the game has not ended. The constructor by default builds a state for an unfinished game where the first player is active. It is conventional in Ludorum that game constructors must produce the initial game state when called with no arguments.
-
-Next we add two class properties to the constructor's prototype: the `name` of the game and an array of `players`.
-
-```javascript
-Choose2Win.prototype.name = 'Choose2Win';
-Choose2Win.prototype.players = ['This', 'That'];
-```
 
 Deciding the `result` of the game is really easy. Check if there is a winner, and if so return a result of +1 for the winner and -1 for the loser. The `victory` method (inherited from `ludorum.Game`) builds a proper result given the victor.
 
