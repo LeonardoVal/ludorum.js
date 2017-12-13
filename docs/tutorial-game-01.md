@@ -104,7 +104,7 @@ Running `TicTacToe.runTestMatch(true)` should output something like this in the 
 [X XOOOXXO] result: {"X":-1,"O":1}
 ```
 
-Tictactoe is a deterministic game, i.e. the flow of the game is only determined by the player's actions. Not all games are like this. Some games use dice, roulettes or shuffled card decks. This _random variables_ also affect the game. Including random variables of these sorts is explained in the next section.
+Tictactoe is a deterministic game, i.e. the flow of the game is only determined by the player's actions. Not all games are like this. Some games use dice, roulettes or shuffled card decks. This _random variables_ also affect the game. How to include random variables of these sorts is explained in the next section.
 
 [Next - A simple non deterministic turn-based game: _Pig_](tutorial-game-02.md.html)
 

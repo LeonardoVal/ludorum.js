@@ -1,7 +1,7 @@
 ﻿A simple non deterministic turn-based game: _Pig_
 =================================================
 
-[Pig](http://en.wikipedia.org/wiki/Pig_%28dice_game%29) is a simple dice betting game. Each turn the active player rolls a die repeatedly, until rolling a 1 or choosing to hold. Players that hold add to their score the sum of the rolls they got to make. Players that roll a 1 don't add any points. The game goes on until one player gets to 100 or some other predefined amount of points.
+[Pig](http://en.wikipedia.org/wiki/Pig_%28dice_game%29) is a simple dice betting game. Each turn the active player rolls a die repeatedly, until rolling a 1 or choosing to hold. Players that hold add to their score the sum of the rolls they got to make. Players that roll a 1 lose their turn without any points. The game goes on until one player gets to 100 or some other predefined amount of points.
 
 ## Implementation with Ludorum #####################################################################
 
@@ -10,24 +10,20 @@ Pig is a good exemplar of a game with random variables. Because of how artificia
 Lets start the game implementation with the `Pig` class to represent normal game states. The constructor receives the active player, the current scores for both players and the amount of points the active player has accumulated in previous rolls in the current turn.
 
 ```javascript
-function Pig(activePlayer, scores, points) {
-	ludorum.Game.call(this, activePlayer || 'One');
-	this.__scores__ = scores || {One: 0, Two: 0};
-	this.points = points || 0;
-}
+var Pig = ludorum.Game.make({
+	name: 'Pig',
+	players: ['One', 'Two'],
 
-Pig.prototype = Object.create(ludorum.Game.prototype);
-Pig.prototype.constructor = Pig;
-(Object.setPrototypeOf || function (constructor, parent) {
-    constructor.__proto__ = parent;
-})(Pig, ludorum.Game);
-
-Pig.prototype.name = 'Pig';
-Pig.prototype.players = ['One', 'Two'];
-
-Pig.prototype.scores = function scores() {
-	return this.__scores__;
-};
+	constructor: function Pig(activePlayer, scores, points) {
+		ludorum.Game.call(this, activePlayer || 'One');
+		this.__scores__ = scores || {One: 0, Two: 0};
+		this.points = points || 0;
+	},
+	
+	scores: function scores() {
+		return this.__scores__;
+	}
+});
 ```
 
 The ending of the game is easy to decide, by checking if any player has 100 points. The actual result is defined as the difference between the scores. So the best victory has a result of 100, and the worst defeat of -100.

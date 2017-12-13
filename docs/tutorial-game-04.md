@@ -8,20 +8,16 @@ The [15 puzzle](https://en.wikipedia.org/wiki/15_puzzle) is a simple puzzle base
 This puzzle is a simple example of a game played by just one player, i.e. a singleplayer game. For our implementation we will use letters for the tiles, instead of pieces of an image. The empty space will be represented by the space character.
 
 ```javascript
-function Puzzle15(tiles, points) {
-	ludorum.Game.call(this, this.players[0]);
-	this.tiles = tiles || 'MCFDJAOLEKBNGIH ';
-	this.points = isNaN(points) ? 80 : +points;
-}
+var Puzzle15 = ludorum.Game.make({
+	name: '15Puzzle',
+	players: ['Player'],
 
-Puzzle15.prototype = Object.create(ludorum.Game.prototype);
-Puzzle15.prototype.constructor = Puzzle15;
-(Object.setPrototypeOf || function (constructor, parent) {
-    constructor.__proto__ = parent;
-})(Puzzle15, ludorum.Game);
-
-Puzzle15.prototype.name = '15Puzzle';
-Puzzle15.prototype.players = ['Player'];
+	constructor: function Puzzle15(tiles, points) {
+		ludorum.Game.call(this, this.players[0]);
+		this.tiles = tiles || 'MCFDJAOLEKBNGIH ';
+		this.points = isNaN(points) ? 80 : +points;
+	}
+});
 ```
 
 The player must arrange the letters in alphabetical order (by rows) making 80 moves or less. Otherwise the player loses the game.

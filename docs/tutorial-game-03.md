@@ -8,23 +8,19 @@
 A game state of Odds & Evens is very simple, since it must only include the current scores. Both players are always active every turn.
 
 ```javascript
-function OddsAndEvens(scores) {
-	ludorum.Game.call(this, this.players);
-	this._scores = scores || {Odds: 0, Evens: 0};
-}
+var OddsAndEvens = ludorum.Game.make({
+	name: 'Odds&Evens',
+	players: ['Odds', 'Evens'],
 
-OddsAndEvens.prototype = Object.create(ludorum.Game.prototype);
-OddsAndEvens.prototype.constructor = OddsAndEvens;
-(Object.setPrototypeOf || function (constructor, parent) {
-    constructor.__proto__ = parent;
-})(OddsAndEvens, ludorum.Game);
+	constructor: function OddsAndEvens(scores) {
+		ludorum.Game.call(this, this.players);
+		this._scores = scores || {Odds: 0, Evens: 0};
+	},
 
-OddsAndEvens.prototype.name = 'Odds&Evens';
-OddsAndEvens.prototype.players = ['Odds', 'Evens'];
-
-OddsAndEvens.prototype.scores = function scores() {
-	return this._scores;
-};
+	scores: function scores() {
+		return this._scores;
+	}
+});
 ```
 
 Game ends when the points goal is reached by either player. Here we use a goal of 10 points. The match result is the difference of points.
@@ -89,7 +85,7 @@ OddsAndEvens.runTestMatch = function runTestMatch(showMoves) {
 };
 ```
 
-The test's output in the console may look as follows:
+The test's output in the console for `OddsAndEvens.runTestMatch(true)` may look as follows:
 
 ```
 {"Odds":0,"Evens":0} moves: {"Odds":1,"Evens":1}
