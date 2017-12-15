@@ -70,19 +70,22 @@ TicTacToe.prototype.next = function next(moves) {
 };
 ```
 
-In order to test our code, we add a method to set up and run a match between two `RandomPlayer`.
+In order to test our code, we add a method to set up and run a match between two `RandomPlayer`s. 
 
 ```javascript
-TicTacToe.runTestMatch = function runTestMatch(showMoves) {
-	var players = [new ludorum.players.RandomPlayer(), new ludorum.players.RandomPlayer()],
-		match = new ludorum.Match(new TicTacToe(), players);
-	if (showMoves) {
-		match.events.on('move', function (game, moves) {
-			console.log('['+ game.board +']\tmoves: '+ JSON.stringify(moves));
-		});
-	}
+TicTacToe.prototype.toString = function toString() {
+	return '['+ this.board +']';
+};
+
+TicTacToe.runTestMatch = function runTestMatch(player1, player2) {
+	player1 = player1 || new ludorum.players.RandomPlayer();
+	player2 = player2 || player1;
+	var match = new ludorum.Match(new TicTacToe(), [player1, player2]);
+	match.events.on('move', function (game, moves) {
+		console.log(game +'\tmoves: '+ JSON.stringify(moves));
+	});
 	match.events.on('end', function (game, result) {
-		console.log('['+ game.board +']\tresult: '+ JSON.stringify(result));
+		console.log(game +'\tresult: '+ JSON.stringify(result));
 	});
 	return match.run();
 };
@@ -90,7 +93,7 @@ TicTacToe.runTestMatch = function runTestMatch(showMoves) {
 
 A random player is a player that chooses its moves randomly. A instance of `Match` is a controller of a game between the players. Since players may decide asynchronously, the `run()` methods returns a [promise](https://www.promisejs.org/). Yet the match also has many events that are fired at different times during the game. The events used in `runTestMatch` to log in the console are: `'move'` (whenever a move is about to be made) and `'end'` (when the game finishes).
 
-Running `TicTacToe.runTestMatch(true)` should output something like this in the console:
+Running `TicTacToe.runTestMatch()` should output something like this in the console:
 
 ```
 [         ] moves: {"X":7}
@@ -103,6 +106,74 @@ Running `TicTacToe.runTestMatch(true)` should output something like this in the 
 [X XO OXXO] moves: {"O":4}
 [X XOOOXXO] result: {"X":-1,"O":1}
 ```
+
+## Making a simple MiniMax player for TicTacToe ####################################################
+
+[Minimax](https://chessprogramming.wikispaces.com/Minimax) is the algorithm in which most artificial players for chess (and similar games) are based. Many variants and optimizations exist, usually including or perfecting a technique called [alpha-beta pruning](https://chessprogramming.wikispaces.com/Alpha-Beta). Ludorum includes two players based on minimax: the `MiniMaxPlayer` uses pure Minimax while the `AlphaBetaPlayer` adds standard alpha-beta pruning. Both players may be used out of the box. The performance may not be the best, although it will be better than a random player. 
+
+```javascript
+TicTacToe.runTestMatch(new ludorum.players.RandomPlayer(), new ludorum.players.AlphaBetaPlayer());
+```
+
+Minimax players explore all possible future playthroughs of the current match, a certain number of moves ahead. This number of moves is called the `horizon` of the player. The player takes into consideration all future final game states within this limitation. The further the player is allowed to explore, the better it will assess which of the available actions is best. Yet also, as the horizon is increased the number of possible game states the player has to parse increases exponentially. A big horizon can make the player take an unacceptable time to choose its move. In TicTacToe it may take a few seconds, but in more complicated games like Chess, it may take several millennia.
+
+```javascript
+TicTacToe.runTestMatch(new ludorum.players.MiniMaxPlayer({ horizon: 9 }));
+```
+
+With small horizons (e.g. 2 or 4) a Minimax player will frequently have problems evaluating possible future playthroughs. Without arriving at a final game state, the player is not able to assess the chance of winning or losing. By default, a random value is assumed. A second way of improving the artificial player's performance is to include an approximate yet efficient way of evaluating non final game states. This is called an `heuristic` evaluation function.
+
+Heuristic functions are specific of the game being played, and the player making the evaluation. A game state that is more convenient to the _Xs_ players will probably not be convenient to the _Os_ player. Therefore, all heuristic functions take a game state and a player's role as arguments.
+
+A rule of thumb for playing TicTacToe tells that the center is always the best square to take, followed by the corners. Playing on the for squares on the sides of the board is usually a bad idea. We will define a function based on weights that will reflect these priorities. Since the function must return a single number, this weights will be summed. If the player owns a square, the weight of this square will be added to the evaluation. If the opponent owns a square, the weight will be subtracted.
+
+We define a function `makeWeightHeuristic` that will take an array of weights for each square in the board, and return an heuristic function that uses them as explained before. Setting these weights properly is not trivial, and the ones provided by default are not meant to be the best ones. Finding a better set of weights is left as an exercise to the reader. 
+
+```javascript
+TicTacToe.makeWeightHeuristic = function makeWeightHeuristic(weights) {
+	weights = weights || [+1,-1,+1,-1,+5,-1,+1,-1,+1]; // Default weights.
+	return function weightHeuristic(game, role) {
+		var squares = game.board.split(''),
+			result = 0,
+			sum = 0;
+		for (var i = 0; i < weights.length && i < squares.length; i++) {
+			sum += Math.abs(weights[i]);
+			if (role === squares[i]) {
+				result += weights[i];
+			} else if (role !== ' ') { // An opponent's square.
+				result -= weights[i];
+			}
+		}
+		return result / sum;
+	};
+};
+```
+
+The final result of the heuristic function is divided by the sum of all weights (disregarding sign). It is imperative when using minimax search not to confuse that heuristic evaluations of non final game states with the results of final game states. Hence, the range of values used by heuristics must always be less than the game results, in absolute value. That is, the highest heuristic value must be less than the smaller victory result for the game; and the lowest heuristic value must be greater than the highest defeat result.
+
+To use an heuristic function, simply add it to the arguments of the minimax player's constructor. The following example shows this, and also tests the player.
+
+```javascript
+TicTacToe.runTestMatch(new ludorum.players.RandomPlayer({ horizon: 2 }), 
+	new ludorum.players.AlphaBetaPlayer({ horizon: 2, heuristic: TicTacToe.makeWeightHeuristic() })
+);
+```
+
+The reader may wonder why use minimax search if a simpler and more efficient heuristic function can be used instead. Ludorum includes a player that only applies an heuristic function without doing any exploration of the future possibilities. It is called `HeuristicPlayer`, and the following example show why this is a bad idea.
+
+```javascript
+TicTacToe.runTestMatch(
+	new ludorum.players.HeuristicPlayer({ heuristic: TicTacToe.makeWeightHeuristic() }), 
+	new ludorum.players.AlphaBetaPlayer({ horizon: 2, heuristic: TicTacToe.makeWeightHeuristic() })
+);
+```
+
+The previous code may be ran many times, yet it will be difficult to get a match where the `HeuristicPlayer` beats the `AlphaBetaPlayer`. This is so even when both are using the same heuristic function, the horizon of the minimax player is very low and the heuristic player has the advantage of moving first. Although it depends on the game being played, usually considering the possible future playthroughs allows for a much better assessment of the moves to make, and hence a better performance of the artificial player.
+
+
+## Final remarks ###################################################################################
+
+We showed how to implement the classic and iconic game of TicTacToe. We also covered how to make a use minimax players included in Ludorum, and how to improve their performance by setting the player's horizon and heuristic functions. These are the most important, but not the only ways to make a minimax player play better. Other optimizations include [quiescence evaluation](https://chessprogramming.wikispaces.com/Quiescence+Search), [move ordering](https://chessprogramming.wikispaces.com/Move+Ordering) and caching techniques like [transposition tables](https://chessprogramming.wikispaces.com/Transposition+Table).
 
 Tictactoe is a deterministic game, i.e. the flow of the game is only determined by the player's actions. Not all games are like this. Some games use dice, roulettes or shuffled card decks. This _random variables_ also affect the game. How to include random variables of these sorts is explained in the next section.
 

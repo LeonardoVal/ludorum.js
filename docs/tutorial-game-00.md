@@ -35,7 +35,7 @@ Other members to be included are:
 
 Displaying or rendering the game state in any way is not a concern for this framework. There is some support for user interfaced based in HTML and CSS, but these are meant to be used for little more than just testing.
 
-## Implementing a game #############################################################################
+## Implementing a game with Ludorum ################################################################
 
 The first example game we will implement with Ludorum is probably the simplest game possible. We called it _Choose2Win_, because in their turn each of two player (called _This_ and _That_) must choose between winning the game or passing the turn to the other player.
 
@@ -103,7 +103,7 @@ Choose2Win.prototype.toString = function toString() {
 
 The `toString` method is used to get a string representation of any object. This is useful for debugging purposes.
 
-# Implementing a player ############################################################################
+# Implementing a player with Ludorum ###############################################################
 
 In Ludorum the agents that play a game are called _players_. All the different types of players extend the base class `Player`. Here we declare a player for `Choose2Win`:
 
