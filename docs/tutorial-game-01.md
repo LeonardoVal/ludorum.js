@@ -107,7 +107,7 @@ Running `TicTacToe.runTestMatch()` should output something like this in the cons
 [X XOOOXXO] result: {"X":-1,"O":1}
 ```
 
-## Making a simple MiniMax player for TicTacToe ####################################################
+## A player for TicTacToe based on the Minimax algorithm ###########################################
 
 [Minimax](https://chessprogramming.wikispaces.com/Minimax) is the algorithm in which most artificial players for chess (and similar games) are based. Many variants and optimizations exist, usually including or perfecting a technique called [alpha-beta pruning](https://chessprogramming.wikispaces.com/Alpha-Beta). Ludorum includes two players based on minimax: the `MiniMaxPlayer` uses pure Minimax while the `AlphaBetaPlayer` adds standard alpha-beta pruning. Both players may be used out of the box. The performance may not be the best, although it will be better than a random player. 
 
@@ -169,7 +169,6 @@ TicTacToe.runTestMatch(
 ```
 
 The previous code may be ran many times, yet it will be difficult to get a match where the `HeuristicPlayer` beats the `AlphaBetaPlayer`. This is so even when both are using the same heuristic function, the horizon of the minimax player is very low and the heuristic player has the advantage of moving first. Although it depends on the game being played, usually considering the possible future playthroughs allows for a much better assessment of the moves to make, and hence a better performance of the artificial player.
-
 
 ## Final remarks ###################################################################################
 
