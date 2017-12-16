@@ -6,7 +6,7 @@ players.RuleBasedPlayer = declare(Player, {
 	/** todo
 	*/
 	constructor: function RuleBasedPlayer(params) {
-		players.HeuristicPlayer.call(this, params);
+		Player.call(this, params);
 		initialize(this, params)
 			/** + `rules` must be an array of functions that return either a move (if the rule 
 				applies) or `null` (if the rule does not apply).
@@ -14,10 +14,7 @@ players.RuleBasedPlayer = declare(Player, {
 			.array('rules', { defaultValue: [] })
 			/** + ``
 			*/
-			.func('features', { ignore: true })
-			/** + the `random` generator must be an instance of `Randomness`. 
-			*/
-			.object('random', { defaultValue: Randomness.DEFAULT });
+			.func('features', { ignore: true });
 	},
 
 	/** This function extracts the relevant `features` of the given game state. These data is the

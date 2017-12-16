@@ -10,10 +10,14 @@ var Player = exports.Player = declare({
 	constructor: (function () {
 		var __PlayerCount__ = 0; // Used by the Player's default naming.
 		return function Player(params) {
+			var prototype = Object.getPrototypeOf(this);
 			initialize(this, params)
-				.string('name', { defaultValue: 'Player' + (__PlayerCount__++), coerce: true });
+				.string('name', { defaultValue: 'Player' + (__PlayerCount__++), coerce: true })
+				.object('random', { defaultValue: prototype.random });
 		};
 	})(),
+
+	random: Randomness.DEFAULT,
 
 	/** A player is asked to choose a move by calling `Player.decision(game, role)`. The result is 
 	the selected move if it can be obtained synchronously, else a future is returned.

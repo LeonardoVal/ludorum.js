@@ -8,9 +8,12 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 	*/
 	constructor: function MiniMaxPlayer(params) {
 		HeuristicPlayer.call(this, params);
+		var prototype = Object.getPrototypeOf(this);
 		initialize(this, params)
-			.integer('horizon', { defaultValue: 4, coerce: true });
+			.integer('horizon', { defaultValue: prototype.horizon, coerce: true });
 	},
+
+	horizon: 4,
 
 	/** MiniMax players cannot be used with simultaneous games.
 	*/

@@ -8,9 +8,12 @@ players.RandomPlayer = declare(Player, {
 	*/
 	constructor: function RandomPlayer(params) {
 		Player.call(this, params);
+		var prototype = Object.getPrototypeOf(this);
 		initialize(this, params)
-			.object('random', { defaultValue: Randomness.DEFAULT });
+			.object('random', { defaultValue: prototype.random });
 	},
+
+	random: Randomness.DEFAULT,
 
 	/** The `decision(game, player)` is made completely at random.
 	*/

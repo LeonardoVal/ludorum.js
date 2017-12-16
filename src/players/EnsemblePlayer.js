@@ -9,7 +9,6 @@ players.EnsemblePlayer = declare(Player, {
 	constructor: function EnsemblePlayer(params) {
 		Player.call(this, params);
 		initialize(this, params)
-			.object('random', { defaultValue: Randomness.DEFAULT })
 			.array('players', { ignore: true });
 	},
 

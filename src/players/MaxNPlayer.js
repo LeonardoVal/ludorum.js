@@ -9,9 +9,12 @@ var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
 	*/
 	constructor: function MaxNPlayer(params) {
 		HeuristicPlayer.call(this, params);
+		var prototype = Object.getPrototypeOf(this);
 		initialize(this, params)
-			.integer('horizon', { defaultValue: 3, coerce: true });
+			.integer('horizon', { defaultValue: prototype.horizon, coerce: true });
 	},
+
+	horizon: 4,
 
 	/** MaxN players cannot be used with simultaneous or non-deterministic games.
 	*/

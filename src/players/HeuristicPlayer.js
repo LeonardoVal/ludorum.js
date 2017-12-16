@@ -10,8 +10,8 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 	*/
 	constructor: function HeuristicPlayer(params) {
 		Player.call(this, params);
+		var prototype = Object.getPrototypeOf(this);
 		initialize(this, params)
-			.object('random', { defaultValue: Randomness.DEFAULT })
 			.func('heuristic', { ignore: true });
 	},
 

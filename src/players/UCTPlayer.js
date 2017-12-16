@@ -5,17 +5,20 @@ Automatic player based on Upper Confidence Bound Monte Carlo tree search.
 players.UCTPlayer = declare(MonteCarloPlayer, {
 	/** The constructor parameters may include:
 
-	+ `simulationCount=30`: Maximum amount of simulations performed at each decision.
-	+ `timeCap=1000ms`: Time limit for the player to decide.
+	+ `simulationCount`: Maximum amount of simulations performed at each decision.
+	+ `timeCap`: Time limit for the player to decide.
 	*/
 	constructor: function UCBPlayer(params) {
 		MonteCarloPlayer.call(this, params);
+		var prototype = Object.getPrototypeOf(this);
 		initialize(this, params)
 		/** + `explorationConstant=sqrt(2)`: The exploration factor used in the UCT selection.
 		*/
-			.number('explorationConstant', { defaultValue: Math.sqrt(2), coerce: true })
+			.number('explorationConstant', { defaultValue: prototype.explorationConstant, coerce: true })
 		;
 	},
+
+	explorationConstant: Math.sqrt(2),
 
 	/** Evaluate all child nodes of the given `gameTree` according to the [Upper Confidence Bound
 	formula by L. Kocsis and Cs. Szepesvári](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.102.1296).

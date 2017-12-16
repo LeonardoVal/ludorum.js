@@ -16,16 +16,21 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 	*/
 	constructor: function MonteCarloPlayer(params) {
 		HeuristicPlayer.call(this, params);
+		var prototype = Object.getPrototypeOf(this);
 		initialize(this, params)
-			.number('simulationCount', { defaultValue: 30, coerce: true })
-			.number('timeCap', { defaultValue: 1000, coerce: true })
-			.number('horizon', { defaultValue: 500, coerce: true });
+			.number('simulationCount', { defaultValue: prototype.simulationCount, coerce: true })
+			.number('timeCap', { defaultValue: prototype.timeCap, coerce: true })
+			.number('horizon', { defaultValue: prototype.horizon, coerce: true });
 		if (params) switch (typeof params.agent) {
 			case 'function': this.agent = new HeuristicPlayer({ heuristic: params.agent }); break;
 			case 'object': this.agent = params.agent; break;
 			default: this.agent = null;
 		}
 	},
+
+	simulationCount: 30,
+	timeCap: 1000,
+	horizon: 500,
 
 	/** `evaluatedMoves(game, player)` returns a sequence with the evaluated moves.
 	*/
