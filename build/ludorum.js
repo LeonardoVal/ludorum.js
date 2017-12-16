@@ -449,10 +449,14 @@ var Player = exports.Player = declare({
 	constructor: (function () {
 		var __PlayerCount__ = 0; // Used by the Player's default naming.
 		return function Player(params) {
+			var prototype = Object.getPrototypeOf(this);
 			initialize(this, params)
-				.string('name', { defaultValue: 'Player' + (__PlayerCount__++), coerce: true });
+				.string('name', { defaultValue: 'Player' + (__PlayerCount__++), coerce: true })
+				.object('random', { defaultValue: prototype.random });
 		};
 	})(),
+
+	random: Randomness.DEFAULT,
 
 	/** A player is asked to choose a move by calling `Player.decision(game, role)`. The result is 
 	the selected move if it can be obtained synchronously, else a future is returned.
@@ -1986,9 +1990,12 @@ players.RandomPlayer = declare(Player, {
 	*/
 	constructor: function RandomPlayer(params) {
 		Player.call(this, params);
+		var prototype = Object.getPrototypeOf(this);
 		initialize(this, params)
-			.object('random', { defaultValue: Randomness.DEFAULT });
+			.object('random', { defaultValue: prototype.random });
 	},
+
+	random: Randomness.DEFAULT,
 
 	/** The `decision(game, player)` is made completely at random.
 	*/
@@ -2064,8 +2071,8 @@ var HeuristicPlayer = players.HeuristicPlayer = declare(Player, {
 	*/
 	constructor: function HeuristicPlayer(params) {
 		Player.call(this, params);
+		var prototype = Object.getPrototypeOf(this);
 		initialize(this, params)
-			.object('random', { defaultValue: Randomness.DEFAULT })
 			.func('heuristic', { ignore: true });
 	},
 
@@ -2222,9 +2229,12 @@ var MaxNPlayer = players.MaxNPlayer = declare(HeuristicPlayer, {
 	*/
 	constructor: function MaxNPlayer(params) {
 		HeuristicPlayer.call(this, params);
+		var prototype = Object.getPrototypeOf(this);
 		initialize(this, params)
-			.integer('horizon', { defaultValue: 3, coerce: true });
+			.integer('horizon', { defaultValue: prototype.horizon, coerce: true });
 	},
+
+	horizon: 4,
 
 	/** MaxN players cannot be used with simultaneous or non-deterministic games.
 	*/
@@ -2321,9 +2331,12 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 	*/
 	constructor: function MiniMaxPlayer(params) {
 		HeuristicPlayer.call(this, params);
+		var prototype = Object.getPrototypeOf(this);
 		initialize(this, params)
-			.integer('horizon', { defaultValue: 4, coerce: true });
+			.integer('horizon', { defaultValue: prototype.horizon, coerce: true });
 	},
+
+	horizon: 4,
 
 	/** MiniMax players cannot be used with simultaneous games.
 	*/
@@ -2521,16 +2534,21 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 	*/
 	constructor: function MonteCarloPlayer(params) {
 		HeuristicPlayer.call(this, params);
+		var prototype = Object.getPrototypeOf(this);
 		initialize(this, params)
-			.number('simulationCount', { defaultValue: 30, coerce: true })
-			.number('timeCap', { defaultValue: 1000, coerce: true })
-			.number('horizon', { defaultValue: 500, coerce: true });
+			.number('simulationCount', { defaultValue: prototype.simulationCount, coerce: true })
+			.number('timeCap', { defaultValue: prototype.timeCap, coerce: true })
+			.number('horizon', { defaultValue: prototype.horizon, coerce: true });
 		if (params) switch (typeof params.agent) {
 			case 'function': this.agent = new HeuristicPlayer({ heuristic: params.agent }); break;
 			case 'object': this.agent = params.agent; break;
 			default: this.agent = null;
 		}
 	},
+
+	simulationCount: 30,
+	timeCap: 1000,
+	horizon: 500,
 
 	/** `evaluatedMoves(game, player)` returns a sequence with the evaluated moves.
 	*/
@@ -2656,17 +2674,20 @@ Automatic player based on Upper Confidence Bound Monte Carlo tree search.
 players.UCTPlayer = declare(MonteCarloPlayer, {
 	/** The constructor parameters may include:
 
-	+ `simulationCount=30`: Maximum amount of simulations performed at each decision.
-	+ `timeCap=1000ms`: Time limit for the player to decide.
+	+ `simulationCount`: Maximum amount of simulations performed at each decision.
+	+ `timeCap`: Time limit for the player to decide.
 	*/
 	constructor: function UCBPlayer(params) {
 		MonteCarloPlayer.call(this, params);
+		var prototype = Object.getPrototypeOf(this);
 		initialize(this, params)
 		/** + `explorationConstant=sqrt(2)`: The exploration factor used in the UCT selection.
 		*/
-			.number('explorationConstant', { defaultValue: Math.sqrt(2), coerce: true })
+			.number('explorationConstant', { defaultValue: prototype.explorationConstant, coerce: true })
 		;
 	},
+
+	explorationConstant: Math.sqrt(2),
 
 	/** Evaluate all child nodes of the given `gameTree` according to the [Upper Confidence Bound
 	formula by L. Kocsis and Cs. Szepesvári](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.102.1296).
@@ -2739,7 +2760,7 @@ players.RuleBasedPlayer = declare(Player, {
 	/** todo
 	*/
 	constructor: function RuleBasedPlayer(params) {
-		players.HeuristicPlayer.call(this, params);
+		Player.call(this, params);
 		initialize(this, params)
 			/** + `rules` must be an array of functions that return either a move (if the rule 
 				applies) or `null` (if the rule does not apply).
@@ -2747,10 +2768,7 @@ players.RuleBasedPlayer = declare(Player, {
 			.array('rules', { defaultValue: [] })
 			/** + ``
 			*/
-			.func('features', { ignore: true })
-			/** + the `random` generator must be an instance of `Randomness`. 
-			*/
-			.object('random', { defaultValue: Randomness.DEFAULT });
+			.func('features', { ignore: true });
 	},
 
 	/** This function extracts the relevant `features` of the given game state. These data is the
@@ -2833,7 +2851,6 @@ players.EnsemblePlayer = declare(Player, {
 	constructor: function EnsemblePlayer(params) {
 		Player.call(this, params);
 		initialize(this, params)
-			.object('random', { defaultValue: Randomness.DEFAULT })
 			.array('players', { ignore: true });
 	},
 
