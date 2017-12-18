@@ -71,21 +71,33 @@ OddsAndEvens.prototype.next = function next(moves) {
 As we did in all cases before, to test our implementation of OddsAndEvens we make matches between random players. Here we use another way of setting up a match between random players. The `playTo` method is implemented for any `Player` subtype. The function makes `Match` with the given game and default instances of the player, `RandomPlayer` in this case. 
 
 ```javascript
-OddsAndEvens.runTestMatch = function runTestMatch(showMoves) {
-	var match = ludorum.players.RandomPlayer.playTo(new OddsAndEvens());
-	if (showMoves) {
-		match.events.on('move', function (game, moves) {
-			console.log(JSON.stringify(game._scores) +'\tmoves: '+ JSON.stringify(moves));
+OddsAndEvens.prototype.toString = function toString() {
+	return JSON.stringify(this._scores);
+};
+
+OddsAndEvens.runTestMatch = function runTestMatch(args) {
+	args = args || {};
+	var game = args.game || new OddsAndEvens(),
+		player1 = args.player1 || new ludorum.players.RandomPlayer(),
+		player2 = args.player2 || new ludorum.players.RandomPlayer(),
+		matchCount = args.matchCount || 1,
+		match;
+	return base.Future.sequence(base.Iterable.range(matchCount), function () {
+		var match = new ludorum.Match(game, [player1, player2]);
+		if (args.showMoves) {
+			match.events.on('move', function (game, moves) {
+				console.log(game +'\tmoves: '+ JSON.stringify(moves));
+			});
+		}
+		match.events.on('end', function (game, result) {
+			console.log(game +'\tresult: '+ JSON.stringify(result));
 		});
-	}
-	match.events.on('end', function (game, result) {
-		console.log(JSON.stringify(game._scores) +'\tresult: '+ JSON.stringify(result));
+		return match.run();
 	});
-	return match.run();
 };
 ```
 
-The test's output in the console for `OddsAndEvens.runTestMatch(true)` may look as follows:
+The test's output in the console for `OddsAndEvens.runTestMatch()` may look as follows:
 
 ```
 {"Odds":0,"Evens":0} moves: {"Odds":1,"Evens":1}
@@ -94,6 +106,51 @@ The test's output in the console for `OddsAndEvens.runTestMatch(true)` may look 
 {"Odds":9,"Evens":9} moves: {"Odds":2,"Evens":2}
 {"Odds":9,"Evens":10} result: {"Odds":-1,"Evens":1}
 ```
+
+## Players for OddsAndEvens with memory ############################################################
+
+```javascript
+var TitForTatPlayer = ludorum.Player.make({
+	constructor: function TitForTatPlayer(params) {
+		params = params || {};
+		ludorum.Player.call(this, params);
+		if (params.match) {
+			this.match = params.match;
+			this.role = params.role;
+			var player = this;
+			this.match.events.on('move', function (game, moves) {
+				player.lastOpponentsMove = moves[game.opponent(player.role)];				
+			});
+		}
+	}
+});
+```
+
+```javascript
+TitForTatPlayer.prototype.participate = function participate(match, role) {
+	return new this.constructor({ match: match, role: role });
+};
+```
+
+```javascript
+TitForTatPlayer.prototype.decision = function decision(game, role) {
+	if (!this.hasOwnProperty('lastOpponentsMove')) {
+		return this.random.choice(this.movesFor(game, role));
+	} else {
+		return this.lastOpponentsMove;
+	}
+};
+```
+
+```javascript
+OddsAndEvens.runTestMatch({
+	player1: new TitForTatPlayer(),
+	player2: new ludorum.players.RandomPlayer(),
+	showMoves: true
+});
+```
+
+# Final remarks ####################################################################################
 
 Making a stochastic simultaneous game implies the combination of the two schemes. Aleatory variables are compatible with more than one active player per turn.
 
