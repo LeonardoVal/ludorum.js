@@ -110,18 +110,9 @@ follows:
 
 ## Considering the whole match in players for OddsAndEvens #########################################
 
-A strategy to play a game may have to consider more than the current game state. It may have to also
-factor in some or all of the previous moves taken in the current match so far. The example given 
-here is a [_Tit for Tat_ strategy](https://en.wikipedia.org/wiki/Tit_for_tat) for the Odds & Evens 
-game. The tit for tat strategy makes the player imitate the opponent's previous action. The first 
-action has a default, but we will consider it random. 
+A strategy to play a game may have to consider more than the current game state. It may have to also factor in some or all of the previous moves taken in the current match so far. The example given  here is a [_Tit for Tat_ strategy](https://en.wikipedia.org/wiki/Tit_for_tat) for the Odds & Evens game. The tit for tat strategy makes the player imitate the opponent's previous action. The first action has a default, but we will consider it random. 
 
-First we create the `TitForTatPlayer` as a subtype of `ludorum.Player`. The `params` argument may 
-include the `match` being played and which role the player plays in it. The player must know its
-opponent's moves in order to imitate them. For that purpose, the players subscribes to the match's
-`move` event. The callback will be called after every turn with the game and the moves taken by all
-active players. The opponent's last move is stored in the `opponentsLastMove` property of the 
-player.
+First we create the `TitForTatPlayer` as a subtype of `ludorum.Player`. The `params` argument may include the `match` being played and which role the player plays in it. The player must know its opponent's moves in order to imitate them. For that purpose, the players subscribes to the match's `move` event. The callback will be called after every turn with the game and the moves taken by all active players. The opponent's last move is stored in the `opponentsLastMove` property of the player.
 
 ```javascript
 var TitForTatPlayer = ludorum.Player.make({
@@ -140,11 +131,7 @@ var TitForTatPlayer = ludorum.Player.make({
 });
 ```
 
-`Player` instances are required to set up a match. If a `Match` instance was required to create a 
-player, the circular dependency will make it impossible to do it. When a `Match` is created, the
-`participate` method of each player is called. By default this method returns the same player 
-instance, assuming the player can play many matches at the same time. If the player has to consider
-the whole match, a new instance must be created with a reference to the given match.
+`Player` instances are required to set up a match. If a `Match` instance was required to create a player, the circular dependency will make it impossible to do it. When a `Match` is created, the `participate` method of each player is called. By default this method returns the same player instance, assuming the player can play many matches at the same time. If the player has to consider the whole match, a new instance must be created with a reference to the given match.
 
 ```javascript
 TitForTatPlayer.prototype.participate = function participate(match, role) {
@@ -152,8 +139,7 @@ TitForTatPlayer.prototype.participate = function participate(match, role) {
 };
 ```
 
-The decision of the `TitForTatPlayer` simply returns the move made by the opponent in the previous 
-turn. In the first turn, the move is chosen at random.
+The decision of the `TitForTatPlayer` simply returns the move made by the opponent in the previous turn. In the first turn, the move is chosen at random.
 
 ```javascript
 TitForTatPlayer.prototype.decision = function decision(game, role) {
@@ -165,8 +151,7 @@ TitForTatPlayer.prototype.decision = function decision(game, role) {
 };
 ```
 
-The player implementation can be tested with the following code. Running it many times will show 
-that this strategy is not superior to a random one. 
+The player implementation can be tested with the following code. Running it many times will show that this strategy is not superior to a random one. 
 
 ```javascript
 OddsAndEvens.runTestMatch({
@@ -176,24 +161,15 @@ OddsAndEvens.runTestMatch({
 });
 ```
 
-A good exercise for the reader would be to implement the opposite strategy, i.e. chosing a different
-move than the opponent's last one.
+A good exercise for the reader would be to implement the opposite strategy, i.e. chosing a different move than the opponent's last one.
 
 # Final remarks ####################################################################################
 
-In this section we've implemented a very simple simultaneous game. Another simple examples is 
-[rock-paper-scissors](https://en.wikipedia.org/wiki/Rock%E2%80%93paper%E2%80%93scissors), and a more
-complicated one is [Diplomacy](https://boardgamegeek.com/boardgame/483/diplomacy). All of these 
-examples are deterministic. Making a stochastic simultaneous game implies the combination of the two
-schemes. Aleatory variables are perfectly compatible with more than one active player per turn.
+In this section we've implemented a very simple simultaneous game. Another simple examples is [rock-paper-scissors](https://en.wikipedia.org/wiki/Rock%E2%80%93paper%E2%80%93scissors), and a more complicated one is [Diplomacy](https://boardgamegeek.com/boardgame/483/diplomacy). All of these examples are deterministic. Making a stochastic simultaneous game implies the combination of the two schemes. Aleatory variables are perfectly compatible with more than one active player per turn.
 
-The _tit-for-tat_ artificial player for Odds & Evens is not a good player. It was used to show how 
-to make players that use information of the whole match to make a decision, rather than only the 
-current game state. Players for simultaneous games can be implemented using _MCTS_. _Minimax_ cannot
-be used with games the have more than one active player per turn.
+The _tit-for-tat_ artificial player for Odds & Evens is not a good player. It was used to show how to make players that use information of the whole match to make a decision, rather than only the current game state. Players for simultaneous games can be implemented using _MCTS_. _Minimax_ cannot be used with games the have more than one active player per turn.
 
-Ludorun focuses on games with more than one player. Still, singleplayer games can be defined within 
-the framework. The next section explains how to implement a simple _puzzle_.
+Ludorun focuses on games with more than one player. Still, singleplayer games can be defined within the framework. The next section explains how to implement a simple _puzzle_.
 
 [Next - A simple singleplayer game: _15 Puzzle_](tutorial-game-04.md.html)
 
