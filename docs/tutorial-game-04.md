@@ -11,11 +11,12 @@ This puzzle is a simple example of a game played by just one player, i.e. a sing
 var Puzzle15 = ludorum.Game.make({
 	name: '15Puzzle',
 	players: ['Player'],
+	maxPoints: 80,
 
 	constructor: function Puzzle15(tiles, points) {
 		ludorum.Game.call(this, this.players[0]);
-		this.tiles = tiles || 'MCFDJAOLEKBNGIH ';
-		this.points = isNaN(points) ? 80 : +points;
+		this.tiles = tiles || 'MCFDJAOL EKBNGIH';
+		this.points = isNaN(points) ? this.maxMoves : +points;
 	}
 });
 ```
@@ -24,7 +25,7 @@ The player must arrange the letters in alphabetical order (by rows) making 80 mo
 
 ```javascript
 Puzzle15.prototype.scores = function scores() {
-	return { Player: 80 - this.points };
+	return { Player: this.points };
 };
 
 Puzzle15.prototype.result = function result() {
@@ -93,21 +94,111 @@ Puzzle15.prototype.next = function next(moves, haps, update) {
 Again, we use random players to test our implementation.
 
 ```javascript
-Puzzle15.runTestMatch = function runTestMatch(showMoves) {
-	var match = ludorum.players.RandomPlayer.playTo(new Puzzle15());
-	if (showMoves) {
+Puzzle15.prototype.toString = function toString() {
+	return '['+ this.tiles +'] ('+ this.points +' remaining)';
+}; 
+
+Puzzle15.runTestMatch = function runTestMatch(args) {
+	args = args || {};
+	var game = args.game || new Puzzle15(args.tiles, args.points),
+		player = args.player || new ludorum.players.RandomPlayer(),
+		match = new ludorum.Match(game, [player]);
+	if (!args.hideMoves) {
 		match.events.on('move', function (game, moves) {
-			console.log(game.tiles +"\tmoved to "+ moves.Player +", "+ game.points 
-				+" points remaining.");
+			console.log("Move "+ moves.Player +": "+ game +".");
 		});
 	}
 	match.events.on('end', function (game, result) {
-		console.log("Puzzle15 finished with "+ game.tiles +"\t, result = "+ result.Player +".");
+		console.log("Finished "+ game +", with "+ result.Player +".");
 	});
 	return match.run();
 };
 ```
 
-A random player has very little hope of solving this puzzle in a reasonable number of moves.
+Running `Puzzle15.runTestMatch()` shows that a random player has very little hope of solving this puzzle in a reasonable number of moves.
+
+# Players based on heuristic search ################################################################
+
+```javascript
+Puzzle15.heuristics = {
+	distanceHeuristic: function distanceHeuristic(game) {
+		var tiles = game.tiles,
+			target = tiles.split('').sort(),
+			r = 0;
+		for (var i = 0; i < target.length; i++) {
+			r += Math.abs(tiles.indexOf(target[i]) - i);
+		}
+		return r;
+	}
+};
+
+Puzzle15.players = {
+	bestFirstPlayer: function bestFirstPlayer(heuristic) {
+		heuristic = heuristic || Puzzle15.distanceHeuristic;
+		return new ludorum.players.HeuristicPlayer({ heuristic: heuristic });
+	}
+};
+```
+
+`Puzzle15.runTestMatch({ player: Puzzle15.players.bestFirstPlayer(), points: 10 })`
+
+```javascript
+var Puzzle15Player = Puzzle15.players.searchAStarPlayer = ludorum.Player.make({
+	constructor: function searchAStarPlayer(params) {
+		params = params || {};
+		ludorum.Player.call(this, params);
+		this.heuristic = params.heuristic || Puzzle15.heuristics.distanceHeuristic;
+		this.depth = params.depth || 30;
+		this.__path__ = [];
+		this.__visited__ = {};
+	}
+});
+
+Puzzle15Player.prototype.__expandNode__ = function __expandNode__(node) {
+	var player = this,
+		role = node.game.players[0];
+	if (node.game.result) {
+		return [];
+	} else {
+		return this.movesFor(node.game, role).map(function (move) {
+			var next = node.game.perform(move),
+				result = next.result();
+			return {
+				game: next,
+				cost: node.cost + 1,
+				h: player.heuristic(next),
+				path: node.path.concat([move]),
+				result: result ? result[role] : 0
+			};
+		});
+	}
+};
+
+Puzzle15Player.prototype.decision = function decision(start, role) {
+	if (this.__path__.length < 1) {
+		var pending = [{ game: start, cost: 0, path: [], result: 0 }],
+			currentNode;
+		while (pending.length > 0) {
+			currentNode = pending.shift();
+			if (currentNode.cost > this.depth || currentNode.game.result > 0) {
+				break;
+			} else if (currentNode.game.result < 0) {
+				continue;
+			}
+			pending = pending.concat(this.__expandNode__(currentNode))
+				.sort(function (n1, n2) {
+					return (n1.cost + n1.h) - (n2.cost + n2.h);
+				});
+		}
+		this.__path__ = currentNode.path;
+	}
+	if (this.__path__.length < 1) {
+		throw new Error("A star search had no ");
+	}
+	return this.__path__.shift();
+};
+```
+
+`Puzzle15.runTestMatch({ player: new Puzzle15Player() })`
 
 _By [Leonardo Val](http://github.com/LeonardoVal)_.
