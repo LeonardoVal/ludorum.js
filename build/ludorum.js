@@ -2696,7 +2696,7 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 	selectNode: function selectNode(gameTree, totalSimulationCount, explorationConstant) {
 		explorationConstant = isNaN(explorationConstant) ? this.explorationConstant : +explorationConstant;
 		return this.random.choice(iterable(gameTree.children).select(1).greater(function (n) {
-			return n.uct.rewards / n.uct.visits +
+			return (n.uct.rewards + n.uct.visits) / n.uct.visits / 2 +
 				explorationConstant * Math.sqrt(Math.log(totalSimulationCount) / n.uct.visits);
 		}));
 	},
@@ -2728,12 +2728,12 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 			simulationResult = this.simulation(node.state, player); // Simulation
 			for (; node; node = node.parent) { // Backpropagation
 				++node.uct.visits;
-				node.uct.rewards += (game.normalizedResult(simulationResult.result) + 1) / 2;
+				node.uct.rewards += game.normalizedResult(simulationResult.result);
 			}
 		}
 		return iterable(root.children).select(1).map(function (n) {
-			return [n.transition, n.uct.visits];
-		});
+				return [n.transition, n.uct.visits];
+			}).toArray();
 	},
 
 	// ## Utilities ################################################################################
@@ -2881,6 +2881,40 @@ players.EnsemblePlayer = declare(Player, {
 			.decision(game, role);
 	},
 
+	/** An `heuristicCombination` makes a decision by evaluating the available actions with all the
+	players in the ensemble, combining the results and choosing the best evaluated move (or one of
+	the best evaluated ones at random, if more than one action has the best evaluation).
+	*/
+	heuristicCombination: (function () {
+		function average(move, evals, game, role) {
+			return iterable(evals).sum() / evals.length;
+		}
+
+		return function heuristicCombination(aggregation) {
+			aggregation = aggregation || average;
+
+			return function combinedHeuristicDecision(game, role, players) {
+				players = players || this.playerSelection(game, role);
+				var isAsync = false,
+					player = this,
+					ds = players.map(function (p) {
+						raiseIf(!p.evaluatedMoves, "Cannot call `evaluatedMoves()` on player ", p.name, "(", p.constructor.name, ")!");
+						var d = p.evaluatedMoves(game, role);
+						isAsync = isAsync || Future.__isFuture__(d);
+						return d;
+					});
+				if (isAsync) {
+					return Future.all(ds).then(function (evaluatedMoves) {
+						console.log(evaluatedMoves);//FIXME
+						return player.__bestAggregatedEvaluationMove__(game, role, aggregation, evaluatedMoves);
+					});
+				} else {
+					return player.__bestAggregatedEvaluationMove__(game, role, aggregation, ds);
+				}
+			};
+		};
+	})(),
+
 	__aggregateEvaluatedMoves__: function __aggregateEvaluatedMoves__(game, role, aggregation, evaluatedMoves) {
 		var grouped = iterable(evaluatedMoves).flatten().groupAll(function (evm) {
 			return JSON.stringify(evm[0]); //TODO Allow to customize
@@ -2898,43 +2932,27 @@ players.EnsemblePlayer = declare(Player, {
 	},
 
 	__bestAggregatedEvaluationMove__: function __bestAggregatedEvaluationMove__(game, role, aggregation, evaluatedMoves) {
-		var aggregated = this.__aggregateEvaluatedMoves__(game, role, aggregation,
-			evaluatedMoves);
-		var bestMoves = HeuristicPlayer.prototype.bestMoves(aggregated);
-		return this.random.choice(bestMoves)[role];
+		var aggregated = this.__aggregateEvaluatedMoves__(game, role, aggregation, evaluatedMoves);
+		raiseIf(aggregated.isEmpty(), "There are no evaluated moves for ", role, " to choose from in ", game, "!");
+		var bestMoves = HeuristicPlayer.prototype.bestMoves(aggregated),
+			bestMove = this.random.choice(bestMoves);
+		return bestMove[role];
 	},
 
-	/**TODO
-	*/
-	heuristicCombination: (function () {
-		function average(move, evals, game, role) {
-			return iterable(evals).sum() / evals.length;
-		}
+	// ## Utilities ###############################################################################
 
-		return function heuristicCombination(aggregation) {
-			aggregation = aggregation || average;
-
-			return function combinedHeuristicDecision(game, role) {
-				var isAsync = false,
-					ds = this.players.map(function (player) {
-						raiseIf(!player.evaluatedMoves,
-							"Cannot call `evaluatedMoves()` on player ", player.name, "!");
-						var d = player.evaluatedMoves(game, role);
-						isAsync = isAsync || Future.__isFuture__(d);
-						return d;
-					});
-				if (isAsync) {
-					return Future.all(ds).then(
-						this.__bestAggregatedEvaluationMove__.bind(game, role, aggregation)
-					);
-				} else {
-					return this.__bestAggregatedEvaluationMove__(game, role, aggregation, ds);
-				}
-			};
-		};
-	})(),
-
-	// ## Utilities ################################################################################
+	'static parallelizeHeuristicPlayer': function parallelizeHeuristicPlayer(amount, webWorkerParams) {
+		amount = amount || navigator.hardwareConcurrency;
+		var fs = base.Iterable.range(amount).map(function () {
+				return ludorum.players.WebWorkerPlayer.create(webWorkerParams);
+			}),
+			EnsemblePlayer = this;
+		return base.Future.all(fs.toArray()).then(function (players) {
+			var p = new EnsemblePlayer({ players: players });
+			p.decision = p.heuristicCombination();
+			return p;
+		});
+	},
 
 	/** Serialization and materialization using Sermat.
 	*/
@@ -3144,19 +3162,20 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 			"Invalid player builder: "+ params.playerBuilder +"!");
 		raiseIf(params.workerSetup && 'string function'.indexOf(typeof params.workerSetup) < 0,
 			"Invalid worker setup: "+ params.workerSetup +"!");
-		var parallel = new base.Parallel();
-		return Future.sequence([exports].concat(params.dependencies || []), function (dependency) {
-			return parallel.loadModule(dependency, true);
-		}).then(function () {
-			return parallel.run(
-				(params.workerSetup ? '('+ params.workerSetup +')(),\n' : '')+
-				'self.PLAYER = ('+ params.playerBuilder +').call(self),\n'+
-				'"OK"');
-		}).then(function () {
-			var worker = parallel.worker;
-			worker.__parallel__ = parallel;
-			return worker;
-		});
+		var parallel = new base.Parallel(),
+			deps = [exports].concat(params.dependencies || []);
+		return Future.sequence(deps, function (dependency) {
+				return parallel.loadModule(dependency, true);
+			}).then(function () {
+				return parallel.run(
+					(params.workerSetup ? '('+ params.workerSetup +')(),\n' : '')+
+					'self.PLAYER = ('+ params.playerBuilder +').call(self),\n'+
+					'"OK"');
+			}).then(function () {
+				var worker = parallel.worker;
+				worker.__parallel__ = parallel;
+				return worker;
+			});
 	},
 
 	/** The static `create(params)` method creates (asynchronously) and initializes a

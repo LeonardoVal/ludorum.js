@@ -31,43 +31,48 @@ define(['ludorum', 'creatartis-base', 'sermat'], function (ludorum, base, Sermat
 			return this; // for chaining.
 		},
 
-		playerRandom: function playerRandom(title, runOnWorker) {
-			this.player(title || "Random", function () {
+		builderRandom: function builderRandom() {
+			return function () { 
 				return new ludorum.players.RandomPlayer();
-			}, !!runOnWorker);
+			};
+		},
+
+		playerRandom: function playerRandom(title, runOnWorker) {
+			this.player(title || "Random", this.builderRandom(), !!runOnWorker);
 			return this; // for chaining.
+		},
+
+		builderMonteCarlo: function builderMonteCarlo(simulationCount, timeCap) {
+			timeCap = timeCap || Infinity;
+			return new Function('return new ludorum.players.MonteCarloPlayer({simulationCount:'+ simulationCount +','
+				+'timeCap:'+ timeCap +'});'
+			);
 		},
 
 		playerMonteCarlo: function playerMonteCarlo(title, runOnWorker, simulationCount, timeCap) {
 			timeCap = timeCap || Infinity;
-			title = title || "MonteCarlo ("
-				+ (simulationCount ? "s="+ simulationCount : "t="+ timeCap)
-				+")";
-			this.player(title,
-				new Function('return new ludorum.players.MonteCarloPlayer({'
-					+'simulationCount:'+ simulationCount +','
-					+'timeCap:'+ timeCap +'});'),
-				!!runOnWorker);
+			title = title || "MonteCarlo ("+ (simulationCount ? simulationCount +"sims" : timeCap +"secs") +")";
+			this.player(title, this.builderMonteCarlo(simulationCount, timeCap), !!runOnWorker);
 			return this; // for chaining.
+		},
+
+		builderUCT: function builderUCT(simulationCount, timeCap) {
+			timeCap = timeCap || Infinity;
+			return new Function('return new ludorum.players.UCTPlayer({simulationCount:'+ simulationCount +','
+				+'timeCap:'+ timeCap +'});'
+			);
 		},
 
 		playerUCT: function playerUCT(title, runOnWorker, simulationCount, timeCap) {
 			timeCap = timeCap || Infinity;
-			title = title || "UCT ("
-				+ (simulationCount ? "s="+ simulationCount : "t="+ timeCap)
-				+")";
-			this.player(title,
-				new Function('return new ludorum.players.UCTPlayer({'
-					+'simulationCount:'+ simulationCount +','
-					+'timeCap:'+ timeCap +'});'),
-				!!runOnWorker);
+			title = title || "UCT ("+ (simulationCount ? simulationCount +"sims" : timeCap +"secs") +")";
+			this.player(title, this.builderUCT(simulationCount, timeCap), !!runOnWorker);
 			return this; // for chaining.
 		},
 
 		playerAlfaBeta: function playerAlfaBeta(title, runOnWorker, horizon, heuristic) {
 			this.player(title || "AlfaBeta (h="+ horizon +")",
-				new Function('return new ludorum.players.AlphaBetaPlayer({'
-					+'horizon:'+ horizon +','
+				new Function('return new ludorum.players.AlphaBetaPlayer({horizon:'+ horizon +','
 					+'heuristic:'+ (heuristic ? heuristic.name : heuristic) +'});'),
 				!!runOnWorker);
 			return this; // for chaining.
@@ -75,10 +80,36 @@ define(['ludorum', 'creatartis-base', 'sermat'], function (ludorum, base, Sermat
 
 		playerMaxN: function playerMaxN(title, runOnWorker, horizon) {
 			this.player(title || "MaxN (h="+ horizon +")",
-				new Function('return new ludorum.players.MaxNPlayer({'
-					+'horizon: '+ horizon +'});'),
+				new Function('return new ludorum.players.MaxNPlayer({horizon: '+ horizon +'});'),
 				!!runOnWorker);
 			return this; // for chaining.
+		},
+
+		playerParallelHeuristic: function playerParallelHeuristic(title, amount, builder) {
+			amount = amount || navigator.hardwareConcurrency || 2;
+			title = title || "par ("+ amount +"ww)";
+			this.player(title, 
+				new Function('return ludorum.players.EnsemblePlayer.parallelizeHeuristicPlayer('
+					+ amount +', {playerBuilder: ('+ builder +'),'
+					+'dependencies:'+ JSON.stringify(this.webWorkerDependencies) +'});'),
+				false);
+			return this; // for chaining.
+		},
+
+		playerParallelMCTS: function playerParallelMCTS(title, amount, simulationCount, timeCap) {
+			title = title || "parMCTS ("+ amount +"ww,"
+				+ (simulationCount ? simulationCount +"sims" : timeCap +"secs") +")";
+			this.playerParallelHeuristic(title, amount, 
+				this.builderMonteCarlo(simulationCount, timeCap));
+			return this; // for chaining
+		},
+
+		playerParallelUCT: function playerParallelUCT(title, amount, simulationCount, timeCap) {
+			title = title || "parUCT ("+ amount +"ww,"
+				+ (simulationCount ? simulationCount +"sims" : timeCap +"secs") +")";
+			this.playerParallelHeuristic(title, amount, 
+				this.builderUCT(simulationCount, timeCap));
+			return this; // for chaining
 		},
 
 		selects: function selects(selectElems) {
