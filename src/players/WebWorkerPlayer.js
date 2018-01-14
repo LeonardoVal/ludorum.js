@@ -25,19 +25,20 @@ var WebWorkerPlayer = players.WebWorkerPlayer = declare(Player, {
 			"Invalid player builder: "+ params.playerBuilder +"!");
 		raiseIf(params.workerSetup && 'string function'.indexOf(typeof params.workerSetup) < 0,
 			"Invalid worker setup: "+ params.workerSetup +"!");
-		var parallel = new base.Parallel();
-		return Future.sequence([exports].concat(params.dependencies || []), function (dependency) {
-			return parallel.loadModule(dependency, true);
-		}).then(function () {
-			return parallel.run(
-				(params.workerSetup ? '('+ params.workerSetup +')(),\n' : '')+
-				'self.PLAYER = ('+ params.playerBuilder +').call(self),\n'+
-				'"OK"');
-		}).then(function () {
-			var worker = parallel.worker;
-			worker.__parallel__ = parallel;
-			return worker;
-		});
+		var parallel = new base.Parallel(),
+			deps = [exports].concat(params.dependencies || []);
+		return Future.sequence(deps, function (dependency) {
+				return parallel.loadModule(dependency, true);
+			}).then(function () {
+				return parallel.run(
+					(params.workerSetup ? '('+ params.workerSetup +')(),\n' : '')+
+					'self.PLAYER = ('+ params.playerBuilder +').call(self),\n'+
+					'"OK"');
+			}).then(function () {
+				var worker = parallel.worker;
+				worker.__parallel__ = parallel;
+				return worker;
+			});
 	},
 
 	/** The static `create(params)` method creates (asynchronously) and initializes a

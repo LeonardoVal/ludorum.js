@@ -39,6 +39,40 @@ players.EnsemblePlayer = declare(Player, {
 			.decision(game, role);
 	},
 
+	/** An `heuristicCombination` makes a decision by evaluating the available actions with all the
+	players in the ensemble, combining the results and choosing the best evaluated move (or one of
+	the best evaluated ones at random, if more than one action has the best evaluation).
+	*/
+	heuristicCombination: (function () {
+		function average(move, evals, game, role) {
+			return iterable(evals).sum() / evals.length;
+		}
+
+		return function heuristicCombination(aggregation) {
+			aggregation = aggregation || average;
+
+			return function combinedHeuristicDecision(game, role, players) {
+				players = players || this.playerSelection(game, role);
+				var isAsync = false,
+					player = this,
+					ds = players.map(function (p) {
+						raiseIf(!p.evaluatedMoves, "Cannot call `evaluatedMoves()` on player ", p.name, "(", p.constructor.name, ")!");
+						var d = p.evaluatedMoves(game, role);
+						isAsync = isAsync || Future.__isFuture__(d);
+						return d;
+					});
+				if (isAsync) {
+					return Future.all(ds).then(function (evaluatedMoves) {
+						console.log(evaluatedMoves);//FIXME
+						return player.__bestAggregatedEvaluationMove__(game, role, aggregation, evaluatedMoves);
+					});
+				} else {
+					return player.__bestAggregatedEvaluationMove__(game, role, aggregation, ds);
+				}
+			};
+		};
+	})(),
+
 	__aggregateEvaluatedMoves__: function __aggregateEvaluatedMoves__(game, role, aggregation, evaluatedMoves) {
 		var grouped = iterable(evaluatedMoves).flatten().groupAll(function (evm) {
 			return JSON.stringify(evm[0]); //TODO Allow to customize
@@ -56,43 +90,27 @@ players.EnsemblePlayer = declare(Player, {
 	},
 
 	__bestAggregatedEvaluationMove__: function __bestAggregatedEvaluationMove__(game, role, aggregation, evaluatedMoves) {
-		var aggregated = this.__aggregateEvaluatedMoves__(game, role, aggregation,
-			evaluatedMoves);
-		var bestMoves = HeuristicPlayer.prototype.bestMoves(aggregated);
-		return this.random.choice(bestMoves)[role];
+		var aggregated = this.__aggregateEvaluatedMoves__(game, role, aggregation, evaluatedMoves);
+		raiseIf(aggregated.isEmpty(), "There are no evaluated moves for ", role, " to choose from in ", game, "!");
+		var bestMoves = HeuristicPlayer.prototype.bestMoves(aggregated),
+			bestMove = this.random.choice(bestMoves);
+		return bestMove[role];
 	},
 
-	/**TODO
-	*/
-	heuristicCombination: (function () {
-		function average(move, evals, game, role) {
-			return iterable(evals).sum() / evals.length;
-		}
+	// ## Utilities ###############################################################################
 
-		return function heuristicCombination(aggregation) {
-			aggregation = aggregation || average;
-
-			return function combinedHeuristicDecision(game, role) {
-				var isAsync = false,
-					ds = this.players.map(function (player) {
-						raiseIf(!player.evaluatedMoves,
-							"Cannot call `evaluatedMoves()` on player ", player.name, "!");
-						var d = player.evaluatedMoves(game, role);
-						isAsync = isAsync || Future.__isFuture__(d);
-						return d;
-					});
-				if (isAsync) {
-					return Future.all(ds).then(
-						this.__bestAggregatedEvaluationMove__.bind(game, role, aggregation)
-					);
-				} else {
-					return this.__bestAggregatedEvaluationMove__(game, role, aggregation, ds);
-				}
-			};
-		};
-	})(),
-
-	// ## Utilities ################################################################################
+	'static parallelizeHeuristicPlayer': function parallelizeHeuristicPlayer(amount, webWorkerParams) {
+		amount = amount || navigator.hardwareConcurrency;
+		var fs = base.Iterable.range(amount).map(function () {
+				return ludorum.players.WebWorkerPlayer.create(webWorkerParams);
+			}),
+			EnsemblePlayer = this;
+		return base.Future.all(fs.toArray()).then(function (players) {
+			var p = new EnsemblePlayer({ players: players });
+			p.decision = p.heuristicCombination();
+			return p;
+		});
+	},
 
 	/** Serialization and materialization using Sermat.
 	*/
