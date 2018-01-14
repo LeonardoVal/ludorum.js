@@ -27,7 +27,7 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 	selectNode: function selectNode(gameTree, totalSimulationCount, explorationConstant) {
 		explorationConstant = isNaN(explorationConstant) ? this.explorationConstant : +explorationConstant;
 		return this.random.choice(iterable(gameTree.children).select(1).greater(function (n) {
-			return n.uct.rewards / n.uct.visits +
+			return (n.uct.rewards + n.uct.visits) / n.uct.visits / 2 +
 				explorationConstant * Math.sqrt(Math.log(totalSimulationCount) / n.uct.visits);
 		}));
 	},
@@ -59,12 +59,12 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 			simulationResult = this.simulation(node.state, player); // Simulation
 			for (; node; node = node.parent) { // Backpropagation
 				++node.uct.visits;
-				node.uct.rewards += (game.normalizedResult(simulationResult.result) + 1) / 2;
+				node.uct.rewards += game.normalizedResult(simulationResult.result);
 			}
 		}
 		return iterable(root.children).select(1).map(function (n) {
-			return [n.transition, n.uct.visits];
-		});
+				return [n.transition, n.uct.visits];
+			}).toArray();
 	},
 
 	// ## Utilities ################################################################################

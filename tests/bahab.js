@@ -81,6 +81,8 @@ init(['ludorum', 'creatartis-base', 'sermat', 'playtester'], function (ludorum, 
 		.playerAlfaBeta("MiniMax-\u03b1\u03b2 (4 plies)", true, 3)
 		.playerAlfaBeta("MiniMax-\u03b1\u03b2 (6 plies)", true, 5)
 		.playerMaxN("MaxN (6 plies)", true, 5)
+		.playerParallelMCTS('', 4, 250)
+		.playerParallelUCT('', 4, 2500)
 		.selects(['playerUppercase', 'playerLowercase'])
 		.button('resetButton', document.getElementById('reset'), APP.reset.bind(APP))
 		.reset();
