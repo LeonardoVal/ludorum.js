@@ -43,7 +43,7 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 			visits: 0,
 			rewards: 0
 		};
-		for (var i = 0; i < this.simulationCount && Date.now() < endTime; ++i) {
+		for (var i = 0; i < this.simulationCount && Date.now() < endTime; i++) {
 			node = root;
 			while (node.uct.pending.length < 1 && node.childrenCount() > 0) { // Selection
 				node = this.selectNode(node, i+1, this.explorationConstant);
@@ -63,7 +63,7 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 			}
 		}
 		return iterable(root.children).select(1).map(function (n) {
-				return [n.transition, n.uct.visits];
+				return [n.transition, n.uct.rewards / n.uct.visits, n.uct.visits];
 			}).toArray();
 	},
 

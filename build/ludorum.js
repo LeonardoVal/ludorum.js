@@ -2569,7 +2569,7 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 					count: 0
 				};
 			}); // Else the following updates won't work.
-		for (var i = 0; i < this.simulationCount && Date.now() < endTime; ++i) {
+		for (var i = 0; i < this.simulationCount && Date.now() < endTime; ) {
 			options.forEach(function (option) {
 				option.nexts = option.nexts.filter(function (next) {
 					var sim = monteCarloPlayer.simulation(next, player);
@@ -2577,11 +2577,12 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 					++option.count;
 					return sim.plies > 0;
 				});
+				i++;
 			});
 		}
 		return options.map(function (option) {
 			raiseIf(isNaN(option.sum), "State evaluation is NaN for move ", option.move, "!");
-			return [option.move, option.count > 0 ? option.sum / option.count : 0];
+			return [option.move, option.count > 0 ? option.sum / option.count : 0, option.count];
 		});
 	},
 
@@ -2712,7 +2713,7 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 			visits: 0,
 			rewards: 0
 		};
-		for (var i = 0; i < this.simulationCount && Date.now() < endTime; ++i) {
+		for (var i = 0; i < this.simulationCount && Date.now() < endTime; i++) {
 			node = root;
 			while (node.uct.pending.length < 1 && node.childrenCount() > 0) { // Selection
 				node = this.selectNode(node, i+1, this.explorationConstant);
@@ -2732,7 +2733,7 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 			}
 		}
 		return iterable(root.children).select(1).map(function (n) {
-				return [n.transition, n.uct.visits];
+				return [n.transition, n.uct.rewards / n.uct.visits, n.uct.visits];
 			}).toArray();
 	},
 
@@ -2905,7 +2906,6 @@ players.EnsemblePlayer = declare(Player, {
 					});
 				if (isAsync) {
 					return Future.all(ds).then(function (evaluatedMoves) {
-						console.log(evaluatedMoves);//FIXME
 						return player.__bestAggregatedEvaluationMove__(game, role, aggregation, evaluatedMoves);
 					});
 				} else {

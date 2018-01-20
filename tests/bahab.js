@@ -20,14 +20,6 @@ init(['ludorum', 'creatartis-base', 'sermat', 'playtester'], function (ludorum, 
 			'.': "ludorum-square-empty"
 		},
 
-		/** This is a mapping from the board to HTML for each of the board's squares.
-		*/
-		squareHTML: {
-			'X': "X",
-			'O': "O",
-			'_': "&nbsp;"
-		},
-
 		display: function display(game) {
 			this.container.innerHTML = ''; // empty the board's DOM.
 			var ui = this,
@@ -82,7 +74,7 @@ init(['ludorum', 'creatartis-base', 'sermat', 'playtester'], function (ludorum, 
 		.playerAlfaBeta("MiniMax-\u03b1\u03b2 (6 plies)", true, 5)
 		.playerMaxN("MaxN (6 plies)", true, 5)
 		.playerParallelMCTS('', 4, 250)
-		.playerParallelUCT('', 4, 2500)
+		.playerParallelUCT('', 4, 250)
 		.selects(['playerUppercase', 'playerLowercase'])
 		.button('resetButton', document.getElementById('reset'), APP.reset.bind(APP))
 		.reset();

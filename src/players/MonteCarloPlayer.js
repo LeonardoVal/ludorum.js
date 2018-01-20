@@ -51,7 +51,7 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 					count: 0
 				};
 			}); // Else the following updates won't work.
-		for (var i = 0; i < this.simulationCount && Date.now() < endTime; ++i) {
+		for (var i = 0; i < this.simulationCount && Date.now() < endTime; ) {
 			options.forEach(function (option) {
 				option.nexts = option.nexts.filter(function (next) {
 					var sim = monteCarloPlayer.simulation(next, player);
@@ -59,11 +59,12 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 					++option.count;
 					return sim.plies > 0;
 				});
+				i++;
 			});
 		}
 		return options.map(function (option) {
 			raiseIf(isNaN(option.sum), "State evaluation is NaN for move ", option.move, "!");
-			return [option.move, option.count > 0 ? option.sum / option.count : 0];
+			return [option.move, option.count > 0 ? option.sum / option.count : 0, option.count];
 		});
 	},
 

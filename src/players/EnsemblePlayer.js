@@ -63,7 +63,6 @@ players.EnsemblePlayer = declare(Player, {
 					});
 				if (isAsync) {
 					return Future.all(ds).then(function (evaluatedMoves) {
-						console.log(evaluatedMoves);//FIXME
 						return player.__bestAggregatedEvaluationMove__(game, role, aggregation, evaluatedMoves);
 					});
 				} else {
