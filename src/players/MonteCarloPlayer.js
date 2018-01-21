@@ -37,7 +37,7 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 	evaluatedMoves: function evaluatedMoves(game, player) {
 		raiseIf(game.isContingent, "MonteCarloPlayer cannot evaluate root contingent states!"); //FIXME
 		var monteCarloPlayer = this,
-			endTime = Date.now() + this.timeCap,
+			startTime = Date.now(),
 			options = this.possibleMoves(game, player).map(function (move) {
 				return {
 					move: move,
@@ -51,7 +51,7 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 					count: 0
 				};
 			}); // Else the following updates won't work.
-		for (var i = 0; i < this.simulationCount && Date.now() < endTime; ) {
+		for (var i = 0; !this.__finishMoveEvaluation__(i, startTime, options); ) {
 			options.forEach(function (option) {
 				option.nexts = option.nexts.filter(function (next) {
 					var sim = monteCarloPlayer.simulation(next, player);
@@ -66,6 +66,13 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 			raiseIf(isNaN(option.sum), "State evaluation is NaN for move ", option.move, "!");
 			return [option.move, option.count > 0 ? option.sum / option.count : 0, option.count];
 		});
+	},
+
+	/** The move evaluation can be finished on many criteria. By default, `simulationCount` and 
+	`timeCap` are considered.
+	*/
+	__finishMoveEvaluation__: function __finishMoveEvaluation__(simCount, startTime, data) {
+		return simCount > this.simulationCount || startTime + this.timeCap < Date.now();
 	},
 
 	/** This player's `stateEvaluation(game, player)` runs `simulationCount` simulations and returns

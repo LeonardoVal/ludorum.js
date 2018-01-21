@@ -36,14 +36,14 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 	*/
 	evaluatedMoves: function evaluatedMoves(game, player) {
 		var root = new GameTree(null, game),
-			endTime = Date.now() + this.timeCap,
+			startTime = Date.now(),
 			node, simulationResult;
 		root.uct = {
 			pending: this.random.shuffle(root.possibleTransitions()),
 			visits: 0,
 			rewards: 0
 		};
-		for (var i = 0; i < this.simulationCount && Date.now() < endTime; i++) {
+		for (var i = 0;  !this.__finishMoveEvaluation__(i, startTime, root); i++) {
 			node = root;
 			while (node.uct.pending.length < 1 && node.childrenCount() > 0) { // Selection
 				node = this.selectNode(node, i+1, this.explorationConstant);
