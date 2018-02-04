@@ -98,6 +98,10 @@ var Contingent = exports.Contingent = declare({
 
 	// ## Utilities ################################################################################
 
+	toString: function toString() {
+		return Sermat.ser(this);
+	},
+
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
