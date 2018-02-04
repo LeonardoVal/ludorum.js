@@ -867,6 +867,10 @@ var Contingent = exports.Contingent = declare({
 
 	// ## Utilities ################################################################################
 
+	toString: function toString() {
+		return Sermat.ser(this);
+	},
+
 	/** Serialization and materialization using Sermat.
 	*/
 	'static __SERMAT__': {
@@ -1912,7 +1916,7 @@ utils.Cache = declare({
 A data structure to help building game trees, i.e. trees in which each node is a game state, the
 final states are leaves and each child node belongs to one of the next states of its parent.
 */
-var GameTree = declare({
+var GameTree = utils.GameTree = declare({
 	/** Each instance represents a node in the game tree. The `parent` must be null or undefined at
 	the root. The given `transition` is either the moves or the aleatory values used to move from 
 	the parent's state to this node's state. They also must be null or undefined at the root.
@@ -1963,7 +1967,7 @@ var GameTree = declare({
 	possibleTransitions: function possibleTransitions() {
 		var state = this.state;
 		if (state.isContingent) {
-			return state.possibleHaps();
+			return iterable(state.possibleHaps()).select(0).toArray();
 		} else {
 			return state.possibleMoves();
 		}
