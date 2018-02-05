@@ -12,61 +12,79 @@ var GameTree = utils.GameTree = declare({
 		this.parent = parent;
 		this.state = state;
 		this.transition = transition;
-		this.children = {};
+		if (state) {
+			this.children = this.possibleTransitions();
+		}
 	},
 	
 	/** This node's `children` are stored in an object, hence getting the count is a little tricky.
 	*/
 	childrenCount: function childrenCount() {
-		return Object.keys(this.children).length;
-	},
-	
-	/** In the `children` object nodes are stored with a serialization of their transitions as keys.
-	By default the JSON _"strinigification"_ is used.
-	*/
-	__childSerialization__: function __childSerialization__(moves) {
-		return JSON.stringify(moves);
+		if (!this.children) {
+			this.children = this.possibleTransitions();
+		}
+		return this.children.length;
 	},
 	
 	/** A node expansion takes the `moves` to calculate the next state and creates the child node
 	with it. If the node already exists, it is returned and none is created.
 	*/
-	expand: function expand(transition) {
-		var key = this.__childSerialization__(transition),
-			child = this.children[key],
-			nextState;
-		if (!child) {
+	expand: function expand(i) {
+		raiseIf(i < 0 || i >= this.childrenCount(), "Cannot expand children ", i, "!");
+		var child = this.children[i];
+		if (!child.state) {
 			try {
-				nextState = this.state.next(transition); 
+				child.state = child.parent.state.next(child.transition); 
 			} catch (err) {
-				raise("Node expansion for ", this.state, " with ", JSON.stringify(transition),
-					" failed with: ", err);
+				raise("Node expansion for ", child.parent.state, " with ", 
+					JSON.stringify(child.transition), " failed with: ", err);
 			}
-			child = new this.constructor(this, nextState, transition);
-			this.children[key] = child;
 		}
 		return child;
 	},
 	
+	/** Expand a child at random.
+	*/
+	expandRandom: function expandRandom(random) {
+		random = random || Randomness.DEFAULT;
+		return this.expand(random.randomInt(this.childrenCount()));
+	},
+
 	/** Returns the possible moves is the state is an instance of Game, or the possible values if
 	the state is an instance of Aleatory.
 	*/
 	possibleTransitions: function possibleTransitions() {
-		var state = this.state;
+		var state = this.state,
+			Cons = this.constructor,
+			parent = this;
+		raiseIf(!state, "GameTree node has no state!");
 		if (state.isContingent) {
-			return iterable(state.possibleHaps()).select(0).toArray();
+			return state.possibleHaps().map(function (t) {
+				var child = new Cons(parent, null, t[0]);
+				child.probability = t[1];
+				return child;
+			});
 		} else {
-			return state.possibleMoves();
+			return state.possibleMoves().map(function (m) {
+				return new Cons(parent, null, m);
+			});
 		}
 	},
 	
-	/** A full expansion creates all child nodes for this node.
+	/** A full expansion creates all children nodes for this node.
 	*/
 	expandAll: function expandAll() {
-		var node = this;
-		return this.possibleTransitions().map(function (transition) {
-			return node.expand(// An array as transition means it belongs to a contingent state
-				Array.isArray(transition) ? transition[0] : transition);
-		});
+		var child;
+		for (var i = 0, len = this.childrenCount; i < len; i++) {
+			if (child.state) {
+				try {
+					child.state = child.parent.next(child.transition); 
+				} catch (err) {
+					raise("Node expansion for ", child.parent, " with ", 
+						JSON.stringify(child.transition), " failed with: ", err);
+				}
+			}
+		}
+		return this.children;
 	}
 }); // declare GameTree
