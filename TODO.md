@@ -14,4 +14,5 @@
 
 ## Utils
 
++ Loop methods in `Checkerboard` (coordinates and squares) like `filter`, `map` and `forEach`.
 + More methods in `Checkerboard` for altering the board (rotate, transpose, etc).
