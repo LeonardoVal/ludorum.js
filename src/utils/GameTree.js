@@ -17,39 +17,6 @@ var GameTree = utils.GameTree = declare({
 		}
 	},
 	
-	/** This node's `children` are stored in an object, hence getting the count is a little tricky.
-	*/
-	childrenCount: function childrenCount() {
-		if (!this.children) {
-			this.children = this.possibleTransitions();
-		}
-		return this.children.length;
-	},
-	
-	/** A node expansion takes the `moves` to calculate the next state and creates the child node
-	with it. If the node already exists, it is returned and none is created.
-	*/
-	expand: function expand(i) {
-		raiseIf(i < 0 || i >= this.childrenCount(), "Cannot expand children ", i, "!");
-		var child = this.children[i];
-		if (!child.state) {
-			try {
-				child.state = child.parent.state.next(child.transition); 
-			} catch (err) {
-				raise("Node expansion for ", child.parent.state, " with ", 
-					JSON.stringify(child.transition), " failed with: ", err);
-			}
-		}
-		return child;
-	},
-	
-	/** Expand a child at random.
-	*/
-	expandRandom: function expandRandom(random) {
-		random = random || Randomness.DEFAULT;
-		return this.expand(random.randomInt(this.childrenCount()));
-	},
-
 	/** Returns the possible moves is the state is an instance of Game, or the possible values if
 	the state is an instance of Aleatory.
 	*/
@@ -70,20 +37,49 @@ var GameTree = utils.GameTree = declare({
 			});
 		}
 	},
+
+	/** This node's `children` are stored in an object, hence getting the count is a little tricky.
+	*/
+	childrenCount: function childrenCount() {
+		if (!this.children) {
+			this.children = this.possibleTransitions();
+		}
+		return this.children.length;
+	},
+	
+	__expandChild__: function __expandChild__(child) {
+		if (!child.state) {
+			try {
+				child.state = child.parent.state.next(child.transition); 
+			} catch (err) {
+				raise("Node expansion for ", child.parent.state, " with ", 
+					JSON.stringify(child.transition), " failed with: ", err);
+			}
+		}
+		return child;
+	},
+
+	/** A node expansion takes the `moves` to calculate the next state and creates the child node
+	with it. If the node already exists, it is returned and none is created.
+	*/
+	expand: function expand(i) {
+		raiseIf(i < 0 || i >= this.childrenCount(), "Cannot expand children ", i, "!");
+		return this.__expandChild__(this.children[i]);
+	},
+	
+	/** Expand a child at random.
+	*/
+	expandRandom: function expandRandom(random) {
+		random = random || Randomness.DEFAULT;
+		return this.expand(random.randomInt(this.childrenCount()));
+	},
 	
 	/** A full expansion creates all children nodes for this node.
 	*/
 	expandAll: function expandAll() {
 		var child;
 		for (var i = 0, len = this.childrenCount; i < len; i++) {
-			if (child.state) {
-				try {
-					child.state = child.parent.next(child.transition); 
-				} catch (err) {
-					raise("Node expansion for ", child.parent, " with ", 
-						JSON.stringify(child.transition), " failed with: ", err);
-				}
-			}
+			this.__expandChild__(this.children[i]);
 		}
 		return this.children;
 	}
