@@ -116,31 +116,58 @@ define(['ludorum', 'creatartis-base', 'sermat'], function (ludorum, base, Sermat
 			selectElems = selectElems ? selectElems.map(domElemOrId) : document.getElementsByTagName('select');
 			this.elements.selects = selectElems;
 			var app = this,
-				selectOnChange = function (playerNum) {
-					var option = app.players[+this.value];
-					(option.runOnWorker ?
-						ludorum.players.WebWorkerPlayer.create({
-							playerBuilder: option.builder,
-							dependencies: app.webWorkerDependencies
-						}) :
-						base.Future.when(option.builder())
-					).then(function (player) {
-						app.currentPlayers[playerNum] = player;
-						app.reset();
-					});
-				},
 				optionsHTML = base.iterable(this.players).map(function (option, i) {
 					return '<option value="'+ i +'">'+ option.title +'</option>';
 				}).join('');
 			selectElems.forEach(function (select, i) {
 				select.innerHTML = optionsHTML;
-				select.onchange = selectOnChange.bind(select, i);
+				select.onchange = function  () {
+					app.selectPlayer(i, +this.value, true);
+				};
 			});
 			var defaultBuilder = app.players[0].builder;
 			this.currentPlayers = selectElems.map(function () {
 				return defaultBuilder();
 			});
 			return this; // for chaining.
+		},
+
+		selectPlayer: function selectPlayer(playerNum, agentNum, resetMatch) {
+			var app = this,
+				option = this.players[agentNum];
+			return (option.runOnWorker ?
+				ludorum.players.WebWorkerPlayer.create({
+					playerBuilder: option.builder,
+					dependencies: app.webWorkerDependencies
+				}) :
+				base.Future.when(option.builder())
+			).then(function (player) {
+				app.currentPlayers[playerNum] = player;
+				if (resetMatch) {
+					app.reset();
+				}
+				return player;
+			});
+		},
+
+		setPlayer: function setPlayer(playerNum, agentNum, resetMatch) {
+			this.elements.selects[playerNum].value = agentNum;
+			return this.selectPlayer(playerNum, agentNum, resetMatch);
+		},
+
+		setPlayers: function selectPlayer(playerNums, agentNum, resetMatch) {
+			playerNums = playerNums || base.Iterable.range(this.players.length).toArray();
+			var app = this,
+				r = base.Future.all(playerNums.map(function (playerNum) {
+					return app.setPlayer(playerNum, agentNum, false);
+				}));
+			if (resetMatch) {
+				return r.then(function () {
+					app.reset();
+				});
+			} else {
+				return r;
+			}
 		},
 
 		button: function button(name, elem, onclick) {
