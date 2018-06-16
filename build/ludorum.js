@@ -3668,6 +3668,8 @@ which includes [TicTacToe](http://en.wikipedia.org/wiki/Tic-tac-toe),
 It implements a rectangular board, the placing of the pieces and the checks for lines.
 */
 games.ConnectionGame = declare(Game, {
+	name: 'ConnectionGame',
+
 	/** Boards by default have 9 rows ...
 	*/
 	height: 9,
@@ -3685,13 +3687,11 @@ games.ConnectionGame = declare(Game, {
 	*/
 	constructor: function ConnectionGame(activePlayer, board) {
 		Game.call(this, activePlayer);
-		this.board = (board instanceof CheckerboardFromString) ? board :
-			new CheckerboardFromString(this.height, this.width, 
-				(board || '.'.repeat(this.height * this.width)) +''
-			);
+		this.board = (board instanceof CheckerboardFromString) ? board : 
+			new CheckerboardFromString(this.height, this.width, board);
+		this.height = this.board.height;
+		this.width = this.board.width;
 	},
-
-	name: 'ConnectionGame',
 	
 	/** This base implementations names its players First and Second.
 	*/
