@@ -187,7 +187,7 @@ define(['ludorum', 'creatartis-base', 'sermat'], function (ludorum, base, Sermat
 						"Turn "+ game.activePlayer() +".";
 					bar.innerHTML = escapeXML("Turn "+ game.activePlayer() +".");
 				});
-				match.events.on('next', function (game, next) {
+				match.events.on('next', function (game, moves, haps, next) {
 					var msg = next.isContingent ? "Resolving contingency." : //FIXME Better message
 						"Turn "+ next.activePlayer() +".";
 					bar.innerHTML = escapeXML(msg);

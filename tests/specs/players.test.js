@@ -48,7 +48,7 @@
 	function zeroSumCheck(done) {
 		return function (match) {
 			var result = match.result(),
-				game = match.history[0];
+				game = match.history[0].state;
 			expect(result).toBeTruthy();
 			expect(result[game.players[0]] + result[game.players[1]]).toBe(0);
 			done();
