@@ -540,11 +540,11 @@ var Match = exports.Match = declare({
 	constructor: function Match(game, players) {
 		this.game = game;
 		this.players = Array.isArray(players) ? iterable(game.players).zip(players).toObject() : players;
-		/** The match records the sequence of game state in `Match.history`.
+		/** The match records the sequence of game states in `Match.history`.
 		*/
-		this.history = [game];
+		this.history = [ { state: game }];
 		this.events = new Events({
-			events: ['begin', 'move', 'next', 'end', 'quit']
+			events: ['begin', 'next', 'end', 'quit']
 		});
 		for (var p in this.players) { // Participate the players.
 			this.players[p] = this.players[p].participate(this, p) || this.players[p];
@@ -563,7 +563,7 @@ var Match = exports.Match = declare({
 	*/
 	state: function state(ply) {
 		ply = isNaN(ply) ? this.ply() : +ply < 0 ? this.ply() + (+ply) : +ply;
-		return this.history[ply | 0];
+		return this.history[ply | 0].state;
 	},
 
 	/** If the last game state is finished, then the whole match is finished. If so,
@@ -586,7 +586,6 @@ var Match = exports.Match = declare({
 			return players[p].decision(game.view(p), p);
 		})).then(function (decisions) {
 			var moves = iterable(activePlayers).zip(decisions).toObject();
-			match.onMove(game, moves);
 			return moves;
 		});
 	},
@@ -622,11 +621,15 @@ var Match = exports.Match = declare({
 		}
 	},
 
-	__advanceContingents__: function __advanceContingents__(game, moves) {
-		for (var next; game.isContingent; game = next) {
-			next = game.randomNext();
-			this.history.push(next);
-			this.onNext(game, next);
+	__advanceContingents__: function __advanceContingents__(game) {
+		var haps, next;
+		while (game.isContingent) {
+			haps = game.randomHaps();
+			this.history[this.history.length - 1].haps = haps;
+			next = game.next(haps);
+			this.history.push({ state: next });
+			this.onNext(game, null, haps, next);
+			game = next;
 		}
 		return game;
 	},
@@ -641,8 +644,9 @@ var Match = exports.Match = declare({
 			return false;
 		}
 		var next = game.next(moves); // Match must go on.
-		this.history.push(next);
-		this.onNext(game, next);
+		this.history[this.history.length - 1].moves = moves;
+		this.history.push({ state: next });
+		this.onNext(game, moves, null, next);
 		return true;
 	},
 
@@ -683,22 +687,12 @@ var Match = exports.Match = declare({
 		}
 	},
 
-	/** + The `move` event fired by `Match.onMove(game, moves)` every time the active players make
-	moves. The callbacks should have the signature `function (game, moves, match)`.
-	*/
-	onMove: function onMove(game, moves) {
-		this.events.emit('move', game, moves, this);
-		if (this.logger) {
-			this.logger.info('Players move: ', JSON.stringify(moves), ' in ', game);
-		}
-	},
-
 	/** + The `next` event fired by `Match.onNext(game, next)` signals when the match advances to
 	the next game state. This may be due to moves or aleatory instantiation.  The callbacks should
 	have the signature `function (gameBefore, gameAfter, match)`.
 	*/
-	onNext: function onNext(game, next) {
-		this.events.emit('next', game, next, this);
+	onNext: function onNext(game, moves, haps, next) {
+		this.events.emit('next', game, moves, haps, next, this);
 		if (this.logger) {
 			this.logger.info('Match advances from ', game, ' to ', next);
 		}
@@ -967,11 +961,12 @@ var Tournament = exports.Tournament = declare({
 			stats.add({key:'length', game:game.name, role:role, player:player.name},
 				match.ply()); //FIXME This may not be accurate if the game has random variables.
 			match.history.forEach(function (entry) {
-				if (typeof entry.moves === 'function') {
-					var moves = entry.moves();
+				var game = entry.state;
+				if (typeof game === 'function') {
+					var moves = game.moves();
 					if (moves && moves.hasOwnProperty(role) && moves[role].length > 0) {
-						stats.add({key:'width', game:game.name, role:role, player:player.name},
-							moves[role].length);
+						stats.add({ key: 'width', game: game.name, role: role, 
+							player: player.name }, moves[role].length);
 					}
 				}
 			});
@@ -3065,9 +3060,9 @@ var UserInterface = players.UserInterface = declare({
 		this.display(game);
 	},
 	
-	/** + `onNext(game, next)` handles the `'move'` event of the match.
+	/** + `onNext(game, moves, haps, next)` handles the `'move'` event of the match.
 	*/
-	onNext: function onNext(game, next) {
+	onNext: function onNext(game, moves, haps, next) {
 		this.display(next);
 	},
 	
