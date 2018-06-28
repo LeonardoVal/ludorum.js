@@ -83,11 +83,12 @@ var Tournament = exports.Tournament = declare({
 			stats.add({key:'length', game:game.name, role:role, player:player.name},
 				match.ply()); //FIXME This may not be accurate if the game has random variables.
 			match.history.forEach(function (entry) {
-				if (typeof entry.moves === 'function') {
-					var moves = entry.moves();
+				var game = entry.state;
+				if (typeof game === 'function') {
+					var moves = game.moves();
 					if (moves && moves.hasOwnProperty(role) && moves[role].length > 0) {
-						stats.add({key:'width', game:game.name, role:role, player:player.name},
-							moves[role].length);
+						stats.add({ key: 'width', game: game.name, role: role, 
+							player: player.name }, moves[role].length);
 					}
 				}
 			});

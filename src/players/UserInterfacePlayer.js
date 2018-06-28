@@ -78,9 +78,9 @@ var UserInterface = players.UserInterface = declare({
 		this.display(game);
 	},
 	
-	/** + `onNext(game, next)` handles the `'move'` event of the match.
+	/** + `onNext(game, moves, haps, next)` handles the `'move'` event of the match.
 	*/
-	onNext: function onNext(game, next) {
+	onNext: function onNext(game, moves, haps, next) {
 		this.display(next);
 	},
 	
