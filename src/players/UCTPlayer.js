@@ -36,7 +36,7 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 	/** `evaluatedMoves(game, player)` return a sequence with the evaluated moves.
 	*/
 	evaluatedMoves: function evaluatedMoves(game, player) {
-		var root = new GameTree(null, game),
+		var root = new GameTree({ state: game }),
 			startTime = Date.now(),
 			node, simulationResult;
 		root.uct = { pending: root.childrenCount(), visits: 0, rewards: 0 };
