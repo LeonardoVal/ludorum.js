@@ -49,8 +49,11 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 	/** The `minimax(game, player, depth)` method calculates the Minimax evaluation of the given 
 	game for the given player. If the game is not finished and the depth is greater than the 
 	horizon, `heuristic` is used.
+
+	hook is an optional argument, which allows a function to be called in every node with the
+	current game and the node's value, as hook(game, value)
 	*/
-	minimax: function minimax(game, player, depth) {
+	minimax: function minimax(game, player, depth, hook) {
 		if (game.isContingent) {
 			return this.expectiMinimax(game, player, depth);
 		}
@@ -71,8 +74,11 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 			}
 			for (var i = 0; i < moves.length; ++i) {
 				next = game.next(obj(activePlayer, moves[i]));
-				value = comparison(value, this.minimax(next, player, depth + 1));
+				value = comparison(value, this.minimax(next, player, depth + 1, hook));
 			}
+		}
+		if (typeof hook === 'function') {
+			hook(game, value);
 		}
 		return value;
 	},
