@@ -49,10 +49,11 @@ init(['ludorum', 'creatartis-base', 'sermat', 'playtester'], function (ludorum, 
 		}
 	});
 
-	/** PlayTesterApp initialization.
-	*/
-	base.global.APP = new PlayTesterApp(new ludorum.games.TicTacToe(), new TicTacToeHTMLInterface(),
+	/** PlayTesterApp initialization. ************************************************************/
+	var APP = new PlayTesterApp(new ludorum.games.TicTacToe(), new TicTacToeHTMLInterface(),
 		{ bar: document.getElementsByTagName('footer')[0] });
+	base.global.APP = APP;
+	APP.SOLUTION = {};
 	APP.playerUI("You")
 		.playerRandom()
 		.playerMonteCarlo("MCTS (20 sims)", true, 20)
@@ -72,8 +73,33 @@ init(['ludorum', 'creatartis-base', 'sermat', 'playtester'], function (ludorum, 
 				})
 			});
 		}, false)
+		.player("Solution", function () {
+			return new ludorum.players.HeuristicPlayer({
+				heuristic: function (game, player) {
+					var k = game.equivalent()[0];
+					return APP.SOLUTION[k] * (player === game.players[0] ? +1 : -1);
+				}
+			});
+		}, false)
 		.selects(['playerXs', 'playerOs'])
 		.button('resetButton', document.getElementById('reset'), APP.reset.bind(APP))
 		.reset();
+
+	/* TicTacToe solution calculation ************************************************************/
+	(function () {
+		var par = new base.Parallel();
+		return par.loadModule(ludorum, true).then(function () {
+			return par.run('('+ function () {
+				return ludorum.players.MiniMaxPlayer.solution(new ludorum.games.TicTacToe(), {
+					gameKey: function (g) { 
+						return g.equivalent()[0];
+					}
+				});
+			} +')()');
+		}).then(function (solution) {
+			APP.SOLUTION = solution;
+			console.log("Solution has "+ Object.keys(solution).length +" entries.");
+		});
+	})();
 }); // init()
 }); // require().
