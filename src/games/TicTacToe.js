@@ -91,30 +91,30 @@ games.TicTacToe = declare(Game, {
 		}).join(''), 3);
 	},
 	
-	/** A `symmetryHash` is a hash value for the game state that can be used in a cache or 
-	transposition table to speed up game tree searches. Many game states may share the same hash
-	value if they can be considered equivalent.
+	/** The `equivalent` states to a game state have symmetrical or rotated (or both) boards. This
+	method returns a sorted list of equivalent of boards (_strings_).
 	
-	In the case of Tictactoe, every board is equivalent with any rotation or symmetry.
+	There can be 7 equivalent states for every game state. The transformations can be inspected in 
+	the property `equivalent.MAPPINGS`.
 	*/
-	symmetryHash: (function () {
-		var SYMMETRIES = '210543876 678345012 630741852 258147036 876543210 852741630 036147258'
+	equivalent: (function () {
+		var MAPPINGS = '210543876 678345012 630741852 258147036 876543210 852741630 036147258'
 			.split(' ').map(function (str) {
 				return str.split('').map(function (chr) {
 					return +chr;
 				});
 			}),
-			f =	function symmetricHash() {
+			f = function symmetricHash() {
 				var board = this.board,
-					syms = SYMMETRIES.map(function (sym) {
+					syms = MAPPINGS.map(function (sym) {
 						return sym.map(function (i) {
 							return board.charAt(i);
 						}).join('');
 					});
 				syms.sort();
-				return this.__hash__(syms[0]);
+				return syms;
 			};
-		f.SYMMETRIES = SYMMETRIES;
+		f.MAPPINGS = MAPPINGS;
 		return f;
 	})(),
 	
