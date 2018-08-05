@@ -44,6 +44,6 @@ module.exports = function(grunt) {
 
 	grunt.registerTask('default', ['build']);
 	grunt.registerTask('console', ['compile', 'docker:build', 'connect:console']);
-	grunt.registerTask('bahab', ['bahab', 'connect:bahab']);
-	grunt.registerTask('tictactoe', ['tictactoe', 'connect:tictactoe']);
+	grunt.registerTask('bahab', ['compile', 'connect:bahab']);
+	grunt.registerTask('tictactoe', ['compile', 'connect:tictactoe']);
 };
