@@ -26,11 +26,11 @@
 		"LICENSE.md"
 	],
 	"dependencies": {
-		"creatartis-base": "~0.1.7",
+		"creatartis-base": "~0.1.8",
 		"sermat": "~0.0.9"
 	},
 	"devDependencies": {
-		"creatartis-grunt": "~0.0.14"
+		"creatartis-grunt": "~0.0.15"
 	},
 	"scripts": {}
 }
