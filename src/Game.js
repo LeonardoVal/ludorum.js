@@ -198,12 +198,15 @@ var Game = exports.Game = declare({
 	/** A `randomNext` picks one of the next states at random.
 	*/
 	randomNext: function randomNext(random, update) {
-		var moves = this.moves(),
-			move = {};
+		var allMoves = this.moves(),
+			randomMoves = {};
 		this.activePlayers.forEach(function (activePlayer) {
-			move[activePlayer] = random.choice(moves[activePlayer]);
+			randomMoves[activePlayer] = random.choice(allMoves[activePlayer]);
 		});
-		return this.next(move, null, update);
+		return {
+			state: this.next(randomMoves, null, update),
+			moves: randomMoves
+		};
 	},
 
 	// ## Result functions #########################################################################

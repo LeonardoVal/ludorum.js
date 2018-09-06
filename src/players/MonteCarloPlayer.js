@@ -118,7 +118,7 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 			} else {
 				var q = this.quiescence(game, player, plies + 1);
 				if (isNaN(q)) { // The simulation continues.
-					game = game.randomNext(this.random, plies > 0); // The original `game` argument must not be changed.
+					game = game.randomNext(this.random, plies > 0).state; // The original `game` argument must not be changed.
 				} else { // The simulation has a result and ends.
 					result.result = q;
 					result.plies = plies;
