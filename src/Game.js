@@ -195,6 +195,17 @@ var Game = exports.Game = declare({
 		return new Contingent(this, moves, aleatories, update);
 	},
 
+	/** A `randomNext` picks one of the next states at random.
+	*/
+	randomNext: function randomNext(random, update) {
+		var moves = this.moves(),
+			move = {};
+		this.activePlayers.forEach(function (activePlayer) {
+			move[activePlayer] = random.choice(moves[activePlayer]);
+		});
+		return this.next(move, null, update);
+	},
+
 	// ## Result functions #########################################################################
 
 	/** The maximum and minimum results may be useful and even required by some game search
