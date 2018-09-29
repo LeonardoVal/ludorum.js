@@ -16,6 +16,7 @@ module.exports = function(grunt) {
 				'players/MiniMaxPlayer', 'players/AlphaBetaPlayer', 'players/MonteCarloPlayer',
 				'players/UCTPlayer', 'players/RuleBasedPlayer', 'players/EnsemblePlayer',
 				'players/UserInterfacePlayer', 'players/WebWorkerPlayer',
+				'players/NewPlayer',
 			// aleatories.
 				'aleatories/Aleatory', 'aleatories/DieAleatory', 'aleatories/aleatories',
 			// games.
