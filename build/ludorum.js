@@ -3368,10 +3368,10 @@ var NewPlayer = players.NewPlayer = declare(HeuristicPlayer, {
 					sum: 0
 				};
 			}),
-			playthrough = this.randomlyComplete([], game);
-		for (var i = 0; i < 200; i++) { //FIXME Magic number.
+			playthrough = this.randomlyComplete([{ state: game }]);
+		for (var i = 0; i < 100; i++) { //FIXME Magic 100.
 			this.accountResult(options, playthrough, player);
-			playthrough = this.step(playthrough, game.players[i % game.players.length], 3); //FIXME Magic number.
+			this.step(playthrough, game.players[i % game.players.length], 5); //FIXME Magic 5.
 		}
 		this.accountResult(options, playthrough, player);
 		return options.map(function (option) {
@@ -3386,15 +3386,14 @@ var NewPlayer = players.NewPlayer = declare(HeuristicPlayer, {
 	*/
 	step: function step(playthrough, player, n) {
 		var self = this,
-			game = playthrough[0].state,
 			playersPlies = iterable(playthrough).filter(function (entry) {
 					return entry.state.isActive(player);
 				}, function (entry, i) {
 					return i;
 				}).toArray(),
 			randomPlies = this.random.choices(n, playersPlies), //TODO Ply selection distribution
-			changedPlaythroughs = randomPlies.map(function (p) { //TODO Not entirely correct for simultaneous games.
-				return self.randomlyComplete(playthrough.slice(0, p), game); 
+			changedPlaythroughs = randomPlies.map(function (ply) { //TODO Not entirely correct for simultaneous games.
+				return self.randomlyComplete(playthrough.slice(0, ply)); 
 			}),
 			bestChangedPlaythrough = iterable(changedPlaythroughs).greater(function (p) {
 				return p[p.length - 1].result[player];
@@ -3405,13 +3404,7 @@ var NewPlayer = players.NewPlayer = declare(HeuristicPlayer, {
 	/** The `randomlyComplete` functions takes an incomplete `playthrough` and takes random moves
 	for all players until a final game state is reached.
 	*/
-	randomlyComplete: function randomlyComplete(playthrough, game) {
-		if (!playthrough) {
-			playthrough = [];
-		}
-		if (playthrough.length < 1) {
-			playthrough.push({ state: game });
-		}
+	randomlyComplete: function randomlyComplete(playthrough) {
 		var ply = playthrough[playthrough.length - 1],
 			randomNext;
 		ply.result = ply.state.result();
@@ -3430,11 +3423,11 @@ var NewPlayer = players.NewPlayer = declare(HeuristicPlayer, {
 	*/
 	accountResult: function accountResult(options, playthrough, player) {
 		var firstPly = playthrough[0],
-			playthroughResult = playthrough[playthrough.length - 1].result,
+			playthroughResult = playthrough[playthrough.length - 1].result; 
 			count = 0;
 		options.forEach(function (option) {
-			var applies = iterable(firstPly.state.activePlayers).all(function (activePlayer) {
-				return option.move[activePlayer] == firstPly.moves[activePlayer]; 
+			var applies = iterable(firstPly.activePlayers).all(function (activePlayer) {
+				return option.moves[activePlayer] == firstPly.moves[activePlayer]; 
 			});
 			if (applies) {
 				count++;
