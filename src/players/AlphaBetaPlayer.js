@@ -15,7 +15,7 @@ players.AlphaBetaPlayer = declare(MiniMaxPlayer, {
 	`Infinity`.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
-		return this.minimax(game, player, 0, -Infinity, Infinity);
+		return this.minimax(game, player, 1, -Infinity, Infinity);
 	},
 
 	/** The `minimax(game, player, depth, alfa, beta)` method calculates the 

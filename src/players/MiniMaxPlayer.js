@@ -24,7 +24,7 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 	/** Every state's evaluation is the minimax value for the given game and player.
 	*/
 	stateEvaluation: function stateEvaluation(game, player, options) {
-		return this.minimax(game, player, 0, options);
+		return this.minimax(game, player, 1, options);
 	},
 
 	/** The `quiescence(game, player, depth)` method is a stability test for the given game state. 
