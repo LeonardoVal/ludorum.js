@@ -238,6 +238,20 @@ var Game = exports.Game = declare({
 		return new Contingent(this, moves, aleatories, update);
 	},
 
+	/** A `randomNext` picks one of the next states at random.
+	*/
+	randomNext: function randomNext(random, update) {
+		var allMoves = this.moves(),
+			randomMoves = {};
+		this.activePlayers.forEach(function (activePlayer) {
+			randomMoves[activePlayer] = random.choice(allMoves[activePlayer]);
+		});
+		return {
+			state: this.next(randomMoves, null, update),
+			moves: randomMoves
+		};
+	},
+
 	// ## Result functions #########################################################################
 
 	/** The maximum and minimum results may be useful and even required by some game search
@@ -2382,7 +2396,7 @@ var MiniMaxPlayer = players.MiniMaxPlayer = declare(HeuristicPlayer, {
 	/** Every state's evaluation is the minimax value for the given game and player.
 	*/
 	stateEvaluation: function stateEvaluation(game, player, options) {
-		return this.minimax(game, player, 0, options);
+		return this.minimax(game, player, 1, options);
 	},
 
 	/** The `quiescence(game, player, depth)` method is a stability test for the given game state. 
@@ -2521,7 +2535,7 @@ players.AlphaBetaPlayer = declare(MiniMaxPlayer, {
 	`Infinity`.
 	*/
 	stateEvaluation: function stateEvaluation(game, player) {
-		return this.minimax(game, player, 0, -Infinity, Infinity);
+		return this.minimax(game, player, 1, -Infinity, Infinity);
 	},
 
 	/** The `minimax(game, player, depth, alfa, beta)` method calculates the 
@@ -2702,22 +2716,15 @@ var MonteCarloPlayer = players.MonteCarloPlayer = declare(HeuristicPlayer, {
 	(`plies`).
 	*/
 	simulation: function simulation(game, player) {
-		var mc = this,
-			result = { game: game },
-			plies, move, moves;
+		var result = { game: game },
+			plies;
 		for (plies = 0; true; ++plies) {
 			if (game.isContingent) {
 				game = game.randomNext(this.random);
 			} else {
-				moves = game.moves();
 				var q = this.quiescence(game, player, plies + 1);
 				if (isNaN(q)) { // The simulation continues.
-					move = {};
-					game.activePlayers.forEach(function (activePlayer) {
-						move[activePlayer] = mc.agent ? mc.agent.decision(game, activePlayer)
-							: mc.random.choice(moves[activePlayer]);
-					});
-					game = game.next(move, null, plies > 0); // The original `game` argument must not be changed.
+					game = game.randomNext(this.random, plies > 0).state; // The original `game` argument must not be changed.
 				} else { // The simulation has a result and ends.
 					result.result = q;
 					result.plies = plies;
