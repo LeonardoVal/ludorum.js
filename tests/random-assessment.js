@@ -46,21 +46,23 @@ function assess(n, game, level, player, runMatch) {
 	var results = iterable(game.players).map(function (role) {
 			return [role, [0, 0, 0]];
 		}).toObject();
-	return Future.sequence(Iterable.range(n), function () {
-		return randomPlays(game, level, player, runMatch).then(function (rs) {
+	return Future.all(Iterable.range(n).map(function () {
+		return randomPlays(game, level, player, runMatch);
+	})).then(function (rs) {
+		for (var i = 0; i < rs.length; i++) {
 			for (var role in results) {
-				results[role][Math.sign(rs[role]) + 1]++;
+				results[role][Math.sign(rs[i][role]) + 1]++;
 			}
-			return results;
-		});
+		}
+		return results;
 	});
 }
 
 (function main() { /////////////////////////////////////////////////////////////////////////////////
 	var server = capataz.Capataz.run({
 			port: 8088,
-			workerCount: 2,
-			desiredEvaluationTime: 10000,
+			maxScheduled: 21000,
+			desiredEvaluationTime: 5000,
 			logFile: base.Text.formatDate(null, '"./tests/random-assessment-"yyyymmdd-hhnnss".log"')
 		}),
 		logger = server.logger;
