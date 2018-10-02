@@ -7,56 +7,9 @@ var base = require('creatartis-base'),
 var Iterable = base.Iterable,
 	iterable = base.iterable,
 	Future = base.Future,
-	Match = ludorum.Match,
 	RandomPlayer = ludorum.players.RandomPlayer
 ;
 Sermat.modifiers.mode = Sermat.CIRCULAR_MODE;
-
-function localRunMatch(game, players) {
-	var match = new Match(game, players);
-	return match.run().then(function () {
-		return match.result();
-	});
-}
-
-function randomPlays(game, level, player, runMatch) {
-	runMatch = runMatch || localRunMatch;
-	var randomPlayers = game.players.map(function (p, i) {
-			return new RandomPlayer({ name: 'RAN#'+ (i + 1) });
-		}),
-		matches = Iterable.range(level).product(game.players).mapApply(function (i, role) {
-			var players = randomPlayers.slice();
-			players[game.players.indexOf(role)] = player;
-			return runMatch(game, players).then(function (result) {
-				return [role, result[role]];
-			});
-		});
-	return Future.all(matches).then(function (rs) {
-		var results = iterable(game.players).map(function (role) {
-				return [role, Infinity];
-			}).toObject();
-		iterable(rs).forEachApply(function (role, r) {
-			results[role] = Math.min(results[role], r);
-		});
-		return results;
-	});
-}
-
-function assess(n, game, level, player, runMatch) {
-	var results = iterable(game.players).map(function (role) {
-			return [role, [0, 0, 0]];
-		}).toObject();
-	return Future.all(Iterable.range(n).map(function () {
-		return randomPlays(game, level, player, runMatch);
-	})).then(function (rs) {
-		for (var i = 0; i < rs.length; i++) {
-			for (var role in results) {
-				results[role][Math.sign(rs[i][role]) + 1]++;
-			}
-		}
-		return results;
-	});
-}
 
 (function main() { /////////////////////////////////////////////////////////////////////////////////
 	var server = capataz.Capataz.run({
@@ -69,17 +22,63 @@ function assess(n, game, level, player, runMatch) {
 	server.__serveNodeModule__(Sermat);
 	server.__serveNodeModule__(ludorum);
 
-	function distributedRunMatch(game, players) {
-		return server.schedule({
-			info: game.name +'('+ players.map(function (p) {
-					return p.name;
-				}).join(',') +')',
-			imports: ['sermat', 'ludorum'],
-			args: [Sermat.ser(game), Sermat.ser(players)],
-			fun: 'function (Sermat, ludorum, game, players) {\n\t'+
-				'var m = new ludorum.Match(Sermat.mat(game), Sermat.mat(players));\n\t'+
-				'return m.run().then(function () { return m.result(); });\n'+
-			'}'
+	function randomPlays(game, player, n) {
+		var randomPlayers = game.players.map(function (p, i) {
+				return new RandomPlayer({ name: 'RAN#'+ (i + 1) });
+			});
+		return Iterable.range(n).product(game.players).mapApply(function (i, role) {
+			var players = randomPlayers.slice();
+			players[game.players.indexOf(role)] = player;
+			return {
+				info: game.name +'('+ players.map(function (p) {
+						return p.name;
+					}).join(',') +')',
+				imports: ['sermat', 'ludorum'],
+				args: [Sermat.ser(game), Sermat.ser(players), role],
+				fun: 'function (Sermat, ludorum, game, players, role) {\n\t'+
+					'var m = new ludorum.Match(Sermat.mat(game), Sermat.mat(players));\n\t'+
+					'return m.run().then(function () { return [role, m.result()[role]]; });\n'+
+				'}'
+			};
+		});
+	}
+
+	function assess(game, player, n, levels) {
+		var resultsZeroes = iterable(game.players).map(function (role) {
+				return [role, [0, 0, 0]];
+			}).toObject(),
+			levelResults = levels.map(function (level) {
+				return { 
+					level: level, 
+					results: Sermat.clone(resultsZeroes),
+					__min__: Infinity,
+					__playCount__: 0
+				};
+			}),
+			count = n * levels[levels.length - 1],
+			i = 0;
+		return server.scheduleAll(randomPlays(game, player, count), server.maxScheduled,
+			function (scheduled) {
+				return scheduled.then(function (p) {
+					var role = p[0],
+						result = p[1];
+					levelResults.forEach(function (levelResult) {
+						var rs = levelResult.results[role],
+							matchCount = rs[0] + rs[1] + rs[2];
+						if (matchCount < n) { 
+							levelResult.__min__ = Math.min(levelResult.__min__, result);
+							levelResult.__playCount__++;
+							if (levelResult.__playCount__ >= levelResult.level) {
+								levelResult.results[role][Math.sign(levelResult.__min__) + 1]++;
+								levelResult.__min__ = Infinity;
+								levelResult.__playCount__ = 0;
+							}
+						}
+					});
+				});
+			}
+		).then(function () {
+			return levelResults;
 		});
 	}
 
@@ -89,10 +88,12 @@ function assess(n, game, level, player, runMatch) {
 				name: 'MM'+ horizon,
 				horizon: horizon
 			});
-		return Future.sequence(Iterable.range(1, 11), function (level) {
-			return assess(1000, game, level, player, distributedRunMatch).then(function (assessment) {
-				logger.info("level:"+ level +"\t"+ player.name +"\t"+ JSON.stringify(assessment));
-			});
+		return assess(game, player, 100, [1,2,3,4,5,6,7,8,9,10]).then(function (levelResults) {
+			server.logger.info(player.name +'\t'+ levelResults.map(JSON.stringify).join('\n'));
 		});
+	}).then(function () {
+		server.logger.info("Finished. Stopping server.");
+		server.logger.info("Server statistics:\n"+ server.statistics);
+		setTimeout(process.exit, 10);
 	});
 })();
