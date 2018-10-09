@@ -44,52 +44,52 @@ Sermat.modifiers.mode = Sermat.CIRCULAR_MODE;
 	}
 
 	function assess(game, player, n, levels) {
-		var resultsZeroes = iterable(game.players).map(function (role) {
-				return [role, [0, 0, 0]];
-			}).toObject(),
-			levelResults = levels.map(function (level) {
-				return { 
-					level: level, 
-					results: Sermat.clone(resultsZeroes),
-					__min__: Infinity,
-					__playCount__: 0
-				};
-			}),
-			count = n * levels[levels.length - 1],
-			i = 0;
-		return server.scheduleAll(randomPlays(game, player, count), server.maxScheduled,
-			function (scheduled) {
-				return scheduled.then(function (p) {
-					var role = p[0],
-						result = p[1];
-					levelResults.forEach(function (levelResult) {
-						var rs = levelResult.results[role],
-							matchCount = rs[0] + rs[1] + rs[2];
-						if (matchCount < n) { 
-							levelResult.__min__ = Math.min(levelResult.__min__, result);
-							levelResult.__playCount__++;
-							if (levelResult.__playCount__ >= levelResult.level) {
-								levelResult.results[role][Math.sign(levelResult.__min__) + 1]++;
-								levelResult.__min__ = Infinity;
-								levelResult.__playCount__ = 0;
-							}
-						}
-					});
+		var count = n * levels[levels.length - 1],
+			plays = randomPlays(game, player, count),
+			results = iterable(game.players).map(function (role) {
+				return [role, ''];
+			}).toObject();
+		return server.scheduleAll(plays, server.maxScheduled, function (scheduled) {
+			return scheduled.then(function (p) {
+				results[p[0]] += p[1] > 0 ? '2' : p[1] < 0 ? '0' : '1';
+			});
+		}).then(function () {
+			var resultsZeroes = iterable(game.players).map(function (role) {
+					return [role, [0, 0, 0]];
+				}).toObject(),
+				levelResults = levels.map(function (level) {
+					return { level: level, results: Sermat.clone(resultsZeroes) };
 				});
-			}
-		).then(function () {
+			levelResults.forEach(function (levelResult) {
+				for (var role in resultsZeroes) {
+					iterable(results[role])
+						.take(levelResult.level * n)
+						.map((c, i) => [c, i])
+						.groupBy((p) => Math.floor(p[1] / levelResult.level))
+						.forEachApply(function (g, rs) {
+							var r = iterable(rs).select(0).min();
+							levelResult.results[role][+r]++;
+						});
+				}
+			});
 			return levelResults;
 		});
 	}
 
 	var game = new ludorum.games.TicTacToe();
-	return Future.sequence([1, 2, 4, 6, 8, 10], function (horizon) {
+	return Future.sequence([1, 2, 4, 6, 8], function (horizon) {
 		var player = new ludorum.players.MiniMaxPlayer({
 				name: 'MM'+ horizon,
 				horizon: horizon
+			}),
+			levels = Iterable.range(1, 51).toArray();
+		return assess(game, player, 1000, levels).then(function (levelResults) {
+			levelResults.forEach((levelResult) => {
+				server.logger.info('player:'+ player.name +'\tlevel:'+ levelResult.level +
+					'\tresults:'+ JSON.stringify(levelResult.results)
+				);
 			});
-		return assess(game, player, 100, [1,2,3,4,5,6,7,8,9,10]).then(function (levelResults) {
-			server.logger.info(player.name +'\t'+ levelResults.map(JSON.stringify).join('\n'));
+			
 		});
 	}).then(function () {
 		server.logger.info("Finished. Stopping server.");
