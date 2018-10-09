@@ -77,7 +77,7 @@ exports.utils.Scanner = declare({
 	__advance__: function __advance__(players, game, ply) {
 		if (game.isContingent) {
 			return iterable(game.possibleHaps()).mapApply(function (haps, prob) {
-				return game.next(value);
+				return game.next(haps);
 			});
 		} else if (this.account(players, game, ply)) {
 			return Iterable.EMPTY;

@@ -55,7 +55,7 @@
 					maxLength: 10
 				}),
 				player = new ludorum.players.RandomPlayer(),
-				scans = scanner.scans({'A': player}, {'B': player});
+				scans = scanner.scans({ A: player }, { B: player });
 			expect(scans).toBeOfType(base.Future);
 			return scans.then(function (stats) {
 				expect(stats.average({key:'game.result'})).toBe(0);
@@ -72,6 +72,22 @@
 				done();
 			});
 		}); //// scans games.Predefined with RandomPlayer
+
+		it("scans games.Pig with RandomPlayer", function (done) {
+			var scanner = new ludorum.utils.Scanner({ 
+					game: new ludorum.games.Pig('One', 25),
+					maxWidth: 50,
+					maxLength: 10
+				}),
+				player = new ludorum.players.RandomPlayer(),
+				scans = scanner.scans({ One: player });
+			expect(scans).toBeOfType(base.Future);
+			return scans.then(function (stats) {
+				// Pig matches can take more than 10 plies.
+				expect(stats.average({key:'aborted'})).toBeGreaterThan(0);
+				done();
+			});
+		}); //// scans games.Pig with RandomPlayer
 	}); // describe Scanner
 
 }); //// define.
