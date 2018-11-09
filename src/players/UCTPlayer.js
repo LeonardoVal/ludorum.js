@@ -24,12 +24,13 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 	formula by L. Kocsis and Cs. Szepesvári](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.102.1296).
 	Returns one of the greatest evaluated, chosen at random.
 	*/
-	selectNode: function selectNode(node, totalSimulationCount, explorationConstant) {
+	selectNode: function selectNode(parent, totalSimulationCount, explorationConstant) {
 		explorationConstant = isNaN(explorationConstant) ? this.explorationConstant : +explorationConstant;
-		return this.random.choice(iterable(node.children).greater(function (n) {
-
-			return (n.uct.rewards + n.uct.visits) / n.uct.visits / 2 +
-				explorationConstant * Math.sqrt(Math.log(totalSimulationCount) / n.uct.visits);
+		return this.random.choice(iterable(parent.children).greater(function (node) {
+			raiseIf(!node.uct, 'Invalid UCT node `'+ node +'` under `'+ parent +'`!');//FIXME
+			var visits = node.uct.visits;
+			return (node.uct.rewards + visits) / visits / 2 +
+				explorationConstant * Math.sqrt(Math.log(parent.uct.visits) / visits);
 		}));
 	},
 
@@ -46,20 +47,24 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 				node = this.selectNode(node, i+1, this.explorationConstant);
 			}
 			if (node.uct.pending > 0) { // Expansion
+				node.uct.pending--;
 				node = node.expandRandom(this.random);
-				node.uct = { pending: root.childrenCount(), visits: 0, rewards: 0 };
+				node.uct = { pending: node.childrenCount(), visits: 0, rewards: 0 };
 			}
 			simulationResult = this.simulation(node.state, player); // Simulation
 			for (; node; node = node.parent) { // Backpropagation
-				++node.uct.visits;
+				node.uct.visits++;
 				node.uct.rewards += game.normalizedResult(simulationResult.result);
 			}
 		}
-		return iterable(root.children).map(function (n) {
+		var result = iterable(root.children).map(function (n) {
 				return n.uct ?
 					[n.transition, n.uct.rewards / n.uct.visits, n.uct.visits] :
 					[n.transition, 0, 0]; //FIXME Is 0 for unevaluated nodes OK? 
 			}).toArray();
+		//console.log(root);//FIXME
+		//console.log(result);//FIXME
+		return result;
 	},
 
 	// ## Utilities ################################################################################

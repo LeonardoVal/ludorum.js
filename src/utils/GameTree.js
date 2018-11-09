@@ -72,7 +72,12 @@ var GameTree = utils.GameTree = declare({
 	*/
 	expandRandom: function expandRandom(random) {
 		random = random || Randomness.DEFAULT;
-		return this.expand(random.randomInt(this.childrenCount()));
+		var pending = this.children.filter(function (child) {
+			return !child.state;
+		});
+		return pending.length < 1 ? null :
+			pending.length === 1 ? this.__expandChild__(pending[0]) :
+			this.__expandChild__(random.choice(pending));
 	},
 	
 	/** A full expansion creates all children nodes for this node.
@@ -87,7 +92,7 @@ var GameTree = utils.GameTree = declare({
 
 	// ## Utilities ###############################################################################
 
-	toString: function toString() {
+	toString: function toString() { //FIXME
 		return 'GameTree('+ this.state +')';
 	},
 
