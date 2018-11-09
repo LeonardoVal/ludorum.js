@@ -26,12 +26,17 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 	*/
 	selectNode: function selectNode(parent, totalSimulationCount, explorationConstant) {
 		explorationConstant = isNaN(explorationConstant) ? this.explorationConstant : +explorationConstant;
-		return this.random.choice(iterable(parent.children).greater(function (node) {
-			raiseIf(!node.uct, 'Invalid UCT node `'+ node +'` under `'+ parent +'`!');//FIXME
-			var visits = node.uct.visits;
-			return (node.uct.rewards + visits) / visits / 2 +
-				explorationConstant * Math.sqrt(Math.log(parent.uct.visits) / visits);
-		}));
+		var EPSILON = 1e-10,
+			bestChildren = iterable(parent.children()).greater(function (node) {
+				if (!node.uct) { // Node has not been expanded.
+					node.uct = { visits: 0, wins: 0, rewards: 0 };
+				}
+				var visits = node.uct.visits,
+					result = node.uct.wins / (visits + EPSILON) + explorationConstant * 
+						Math.sqrt(Math.log(parent.uct.visits + 1) / (visits + EPSILON));
+				return result;
+			});
+		return this.random.choice(bestChildren);
 	},
 
 	/** `evaluatedMoves(game, player)` return a sequence with the evaluated moves.
@@ -40,29 +45,31 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 		var root = new GameTree({ state: game }),
 			startTime = Date.now(),
 			node, simulationResult;
-		root.uct = { pending: root.childrenCount(), visits: 0, rewards: 0 };
+		root.uct = { visits: 0, wins: 0, rewards: 0 };
 		for (var i = 0;  !this.__finishMoveEvaluation__(i, startTime, root); i++) {
 			node = root;
-			while (node.uct.pending < 1 && node.childrenCount() > 0) { // Selection
+			while (node.__children__ && node.__children__.length > 0) { // Selection
 				node = this.selectNode(node, i+1, this.explorationConstant);
 			}
-			if (node.uct.pending > 0) { // Expansion
-				node.uct.pending--;
-				node = node.expandRandom(this.random);
-				node.uct = { pending: node.childrenCount(), visits: 0, rewards: 0 };
+			if (!node.state) {
+				node.expand();
 			}
 			simulationResult = this.simulation(node.state, player); // Simulation
 			for (; node; node = node.parent) { // Backpropagation
 				node.uct.visits++;
+				if (simulationResult.result > 0) {
+					node.uct.wins++;
+				}
 				node.uct.rewards += game.normalizedResult(simulationResult.result);
 			}
 		}
-		var result = iterable(root.children).map(function (n) {
+		var result = iterable(root.children()).map(function (n) {
+				if (!n.uct) console.log(n);//FIXME
+				var visits = n.uct.visits;
 				return n.uct ?
-					[n.transition, n.uct.rewards / n.uct.visits, n.uct.visits] :
-					[n.transition, 0, 0]; //FIXME Is 0 for unevaluated nodes OK? 
+					[n.transition, n.uct.rewards / (visits + 1e-10), visits] :
+					[n.transition, 0, 0]; 
 			}).toArray();
-		//console.log(root);//FIXME
 		//console.log(result);//FIXME
 		return result;
 	},

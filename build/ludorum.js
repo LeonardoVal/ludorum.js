@@ -1951,12 +1951,23 @@ var GameTree = utils.GameTree = declare({
 		this.state = args && args.state;
 		this.transition = args && args.transition;
 		this.probability = args && +args.probability;
-		this.children = args && args.children;
-		if (this.state && !this.children) {
-			this.children = this.possibleTransitions();
-		}
+		this.__children__ = args && args.children;
+		this.children();
 	},
 	
+	// ## Children #################################################################################
+
+	children: function children() {
+		if (!this.__children__) {
+			if (!this.state) {
+				return null;
+			} else { 
+				this.__children__ = this.possibleTransitions();
+			}
+		}
+		return this.__children__;
+	},
+
 	/** Returns the possible moves is the state is an instance of Game, or the possible haps values 
 	if the state is contingent.
 	*/
@@ -1976,56 +1987,36 @@ var GameTree = utils.GameTree = declare({
 			});
 		}
 	},
-
-	/** This node's `children` are stored in an object, hence getting the count is a little tricky.
-	*/
-	childrenCount: function childrenCount() {
-		if (!this.children) {
-			this.children = this.possibleTransitions();
-		}
-		return this.children.length;
-	},
 	
-	__expandChild__: function __expandChild__(child) {
-		if (!child.state) {
-			try {
-				child.state = child.parent.state.next(child.transition); 
-			} catch (err) {
-				raise("Node expansion for ", child.parent.state, " with ", 
-					JSON.stringify(child.transition), " failed with: ", err);
-			}
-		}
-		return child;
+	// ## Node expansion ###########################################################################
+
+	/** .
+	*/
+	expand: function expand() {
+		raiseIf(this.state, "Node `", this, "` is already expanded!");
+		raiseIf(!this.parent, "Cannot expand node `", this, "` without a parent!");
+		this.state = this.parent.state.next(this.transition);
+		this.children();
+		return this;
 	},
 
-	/** A node expansion takes the `moves` to calculate the next state and creates the child node
-	with it. If the node already exists, it is returned and none is created.
+	/** Children are `pending` when they have not been expanded yet. This method returns an array
+	of these for this node.
 	*/
-	expand: function expand(i) {
-		raiseIf(i < 0 || i >= this.childrenCount(), "Cannot expand children ", i, "!");
-		return this.__expandChild__(this.children[i]);
-	},
-	
-	/** Expand a child at random.
-	*/
-	expandRandom: function expandRandom(random) {
-		random = random || Randomness.DEFAULT;
-		var pending = this.children.filter(function (child) {
+	pending: function pending() {
+		return this.children().filter(function (child) {
 			return !child.state;
 		});
-		return pending.length < 1 ? null :
-			pending.length === 1 ? this.__expandChild__(pending[0]) :
-			this.__expandChild__(random.choice(pending));
 	},
 	
-	/** A full expansion creates all children nodes for this node.
+	/** Expands one of the given `nodes` at random. If `nodes` are not given, this node's pending
+	children are used instead.
 	*/
-	expandAll: function expandAll() {
-		var child;
-		for (var i = 0, len = this.childrenCount; i < len; i++) {
-			this.__expandChild__(this.children[i]);
-		}
-		return this.children;
+	expandRandom: function expandRandom(random, nodes) {
+		random = random || Randomness.DEFAULT;
+		nodes = nodes || this.pending();
+		return nodes.length < 1 ? null :
+			(nodes.length === 1 ? nodes[0] : random.choice(nodes)).expand();
 	},
 
 	// ## Utilities ###############################################################################
@@ -2805,12 +2796,17 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 	*/
 	selectNode: function selectNode(parent, totalSimulationCount, explorationConstant) {
 		explorationConstant = isNaN(explorationConstant) ? this.explorationConstant : +explorationConstant;
-		return this.random.choice(iterable(parent.children).greater(function (node) {
-			raiseIf(!node.uct, 'Invalid UCT node `'+ node +'` under `'+ parent +'`!');//FIXME
-			var visits = node.uct.visits;
-			return (node.uct.rewards + visits) / visits / 2 +
-				explorationConstant * Math.sqrt(Math.log(parent.uct.visits) / visits);
-		}));
+		var EPSILON = 1e-10,
+			bestChildren = iterable(parent.children()).greater(function (node) {
+				if (!node.uct) { // Node has not been expanded.
+					node.uct = { visits: 0, wins: 0, rewards: 0 };
+				}
+				var visits = node.uct.visits,
+					result = node.uct.wins / (visits + EPSILON) + explorationConstant * 
+						Math.sqrt(Math.log(parent.uct.visits + 1) / (visits + EPSILON));
+				return result;
+			});
+		return this.random.choice(bestChildren);
 	},
 
 	/** `evaluatedMoves(game, player)` return a sequence with the evaluated moves.
@@ -2819,30 +2815,32 @@ players.UCTPlayer = declare(MonteCarloPlayer, {
 		var root = new GameTree({ state: game }),
 			startTime = Date.now(),
 			node, simulationResult;
-		root.uct = { pending: root.childrenCount(), visits: 0, rewards: 0 };
+		root.uct = { visits: 0, wins: 0, rewards: 0 };
 		for (var i = 0;  !this.__finishMoveEvaluation__(i, startTime, root); i++) {
 			node = root;
-			while (node.uct.pending < 1 && node.childrenCount() > 0) { // Selection
+			while (node.__children__ && node.__children__.length > 0) { // Selection
 				node = this.selectNode(node, i+1, this.explorationConstant);
 			}
-			if (node.uct.pending > 0) { // Expansion
-				node.uct.pending--;
-				node = node.expandRandom(this.random);
-				node.uct = { pending: node.childrenCount(), visits: 0, rewards: 0 };
+			if (!node.state) {
+				node.expand();
 			}
 			simulationResult = this.simulation(node.state, player); // Simulation
 			for (; node; node = node.parent) { // Backpropagation
 				node.uct.visits++;
+				if (simulationResult.result > 0) {
+					node.uct.wins++;
+				}
 				node.uct.rewards += game.normalizedResult(simulationResult.result);
 			}
 		}
-		var result = iterable(root.children).map(function (n) {
+		var result = iterable(root.children()).map(function (n) {
+				if (!n.uct) console.log(n);//FIXME
+				var visits = n.uct.visits;
 				return n.uct ?
-					[n.transition, n.uct.rewards / n.uct.visits, n.uct.visits] :
-					[n.transition, 0, 0]; //FIXME Is 0 for unevaluated nodes OK? 
+					[n.transition, n.uct.rewards / (visits + 1e-10), visits] :
+					[n.transition, 0, 0]; 
 			}).toArray();
-		//console.log(root);//FIXME
-		console.log(result);//FIXME
+		//console.log(result);//FIXME
 		return result;
 	},
 

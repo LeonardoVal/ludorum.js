@@ -13,12 +13,23 @@ var GameTree = utils.GameTree = declare({
 		this.state = args && args.state;
 		this.transition = args && args.transition;
 		this.probability = args && +args.probability;
-		this.children = args && args.children;
-		if (this.state && !this.children) {
-			this.children = this.possibleTransitions();
-		}
+		this.__children__ = args && args.children;
+		this.children();
 	},
 	
+	// ## Children #################################################################################
+
+	children: function children() {
+		if (!this.__children__) {
+			if (!this.state) {
+				return null;
+			} else { 
+				this.__children__ = this.possibleTransitions();
+			}
+		}
+		return this.__children__;
+	},
+
 	/** Returns the possible moves is the state is an instance of Game, or the possible haps values 
 	if the state is contingent.
 	*/
@@ -38,56 +49,36 @@ var GameTree = utils.GameTree = declare({
 			});
 		}
 	},
-
-	/** This node's `children` are stored in an object, hence getting the count is a little tricky.
-	*/
-	childrenCount: function childrenCount() {
-		if (!this.children) {
-			this.children = this.possibleTransitions();
-		}
-		return this.children.length;
-	},
 	
-	__expandChild__: function __expandChild__(child) {
-		if (!child.state) {
-			try {
-				child.state = child.parent.state.next(child.transition); 
-			} catch (err) {
-				raise("Node expansion for ", child.parent.state, " with ", 
-					JSON.stringify(child.transition), " failed with: ", err);
-			}
-		}
-		return child;
+	// ## Node expansion ###########################################################################
+
+	/** .
+	*/
+	expand: function expand() {
+		raiseIf(this.state, "Node `", this, "` is already expanded!");
+		raiseIf(!this.parent, "Cannot expand node `", this, "` without a parent!");
+		this.state = this.parent.state.next(this.transition);
+		this.children();
+		return this;
 	},
 
-	/** A node expansion takes the `moves` to calculate the next state and creates the child node
-	with it. If the node already exists, it is returned and none is created.
+	/** Children are `pending` when they have not been expanded yet. This method returns an array
+	of these for this node.
 	*/
-	expand: function expand(i) {
-		raiseIf(i < 0 || i >= this.childrenCount(), "Cannot expand children ", i, "!");
-		return this.__expandChild__(this.children[i]);
-	},
-	
-	/** Expand a child at random.
-	*/
-	expandRandom: function expandRandom(random) {
-		random = random || Randomness.DEFAULT;
-		var pending = this.children.filter(function (child) {
+	pending: function pending() {
+		return this.children().filter(function (child) {
 			return !child.state;
 		});
-		return pending.length < 1 ? null :
-			pending.length === 1 ? this.__expandChild__(pending[0]) :
-			this.__expandChild__(random.choice(pending));
 	},
 	
-	/** A full expansion creates all children nodes for this node.
+	/** Expands one of the given `nodes` at random. If `nodes` are not given, this node's pending
+	children are used instead.
 	*/
-	expandAll: function expandAll() {
-		var child;
-		for (var i = 0, len = this.childrenCount; i < len; i++) {
-			this.__expandChild__(this.children[i]);
-		}
-		return this.children;
+	expandRandom: function expandRandom(random, nodes) {
+		random = random || Randomness.DEFAULT;
+		nodes = nodes || this.pending();
+		return nodes.length < 1 ? null :
+			(nodes.length === 1 ? nodes[0] : random.choice(nodes)).expand();
 	},
 
 	// ## Utilities ###############################################################################
