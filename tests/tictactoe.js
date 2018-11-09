@@ -56,10 +56,10 @@ init(['ludorum', 'creatartis-base', 'sermat', 'playtester'], function (ludorum, 
 	APP.SOLUTION = {};
 	APP.playerUI("You")
 		.playerRandom()
-		.playerMonteCarlo("MCTS (20 sims)", true, 20)
-		.playerMonteCarlo("MCTS (80 sims)", true, 80)
 		.playerAlfaBeta("MiniMax-\u03b1\u03b2 (4 plies)", true, 3)
 		.playerAlfaBeta("MiniMax-\u03b1\u03b2 (6 plies)", true, 5)
+		.playerMonteCarlo("MCTS (100 sims)", true, 100, Infinity)
+		.playerUCT("UCT (100 sims)", true, 100, Infinity)
 		.playerMaxN("MaxN (6 plies)", true, 5)
 		.player("Rule based", function () {
 			return new ludorum.players.RuleBasedPlayer({
