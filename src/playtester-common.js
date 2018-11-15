@@ -19,7 +19,7 @@ define(['ludorum', 'creatartis-base', 'sermat'], function (ludorum, base, Sermat
 			this.webWorkerDependencies = webWorkerDependencies || [];
 		},
 
-		player: function addPlayer(title, builder, runOnWorker) {
+		player: function player(title, builder, runOnWorker) {
 			this.players.push({title: title, builder: builder, runOnWorker: runOnWorker });
 			return this; // for chaining.
 		},
