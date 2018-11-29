@@ -10,7 +10,7 @@ module.exports = function(grunt) {
 			'Game', 'Player', 'Match', 'Contingent', 'Tournament',
 			// utils.
 				'utils/Checkerboard', 'utils/CheckerboardFromString', 'utils/CheckerboardFromPieces',
-				'utils/Scanner', 'utils/Cache', 'utils/GameTree',
+				'utils/Cache', 'utils/GameTree',
 			// players.
 			'players/RandomPlayer', 'players/TracePlayer', 'players/HeuristicPlayer', 'players/MaxNPlayer',
 				'players/MiniMaxPlayer', 'players/AlphaBetaPlayer', 'players/MonteCarloPlayer',
