@@ -1,0 +1,22 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"editor.detectIndentation": false,
+		"editor.fontSize": 14,
+		"editor.insertSpaces": false,
+		"editor.minimap.enabled": false,
+		"editor.renderControlCharacters": true,
+		"editor.renderWhiteSpace": "none",
+		"editor.rulers":[80],
+		"editor.tabSize": 5,
+		"explorer.confirmDragAndDrop": false,
+		"window.zoomLevel": -1,
+		"workbench.activityBar.visible": true,
+		"workbench.sideBar.location": "right",
+		"workbench.statusBar.visible": true
+	}
+}
