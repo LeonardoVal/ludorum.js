@@ -1,5 +1,7 @@
 ﻿bower_components/
 docs/docker/
+docs/jsdoc/
+docs/jsdoc-conf.json
 lib/
 node_modules/
 src/
