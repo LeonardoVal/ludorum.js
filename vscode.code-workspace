@@ -6,7 +6,7 @@
 	],
 	"settings": {
 		"editor.detectIndentation": false,
-		"editor.fontSize": 14,
+		"editor.fontSize": 12,
 		"editor.insertSpaces": false,
 		"editor.minimap.enabled": false,
 		"editor.renderControlCharacters": true,
