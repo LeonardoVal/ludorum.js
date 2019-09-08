@@ -136,7 +136,7 @@ Here we define a method `runTestMatch` that sets up a match to test the `Choose2
 Choose2Win.runTestMatch = function runTestMatch(players) {
 	players = players || [new ludorum.players.RandomPlayer(), new Choose2WinPlayer()];
 	var match = new ludorum.Match(new Choose2Win(), players);
-	match.events.on('move', function (game, moves) {
+	match.events.on('next', function (game, moves) {
 		console.log(game +'\tmoves: '+ JSON.stringify(moves));
 	});
 	match.events.on('end', function (game, result) {
