@@ -1,13 +1,15 @@
 ﻿# Repo files
-.svn/
 .git/
 
 # Dependencies
 node_modules/
+packages/**/node_modules/
 bower_components/
+packages/**/bower_components/
 
 # Generated files
-docs/docker/
-docs/jsdoc/
-docs/jsdoc-conf.json
-npm-debug.log
+packages/**/build/
+packages/**/docs/docker/
+packages/**/docs/jsdoc/
+packages/**/docs/jsdoc-conf.json
+**/npm-debug.log
