@@ -1,0 +1,73 @@
+{
+  "name": "@ludorum/ludorum-core",
+  "description": "A board game implementation library, focusing on artificial intelligence.",
+  "keywords": [
+    "board game",
+    "game",
+    "minimax",
+    "artificial intelligence",
+    "game ai"
+  ],
+  "version": "0.3.0",
+  "author": {
+    "name": "Leonardo Val",
+    "email": "leonardo.val@creatartis.com"
+  },
+  "homepage": "http://creatartis.com",
+  "contributors": [],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/LeonardoVal/ludorum.js"
+  },
+  "main": "build/ludorum.min.js",
+  "files": [
+    "build",
+    "LICENSE.md"
+  ],
+  "dependencies": {
+    "sermat": "^0.1.0",
+    "@creatartis/randomness": "^0.0.2"
+  },
+  "devDependencies": {
+    "@creatartis/creatartis-build": "0.2.2-alpha"
+  },
+  "scripts": {
+    "build": "npx @creatartis/creatartis-build lint build:esm test doc",
+    "lint": "npx @creatartis/creatartis-build lint",
+    "test": "npx @creatartis/creatartis-build lint test",
+    "publish:verdaccio": "npx @creatartis/creatartis-build lint build:esm test publish:verdaccio",
+    "republish:verdaccio": "npm unpublish --registry http://localhost:4873 --force && npm run publish:verdaccio"
+  },
+  "babel": {
+    "extends": "./node_modules/@creatartis/creatartis-build/dist/babel-config.js"
+  },
+  "eslintConfig": {
+    "extends": "./node_modules/@creatartis/creatartis-build/dist/eslint-config.js",
+    "rules": {
+      "no-await-in-loop": 0,
+      "no-console": 0,
+      "import/no-dynamic-require": 0,
+      "no-restricted-syntax": 0,
+      "no-unused-vars": 0
+    }
+  },
+  "eslintIgnore": [
+    "dist/",
+    "node_modules/"
+  ],
+  "jest": {
+    "setupFilesAfterEnv": [
+      "./node_modules/@creatartis/creatartis-build/dist/jest-setup.js"
+    ],
+    "testPathIgnorePatterns": [
+      "node_modules/",
+      "src/",
+      "dist/"
+    ],
+    "transform": {
+      "\\.jsx?$": "babel-jest"
+    },
+    "verbose": true
+  }
+}
