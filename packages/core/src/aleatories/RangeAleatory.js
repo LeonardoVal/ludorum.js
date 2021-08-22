@@ -33,6 +33,6 @@ export default class RangeAleatory extends Aleatory {
    */
   static __SERMAT_ = {
     identifier: 'ludorum.RangeAleatory',
-    serializer: (obj) => [{ min: obj.min, max: obj.max }],
+    serializer: ({ min, max }) => [{ min, max }],
   };
 } // class RangeAleatory
