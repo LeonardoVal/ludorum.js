@@ -12,4 +12,8 @@ packages/**/build/
 packages/**/docs/docker/
 packages/**/docs/jsdoc/
 packages/**/docs/jsdoc-conf.json
+packages/**/test/specs/coverage/
 **/npm-debug.log
+
+# Other
+packages/_dumper/
