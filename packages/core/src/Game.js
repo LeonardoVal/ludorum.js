@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign */
 /* eslint-disable no-mixed-operators */
 import { Sermat } from 'sermat';
-import Aleatory from './Aleatory';
+import Aleatory from './aleatories/Aleatory';
 import {
   cartesianProduct, cartesianProductObject, unimplemented,
 } from './utils';
