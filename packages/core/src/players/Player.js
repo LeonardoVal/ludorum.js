@@ -1,7 +1,8 @@
-import { Randomness } from '@creatartis/randomness';
-import Match from './Match';
-import Game from './Game';
-import { cartesianProductObject } from './utils';
+import randomness from '@creatartis/randomness';
+import Game from '../games/Game';
+import { cartesianProductObject, unimplemented } from '../utils';
+
+const { Randomness } = randomness;
 
 let PLAYER_COUNT = -1; // Used by the Player's default naming.
 
@@ -12,15 +13,6 @@ let PLAYER_COUNT = -1; // Used by the Player's default naming.
  * This is an abstract class that is meant to be extended.
  */
 export default class Player {
-  /** Default unique name for players.
-   *
-   * @returns {string}
-   */
-  static defaultPlayerName() {
-    PLAYER_COUNT += 1;
-    return `Player${PLAYER_COUNT}`;
-  }
-
   /** The default constructor takes its `name` and a pseudo-`random` number
    * generator from the given `params`.
    *
@@ -30,7 +22,7 @@ export default class Player {
    */
   constructor(args = null) {
     const { name, random } = args || {};
-    this.name = `${name || this.constructor.defaultPlayerName()}`;
+    this.name = `${name || `${this.constructor.name}${PLAYER_COUNT += 1}`}`;
     this.random = random || Randomness.DEFAULT;
   }
 
@@ -41,8 +33,7 @@ export default class Player {
    * @returns {any} A promise that resolves to the selected move.
    */
   async decision(game, role) {
-    // Indeed not a very thoughtful base implementation.
-    return this.actionsFor(game, role)[0];
+    return unimplemented('decision', this);
   }
 
   /** To help implement the decision, `actionsFor` gets the actions in the game
@@ -55,7 +46,7 @@ export default class Player {
    * @throws {Error} If the given role has no available moves.
    */
   actionsFor(game, role) {
-    const { [role]: roleActions } = game.actions() || {};
+    const { [role]: roleActions } = game.actions || {};
     if (!Array.isArray(roleActions) || roleActions.length < 1) {
       throw new Error(`Role ${role} has no actions for game ${game}.`);
     }
@@ -63,7 +54,7 @@ export default class Player {
   }
 
   /** Not all players can be used to play with all games. Still, by default the
-   * result of `canPlay` is `true`.
+   * result of `canPlay` is `true` for all instances of `Game`.
    *
    * @param {Game} game - Game state.
    * @returns {boolean} Whether this player can play the `game` or not.
@@ -85,18 +76,6 @@ export default class Player {
     return this;
   }
 
-  // Utilities /////////////////////////////////////////////////////////////////
-
-  /** The `playTo` method makes a match for the given `game` where all roles are
-   * played by this agent.
-   *
-   * @param {Game} [game] - Game to play.
-   * @returns {Match}
-   */
-  playTo(game) {
-    return new Match(game, game.players.map(() => this));
-  }
-
   /** The `possibleChoices` for all active players in a given `game` is a
    * sequence of objects, with one available action for each active role.
    *
@@ -104,7 +83,7 @@ export default class Player {
    * @yields {object} A map from active roles to actions.
    */
   static* possibleChoices(game) {
-    const actions = game.actions();
+    const { actions } = game;
     yield* cartesianProductObject(actions);
   }
 

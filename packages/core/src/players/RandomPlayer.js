@@ -1,4 +1,4 @@
-import Player from '../Player';
+import Player from './Player';
 
 /** A RandomPlayer is an automatic player that moves fully randomly.
  */
