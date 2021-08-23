@@ -1,8 +1,11 @@
-import Aleatory from './Aleatory';
-import Game from './Game';
+import aleatories from './aleatories';
+import games from './games';
 import Match from './Match';
-import Player from './Player';
+import players from './players';
 
 export {
-  Aleatory, Game, Match, Player,
+  aleatories,
+  games,
+  Match,
+  players,
 };
