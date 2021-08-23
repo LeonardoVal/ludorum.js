@@ -1,7 +1,7 @@
-import Game from '../Game';
+import Game from './Game';
 
-const PLAYERS = [Symbol('This'), Symbol('That')];
-const ACTIONS = ['win', 'lose', 'pass'];
+const ROLES = ['This', 'That'];
+const ACTIONS = { WIN: 'win', LOSE: 'lose', PASS: 'pass' };
 
 /** # Choose2Win
  *
@@ -22,7 +22,7 @@ export default class Choose2Win extends Game {
   /** Players of this dummy game are labeled This and That.
   */
   get roles() {
-    return PLAYERS;
+    return ROLES;
   }
 
   /** Every turn the active player's moves are: `'win'`, `'lose'` and `'pass'`.
@@ -50,14 +50,14 @@ export default class Choose2Win extends Game {
   /** If a player moves to win or lose, a final game state is returned. Else the
    * game goes on.
   */
-  apply(actions) {
-    const activeRole = this.activeRole();
+  perform(actions) {
+    const { activeRole } = this;
     const opponent = this.opponent(activeRole);
     const action = actions[activeRole];
     switch (action) {
-      case 'win': this.winner = activeRole; break;
-      case 'lose': this.winner = opponent; break;
-      case 'pass': break; // do nothing
+      case ACTIONS.WIN: this.winner = activeRole; break;
+      case ACTIONS.LOSE: this.winner = opponent; break;
+      case ACTIONS.PASS: break; // do nothing
       default: throw new Error(`Invalid action ${action} for role ${activeRole} at ${this}!`);
     }
     this.activateRoles(opponent);

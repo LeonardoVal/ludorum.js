@@ -1,10 +1,10 @@
 /* eslint-disable no-param-reassign */
 /* eslint-disable no-mixed-operators */
 import { Sermat } from 'sermat';
-import Aleatory from './aleatories/Aleatory';
+import Aleatory from '../aleatories/Aleatory';
 import {
   cartesianProduct, cartesianProductObject, unimplemented,
-} from './utils';
+} from '../utils';
 
 /** The class `ludorum.Game` is the base type for all games.
 */
@@ -16,8 +16,11 @@ export default class Game {
    * @param {string|string[]} [args.activeRoles] - Role/s that are active are
    *  allowed to perform actions, and hence have actions available.
    */
-  constructor({ activeRoles }) {
-    this.activateRoles(activeRoles);
+  constructor(args) {
+    const { activeRoles } = args || {};
+    if (activeRoles) {
+      this.activateRoles(activeRoles);
+    }
   }
 
   /** The game's `name` is used mainly for displaying purposes.
@@ -69,7 +72,7 @@ export default class Game {
     return unimplemented('perform()', this);
   }
 
-  /** The next method is similar to `apply`, but it doesn't update the current
+  /** The next method is similar to `perform`, but it doesn't update the current
    * game state. It rather builds a new instance with the updated game state.
    *
    * @param {object} actions - Should be an object with a move for each active
@@ -78,7 +81,7 @@ export default class Game {
   */
   next(actions) {
     const result = this.clone();
-    result.apply(actions);
+    result.perform(actions);
     return result;
   }
 
@@ -132,14 +135,30 @@ export default class Game {
 
   // Player information ////////////////////////////////////////////////////////
 
+  /** Gets a role by string or number.
+   *
+   * @param {string|number} id - Role name or index.
+   * @returns {string}
+   * @throws {Error} - If role is not valid.
+   */
+  role(id) {
+    const { roles } = this;
+    switch (typeof id) {
+      case 'string': if (roles.include(id)) return id; break;
+      case 'number': if (roles[id]) return roles[id]; break;
+      default: // Fall through.
+    }
+    throw new Error(`Unknown role ${id}!`);
+  }
+
   /** Method `isActive` checks if the given roles are all active.
    *
-   * @param {...string} roles
+   * @param {...(string|number)} roles
    * @return {boolean}
    */
   isActive(...roles) {
     const { activeRoles } = this;
-    return roles.every((role) => activeRoles.find(role));
+    return roles.every((role) => activeRoles.find(this.role(role)));
   }
 
   /** In most games there is only one active player per turn. The method
@@ -162,13 +181,12 @@ export default class Game {
   /** Sets the `activeRoles` of this game state. Since this method changes the
    * current game state, use with care.
    *
-   * @param {string|string[]} activeRoles
+   * @param {...(string|number)} activeRoles
    * @return {string[]}
    */
-  activateRoles(activeRoles) {
-    if (activeRoles) {
-      this.activeRoles = Array.isArray(activeRoles) ? activeRoles : [activeRoles];
-    }
+  activateRoles(...activeRoles) {
+    const { roles } = this;
+    this.activeRoles = activeRoles.map((role) => this.role(role));
     return this.activeRoles;
   }
 
@@ -181,7 +199,8 @@ export default class Game {
    * @return {string[]}
    */
   opponents(...roles) {
-    const roleSet = new Set(roles.length > 0 ? roles : this.activeRoles);
+    const roleSet = new Set(roles.length < 1 ? this.activeRoles
+      : roles.map((role) => this.role(role)));
     return this.roles.filter((role) => !roleSet.has(role));
   }
 
@@ -191,12 +210,13 @@ export default class Game {
    * @param {string=activeRole} role
    * @return {string}
    */
-  opponent(player = null) {
-    const roleCount = this.roles.length;
+  opponent(role = null) {
+    const { roles } = this;
+    const roleCount = roles.length;
     if (roleCount !== 2) {
-      throw new Error('Cannot get the opponent on a game without 2 players!');
+      throw new Error('Can only get the opponent on a game of 2 players!');
     }
-    const i = this.players.indexOf(player || this.activeRole);
+    const i = roles.indexOf(role ? this.role(role) : this.activeRole);
     return this.roles[(i + 1) % roleCount];
   }
 
