@@ -1,4 +1,5 @@
 import Game from './Game';
+import { validate } from '../utils';
 
 const ROLES = ['This', 'That'];
 const ACTIONS = { WIN: 'win', LOSE: 'lose', PASS: 'pass' };
@@ -13,8 +14,17 @@ export default class Choose2Win extends Game {
   /** The constructor takes a number of turns for the game to last (`Infinity`
    * by default), the active player and the winner if the game has ended.
   */
-  constructor({ turns, activeRole, winner }) {
+  constructor(args) {
+    const {
+      activeRole = 0,
+      turns = Infinity,
+      winner = null,
+    } = args || {};
     super({ activeRoles: [activeRole] });
+    validate({
+      turns: !Number.isNaN(+turns),
+      winner: ROLES.includes(winner) || winner === null,
+    });
     this.turns = Number.isNaN(turns) ? Infinity : +turns;
     this.winner = winner;
   }
