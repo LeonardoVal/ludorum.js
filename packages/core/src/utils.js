@@ -38,14 +38,12 @@ export const throwIf = (cond, message, ErrorType = Error) => {
 
 export const validate = (validations) => {
   const { hasOwnProperty } = Object.prototype;
-  for (const key in validations) {
-    if (hasOwnProperty.call(validations, key)) {
-      const validation = validations[key];
-      if (!validation) {
-        throw new TypeError(`Invalid value for ${key}!`);
-      }
+  Object.keys(validations).forEach((key) => {
+    const validation = validations[key];
+    if (!validation) {
+      throw new TypeError(`Invalid value for ${key}!`);
     }
-  }
+  });
 };
 
 /** TODO
