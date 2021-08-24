@@ -30,6 +30,24 @@ export const ensureType = (value, type, defaultValue) => {
   return value;
 };
 
+export const throwIf = (cond, message, ErrorType = Error) => {
+  if (cond) {
+    throw new ErrorType(message);
+  }
+};
+
+export const validate = (validations) => {
+  const { hasOwnProperty } = Object.prototype;
+  for (const key in validations) {
+    if (hasOwnProperty.call(validations, key)) {
+      const validation = validations[key];
+      if (!validation) {
+        throw new TypeError(`Invalid value for ${key}!`);
+      }
+    }
+  }
+};
+
 /** TODO
 */
 export const unimplemented = (method, obj) => {
