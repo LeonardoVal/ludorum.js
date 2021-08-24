@@ -142,7 +142,7 @@ export default class Game {
    * @param {string} role
    * @return {Game}
    */
-  view() {
+  view(_role) {
     return this;
   }
 
@@ -157,7 +157,7 @@ export default class Game {
   role(id) {
     const { roles } = this;
     switch (typeof id) {
-      case 'string': if (roles.include(id)) return id; break;
+      case 'string': if (roles.includes(id)) return id; break;
       case 'number': if (roles[id]) return roles[id]; break;
       default: // Fall through.
     }
@@ -274,7 +274,7 @@ export default class Game {
    * @property {boolean}
   */
   get isFinished() {
-    return !this.result;
+    return !!this.result;
   }
 
   /** The maximum and minimum results may be useful and even required by some
@@ -423,8 +423,9 @@ export default class Game {
   /** Based on the game's serialization, `clone()` creates a copy of this game
    * state.
    */
-  clone() {
-    return Sermat.clone(this);
+  clone() { // TODO Use Sermat.
+    const args = this.constructor.__SERMAT__.serializer(this);
+    return new this.constructor(...args);
   }
 
   /** The default string representation of a game is equal to its serialization

@@ -30,12 +30,14 @@ describe('players', () => {
         game,
         players: [new RandomPlayer(), new RandomPlayer()],
       });
-      await match.run();
-      const result = match.result();
+      for await (const entry of match.run()) {
+        expect(entry.game).toBeDefined();
+      }
+      const { current: { game: { result } }, history } = match;
       expect(result).toBeTruthy();
       expect(result.First).toEqual(result1);
       expect(result.Second).toEqual(result2);
-      expect(match.ply()).toEqual(MATCH_LENGTH);
+      expect(history.length).toBe(MATCH_LENGTH + 1);
     }
   });
 }); // describe 'players'

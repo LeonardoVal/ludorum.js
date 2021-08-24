@@ -1,7 +1,9 @@
 /* eslint-disable no-param-reassign */
-import { Randomness } from '@creatartis/randomness';
-import { ensureType } from './utils';
-import Game from './Game';
+import randomness from '@creatartis/randomness';
+import Game from './games/Game';
+import { throwIf, validate } from './utils';
+
+const { Randomness } = randomness;
 
 /** A match is a controller for a game, managing player decisions, handling the
  * flow of the turns between the players by following the game's logic.
@@ -40,55 +42,39 @@ export default class Match {
    * @param {object} [args]
    * @param {Game} [args.game]
    * @param {Player[]|object} [args.players]
-   * @param {object[]} [args.spectators]
    * //TODO
    */
   constructor(args) {
     const {
-      game, history, players, random, spectators,
+      game,
+      players,
+      random = Randomness.DEFAULT,
     } = args || {};
-    this.game = ensureType(game, Game);
+    validate({
+      game: game instanceof Game,
+      players: typeof players === 'object',
+      random: random instanceof Randomness,
+    });
+    this.game = game;
+    this.history = [{ game }];
     this.players = Match.matchPlayers(this, game, players);
-    this.spectators = spectators;
-    this.history = history || [{ game, result: game.result }];
-    this.random = random || Randomness.DEFAULT;
+    this.random = random;
   }
 
-  /** The match represents a sequence of steps in a game. This is an
-   * asynchronous sequence, because players choose their actions asynchronously.
-   */
-  [Symbol.asyncIterator]() {
-    let i = 0;
-    let done = false;
-    return {
-      next: async () => {
-        if (done) {
-          return { done };
-        }
-        const entry = (i < this.history.length) ? this.history[i] : await this.next();
-        i += 1;
-        const { result } = this.next();
-        done = !!result;
-        return { value: entry };
-      },
-    };
-  }
-
-  /** Each step in the match's history is called a `ply`. This property
-   * indicates the current ply number.
+  /** TODO
    *
-   * @property {int} [ply]
    */
-  get ply() {
-    return this.history.length - 1;
+  get current() {
+    const { history } = this;
+    return history[history.length - 1];
   }
 
   /** Indicates if this match's game is finished.
    *
    * @property {boolean} isFinished
-  */
+   */
   get isFinished() {
-    return !!this.history[this.ply].result;
+    return this.current.game.isFinished;
   }
 
   /** This method asks the active players in the game to choose their actions.
@@ -97,18 +83,41 @@ export default class Match {
    *   this match's current game state.
    * @return {object}
    */
-  async decisions(game = null) { // TODO Let Nature decide.
-    const { history, players, ply } = this;
-    game = game || history[ply].game;
-    const { activeRoles } = game;
-    const decisions = activeRoles.map((role) => {
-      const player = players[role];
-      return player.decision(game.view(player), role)
-        .then((decision) => [role, decision]);
+  async actions(game = null) {
+    const { players } = this;
+    game = game || this.current.game;
+    const { actions } = game;
+    if (!actions) {
+      return null;
+    }
+    const activeRoles = Object.keys(actions);
+    const result = {};
+    await Promise.all(
+      activeRoles.map(async (role) => {
+        const player = players[role];
+        throwIf(!player, `Player not found for role ${role}!`);
+        result[role] = await player.decision(game.view(role), role);
+      }),
+    );
+    return result;
+  }
+
+  /** TODO
+   *
+   * @param {Game} game
+   */
+  haps(game = null) {
+    const { random } = this;
+    game = game || this.current.game;
+    const { aleatories } = game;
+    if (!aleatories) {
+      return null;
+    }
+    const result = { ...aleatories };
+    Object.keys(result).forEach((key) => {
+      result[key] = result[key].randomValue(random);
     });
-    // TODO Nature haps.
-    const moves = await Promise.all(decisions);
-    return Object.fromEntries(moves);
+    return result;
   }
 
   /** After players of all active roles have decided which action they're
@@ -119,23 +128,17 @@ export default class Match {
    * @return {object} - The new entry on the match's history.
    */
   async next() {
-    const { ply, history, players } = this;
-    const { game, result } = history[ply];
-    if (result) {
+    const { history, current } = this;
+    const { game } = current;
+    if (game.isFinished) {
       return null;
     }
-    if (ply < 1) {
-      this.emit('onBegin', game, this);
-    }
-    const actions = await this.decisions(game, players);
-    // TODO Match commands, like QUIT.
+    const actions = await this.actions(game);
+    current.actions = actions;
+    const haps = this.haps(game);
+    current.haps = haps;
     const nextGame = game.next(actions);
-    this.emit('onNext', game, actions, nextGame, this);
-    const nextResult = nextGame.result();
-    if (nextResult) {
-      this.emit('onEnd', game, result, this);
-    }
-    const nextEntry = { actions, game: nextGame, result: nextResult };
+    const nextEntry = { game: nextGame };
     history.push(nextEntry);
     return nextEntry;
   }
@@ -145,15 +148,13 @@ export default class Match {
    *
    * @returns {object}
    */
-  async run() {
-    if (this.isFinished) {
-      return this.history[this.play];
+  async* run() {
+    while (!this.isFinished) {
+      const { current } = this;
+      await this.next();
+      yield current;
     }
-    let entry;
-    for await (entry of this) {
-      // Do nothing.
-    }
-    return entry;
+    yield this.current;
   }
 
   // Commands //////////////////////////////////////////////////////////////////

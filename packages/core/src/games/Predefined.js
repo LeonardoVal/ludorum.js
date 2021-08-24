@@ -28,7 +28,7 @@ export default class Predefined extends Game {
       height: !Number.isNaN(+height) && +height >= 0,
       width: !Number.isNaN(+width) && +width > 0,
     });
-    this._result = _result;
+    this._result = { ..._result };
     this.activateRoles(activeRole);
     this.height = +height;
     this.width = +width;
@@ -55,7 +55,7 @@ export default class Predefined extends Game {
   /** Returned the predefined results if height is zero or less.
   */
   get result() {
-    return this.height > 0 ? null : { ...this.__result };
+    return this.height > 0 ? null : { ...this._result };
   }
 
   /** Moves are completely irrelevant. They only advance in the match.
