@@ -1,5 +1,3 @@
-/* eslint-disable no-param-reassign */
-/* eslint-disable no-mixed-operators */
 import { Sermat } from 'sermat';
 import Aleatory from '../aleatories/Aleatory';
 import {
@@ -49,15 +47,26 @@ export default class Game {
    * actions each can make in this turn. If the game has finished then a _falsy_
    * value must be returned (`null` is recommended).
    *
-   * @return {object}
+   * @property {object}
    * @example
    *   {
    *     Player1: ['Rock', 'Paper', 'Scissors'],
    *     Player2: ['Rock', 'Paper', 'Scissors'],
    *   }
-  */
+   */
   get actions() {
     return unimplemented('actions', this);
+  }
+
+  /** The game's `aleatories` are the random variables that may affect the game,
+   * e.g. dice or card decks. Is an object with each property having an instance
+   * of `Aleatory`. Should be `null` when there are none, which is the default
+   * case.
+   *
+   * @property {object}
+   */
+  get aleatories() {
+    return null;
   }
 
   /** Once the players have chosen their actions, these must be `perform`ed to
@@ -66,9 +75,11 @@ export default class Game {
    *
    * @param {object} actions - Should be an object with a move for each active
    *   player. For example: `{ Player1: 'Rock', Player2: 'Paper' }`.
+   * @param {object} haps - Should be an object with a value for each aleatory.
+   *   For example: `{ die: 5, coin: 'Tails' }`.
    * @return {Game} - Same as `this`.
-  */
-  perform() {
+   */
+  perform(_actions, _haps) {
     return unimplemented('perform()', this);
   }
 
@@ -77,11 +88,13 @@ export default class Game {
    *
    * @param {object} actions - Should be an object with a move for each active
    *   player. For example: `{ Player1: 'Rock', Player2: 'Paper' }`.
+   * @param {object} haps - Should be an object with a value for each aleatory.
+   *   For example: `{ die: 5, coin: 'Tails' }`.
    * @return {Game} - A new game instance.
-  */
-  next(actions) {
+   */
+  next(actions, haps) {
     const result = this.clone();
-    result.perform(actions);
+    result.perform(actions, haps);
     return result;
   }
 
@@ -255,6 +268,14 @@ export default class Game {
   }
 
   // Result functions //////////////////////////////////////////////////////////
+
+  /** A finished game must have a result, no active player and no actions.
+   *
+   * @property {boolean}
+  */
+  get isFinished() {
+    return !this.result;
+  }
 
   /** The maximum and minimum results may be useful and even required by some
    * game search algorithm. To expose these values, `resultBounds()` returns an
