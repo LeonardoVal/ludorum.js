@@ -32,7 +32,7 @@ export default class Player {
    * @param {string} [role] - Role this player is playing in the given game.
    * @returns {any} A promise that resolves to the selected move.
    */
-  async decision(game, role) {
+  async decision(_game, _role) {
     return unimplemented('decision', this);
   }
 
