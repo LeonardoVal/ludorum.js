@@ -1,7 +1,7 @@
-/* eslint-disable no-plusplus */
-/* eslint-disable max-classes-per-file */
-import { Randomness } from '@creatartis/randomness';
+import randomness from '@creatartis/randomness';
 import { unimplemented } from '../utils';
+
+const { Randomness } = randomness;
 
 /**  Aleatories are different means of non determinism that games can use, like:
  * dice, card decks, roulettes, etc.
