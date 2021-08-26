@@ -16,7 +16,7 @@ export default class Game {
   constructor(args) {
     const { activeRoles } = args || {};
     if (activeRoles) {
-      this.activateRoles(activeRoles);
+      this.activateRoles(...activeRoles);
     }
   }
 
@@ -161,7 +161,8 @@ export default class Game {
     if (!Number.isNaN(+id) && roles[id]) {
       return roles[id];
     }
-    throw new Error(`Unknown role ${id}!`);
+    throw new Error(`Unknown role ${JSON.stringify(id)} (roles: ${
+      roles.map((r) => JSON.stringify(r)).join(', ')})!`);
   }
 
   /** Method `isActive` checks if the given roles are all active.
