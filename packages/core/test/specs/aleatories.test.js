@@ -3,22 +3,24 @@ import {
   Aleatory, RangeAleatory, ListAleatory, WeightedAleatory, dice,
 } from '../../src/aleatories';
 
-function expectUniformDistribution(dist, values) {
+const expectUniformDistribution = (dist, values) => {
   const distArray = [...dist];
   const prob = 1 / values.length;
   values.forEach((value, i) => {
+    expect(distArray.length).toBeGreaterThan(i);
+    expect(distArray[i].length).toBe(2);
     expect(distArray[i][0]).toBe(value);
     expect(distArray[i][1]).toBeCloseTo(prob);
   });
-}
+};
 
 describe('aleatories', () => {
   it('expected definitions', () => {
-    expect(typeof Aleatory).toBe('function');
-    expect(typeof RangeAleatory).toBe('function');
-    expect(typeof ListAleatory).toBe('function');
-    expect(typeof WeightedAleatory).toBe('function');
-    expect(typeof dice).toBe('object');
+    expect(Aleatory).toBeOfType('function');
+    expect(RangeAleatory).toBeOfType('function');
+    expect(ListAleatory).toBeOfType('function');
+    expect(WeightedAleatory).toBeOfType('function');
+    expect(dice).toBeOfType('object');
   });
 
   it('RangeAleatory', () => {
@@ -42,7 +44,7 @@ describe('aleatories', () => {
     const faceCounts = [4, 6, 8, 10, 12, 20];
     faceCounts.forEach((n) => {
       const die = dice[`D${n}`];
-      expect(die).toBeDefined();
+      expect(die).toBeOfType(Aleatory);
       expectUniformDistribution(die.distribution(), values.slice(1, n+1));
     });
   });

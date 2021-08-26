@@ -32,14 +32,14 @@ export default class Choose2Win extends Game {
   /** Players of this dummy game are labeled This and That.
   */
   get roles() {
-    return ROLES;
+    return [...ROLES];
   }
 
   /** Every turn the active player's moves are: `'win'`, `'lose'` and `'pass'`.
   */
   get actions() {
     if (!this.winner && this.turns > 0) {
-      return { [this.activeRole]: ACTIONS };
+      return { [this.activeRole]: Object.values(ACTIONS) };
     }
     return null;
   }
@@ -77,9 +77,9 @@ export default class Choose2Win extends Game {
   /** Serialization and materialization using Sermat.
   */
   static __SERMAT__ = {
-    identifier: 'Choose2Win',
-    serializer: (turns, activePlayer, winner) => (
-      [{ turns, activePlayer, winner }]
+    identifier: 'ludorum.Choose2Win',
+    serializer: ({ turns, activeRole, winner }) => (
+      [{ turns, activeRole, winner }]
     ),
   };
 } // class Choose2Win.

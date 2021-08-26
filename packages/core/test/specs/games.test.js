@@ -1,43 +1,41 @@
 import randomness from '@creatartis/randomness';
-import Predefined from '../../src/games/Predefined';
-import Match from '../../src/Match';
 import {
-  Player, RandomPlayer,
-} from '../../src/players';
+  Choose2Win, Game, Predefined, tests,
+} from '../../src/games';
 
 const { Randomness } = randomness;
 const RANDOM = Randomness.DEFAULT;
 const MATCH_COUNT = 5;
 
-describe('players', () => {
+describe('games', () => {
   it('expected definitions', () => {
-    expect(Player).toBeOfType('function');
-    expect(RandomPlayer).toBeOfType('function');
+    expect(Game).toBeOfType('function');
+    expect(Predefined).toBeOfType('function');
+    expect(tests).toBeOfType('object');
+    expect(tests.checkGameFlow).toBeOfType('function');
   });
 
-  it('RandomPlayer with Predefined', async () => {
-    const MATCH_LENGTH = 5;
+  it('Predefined works like a game', () => {
+    const game = new Predefined();
     for (let i = 0; i < MATCH_COUNT; i += 1) {
-      const result1 = (i % 3) - 1;
-      const result2 = -result1;
-      const game = new Predefined({
-        activeRole: i % 2,
-        result: { First: result1, Second: result2 },
-        height: MATCH_LENGTH,
-        width: 6,
+      tests.checkGameFlow(expect, game, {
+        deterministic: true,
+        oneActivePlayerPerTurn: true,
+        random: RANDOM,
+        zeroSum: true,
       });
-      const match = new Match({
-        game,
-        players: [new RandomPlayer(), new RandomPlayer()],
+    }
+  });
+
+  it('Choose2Win works like a game', () => {
+    const game = new Choose2Win();
+    for (let i = 0; i < MATCH_COUNT; i += 1) {
+      tests.checkGameFlow(expect, game, {
+        deterministic: true,
+        oneActivePlayerPerTurn: true,
+        random: RANDOM,
+        zeroSum: true,
       });
-      for await (const entry of match.run()) {
-        expect(entry.game).toBeOfType(Predefined);
-      }
-      const { current: { game: { result } }, history } = match;
-      expect(result).toBeTruthy();
-      expect(result.First).toEqual(result1);
-      expect(result.Second).toEqual(result2);
-      expect(history.length).toBe(MATCH_LENGTH + 1);
     }
   });
 }); // describe 'players'

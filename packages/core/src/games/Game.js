@@ -1,5 +1,4 @@
 import { Sermat } from 'sermat';
-import Aleatory from '../aleatories/Aleatory';
 import {
   cartesianProduct, cartesianProductObject, unimplemented,
 } from '../utils';
@@ -156,10 +155,11 @@ export default class Game {
    */
   role(id) {
     const { roles } = this;
-    switch (typeof id) {
-      case 'string': if (roles.includes(id)) return id; break;
-      case 'number': if (roles[id]) return roles[id]; break;
-      default: // Fall through.
+    if (roles.includes(id)) {
+      return id;
+    }
+    if (!Number.isNaN(+id) && roles[id]) {
+      return roles[id];
     }
     throw new Error(`Unknown role ${id}!`);
   }
@@ -171,7 +171,7 @@ export default class Game {
    */
   isActive(...roles) {
     const { activeRoles } = this;
-    return roles.every((role) => activeRoles.find(this.role(role)));
+    return roles.every((role) => activeRoles.includes(this.role(role)));
   }
 
   /** In most games there is only one active player per turn. The method
@@ -198,7 +198,6 @@ export default class Game {
    * @return {string[]}
    */
   activateRoles(...activeRoles) {
-    const { roles } = this;
     this.activeRoles = activeRoles.map((role) => this.role(role));
     return this.activeRoles;
   }
@@ -394,20 +393,6 @@ export default class Game {
     } else { // Simultaneous games.
       yield* cartesianProductObject(actions);
     }
-  }
-
-  /** A `randomNext` picks one of the next states at random.
-   */
-  randomNext(random, update) {
-    const allMoves = this.moves();
-    const randomMoves = {};
-    this.activeRoles.forEach((activeRole) => {
-      randomMoves[activeRole] = random.choice(allMoves[activeRole]);
-    });
-    return {
-      state: this.next(randomMoves, null, update),
-      moves: randomMoves,
-    };
   }
 
   // ## Conversions & presentations ############################################
