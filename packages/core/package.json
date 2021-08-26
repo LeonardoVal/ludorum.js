@@ -30,7 +30,7 @@
     "@creatartis/randomness": "^0.0.2"
   },
   "devDependencies": {
-    "@creatartis/creatartis-build": "0.2.2-alpha"
+    "@creatartis/creatartis-build": "0.2.2"
   },
   "scripts": {
     "build": "npx @creatartis/creatartis-build lint build:esm test doc",
