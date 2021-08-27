@@ -174,12 +174,12 @@ export default class Match {
         return false;
       }
     })
-  } /* */
+  } /* * /
 
   // Events ////////////////////////////////////////////////////////////////////
 
   /** Calls an event handler method of every spectator that has it.
-   */
+   * /
   emit(eventName, ...args) {
     this.spectators.forEach((spectator) => {
       if (typeof spectator[eventName] === 'function') {
@@ -209,7 +209,7 @@ export default class Match {
         log(`Match for ${game} aborted because player ${player} quitted.`);
       },
     };
-  }
+  } /* */
 
   toString() {
     return `${this.constructor.name}(${this.game})`; // TODO Add players
@@ -219,6 +219,6 @@ export default class Match {
   */
   static __SERMAT__ = {
     identifier: 'ludorum.Match',
-    serializer: (obj) => [obj.game, obj.players, obj.history],
+    serializer: ({ game, players, random }) => [{ game, players, random }],
   };
 } // class Match.
