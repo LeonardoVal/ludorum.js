@@ -1,14 +1,14 @@
 {
-  "name": "@ludorum/ludorum-core",
-  "description": "A board game implementation library, focusing on artificial intelligence.",
+  "name": "@ludorum/player-montecarlo",
+  "description": "Artificial players based on MCTS for Ludorum.",
   "keywords": [
     "board game",
     "game",
-    "minimax",
     "artificial intelligence",
-    "game ai"
+    "game ai",
+    "mcts"
   ],
-  "version": "0.3.0",
+  "version": "0.1.0",
   "author": {
     "name": "Leonardo Val",
     "email": "leonardo.val@creatartis.com"
@@ -27,15 +27,17 @@
   ],
   "dependencies": {
     "sermat": "^0.1.0",
-    "@creatartis/randomness": "^0.0.2"
+    "@creatartis/randomness": "^0.0.2",
+    "@ludorum/core": "^0.3.0"
   },
   "devDependencies": {
-    "@creatartis/creatartis-build": "^0.2.2-alpha"
+    "@creatartis/creatartis-build": "0.2.2"
   },
   "scripts": {
-    "build": "npx creatartis-build.js lint build:esm test doc",
-    "test": "npx creatartis-build.js lint test",
-    "publish:verdaccio": "npx creatartis-build.js lint build:esm test publish:verdaccio",
+    "build": "npx creatartis-build lint build:esm test doc",
+    "lint": "npx creatartis-build lint",
+    "test": "npx creatartis-build lint test",
+    "publish:verdaccio": "npx creatartis-build lint build:esm test publish:verdaccio",
     "republish:verdaccio": "npm unpublish --registry http://localhost:4873 --force && npm run publish:verdaccio"
   },
   "babel": {
@@ -47,6 +49,8 @@
       "no-await-in-loop": 0,
       "no-console": 0,
       "import/no-dynamic-require": 0,
+      "no-mixed-operators": 0,
+      "no-param-reassign": 0,
       "no-restricted-syntax": 0,
       "no-unused-vars": 0
     }

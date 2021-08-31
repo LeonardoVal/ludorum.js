@@ -1,13 +1,14 @@
 {
-  "name": "@ludorum/core",
-  "description": "A board game implementation library, focusing on artificial intelligence.",
+  "name": "@ludorum/player-minimax",
+  "description": "Artificial players based on MiniMax for Ludorum.",
   "keywords": [
     "board game",
     "game",
     "artificial intelligence",
-    "game ai"
+    "game ai",
+    "minimax"
   ],
-  "version": "0.3.0",
+  "version": "0.1.0",
   "author": {
     "name": "Leonardo Val",
     "email": "leonardo.val@creatartis.com"
@@ -26,7 +27,8 @@
   ],
   "dependencies": {
     "sermat": "^0.1.0",
-    "@creatartis/randomness": "^0.0.2"
+    "@creatartis/randomness": "^0.0.2",
+    "@ludorum/core": "^0.3.0"
   },
   "devDependencies": {
     "@creatartis/creatartis-build": "0.2.2"
