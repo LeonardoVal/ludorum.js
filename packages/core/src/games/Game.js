@@ -293,10 +293,10 @@ export default class Game {
   /** The `normalizedResult` is the `result()` expressed so the minimum defeat
    * is equal to -1 and the maximum victory is equal to +1.
    */
-  normalizedResult(result) {
-    result = result || this.result();
+  normalizedResult(result = null) {
+    result = result || this.result;
     if (result && typeof result === 'object') {
-      const [minR, maxR] = this.resultBounds();
+      const [minR, maxR] = this.resultBounds;
       return Object.fromEntries(Object.entries(result).map(
         ([p, r]) => [p, (r - minR) / (maxR - minR) * 2 - 1],
       ));
@@ -369,31 +369,130 @@ export default class Game {
 
   // Game flow /////////////////////////////////////////////////////////////////
 
-  /** The method `moves` returns the available moves for each player. Yet this
-   * is not the same as the `moves` objects that can be used with `next()` to
-   * obtain a next game state. Furthermore, if there are more than one active
+  /** The method `actions` returns the available moves for each player. Yet this
+   * is not the same as the `actions` objects that can be used with the
+   * `perform` or `next` methods. Furthermore, if there are more than one active
    * player per turn, the possible decisions can be build with all combinations
    * for all active players.
    *
-   * The method `possibleMoves` calculates all possible `moves` objects based on
-   * the result of `moves`. For example, if `moves` returns
-   * `{A:[1,2], B:[3,4]}`, then `possibleMoves` would return
+   * The method `possibleActions` calculates all possible `actions` objects
+   * based on the given `actions`. For example, if `actions` returns
+   * `{A:[1,2], B:[3,4]}`, then `possibleActions` would return
    * `[{A:1, B:3}, {A:1, B:4}, {A:2, B:3}, {A:2, B:4}]`.
    *
-   * @param {object} [moves=null]
+   * @param {object} [actions]
    * @yields {object}
-   */
-  * possibleMoves(actions = null) {
-    actions = actions || this.actions;
-    const { activeRoles } = this;
-    if (activeRoles.length === 1) { // Most common case.
-      const [activeRole] = activeRoles;
-      for (const ac of actions[activeRole]) {
-        yield { [activeRole]: ac };
+   * @static
+  */
+  static* possibleActions(actions) {
+    if (actions && typeof actions === 'object') {
+      const activeRoles = Object.keys(actions);
+      if (activeRoles.length === 1) { // Most common case optimized.
+        const [activeRole] = activeRoles;
+        for (const action of actions[activeRole]) {
+          yield { [activeRole]: action };
+        }
+      } else {
+        const recursion = function* recursion(i) {
+          if (i < activeRoles.length) {
+            const activeRole = activeRoles[i];
+            for (const action of actions[activeRole]) {
+              for (const other of recursion(i + 1)) {
+                yield { [activeRole]: action, ...other };
+              }
+            }
+          } else {
+            yield {};
+          }
+        };
+        yield* recursion(0);
       }
-    } else { // Simultaneous games.
-      yield* cartesianProductObject(actions);
     }
+  }
+
+  /** Instance version of the static `possibleActions`, which uses this game
+   * state's current actions.
+   *
+   * @yields {object}
+  */
+  * possibleActions() {
+    yield* this.constructor.possibleActions(this.actions);
+  }
+
+  /** The method `aleatories` returns the available aleatory variables for a
+   * game state. Yet this is not the same as the `haps` objects that can be used
+   * with the `perform` or `next` methods.
+   *
+   * The method `possibleHaps` calculates all possible `haps` objects based on
+   * the given `aleatories`. The generated sequence has arrays of the shape
+   * `[haps, probability]`.
+   *
+   * @param {object} aleatories
+   * @yields {[object, number]}
+   * @static
+  */
+  static* possibleHaps(aleatories) {
+    if (aleatories && typeof aleatories === 'object') {
+      const hapNames = Object.keys(aleatories);
+      if (hapNames.length === 1) { // Most common case optimized.
+        const [hapName] = hapNames;
+        for (const [value, prob] of aleatories[hapNames].distribution) {
+          yield [{ [hapName]: value }, prob];
+        }
+      } else {
+        const recursion = function* recursion(i) {
+          if (i < hapNames.length) {
+            const hapName = hapNames[i];
+            for (const [value, probValue] of aleatories[hapNames].distribution) {
+              for (const [other, probOther] of recursion(i + 1)) {
+                yield [{ [hapName]: value, ...other }, probValue * probOther];
+              }
+            }
+          } else {
+            yield [{}, 1];
+          }
+        };
+        yield* recursion(0);
+      }
+    }
+  }
+
+  /** Instance version of the static `possibleHaps`, which uses this game
+   * state's current actions.
+   *
+   * @yields {object}
+  */
+  * possibleHaps() {
+    yield* this.constructor.possibleAleatories(this.aleatories);
+  }
+
+  /** TODO
+   *
+   * @param {object} actions
+   * @param {object} aleatories
+  */
+  static* possibilities(actions, aleatories) {
+    const possibleActions = actions ? this.possibleActions(actions) : [null];
+    const possibleHaps = aleatories ? this.possibleHaps(aleatories) : [[null, 1]];
+    for (const actionsObject of possibleActions) {
+      for (const [hapsObject, probability] of possibleHaps) {
+        yield {
+          actions: actionsObject,
+          haps: hapsObject,
+          probability,
+        };
+      }
+    }
+  }
+
+  /** Instance version of the static `possibilities`, which uses this game
+   * state's current actions and aleatories.
+   *
+   * @yields {object}
+  */
+  * possibilities() {
+    const { actions, aleatories } = this;
+    yield* this.constructor.possibilities(actions, aleatories);
   }
 
   // ## Conversions & presentations ############################################

@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign */
 import randomness from '@creatartis/randomness';
 import Game from './games/Game';
-import { throwIf, validate } from './utils';
+import { validate } from './utils';
 
 const { Randomness } = randomness;
 
@@ -95,7 +95,9 @@ export default class Match {
     await Promise.all(
       activeRoles.map(async (role) => {
         const player = players[role];
-        throwIf(!player, `Player not found for role ${role}!`);
+        if (!player) {
+          throw new Error(`Player not found for role ${role}!`);
+        }
         result[role] = await player.decision(game.view(role), role);
       }),
     );

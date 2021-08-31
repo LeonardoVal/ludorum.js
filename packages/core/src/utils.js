@@ -30,12 +30,6 @@ export const ensureType = (value, type, defaultValue) => {
   return value;
 };
 
-export const throwIf = (cond, message, ErrorType = Error) => {
-  if (cond) {
-    throw new ErrorType(message);
-  }
-};
-
 export const validate = (validations) => {
   const { hasOwnProperty } = Object.prototype;
   Object.keys(validations).forEach((key) => {

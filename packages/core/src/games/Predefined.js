@@ -60,7 +60,7 @@ export default class Predefined extends Game {
 
   /** Moves are completely irrelevant. They only advance in the match.
   */
-  perform(actions) {
+  perform(_actions) {
     this.height -= 1;
     this.activateRoles(this.opponent());
   }

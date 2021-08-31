@@ -76,17 +76,6 @@ export default class Player {
     return this;
   }
 
-  /** The `possibleChoices` for all active players in a given `game` is a
-   * sequence of objects, with one available action for each active role.
-   *
-   * @param {Game} [game] - A game state.
-   * @yields {object} A map from active roles to actions.
-   */
-  static* possibleChoices(game) {
-    const { actions } = game;
-    yield* cartesianProductObject(actions);
-  }
-
   /** The string representation of the player is like `Player("name")`.
    *
    * @returns {string}
