@@ -1,9 +1,8 @@
-import randomness from '@creatartis/randomness';
+import { Randomness } from '@creatartis/randomness';
 import {
   Choose2Win, Game, Predefined, tests,
 } from '../../src/games';
 
-const { Randomness } = randomness;
 const RANDOM = Randomness.DEFAULT;
 const MATCH_COUNT = 5;
 

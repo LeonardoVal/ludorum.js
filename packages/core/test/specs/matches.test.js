@@ -1,9 +1,8 @@
-import randomness from '@creatartis/randomness';
+import { Randomness } from '@creatartis/randomness';
 import { Predefined } from '../../src/games';
 import { RandomPlayer } from '../../src/players';
 import Match from '../../src/Match';
 
-const { Randomness } = randomness;
 const RANDOM = Randomness.DEFAULT;
 const MATCH_COUNT = 5;
 

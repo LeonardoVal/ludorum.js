@@ -3,7 +3,9 @@ import {
   cartesianProduct, cartesianProductObject, unimplemented,
 } from '../utils';
 
-/** The class `ludorum.Game` is the base type for all games.
+/** The class `Game` is the base type for all games.
+ *
+ * @class
 */
 export default class Game {
   /** `Game`'s constructor takes the active player/s. A player is active if and
@@ -296,13 +298,13 @@ export default class Game {
   normalizedResult(result = null) {
     result = result || this.result;
     if (result && typeof result === 'object') {
-      const [minR, maxR] = this.resultBounds;
+      const { resultBounds: [minR, maxR] } = this;
       return Object.fromEntries(Object.entries(result).map(
-        ([p, r]) => [p, (r - minR) / (maxR - minR) * 2 - 1],
+        ([p, r]) => [p, (+r - minR) / (maxR - minR) * 2 - 1],
       ));
     }
     if (typeof result === 'number') {
-      const [minR, maxR] = this.resultBounds();
+      const { resultBounds: [minR, maxR] } = this;
       return (+result - minR) / (maxR - minR) * 2 - 1;
     }
     return null;

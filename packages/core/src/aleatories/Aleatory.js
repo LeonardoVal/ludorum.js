@@ -1,10 +1,10 @@
-import randomness from '@creatartis/randomness';
+import { Randomness } from '@creatartis/randomness';
 import { unimplemented } from '../utils';
-
-const { Randomness } = randomness;
 
 /**  Aleatories are different means of non determinism that games can use, like:
  * dice, card decks, roulettes, etc.
+ *
+ * @class
 */
 export default class Aleatory {
   /** The aleatory iterates over the distribution of its random variable, which
@@ -14,7 +14,7 @@ export default class Aleatory {
     yield unimplemented('distribution', this);
   }
 
-  probability(value) {
+  probability(_value) {
     return unimplemented('probability', this);
   }
 

@@ -1,10 +1,9 @@
-import randomness from '@creatartis/randomness';
+import { Randomness } from '@creatartis/randomness';
 import {
   Player, RandomPlayer, TracePlayer, HeuristicPlayer,
   tests,
 } from '../../src/players';
 
-const { Randomness } = randomness;
 const RANDOM = Randomness.DEFAULT;
 
 describe('players', () => {

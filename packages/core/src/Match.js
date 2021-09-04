@@ -1,14 +1,12 @@
 /* eslint-disable no-param-reassign */
-import randomness from '@creatartis/randomness';
+import { Randomness } from '@creatartis/randomness';
+import BaseClass from './utils/BaseClass';
 import Game from './games/Game';
-import { validate } from './utils';
-
-const { Randomness } = randomness;
 
 /** A match is a controller for a game, managing player decisions, handling the
  * flow of the turns between the players by following the game's logic.
  */
-export default class Match {
+export default class Match extends BaseClass {
   /** TODO
   */
   static matchPlayers(match, game, players) {
@@ -45,20 +43,13 @@ export default class Match {
    * //TODO
    */
   constructor(args) {
-    const {
-      game,
-      players,
-      random = Randomness.DEFAULT,
-    } = args || {};
-    validate({
-      game: game instanceof Game,
-      players: typeof players === 'object',
-      random: random instanceof Randomness,
-    });
-    this.game = game;
-    this.history = [{ game }];
-    this.players = Match.matchPlayers(this, game, players);
-    this.random = random;
+    const { game, players, random } = args || {};
+    super();
+    this
+      ._prop('game', game, Game)
+      ._prop('history', [{ game }], Array)
+      ._prop('random', random, Randomness, Randomness.DEFAULT)
+      ._prop('players', Match.matchPlayers(this, game, players), 'object');
   }
 
   /** TODO

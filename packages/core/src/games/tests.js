@@ -1,8 +1,6 @@
-import randomness from '@creatartis/randomness';
+import { Randomness } from '@creatartis/randomness';
 import Aleatory from '../aleatories/Aleatory';
 import Game from './Game';
-
-const { Randomness } = randomness;
 
 export const checkFinishedGameState = (expect, game, options) => {
   const { result, roles } = game;

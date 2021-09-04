@@ -7,7 +7,7 @@ game states or moves.
 */
 export default class HeuristicPlayer extends Player {
   /** The constructor takes the player's `name` and a `random` number generator
-   * (`base.Randomness.DEFAULT` by default). Many heuristic can be based on
+   * (`Randomness.DEFAULT` by default). Many heuristic can be based on
    * randomness, but this is also necessary to chose between moves with the same
    * evaluation without any bias.
   */
@@ -26,11 +26,11 @@ export default class HeuristicPlayer extends Player {
    * is the most common thing to do.
   */
   async actionEvaluation(action, game, role) {
-    const { actions, aleatories } = game;
+    const { actions, aleatories, constructor } = game;
     const roleActions = { ...actions, [role]: [action] };
     let sum = 0;
     let count = 0;
-    const possibilities = game.constructor.possibilities(roleActions, aleatories);
+    const possibilities = constructor.possibilities(roleActions, aleatories);
     for (const { actions: _actions, haps, probability } of possibilities) {
       const nextGame = game.next(_actions, haps);
       sum += (await this.stateEvaluation(nextGame, role)) * probability;

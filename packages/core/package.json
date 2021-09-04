@@ -25,8 +25,8 @@
     "LICENSE.md"
   ],
   "dependencies": {
-    "sermat": "^0.1.0",
-    "@creatartis/randomness": "^0.0.2"
+    "@creatartis/randomness": "^0.1.0",
+    "sermat": "^0.1.0"
   },
   "devDependencies": {
     "@creatartis/creatartis-build": "0.2.2"
