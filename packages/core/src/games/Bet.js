@@ -1,4 +1,3 @@
-import { validate } from '../utils';
 import Game from './Game';
 import { Aleatory, dice } from '../aleatories';
 
@@ -14,20 +13,12 @@ export default class Bet extends Game {
   /** TODO
   */
   constructor(args = {}) {
-    const {
-      die = dice.D2,
-      goal = DEFAULT_GOAL,
-      points = DEFAULT_POINTS,
-    } = args;
+    const { die, goal, points } = args;
     super({ activeRoles: [ROLE] });
-    validate({
-      die: die instanceof Aleatory,
-      goal: !Number.isNaN(+goal),
-      points: !Number.isNaN(+points),
-    });
-    this.die = die;
-    this.goal = +goal;
-    this.points = +points;
+    this
+      ._prop('die', die, Aleatory, dice.D2)
+      ._prop('goal', goal, +goal, !Number.isNaN(+goal), DEFAULT_GOAL)
+      ._prop('points', points, !Number.isNaN(+points), DEFAULT_POINTS);
   }
 
   /** TODO

@@ -1,28 +1,49 @@
 import { Randomness } from '@creatartis/randomness';
-import { unimplemented } from '../utils';
+import BaseClass from '../utils/BaseClass';
 
 /**  Aleatories are different means of non determinism that games can use, like:
  * dice, card decks, roulettes, etc.
  *
  * @class
 */
-export default class Aleatory {
+export default class Aleatory extends BaseClass {
   /** The aleatory iterates over the distribution of its random variable, which
    * is a sequence of `[value, probability]` pairs.
+   *
+   * @yields {[any, number]}
    */
   * distribution() {
-    yield unimplemented('distribution', this);
+    yield this._unimplemented('distribution');
   }
 
+  /** The probability of a given `value`.
+   *
+   * @param {any} _value
+   * @returns {number}
+   */
   probability(_value) {
-    return unimplemented('probability', this);
+    return this._unimplemented('probability');
   }
 
-  /** The `Aleatory.randomValue()` can be used to obtain a valid random value
-   * for the random variable.
+  /** Returns a valid random value for this aleatory.
+   *
+   * @param {Randomness} [rng=null]
+   * @returns {any}
   */
-  randomValue(random = Randomness.DEFAULT) {
+  randomValue(rng = null) {
     const weightedValues = [...this.distribution()];
-    return random.weightedChoice(weightedValues);
+    return this.rng(rng).weightedChoice(weightedValues);
+  }
+
+  /** Checks if the given object is an instance of `Randomness`, or returns a
+   * default RNG if it is `null`.
+   *
+   * @param {Randomness} [g=null]
+   * @returns {Randomness}
+   * @throws {TypeError} - If the given RNG is neither `null` nor an instance of
+   *   `Randomness`.
+  */
+  rng(g = null) {
+    return this._typedValue(g, Randomness, Randomness.DEFAULT);
   }
 } // class Aleatory

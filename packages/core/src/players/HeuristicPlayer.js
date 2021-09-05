@@ -1,9 +1,10 @@
 import Player from './Player';
 
-/** # HeuristicPlayer
-
-This is the base type of automatic players based on heuristic evaluations of
-game states or moves.
+/** This is the base type of automatic players based on heuristic evaluations of
+ * game states or moves.
+ *
+ * @class
+ * @extends Player
 */
 export default class HeuristicPlayer extends Player {
   /** The constructor takes the player's `name` and a `random` number generator
@@ -12,12 +13,10 @@ export default class HeuristicPlayer extends Player {
    * evaluation without any bias.
   */
   constructor(args = null) {
+    const { heuristic } = args || {};
     super(args);
-    if (args.heuristic) {
-      Object.defineProperty(this, '_heuristic', {
-        value: args.heuristic,
-      });
-    }
+    this
+      ._prop('heuristic', heuristic, 'function', this.randomHeuristic);
   }
 
   /** An `HeuristicPlayer` choses the best moves at any given game state. For
@@ -26,11 +25,11 @@ export default class HeuristicPlayer extends Player {
    * is the most common thing to do.
   */
   async actionEvaluation(action, game, role) {
-    const { actions, aleatories, constructor } = game;
+    const { actions, aleatories, constructor: Game } = game;
     const roleActions = { ...actions, [role]: [action] };
     let sum = 0;
     let count = 0;
-    const possibilities = constructor.possibilities(roleActions, aleatories);
+    const possibilities = Game.possibilities(roleActions, aleatories);
     for (const { actions: _actions, haps, probability } of possibilities) {
       const nextGame = game.next(_actions, haps);
       sum += (await this.stateEvaluation(nextGame, role)) * probability;
@@ -68,9 +67,8 @@ export default class HeuristicPlayer extends Player {
    * @param {string} role
    * @returns {number}
   */
-  async heuristic(game, role) {
-    const { _heuristic } = this;
-    return _heuristic ? _heuristic(game, role) : this.randomHeuristic();
+  async heuristic(_game, _role) {
+    return this._unimplemented('heuristic');
   }
 
   /** Heuristic players work by evaluating the moves of the `role` in the given

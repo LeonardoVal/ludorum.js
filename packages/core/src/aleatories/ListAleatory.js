@@ -1,12 +1,10 @@
-/* eslint-disable no-plusplus */
-import { Randomness } from '@creatartis/randomness';
 import Aleatory from './Aleatory';
 
 export default class ListAleatory extends Aleatory {
   constructor(args) {
-    super();
     const { values } = args || {};
-    this.values = [...values];
+    super();
+    this._prop('values', [...values], Array);
   }
 
   probability(value) {
@@ -22,8 +20,8 @@ export default class ListAleatory extends Aleatory {
     }
   }
 
-  randomValue(random = Randomness.DEFAULT) {
-    return random.choice(this.values);
+  randomValue(rng) {
+    return this.rng(rng).choice(this.values);
   }
 
   /** Serialization and materialization using Sermat.

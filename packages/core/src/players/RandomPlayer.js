@@ -1,6 +1,9 @@
 import Player from './Player';
 
 /** A RandomPlayer is an automatic player that moves fully randomly.
+ *
+ * @class
+ * @extends Player
  */
 export default class RandomPlayer extends Player {
   /** The `decision` is made completely at random.

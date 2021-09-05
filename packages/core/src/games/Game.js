@@ -1,13 +1,11 @@
 import { Sermat } from 'sermat';
-import {
-  cartesianProduct, cartesianProductObject, unimplemented,
-} from '../utils';
+import BaseClass from '../utils/BaseClass';
 
 /** The class `Game` is the base type for all games.
  *
  * @class
 */
-export default class Game {
+export default class Game extends BaseClass {
   /** `Game`'s constructor takes the active player/s. A player is active if and
    * only if it can move.
    *
@@ -17,6 +15,7 @@ export default class Game {
    */
   constructor(args) {
     const { activeRoles } = args || {};
+    super();
     if (activeRoles) {
       this.activateRoles(...activeRoles);
     }
@@ -39,7 +38,7 @@ export default class Game {
    *   ['Red', 'Blue']
    */
   get roles() {
-    return unimplemented('roles', this);
+    return this.unimplemented('roles');
   }
 
   // TODO Default abstract getter for `activeRoles`?
@@ -56,7 +55,7 @@ export default class Game {
    *   }
    */
   get actions() {
-    return unimplemented('actions', this);
+    return this.unimplemented('actions');
   }
 
   /** The game's `aleatories` are the random variables that may affect the game,
@@ -81,7 +80,7 @@ export default class Game {
    * @return {Game} - Same as `this`.
    */
   perform(_actions, _haps) {
-    return unimplemented('perform()', this);
+    return this.unimplemented('perform()');
   }
 
   /** The next method is similar to `perform`, but it doesn't update the current
@@ -110,7 +109,7 @@ export default class Game {
    *   { Player1: -1, Player2: +1 }
    */
   get result() {
-    return unimplemented('result()', this);
+    return this.unimplemented('result');
   }
 
   /** Some games may assign scores to the players in a finished game. This may

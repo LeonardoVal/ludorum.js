@@ -1,9 +1,10 @@
 import Player from './Player';
 import RandomPlayer from './RandomPlayer';
 
-/** # TracePlayer
-
-Scripted automatic player that uses a predefined list of actions.
+/** Scripted automatic player that uses a predefined list of actions.
+ *
+ * @class
+ * @extends Player
 */
 export default class TracePlayer extends Player {
   /** The constructor takes the player's `name` and the `trace` as an sequence
@@ -16,13 +17,11 @@ export default class TracePlayer extends Player {
    * @param {Player} [args.player] - A player to act when there is no trace.
   */
   constructor(args = null) {
+    const { player, trace } = args || {};
     super(args);
-    const {
-      player = null,
-      trace = [],
-    } = args || {};
-    this.player = player;
-    this.trace = trace;
+    this
+      ._prop('player', player, Player, undefined)
+      ._prop('trace', trace, Array, []);
     this.traceIndex = 0;
   }
 

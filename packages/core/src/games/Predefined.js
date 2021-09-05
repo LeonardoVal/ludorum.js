@@ -1,5 +1,4 @@
 import Game from './Game';
-import { validate } from '../utils';
 
 const DEFAULT_HEIGHT = 5;
 const DEFAULT_WIDTH = 5;
@@ -17,21 +16,14 @@ export default class Predefined extends Game {
   */
   constructor(args) {
     const {
-      activeRole = 0,
-      result: _result = DEFAULT_RESULT,
-      height = DEFAULT_HEIGHT,
-      width = DEFAULT_WIDTH,
+      activeRole = 0, result, height = DEFAULT_HEIGHT, width = DEFAULT_WIDTH,
     } = args || {};
     super();
-    validate({
-      result: typeof _result === 'object' && _result,
-      height: !Number.isNaN(+height) && +height >= 0,
-      width: !Number.isNaN(+width) && +width > 0,
-    });
-    this._result = { ..._result };
+    this._prop('_result', result, 'object', DEFAULT_RESULT);
     this.activateRoles(activeRole);
-    this.height = +height;
-    this.width = +width;
+    this
+      ._prop('height', height, !Number.isNaN(+height) && +height >= 0)
+      ._prop('width', width, !Number.isNaN(+width) && +width > 0);
   }
 
   /** Default roles for `Predefined` are `First` and `Second`.

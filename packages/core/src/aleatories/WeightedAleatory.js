@@ -1,4 +1,3 @@
-import { Randomness } from '@creatartis/randomness';
 import Aleatory from './Aleatory';
 
 export default class WeightedAleatory extends Aleatory {
@@ -16,9 +15,11 @@ export default class WeightedAleatory extends Aleatory {
   }
 
   constructor(args) {
+    let { weightedValues } = args || {};
     super();
-    const { weightedValues } = args || {};
-    this.weightedValues = this.constructor.weightedValuesMap(weightedValues);
+    weightedValues = this.constructor.weightedValuesMap(weightedValues);
+    this
+      ._prop('weightedValues', weightedValues, Map);
   }
 
   probability(value) {
@@ -28,11 +29,6 @@ export default class WeightedAleatory extends Aleatory {
 
   * distribution() {
     yield* this.weightedValues;
-  }
-
-  randomValue(random = Randomness.DEFAULT) {
-    const weightedValues = [...this.distribution()];
-    return random.weightedChoice(weightedValues);
   }
 
   /** Serialization and materialization using Sermat.

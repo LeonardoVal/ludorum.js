@@ -1,6 +1,6 @@
 import { Randomness } from '@creatartis/randomness';
 import Game from '../games/Game';
-import { cartesianProductObject, unimplemented } from '../utils';
+import BaseClass from '../utils/BaseClass';
 
 let PLAYER_COUNT = -1; // Used by the Player's default naming.
 
@@ -9,8 +9,10 @@ let PLAYER_COUNT = -1; // Used by the Player's default naming.
  * player to do so.
  *
  * This is an abstract class that is meant to be extended.
+ *
+ * @class
  */
-export default class Player {
+export default class Player extends BaseClass {
   /** The default constructor takes its `name` and a pseudo-`random` number
    * generator from the given `params`.
    *
@@ -20,8 +22,10 @@ export default class Player {
   */
   constructor(args = null) {
     const { name, random } = args || {};
-    this.name = `${name || `${this.constructor.name}${PLAYER_COUNT += 1}`}`;
-    this.random = random || Randomness.DEFAULT;
+    super();
+    this
+      ._prop('name', `${name || `${this.constructor.name}${PLAYER_COUNT += 1}`}`)
+      ._prop('random', random, Randomness, Randomness.DEFAULT);
   }
 
   /** A player is asked to choose a move by calling `decision`.
@@ -31,7 +35,7 @@ export default class Player {
    * @returns {any} A promise that resolves to the selected move.
   */
   async decision(_game, _role) {
-    return unimplemented('decision', this);
+    return this._unimplemented('decision');
   }
 
   /** Not all players can be used to play with all games. Still, by default the
