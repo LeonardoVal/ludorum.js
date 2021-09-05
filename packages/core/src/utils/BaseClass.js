@@ -1,3 +1,16 @@
+const typeCheckers = {
+  boolean(type) {
+    return !type && 'checks failed';
+  },
+  function(type, value) {
+    return !(value instanceof type) && `expected ${type.name}`;
+  },
+  string(type, value) {
+    // eslint-disable-next-line valid-typeof
+    return typeof value !== type && `expected ${type}`;
+  },
+};
+
 /** Base class for all classes in this package.
  *
  * @class
@@ -30,17 +43,12 @@ export default class BaseClass {
    * @throws {ErrorType}
   */
   static checkType(value, type, ErrorType = null) {
-    const isValid = typeof type === 'boolean' && type
-      // eslint-disable-next-line valid-typeof
-      || typeof type === 'string' && typeof value === type
-      || typeof type === 'function' && value instanceof type;
-    if (!isValid && ErrorType) {
+    const error = typeCheckers[typeof type](type, value);
+    if (error && ErrorType) {
       // eslint-disable-next-line no-nested-ternary
-      const message = typeof type === 'string' ? `expected ${type}`
-        : typeof type === 'function' ? `expected ${type.name}`
-          : 'checks failed';
-      throw new ErrorType(`Type mismatch for ${value}, ${message}!`);
+      throw new ErrorType(`Type mismatch for ${value}, ${error}!`);
     }
+    return !error;
   }
 
   /** Instance version of the static method `checkType`.
