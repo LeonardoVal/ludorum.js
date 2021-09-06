@@ -6,7 +6,7 @@ import Player from './Player';
  * @class
  * @extends Player
 */
-export default class HeuristicPlayer extends Player {
+class HeuristicPlayer extends Player {
   /** The constructor takes the player's `name` and a `random` number generator
    * (`Randomness.DEFAULT` by default). Many heuristic can be based on
    * randomness, but this is also necessary to chose between moves with the same
@@ -77,7 +77,7 @@ export default class HeuristicPlayer extends Player {
    *
    * @param {Game} - A game state
    * @param {string} - A role in the given game.
-   * @yields {[any, number]} Pairs `[move, evaluation]`.
+   * @yields {Array} - Pairs `[move, evaluation]`.
   */
   async* evaluatedActions(game, role) {
     const { actions } = game;
@@ -156,3 +156,5 @@ export default class HeuristicPlayer extends Player {
     },
   };
 } // class HeuristicPlayer.
+
+export default HeuristicPlayer;

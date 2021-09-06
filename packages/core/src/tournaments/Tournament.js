@@ -4,7 +4,7 @@ A tournament is a set of matches played between many players. The whole contest
 ranks the participants according to the result of the matches. This is an
 abstract base class for many different types of contests.
 */
-export default class Tournament {
+class Tournament {
   /** TODO
   */
   constructor({ game, players }) {
@@ -160,3 +160,5 @@ export default class Tournament {
     serializer: (obj) => [obj.game, obj.players],
   }
 } // class Tournament
+
+export default Tournament;

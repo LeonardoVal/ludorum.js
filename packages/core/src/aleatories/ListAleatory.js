@@ -1,6 +1,6 @@
 import Aleatory from './Aleatory';
 
-export default class ListAleatory extends Aleatory {
+class ListAleatory extends Aleatory {
   constructor(args) {
     const { values } = args || {};
     super();
@@ -31,3 +31,5 @@ export default class ListAleatory extends Aleatory {
     serializer: (obj) => [{ values: obj.values }],
   };
 } // class ListAleatory
+
+export default ListAleatory;

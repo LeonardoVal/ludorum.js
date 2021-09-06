@@ -5,8 +5,8 @@ import Game from './games/Game';
 
 /** A match is a controller for a game, managing player decisions, handling the
  * flow of the turns between the players by following the game's logic.
- */
-export default class Match extends BaseClass {
+*/
+class Match extends BaseClass {
   /** TODO
   */
   static matchPlayers(match, game, players) {
@@ -215,3 +215,5 @@ export default class Match extends BaseClass {
     serializer: ({ game, players, random }) => [{ game, players, random }],
   };
 } // class Match.
+
+export default Match;

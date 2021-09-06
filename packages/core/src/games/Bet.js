@@ -9,7 +9,7 @@ const DEFAULT_GOAL = 10;
 /** # Bet
  *
 */
-export default class Bet extends Game {
+class Bet extends Game {
   /** TODO
   */
   constructor(args = {}) {
@@ -77,3 +77,5 @@ export default class Bet extends Game {
     serializer: ({ die, goal, points }) => [{ die, goal, points }],
   };
 } // class Bet
+
+export default Bet;

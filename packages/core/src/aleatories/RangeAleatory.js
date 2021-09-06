@@ -2,7 +2,7 @@ import Aleatory from './Aleatory';
 
 const rangeProbability = (min, max) => 1 / (max - min + 1);
 
-export default class RangeAleatory extends Aleatory {
+class RangeAleatory extends Aleatory {
   constructor(args) {
     const { min, max } = args || {};
     super();
@@ -35,3 +35,5 @@ export default class RangeAleatory extends Aleatory {
     serializer: ({ min, max }) => [{ min, max }],
   };
 } // class RangeAleatory
+
+export default RangeAleatory;

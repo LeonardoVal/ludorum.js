@@ -15,7 +15,7 @@ const typeCheckers = {
  *
  * @class
 */
-export default class BaseClass {
+class BaseClass {
   /** Raises an error saying the definition is not implemented. Used to simulate
    * abstract members.
    *
@@ -123,3 +123,5 @@ export default class BaseClass {
   // TODO const - for non-writable properties.
   // TODO memoize
 } // class BaseClass
+
+export default BaseClass;

@@ -5,7 +5,7 @@ import BaseClass from '../utils/BaseClass';
  *
  * @class
 */
-export default class Game extends BaseClass {
+class Game extends BaseClass {
   /** `Game`'s constructor takes the active player/s. A player is active if and
    * only if it can move.
    *
@@ -221,7 +221,7 @@ export default class Game extends BaseClass {
   /** Since most games have only two players, the method `opponent` conveniently
    * returns the opponent of the given player, or the active player by default.
    *
-   * @param {string=activeRole} role
+   * @param {string} [role=activeRole]
    * @return {string}
    */
   opponent(role = null) {
@@ -429,7 +429,7 @@ export default class Game extends BaseClass {
    * `[haps, probability]`.
    *
    * @param {object} aleatories
-   * @yields {[object, number]}
+   * @yields {Array} - Arrays of the shape `[object, number]`.
    * @static
   */
   static* possibleHaps(aleatories) {
@@ -535,3 +535,5 @@ export default class Game extends BaseClass {
    * games.
    */
 } // class Game.
+
+export default Game;

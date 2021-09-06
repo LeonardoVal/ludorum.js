@@ -6,11 +6,11 @@ import BaseClass from '../utils/BaseClass';
  *
  * @class
 */
-export default class Aleatory extends BaseClass {
+class Aleatory extends BaseClass {
   /** The aleatory iterates over the distribution of its random variable, which
    * is a sequence of `[value, probability]` pairs.
    *
-   * @yields {[any, number]}
+   * @yields {Array} - Arrays with the shape `[any, number]`.
    */
   * distribution() {
     yield this._unimplemented('distribution');
@@ -47,3 +47,5 @@ export default class Aleatory extends BaseClass {
     return this._typedValue(g, Randomness, Randomness.DEFAULT);
   }
 } // class Aleatory
+
+export default Aleatory;

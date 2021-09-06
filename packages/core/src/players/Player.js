@@ -12,7 +12,7 @@ let PLAYER_COUNT = -1; // Used by the Player's default naming.
  *
  * @class
  */
-export default class Player extends BaseClass {
+class Player extends BaseClass {
   /** The default constructor takes its `name` and a pseudo-`random` number
    * generator from the given `params`.
    *
@@ -106,3 +106,5 @@ export default class Player extends BaseClass {
     serializer: ({ name, random }) => [{ name, random }],
   };
 } // class Player.
+
+export default Player;

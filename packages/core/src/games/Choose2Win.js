@@ -3,13 +3,14 @@ import Game from './Game';
 const ROLES = ['This', 'That'];
 const ACTIONS = { WIN: 'win', LOSE: 'lose', PASS: 'pass' };
 
-/** # Choose2Win
- *
- * Choose2Win is a simple silly game. Each turn one of the players can decide to
- * win, to lose or to pass the turn. It is meant to be used only for testing
+/** Choose2Win is a simple silly game. Each turn one of the players can decide
+ * to win, to lose or to pass the turn. It is meant to be used only for testing
  * Ludorum, since a game can hardly become less interesting than this.
+ *
+ * @class
+ * @extends Game
 */
-export default class Choose2Win extends Game {
+class Choose2Win extends Game {
   /** The constructor takes a number of turns for the game to last (`Infinity`
    * by default), the active player and the winner if the game has ended.
   */
@@ -75,3 +76,5 @@ export default class Choose2Win extends Game {
     ),
   };
 } // class Choose2Win.
+
+export default Choose2Win;

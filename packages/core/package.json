@@ -33,10 +33,11 @@
   },
   "scripts": {
     "build": "npx creatartis-build lint build:esm test doc",
+    "doc": "npx creatartis-build doc",
     "lint": "npx creatartis-build lint",
-    "test": "npx creatartis-build lint test",
     "publish:verdaccio": "npx creatartis-build lint build:esm test publish:verdaccio",
-    "republish:verdaccio": "npm unpublish --registry http://localhost:4873 --force && npm run publish:verdaccio"
+    "republish:verdaccio": "npm unpublish --registry http://localhost:4873 --force && npm run publish:verdaccio",
+    "test": "npx creatartis-build lint test"
   },
   "babel": {
     "extends": "./node_modules/@creatartis/creatartis-build/dist/babel-config.js"

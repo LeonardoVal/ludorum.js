@@ -6,7 +6,7 @@ import RandomPlayer from './RandomPlayer';
  * @class
  * @extends Player
 */
-export default class TracePlayer extends Player {
+class TracePlayer extends Player {
   /** The constructor takes the player's `name` and the `trace` as an sequence
    * of moves to make.
    *
@@ -60,3 +60,5 @@ export default class TracePlayer extends Player {
     },
   };
 } // declare TracePlayer.
+
+export default TracePlayer;

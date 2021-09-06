@@ -1,6 +1,6 @@
 import Aleatory from './Aleatory';
 
-export default class WeightedAleatory extends Aleatory {
+class WeightedAleatory extends Aleatory {
   static weightedValuesMap(weightedValues) {
     const result = new Map();
     let probSum = 0;
@@ -38,3 +38,5 @@ export default class WeightedAleatory extends Aleatory {
     serializer: (obj) => [{ weightedValues: obj.weightedValues }],
   };
 } // class WeightedAleatory
+
+export default WeightedAleatory;

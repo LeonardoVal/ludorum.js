@@ -5,7 +5,7 @@ import Player from './Player';
  * @class
  * @extends Player
  */
-export default class RandomPlayer extends Player {
+class RandomPlayer extends Player {
   /** The `decision` is made completely at random.
    *
    * @param {Game} [game] - Game state on which to choose an action.
@@ -22,3 +22,5 @@ export default class RandomPlayer extends Player {
     serializer: Player.__SERMAT__.serializer,
   };
 } // class RandomPlayer.
+
+export default RandomPlayer;

@@ -5,11 +5,13 @@ const DEFAULT_WIDTH = 5;
 const DEFAULT_ROLES = ['First', 'Second'];
 const DEFAULT_RESULT = Object.fromEntries(DEFAULT_ROLES.map((p) => [p, 0]));
 
-/** # Predefined
-
-Simple reference games with a predefined outcome, mostly for testing purposes.
+/** Simple reference games with a predefined outcome, mostly for testing
+ * purposes.
+ *
+ * @class
+ * @extends Game
 */
-export default class Predefined extends Game {
+class Predefined extends Game {
   /** `Predefined` is a pseudogame used for testing purposes. It will give
    * `width` amount of  moves for each player until `height` moves pass. Then
    * the match is finished with the given `result`, or a tie as default.
@@ -68,3 +70,5 @@ export default class Predefined extends Game {
     }],
   }
 } // class Predefined.
+
+export default Predefined;
