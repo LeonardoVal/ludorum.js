@@ -26,19 +26,19 @@
     "LICENSE.md"
   ],
   "dependencies": {
-    "sermat": "^0.1.0",
-    "@creatartis/randomness": "^0.0.2",
-    "@ludorum/core": "^0.3.0"
+    "@creatartis/randomness": "^0.1.0",
+    "@ludorum/core": "^0.3.0",
+    "sermat": "^0.1.0"
   },
   "devDependencies": {
     "@creatartis/creatartis-build": "0.2.2"
   },
   "scripts": {
-    "build": "npx creatartis-build lint build:esm test doc",
+    "build": "npx creatartis-build lint build:esm build test doc",
     "lint": "npx creatartis-build lint",
-    "test": "npx creatartis-build lint test",
     "publish:verdaccio": "npx creatartis-build lint build:esm test publish:verdaccio",
-    "republish:verdaccio": "npm unpublish --registry http://localhost:4873 --force && npm run publish:verdaccio"
+    "republish:verdaccio": "npm unpublish --registry http://localhost:4873 --force && npm run publish:verdaccio",
+    "test": "npx creatartis-build lint test"
   },
   "babel": {
     "extends": "./node_modules/@creatartis/creatartis-build/dist/babel-config.js"
