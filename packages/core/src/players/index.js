@@ -11,3 +11,11 @@ export {
   TracePlayer,
   tests,
 };
+
+export default {
+  HeuristicPlayer,
+  Player,
+  RandomPlayer,
+  TracePlayer,
+  tests,
+};

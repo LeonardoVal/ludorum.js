@@ -9,3 +9,10 @@ export {
   Predefined,
   tests,
 };
+
+export default {
+  Choose2Win,
+  Game,
+  Predefined,
+  tests,
+};

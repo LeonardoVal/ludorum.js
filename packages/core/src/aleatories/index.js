@@ -11,3 +11,11 @@ export {
   RangeAleatory,
   WeightedAleatory,
 };
+
+export default {
+  Aleatory,
+  dice,
+  ListAleatory,
+  RangeAleatory,
+  WeightedAleatory,
+};
