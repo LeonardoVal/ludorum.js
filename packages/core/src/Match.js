@@ -212,7 +212,12 @@ class Match extends BaseClass {
   */
   static __SERMAT__ = {
     identifier: 'ludorum.Match',
-    serializer: ({ game, players, random }) => [{ game, players, random }],
+    serializer({ game, players, random }) {
+      return [{ game, players, random }];
+    },
+    materializer(_obj, args) {
+      return args && (new Match(...args));
+    },
   };
 } // class Match.
 

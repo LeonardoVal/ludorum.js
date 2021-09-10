@@ -63,11 +63,16 @@ class Predefined extends Game {
   */
   static __SERMAT__ = {
     identifier: 'ludorum.Predefined',
-    serializer: ({
+    serializer({
       activeRole, height, width, _result,
-    }) => [{
-      activeRole, height, width, result: _result,
-    }],
+    }) {
+      return [{
+        activeRole, height, width, result: _result,
+      }];
+    },
+    materializer(_obj, args) {
+      return args && (new Predefined(...args));
+    },
   }
 } // class Predefined.
 

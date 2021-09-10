@@ -26,9 +26,14 @@ class ListAleatory extends Aleatory {
 
   /** Serialization and materialization using Sermat.
    */
-  static __SERMAT_ = {
+  static __SERMAT__ = {
     identifier: 'ludorum.ListAleatory',
-    serializer: (obj) => [{ values: obj.values }],
+    serializer({ values }) {
+      return [{ values }];
+    },
+    materializer(_obj, args) {
+      return args && (new ListAleatory(...args));
+    },
   };
 } // class ListAleatory
 

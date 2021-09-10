@@ -509,7 +509,7 @@ class Game extends BaseClass {
   /** Based on the game's serialization, `clone()` creates a copy of this game
    * state.
    */
-  clone() { // TODO Use Sermat.
+  clone() {
     const args = this.constructor.__SERMAT__.serializer(this);
     return new this.constructor(...args);
   }

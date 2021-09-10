@@ -74,7 +74,12 @@ class Bet extends Game {
   */
   static __SERMAT__ = {
     identifier: 'ludorum.Bet',
-    serializer: ({ die, goal, points }) => [{ die, goal, points }],
+    serializer({ die, goal, points }) {
+      return [{ die, goal, points }];
+    },
+    materializer(_obj, args) {
+      return args && (new Bet(...args));
+    },
   };
 } // class Bet
 

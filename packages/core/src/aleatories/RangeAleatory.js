@@ -30,9 +30,14 @@ class RangeAleatory extends Aleatory {
 
   /** Serialization and materialization using Sermat.
    */
-  static __SERMAT_ = {
+  static __SERMAT__ = {
     identifier: 'ludorum.RangeAleatory',
-    serializer: ({ min, max }) => [{ min, max }],
+    serializer({ min, max }) {
+      return [{ min, max }];
+    },
+    materializer(_obj, args) {
+      return args && (new RangeAleatory(...args));
+    },
   };
 } // class RangeAleatory
 

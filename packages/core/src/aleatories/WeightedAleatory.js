@@ -35,7 +35,12 @@ class WeightedAleatory extends Aleatory {
    */
   static __SERMAT_ = {
     identifier: 'ludorum.WeightedAleatory',
-    serializer: (obj) => [{ weightedValues: obj.weightedValues }],
+    serializer(obj) {
+      return [{ weightedValues: obj.weightedValues }];
+    },
+    materializer(_obj, args) {
+      return args && (new WeightedAleatory(...args));
+    },
   };
 } // class WeightedAleatory
 

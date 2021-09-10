@@ -71,9 +71,12 @@ class Choose2Win extends Game {
   */
   static __SERMAT__ = {
     identifier: 'ludorum.Choose2Win',
-    serializer: ({ turns, activeRole, winner }) => (
-      [{ turns, activeRole, winner }]
-    ),
+    serializer({ turns, activeRole, winner }) {
+      return [{ turns, activeRole, winner }];
+    },
+    materializer(_obj, args) {
+      return args && (new Choose2Win(...args));
+    },
   };
 } // class Choose2Win.
 
