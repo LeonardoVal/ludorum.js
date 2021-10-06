@@ -1,164 +1,123 @@
-/** # Tournament
+import { Randomness } from '@creatartis/randomness';
+import BaseClass from '../utils/BaseClass';
+import { addStatistic } from '../utils/stats';
+import Game from '../games/Game';
+import Match from '../Match';
 
-A tournament is a set of matches played between many players. The whole contest
-ranks the participants according to the result of the matches. This is an
-abstract base class for many different types of contests.
+/** A tournament is a set of matches played between many players. The whole
+ * contest ranks the participants according to the result of the matches. This
+ * is an abstract base class for many different types of contests.
 */
-class Tournament {
-  /** TODO
+class Tournament extends BaseClass {
+  /** The tournament always has one [`game`](Game.html) state from which all
+   * matches start. All the `players` involved in the tournament must be
+   * provided to the constructor in an array.
+   *
+   * @param {object} args
+   * @param {Game} args.game
+   * @param {Player[]} args.players
   */
-  constructor({ game, players }) {
-    /** The tournament always has one [`game`](Game.html) state from which
-    all matches start.
-    */
-    this.game = game;
-    /** All the [`players`](Player.html) involved in the tournament must be
-    provided to the constructor in an array.
-    */
-    this.players = [...players];
-    // this.statistics = new Statistics();
-    /* this.events = new Events({
-      events: ['begin', 'beforeMatch', 'afterMatch', 'end']
-    }); */
+  constructor(args) {
+    const {
+      game, players, random,
+    } = args || {};
+    super();
+    this
+      ._prop('game', game, Game)
+      ._prop('players', players, Array)
+      ._prop('random', random, Randomness, Randomness.DEFAULT);
   }
 
-  /** The next match to be played is determined by `__advance__`, which
-  returns a match instance, or null if the tournament has finished. It is not
-  implemented in this base class.
+  /** Shotcut for creating a `Match` with a `game` and `players`.
+   *
+   * @param {Game} game
+   * @param {Player[]} players
+   * @returns {Match}
   */
-  // __advance__: unimplemented("Tournament", "__advance__"),
+  newMatch(game, players) {
+    return new Match({ game, players });
+  }
 
-  /** `Tournament.run()` plays all the tournament's matches. Since running a
-  match is asynchronous, running a tournament is too. Hence the result is
-  always a future, which will be resolved when all matches have been played.
+  /** Generates the `Match` objects for this tournament. It is not implemented
+   * in this base class.
+   *
+   * @yields {Match}
   */
-  run() {
-    this.onBegin();
-    const tournament = this;
-    /* return Future.doWhile(() => {
-      return Future.then(tournament.__advance__(), function (match) {
-        if (match) {
-          tournament.beforeMatch(match);
-          return tournament.__runMatch__(match).then(function (match) {
-            tournament.account(match);
-            tournament.afterMatch(match);
-            return match;
-          });
-        } else {
-          return null;
-        }
+  async* matches() {
+    yield this._unimplemented('*matches()');
+  }
+
+  /** Plays all the tournament's matches. The `matchRunner` argument can be used
+   * to override the way each match is processed.
+   *
+   * @param {function} [matchRunner=null]
+   * @yields {Match}
+  */
+  async* run(matchRunner = null) {
+    for await (const match of this.matches()) {
+      if (matchRunner) {
+        yield matchRunner(match);
+      } else {
+        await match.complete();
+        yield match;
+      }
+    }
+  }
+
+  /** Analogous to `run`, but waits for the whole tournament to finish and
+   * returns all matches played in an array.
+   *
+   * @param {function} [matchRunner=null]
+   * @returns {Match[]}
+  */
+  async complete(matchRunner = null) {
+    const results = [];
+    for await (const result of this.run(matchRunner)) {
+      results.push(result);
+    }
+    return results;
+  }
+
+  /** Tournaments are usually done to gather information from the matches. The
+   * `stats` method runs all the matches and records data about them:
+   *
+   * + The match results are gathered in the `results` key.
+   * + The keys `victories`, `defeats` and `draws` count each result type.
+   * + The length of each game is recorded under `length`.
+   *
+   * All these numbers are open by game, role, player.
+   *
+   * @param {object} [args=null]
+   * @param {Array} [args.matches] - An array to put the matches (optional).
+   * @returns
+  */
+  async stats(args = null) {
+    const { matches } = args || {};
+    const { game, players } = this;
+    const result = new Map();
+    for await (const match of this.run()) {
+      const { current: { game: { result: matchResult } } } = match;
+      Object.entries(match.players).forEach(([role, player]) => {
+        const baseKeys = { role, game: game.name, player: player.name };
+        const playerResult = matchResult[role];
+        addStatistic(result, { ...baseKeys, key: 'results' }, playerResult);
+        const playerStatus = playerResult > 0 ? 'victories'
+          : (playerResult < 0 ? 'defeats' : 'draws');
+        addStatistic(result, { ...baseKeys, key: playerStatus }, playerResult);
+        const matchLength = match.history.length;
+        addStatistic(result, { ...baseKeys, key: 'length' }, matchLength);
+        // TODO Record matches' widths.
       });
-    }).then(this.onEnd.bind(this)); */
-  }
-
-  /** The method `__runMatch__` runs a match. It is present so it can be
-  overridden, to implement some specific behaviour of the contest.
-  */
-  __runMatch__(match) {
-    return match.run();
-  }
-
-  /** Tournaments gather information from the played matches using their
-  `statistics` property (instance of `creatartis-base.Statistics`). The method
-  `Tournament.account(match)` is called to accounts the results of each
-  finished match for the players' score.
-
-  The match results are gathered in the `results` key. The keys `victories`,
-  `defeats` and `draws` count each result type. The length of each game is
-  recorded under `length`. The move count at each ply is aggregated under
-  `width`. All these numbers are open by game, role, player.
-  */
-  account(match) {
-    /* var game = this.game,
-      results = match.result(),
-      isDraw = false,
-      stats = this.statistics;
-    raiseIf(!results, "Match doesn't have results. Has it finished?");
-    iterable(match.players).forEach(function (p) { // Player statistics.
-      var role = p[0],
-        player = p[1],
-        playerResult = results[p[0]];
-      stats.add({key:'results', game:game.name, role:role, player:player.name},
-        playerResult);
-      stats.add({key:(playerResult > 0 ? 'victories' : playerResult < 0 ? 'defeats' : 'draws'),
-        game:game.name, role:role, player:player.name}, playerResult);
-      stats.add({key:'length', game:game.name, role:role, player:player.name},
-        match.ply()); //FIXME This may not be accurate if the game has random variables.
-      match.history.forEach(function (entry) {
-        var game = entry.state;
-        if (typeof game === 'function') {
-          var moves = game.moves();
-          if (moves && moves.hasOwnProperty(role) && moves[role].length > 0) {
-            stats.add({ key: 'width', game: game.name, role: role,
-              player: player.name }, moves[role].length);
-          }
-        }
-      });
-    }); */
-  }
-
-  /** ## Events #############################################################
-
-  Tournaments provide events to enable further analysis and control over it.
-  `Tournament.events` is the event handler. The emitted events are:
-  */
-
-  /** + The `begin` event fired by `Tournament.onBegin()` when the whole
-  contest begins. The callbacks should have the signature
-  `function (tournament)`.
-  */
-  onBegin() {
-    this.events.emit('begin', this);
-    if (this.logger) {
-      this.logger.info('Tournament begins for game ', this.game.name, '.');
+      if (matches) {
+        matches.push(match);
+      }
     }
-  }
-
-  /** + The `beforeMatch` event triggered by `Tournament.beforeMatch(match)`
-  just before starting a match. The callbacks should have the signature
-  `function (match, tournament)`.
-  */
-  beforeMatch(match) {
-    this.events.emit('beforeMatch', match, this);
-    if (this.logger) {
-      this.logger.debug('Beginning match with ', JSON.stringify(match.players), '.');
-    }
-  }
-
-  /** + The `afterMatch` event triggered by `Tournament.afterMatch(match)`
-  just after a match ends. The callbacks should have the signature
-  `function (match, tournament)`.
-  */
-  afterMatch(match) {
-    this.events.emit('afterMatch', match, this);
-    if (this.logger) {
-      this.logger.debug('Finishing match with ', JSON.stringify(match.players), '.');
-    }
-  }
-
-  /** + The `end` event triggered by `Tournament.onEnd()` when the whole
-  contest is completed. The callbacks should have the signature
-  `function (statistics, tournament)`.
-  */
-  onEnd() {
-    this.events.emit('end', this.statistics, this);
-    if (this.logger) {
-      this.logger.info('Tournament ends for game ', this.game.name, ':\n', this.statistics, '\n');
-    }
-  }
-
-  // ## Utilities ################################################################################
-
-  toString() {
-    return '';// Sermat.ser(this);
-  }
-
-  /** Serialization and materialization using Sermat.
-  */
-  static __SERMAT__ = {
-    identifier: 'Tournament',
-    serializer: (obj) => [obj.game, obj.players],
+    return [...result.values()];
   }
 } // class Tournament
+
+/** Serialization and materialization using Sermat.
+*/
+BaseClass.addSERMAT(Tournament, 'game players random');
 
 export default Tournament;
