@@ -114,10 +114,12 @@ class BaseClass {
     if (value === undefined && args.length > 0 && args[0] === undefined) {
       return obj; // Property assumed to be optional and skipped.
     }
-    Object.defineProperty(obj, id, {
-      value: this.typedValue(value, type, ...args),
-      writable: true,
-    });
+    try {
+      value = this.typedValue(value, type, ...args);
+    } catch (error) {
+      throw new TypeError(`Property ${id} failed: ${error}`);
+    }
+    Object.defineProperty(obj, id, { value, writable: true });
     return obj;
   }
 
