@@ -7,7 +7,7 @@
     "artificial intelligence",
     "game ai"
   ],
-  "version": "0.3.0",
+  "version": "0.3.0-alpha",
   "author": {
     "name": "Leonardo Val",
     "email": "leonardo.val@creatartis.com"
@@ -22,11 +22,11 @@
   "main": "core.js",
   "module": "index.js",
   "dependencies": {
-    "@creatartis/randomness": "^0.1.1",
-    "sermat": "^0.1.0"
+    "@creatartis/randomness": "^0.1.2",
+    "sermat": "^0.1.1"
   },
   "devDependencies": {
-    "@creatartis/creatartis-build": "0.2.4-beta"
+    "@creatartis/creatartis-build": "0.2.5"
   },
   "scripts": {
     "build": "npx creatartis-build lint build:esm build test doc",
@@ -43,10 +43,11 @@
   "eslintConfig": {
     "extends": "./node_modules/@creatartis/creatartis-build/eslint-config.js",
     "rules": {
+      "import/no-dynamic-require": 0,
       "no-await-in-loop": 0,
       "no-console": 0,
-      "import/no-dynamic-require": 0,
       "no-mixed-operators": 0,
+      "no-nested-ternary": 0,
       "no-param-reassign": 0,
       "no-restricted-syntax": 0,
       "no-unused-vars": 0
