@@ -16,6 +16,15 @@ const typeCheckers = {
  * @class
 */
 class BaseClass {
+  toString() {
+    const { constructor: { name, __SERMAT__: sermatSpec } } = this;
+    if (typeof sermatSpec?.serializer === 'function') {
+      const args = sermatSpec.serializer(this);
+      return `${name}(${args.join(',')})`;
+    }
+    return `${name}(...)`;
+  }
+
   /** Raises an error saying the definition is not implemented. Used to simulate
    * abstract members.
    *
@@ -122,6 +131,31 @@ class BaseClass {
 
   // TODO const - for non-writable properties.
   // TODO memoize
+
+  static addSERMAT(Class, fields) {
+    const fieldSpec = {};
+    fields.replace(
+      /([^\s=]+)(?:=(\S+))?/g,
+      ($0, $1, $2) => { fieldSpec[$1] = $2 || $1; },
+    );
+    const parentSpec = Object.getPrototypeOf(Class).__SERMAT__;
+    Object.defineProperty(Class, '__SERMAT__', {
+      value: {
+        identifier: `ludorum.${Class.name}`,
+        serializer(obj) {
+          const result = parentSpec?.serializer(obj) ?? [{}];
+          const [args] = result;
+          Object.entries(fieldSpec).forEach(([arg, field]) => {
+            args[arg] = obj[field];
+          });
+          return result;
+        },
+        materializer(_obj, args) {
+          return args && (new Class(...args));
+        },
+      },
+    });
+  }
 } // class BaseClass
 
 export default BaseClass;
