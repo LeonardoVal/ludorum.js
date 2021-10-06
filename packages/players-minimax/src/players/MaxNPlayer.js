@@ -6,7 +6,7 @@ import { HeuristicPlayer } from '@ludorum/core/players';
  * @class
  * @extends HeuristicPlayer
 */
-export default class MaxNPlayer extends HeuristicPlayer {
+class MaxNPlayer extends HeuristicPlayer {
   /** Besides the parameters of every `HeuristicPlayer`, an `horizon` for the
    * search may be specified (3 plies by default).
    *
@@ -14,8 +14,9 @@ export default class MaxNPlayer extends HeuristicPlayer {
    * @param {int} [args.horizon=4]
   */
   constructor(args = null) {
+    const { horizon } = args || {};
     super(args);
-    this._prop('horizon', args?.horizon, 'number', 4);
+    this._prop('horizon', horizon, 'number', 4);
   }
 
   /** MaxN players cannot be used with simultaneous or non-deterministic games.
@@ -99,17 +100,10 @@ export default class MaxNPlayer extends HeuristicPlayer {
     }
     return values;
   }
-
-  // Utilities
-
-  /** Serialization and materialization using Sermat.
-  */
-  static __SERMAT__ = {
-    identifier: 'MaxNPlayer',
-    serializer(obj) {
-      const [args] = HeuristicPlayer.__SERMAT__.serializer(obj);
-      args.horizon = obj.horizon;
-      return [args];
-    },
-  };
 } // class MaxNPlayer.
+
+/** Serialization and materialization using Sermat.
+*/
+HeuristicPlayer.addSERMAT(MaxNPlayer, 'horizon');
+
+export default MaxNPlayer;

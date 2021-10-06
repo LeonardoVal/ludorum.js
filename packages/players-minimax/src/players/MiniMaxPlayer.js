@@ -58,25 +58,24 @@ class MiniMaxPlayer extends HeuristicPlayer {
    * for the given player. If the game is not finished and the depth is greater
    * than the horizon, `heuristic` is used.
   */
-  minimax(game, player, depth) {
+  minimax(game, role, depth) {
     const {
       activeRole, aleatories,
     } = game;
     if (aleatories) {
-      return this.expectiMinimax(game, player, depth, options);
+      return this.expectiMinimax(game, role, depth);
     }
     let value = this.quiescence(game, role, depth);
     if (Number.isNaN(value)) { // game is not quiescent.
       const actions = this.actionsFor(game, activeRole);
-      let comparison;
       if (actions.length < 1) {
         throw new Error(`No moves for unfinished game ${game}.`);
       }
-      value = activeRole === player ? -Infinity : +Infinity;
-      comparison = value < 0 ? Math.max : Math.min;
+      value = activeRole === role ? -Infinity : +Infinity;
+      const comparison = value < 0 ? Math.max : Math.min;
       actions.forEach((action) => {
         const next = game.next({ [activeRole]: action });
-        value = comparison(value, this.minimax(next, player, depth + 1));
+        value = comparison(value, this.minimax(next, role, depth + 1));
       });
     }
     this?.hook(game, value); // Call hook if present.
@@ -108,18 +107,22 @@ class MiniMaxPlayer extends HeuristicPlayer {
   + `evals`: The object in which the solution is stored. A new object is used by default.
   */
   static solution(game, options) {
-    var evals = options && options.evals || {},
-      mmPlayer = new this({ horizon: 1e8 }),
-      gameKey = options.gameKey || function (game) {
-        return game.toString();
-      };
-    mmPlayer.minimax(game, game.activePlayer(), 0, {
-      hook: function (game, value) {
-        var k = gameKey(game);
-        raiseIf(evals.hasOwnProperty(k) && evals[k] !== value, "Game ", game, "(key ",
-          k, ") has different values ", evals[k], " and ", value, "!");
-        evals[k] = value;
-      }
+    const evals = options?.evals ?? new Map();
+    const mmPlayer = new this({ horizon: 1e8 });
+    const gameKey = options?.gameKey ?? ((g) => g.toString());
+    mmPlayer.minimax(game, game.activeRole, 0, {
+      // eslint-disable-next-line no-shadow
+      hook(game, value) {
+        const k = gameKey(game);
+        if (evals.has(k)) {
+          if (evals.get(k) !== value) {
+            throw new Error(`Game ${game} (key ${k}) has different values ${
+              evals.get(k)} and ${value}!`);
+          }
+        } else {
+          evals.set(k, value);
+        }
+      },
     });
     return evals;
   }
@@ -129,12 +132,15 @@ class MiniMaxPlayer extends HeuristicPlayer {
   static __SERMAT__ = {
     identifier: 'MiniMaxPlayer',
     serializer(obj) {
-      var ser = HeuristicPlayer.__SERMAT__.serializer(obj),
-        args = ser[0];
+      const [args] = HeuristicPlayer.__SERMAT__.serializer(obj);
       args.horizon = obj.horizon;
-      return ser;
-    }
+      return [args];
+    },
   };
 } // declare MiniMaxPlayer.
+
+/** Serialization and materialization using Sermat.
+*/
+HeuristicPlayer.addSERMAT(MiniMaxPlayer, 'horizon');
 
 export default MiniMaxPlayer;
