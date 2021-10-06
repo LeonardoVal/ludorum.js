@@ -24,7 +24,7 @@ class Player extends BaseClass {
     const { name, random } = args || {};
     super();
     this
-      ._prop('name', `${name || `${this.constructor.name}${PLAYER_COUNT += 1}`}`)
+      ._prop('name', `${name || `${this.constructor.name}${PLAYER_COUNT += 1}`}`, 'string')
       ._prop('random', random, Randomness, Randomness.DEFAULT);
   }
 
