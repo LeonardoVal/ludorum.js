@@ -1,4 +1,3 @@
-import { Sermat } from 'sermat';
 import BaseClass from '../utils/BaseClass';
 
 /** The class `Game` is the base type for all games.
@@ -498,12 +497,11 @@ class Game extends BaseClass {
 
   // ## Conversions & presentations ############################################
 
-  /** Some algorithms require a `__hash__()` for each game state, in order to
-   * store them in caches or hash tables. The default implementation uses
-   * `Sermat.hashCode`.
+  /** Some algorithms require a _hash code_ for each game state, in order to
+   * store them in caches or hash tables. Not implemented by default.
    */
-  __hash__() {
-    return Sermat.hashCode(this).toString(36);
+  hashCode() {
+    this._unimplemented('hashCode');
   }
 
   /** Based on the game's serialization, `clone()` creates a copy of this game

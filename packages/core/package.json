@@ -22,11 +22,11 @@
   "main": "core.js",
   "module": "index.js",
   "dependencies": {
-    "@creatartis/randomness": "^0.1.2",
-    "sermat": "^0.1.1"
+    "@creatartis/randomness": "^0.1.2"
   },
   "devDependencies": {
-    "@creatartis/creatartis-build": "0.2.5"
+    "@creatartis/creatartis-build": "0.2.5",
+    "sermat": "^0.1.1"
   },
   "scripts": {
     "build": "npx creatartis-build lint build:esm build test doc",
