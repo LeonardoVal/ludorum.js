@@ -66,18 +66,10 @@ class Choose2Win extends Game {
     this.activateRoles(opponent);
     this.turns -= 1;
   }
-
-  /** Serialization and materialization using Sermat.
-  */
-  static __SERMAT__ = {
-    identifier: 'ludorum.Choose2Win',
-    serializer({ turns, activeRole, winner }) {
-      return [{ turns, activeRole, winner }];
-    },
-    materializer(_obj, args) {
-      return args && (new Choose2Win(...args));
-    },
-  };
 } // class Choose2Win.
+
+/** Serialization and materialization using Sermat.
+*/
+Game.addSERMAT(Choose2Win, 'turns winner');
 
 export default Choose2Win;

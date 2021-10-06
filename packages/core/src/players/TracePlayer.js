@@ -49,16 +49,10 @@ class TracePlayer extends Player {
       name, random, trace, player,
     });
   }
-
-  /** Serialization and materialization using Sermat.
-  */
-  static __SERMAT__ = {
-    identifier: 'TracePlayer',
-    serializer(obj) {
-      const [args] = Player.__SERMAT__.serializer(obj);
-      return [{ ...args, trace: obj.trace }];
-    },
-  };
 } // declare TracePlayer.
+
+/** Serialization and materialization using Sermat.
+*/
+Player.addSERMAT(TracePlayer, 'trace player');
 
 export default TracePlayer;

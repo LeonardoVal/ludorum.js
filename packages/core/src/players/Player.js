@@ -89,22 +89,10 @@ class Player extends BaseClass {
       yield game.next({ [role]: action });
     }
   }
-
-  /** The string representation of the player is like `Player("name")`.
-   *
-   * @returns {string}
-   * @override
-  */
-  toString() {
-    return `${this.constructor.name}(${JSON.stringify(this.name)})`;
-  }
-
-  /** Serialization and materialization using Sermat.
-  */
-  static __SERMAT__ = {
-    identifier: 'ludorum.Player',
-    serializer: ({ name, random }) => [{ name, random }],
-  };
 } // class Player.
+
+/** Serialization and materialization using Sermat.
+*/
+BaseClass.addSERMAT(Player, 'name random');
 
 export default Player;

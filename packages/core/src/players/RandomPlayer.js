@@ -16,11 +16,10 @@ class RandomPlayer extends Player {
     const actions = this.actionsFor(game, role);
     return this.random.choice(actions);
   }
-
-  static __SERMAT__ = {
-    identifier: 'ludorum.RandomPlayer',
-    serializer: Player.__SERMAT__.serializer,
-  };
 } // class RandomPlayer.
+
+/** Serialization and materialization using Sermat.
+*/
+Player.addSERMAT(RandomPlayer, '');
 
 export default RandomPlayer;

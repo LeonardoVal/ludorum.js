@@ -514,13 +514,6 @@ class Game extends BaseClass {
     return new this.constructor(...args);
   }
 
-  /** The default string representation of a game is equal to its serialization
-   * with Sermat.
-   */
-  toString() {
-    return Sermat.ser(this);
-  }
-
   // ## Game implementation ####################################################
 
   /** TODO `cacheProperties` modifies getter methods (like `moves()` or `result()`)
@@ -535,5 +528,9 @@ class Game extends BaseClass {
    * games.
    */
 } // class Game.
+
+/** Serialization and materialization using Sermat.
+*/
+BaseClass.addSERMAT(Game, 'activeRole');
 
 export default Game;

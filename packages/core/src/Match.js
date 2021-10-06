@@ -7,10 +7,14 @@ import Game from './games/Game';
  * flow of the turns between the players by following the game's logic.
 */
 class Match extends BaseClass {
-  /** TODO
+  /** Participates all given `layers` to the given `match`.
+   *
+   * @param {Match} match
+   * @param {Player[]|object} players
+   * @returns {object}
   */
-  static matchPlayers(match, game, players) {
-    const { roles } = game;
+  static participate(match, players) {
+    const { roles } = match.game;
     if (Array.isArray(players)) {
       if (roles.length !== players.length) {
         throw new Error(
@@ -40,20 +44,23 @@ class Match extends BaseClass {
    * @param {object} [args]
    * @param {Game} [args.game]
    * @param {Player[]|object} [args.players]
-   * //TODO
-   */
+  */
   constructor(args) {
-    const { game, players, random } = args || {};
+    const {
+      game, history, players, random,
+    } = args || {};
     super();
     this
       ._prop('game', game, Game)
-      ._prop('history', [{ game }], Array)
+      ._prop('history', history, Array, [{ game }])
       ._prop('random', random, Randomness, Randomness.DEFAULT)
-      ._prop('players', Match.matchPlayers(this, game, players), 'object');
+      ._prop('players', Match.participate(this, players), 'object');
   }
 
-  /** TODO
+  /** The current state of the match, as the last state in the match's
+   * `history`.
    *
+   * @return {object}
    */
   get current() {
     const { history } = this;
@@ -119,7 +126,7 @@ class Match extends BaseClass {
    * to get the next state, and adds it to the match's history.
    *
    * @return {object} - The new entry on the match's history.
-   */
+  */
   async next() {
     const { history, current } = this;
     const { game } = current;
@@ -140,7 +147,7 @@ class Match extends BaseClass {
    * the match's history.
    *
    * @returns {object}
-   */
+  */
   async* run() {
     while (!this.isFinished) {
       const { current } = this;
@@ -148,6 +155,19 @@ class Match extends BaseClass {
       yield current;
     }
     yield this.current;
+  }
+
+  /** Analogous to `run`, but waits for the whole match to finish and returns
+   * the whole history in an array.
+   *
+   * @returns {object[]}
+  */
+  async complete() {
+    const result = [];
+    for await (const entry of this.run()) {
+      result.push(entry);
+    }
+    return result;
   }
 
   // Commands //////////////////////////////////////////////////////////////////
@@ -167,58 +187,11 @@ class Match extends BaseClass {
         return false;
       }
     })
-  } /* * /
-
-  // Events ////////////////////////////////////////////////////////////////////
-
-  /** Calls an event handler method of every spectator that has it.
-   * /
-  emit(eventName, ...args) {
-    this.spectators.forEach((spectator) => {
-      if (typeof spectator[eventName] === 'function') {
-        spectator[eventName](...args);
-      }
-    });
-  }
-
-  // Utilities /////////////////////////////////////////////////////////////////
-
-  consoleSpectator(log) {
-    // eslint-disable-next-line no-console
-    log = log || console.log;
-    return {
-      onBegin(game, match) {
-        log(`Match begins with ${Object.entries(match.players)
-          .map(([role, player]) => `${player} as ${role}`)
-          .join(', ')}; for ${game}.`);
-      },
-      onNext(game, _actions, next) {
-        log(`Match advances from ${game} to ${next}.`);
-      },
-      onEnd(game, result) {
-        log(`Match for ${game} ends with ${JSON.stringify(result)}.`);
-      },
-      onQuit(game, player) {
-        log(`Match for ${game} aborted because player ${player} quitted.`);
-      },
-    };
   } /* */
-
-  toString() {
-    return `${this.constructor.name}(${this.game})`; // TODO Add players
-  }
-
-  /** Serialization and materialization using Sermat.
-  */
-  static __SERMAT__ = {
-    identifier: 'ludorum.Match',
-    serializer({ game, players, random }) {
-      return [{ game, players, random }];
-    },
-    materializer(_obj, args) {
-      return args && (new Match(...args));
-    },
-  };
 } // class Match.
+
+/** Serialization and materialization using Sermat.
+*/
+BaseClass.addSERMAT(Match, 'game history players random');
 
 export default Match;

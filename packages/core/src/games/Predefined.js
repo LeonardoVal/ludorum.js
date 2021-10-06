@@ -58,22 +58,10 @@ class Predefined extends Game {
     this.height -= 1;
     this.activateRoles(this.opponent());
   }
-
-  /** Serialization and materialization using Sermat.
-  */
-  static __SERMAT__ = {
-    identifier: 'ludorum.Predefined',
-    serializer({
-      activeRole, height, width, _result,
-    }) {
-      return [{
-        activeRole, height, width, result: _result,
-      }];
-    },
-    materializer(_obj, args) {
-      return args && (new Predefined(...args));
-    },
-  }
 } // class Predefined.
+
+/** Serialization and materialization using Sermat.
+*/
+Game.addSERMAT(Predefined, 'height width result=_result');
 
 export default Predefined;

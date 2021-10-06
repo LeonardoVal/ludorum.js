@@ -69,18 +69,10 @@ class Bet extends Game {
     const { die: roll } = haps;
     this.points += bet === roll ? +1 : -1;
   }
-
-  /** Serialization and materialization using Sermat.
-  */
-  static __SERMAT__ = {
-    identifier: 'ludorum.Bet',
-    serializer({ die, goal, points }) {
-      return [{ die, goal, points }];
-    },
-    materializer(_obj, args) {
-      return args && (new Bet(...args));
-    },
-  };
 } // class Bet
+
+/** Serialization and materialization using Sermat.
+*/
+Game.addSERMAT(Bet, 'die goal points');
 
 export default Bet;

@@ -27,18 +27,10 @@ class RangeAleatory extends Aleatory {
   randomValue(rng) {
     return this.rng(rng).random(this.min, this.max);
   }
-
-  /** Serialization and materialization using Sermat.
-   */
-  static __SERMAT__ = {
-    identifier: 'ludorum.RangeAleatory',
-    serializer({ min, max }) {
-      return [{ min, max }];
-    },
-    materializer(_obj, args) {
-      return args && (new RangeAleatory(...args));
-    },
-  };
 } // class RangeAleatory
+
+/** Serialization and materialization using Sermat.
+*/
+Aleatory.addSERMAT(RangeAleatory, 'min max');
 
 export default RangeAleatory;

@@ -145,16 +145,10 @@ class HeuristicPlayer extends Player {
       return sum;
     };
   } */
-
-  /** Serialization and materialization using Sermat.
-  */
-  static __SERMAT__ = {
-    identifier: 'HeuristicPlayer',
-    serializer(obj) {
-      const [args] = Player.__SERMAT__.serializer(obj);
-      return [{ ...args, heuristic: obj._heuristic }];
-    },
-  };
 } // class HeuristicPlayer.
+
+/** Serialization and materialization using Sermat.
+*/
+Player.addSERMAT(HeuristicPlayer, 'heuristic');
 
 export default HeuristicPlayer;

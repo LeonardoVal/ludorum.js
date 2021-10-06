@@ -23,18 +23,10 @@ class ListAleatory extends Aleatory {
   randomValue(rng) {
     return this.rng(rng).choice(this.values);
   }
-
-  /** Serialization and materialization using Sermat.
-   */
-  static __SERMAT__ = {
-    identifier: 'ludorum.ListAleatory',
-    serializer({ values }) {
-      return [{ values }];
-    },
-    materializer(_obj, args) {
-      return args && (new ListAleatory(...args));
-    },
-  };
 } // class ListAleatory
+
+/** Serialization and materialization using Sermat.
+*/
+Aleatory.addSERMAT(ListAleatory, 'values');
 
 export default ListAleatory;

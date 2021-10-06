@@ -30,18 +30,10 @@ class WeightedAleatory extends Aleatory {
   * distribution() {
     yield* this.weightedValues;
   }
-
-  /** Serialization and materialization using Sermat.
-   */
-  static __SERMAT_ = {
-    identifier: 'ludorum.WeightedAleatory',
-    serializer(obj) {
-      return [{ weightedValues: obj.weightedValues }];
-    },
-    materializer(_obj, args) {
-      return args && (new WeightedAleatory(...args));
-    },
-  };
 } // class WeightedAleatory
+
+/** Serialization and materialization using Sermat.
+*/
+Aleatory.addSERMAT(WeightedAleatory, 'weightedValues');
 
 export default WeightedAleatory;
