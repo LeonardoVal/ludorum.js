@@ -89,7 +89,7 @@ class Tournament extends BaseClass {
    *
    * @param {object} [args=null]
    * @param {Array} [args.matches] - An array to put the matches (optional).
-   * @returns
+   * @returns {object[]}
   */
   async stats(args = null) {
     const { matches } = args || {};
