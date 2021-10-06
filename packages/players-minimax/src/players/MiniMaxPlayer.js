@@ -1,6 +1,4 @@
-import { players } from '@ludorum/core';
-
-const { HeuristicPlayer } = players;
+import HeuristicPlayer from '@ludorum/core/players/HeuristicPlayer';
 
 /** Automatic players based on pure MiniMax.
  *

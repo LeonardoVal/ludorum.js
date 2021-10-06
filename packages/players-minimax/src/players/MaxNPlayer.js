@@ -1,4 +1,4 @@
-import { HeuristicPlayer } from '@ludorum/core/players';
+import HeuristicPlayer from '@ludorum/core/players/HeuristicPlayer';
 
 /** Automatic players based on the [MaxN](http://dl.acm.org/citation.cfm?id=2887795)
  * algorithm, a MiniMax variant for games of more than two players.

@@ -35,6 +35,7 @@
   },
   "scripts": {
     "build": "npx creatartis-build lint build:esm build test doc",
+    "deps:verdaccio": "rm -rf node_modules package-lock.json && npm i --registry http://localhost:4873",
     "doc": "npx creatartis-build doc",
     "lint": "npx creatartis-build lint",
     "release": "npm run build && npx creatartis-build release",

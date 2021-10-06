@@ -1,11 +1,9 @@
-import randomness from '@creatartis/randomness';
-import { players } from '@ludorum/core';
+import { Randomness } from '@creatartis/randomness';
+import { tests } from '@ludorum/core/players';
 import {
   MaxNPlayer, MiniMaxPlayer,
 } from '../../src/players';
 
-const { tests } = players;
-const { Randomness } = randomness;
 const RANDOM = Randomness.DEFAULT;
 
 describe('players', () => {
@@ -16,9 +14,13 @@ describe('players', () => {
 
   it('MaxNPlayer with Predefined', async () => {
     await tests.checkPlayerWithPredefined({
-      playerBuilder: () => new MaxNPlayer({
-        random: RANDOM,
-      }),
+      playerBuilder: () => new MaxNPlayer({ random: RANDOM }),
+    });
+  });
+
+  it('MiniMaxPlayer with Predefined', async () => {
+    await tests.checkPlayerWithPredefined({
+      playerBuilder: () => new MiniMaxPlayer({ random: RANDOM }),
     });
   });
 }); // describe 'players'
