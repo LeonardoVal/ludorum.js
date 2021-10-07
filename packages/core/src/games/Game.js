@@ -536,6 +536,6 @@ class Game extends BaseClass {
 
 /** Serialization and materialization using Sermat.
 */
-BaseClass.addSERMAT(Game, 'activeRole');
+Game.defineSERMAT('activeRole');
 
 export default Game;

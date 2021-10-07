@@ -93,6 +93,6 @@ class Player extends BaseClass {
 
 /** Serialization and materialization using Sermat.
 */
-BaseClass.addSERMAT(Player, 'name random');
+Player.defineSERMAT('name random');
 
 export default Player;

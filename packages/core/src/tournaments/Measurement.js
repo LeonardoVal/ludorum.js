@@ -50,6 +50,6 @@ class Measurement extends Tournament {
 
 /** Serialization and materialization using Sermat.
 */
-Tournament.addSERMAT(Measurement, 'matchCount opponents');
+Measurement.defineSERMAT('matchCount opponents');
 
 export default Measurement;

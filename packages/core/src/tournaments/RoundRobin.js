@@ -34,6 +34,6 @@ class RoundRobin extends Tournament {
   }
 } // class RoundRobin
 
-Tournament.addSERMAT(RoundRobin, 'matchCount');
+RoundRobin.defineSERMAT('matchCount');
 
 export default RoundRobin;

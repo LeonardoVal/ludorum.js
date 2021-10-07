@@ -39,6 +39,6 @@ class WeightedAleatory extends Aleatory {
 
 /** Serialization and materialization using Sermat.
 */
-Aleatory.addSERMAT(WeightedAleatory, 'weightedValues');
+WeightedAleatory.defineSERMAT('weightedValues');
 
 export default WeightedAleatory;

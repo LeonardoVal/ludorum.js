@@ -123,6 +123,6 @@ class Tournament extends BaseClass {
 
 /** Serialization and materialization using Sermat.
 */
-BaseClass.addSERMAT(Tournament, 'game players random');
+Tournament.defineSERMAT('game players random');
 
 export default Tournament;

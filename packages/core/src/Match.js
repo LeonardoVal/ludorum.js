@@ -192,6 +192,6 @@ class Match extends BaseClass {
 
 /** Serialization and materialization using Sermat.
 */
-BaseClass.addSERMAT(Match, 'game history players random');
+Match.defineSERMAT('game history players random');
 
 export default Match;

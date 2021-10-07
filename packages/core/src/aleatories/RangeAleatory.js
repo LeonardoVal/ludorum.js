@@ -36,6 +36,6 @@ class RangeAleatory extends Aleatory {
 
 /** Serialization and materialization using Sermat.
 */
-Aleatory.addSERMAT(RangeAleatory, 'min max');
+RangeAleatory.defineSERMAT('min max');
 
 export default RangeAleatory;

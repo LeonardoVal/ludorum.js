@@ -32,6 +32,6 @@ class ListAleatory extends Aleatory {
 
 /** Serialization and materialization using Sermat.
 */
-Aleatory.addSERMAT(ListAleatory, 'values');
+ListAleatory.defineSERMAT('values');
 
 export default ListAleatory;

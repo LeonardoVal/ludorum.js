@@ -25,6 +25,6 @@ class RandomPlayer extends Player {
 
 /** Serialization and materialization using Sermat.
 */
-Player.addSERMAT(RandomPlayer, '');
+RandomPlayer.defineSERMAT('');
 
 export default RandomPlayer;

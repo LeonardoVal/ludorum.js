@@ -88,6 +88,6 @@ class Choose2Win extends Game {
 
 /** Serialization and materialization using Sermat.
 */
-Game.addSERMAT(Choose2Win, 'turns winner');
+Choose2Win.defineSERMAT('turns winner');
 
 export default Choose2Win;

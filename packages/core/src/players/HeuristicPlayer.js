@@ -154,6 +154,6 @@ class HeuristicPlayer extends Player {
 
 /** Serialization and materialization using Sermat.
 */
-Player.addSERMAT(HeuristicPlayer, 'heuristic');
+HeuristicPlayer.defineSERMAT('heuristic');
 
 export default HeuristicPlayer;

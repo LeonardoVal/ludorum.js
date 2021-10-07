@@ -58,6 +58,6 @@ class TracePlayer extends Player {
 
 /** Serialization and materialization using Sermat.
 */
-Player.addSERMAT(TracePlayer, 'trace player');
+TracePlayer.defineSERMAT('trace player');
 
 export default TracePlayer;

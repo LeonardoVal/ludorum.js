@@ -75,6 +75,6 @@ class Predefined extends Game {
 
 /** Serialization and materialization using Sermat.
 */
-Game.addSERMAT(Predefined, 'height width result=_result');
+Predefined.defineSERMAT('height width result=_result');
 
 export default Predefined;

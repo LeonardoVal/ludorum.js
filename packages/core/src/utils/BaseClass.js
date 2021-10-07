@@ -157,16 +157,19 @@ class BaseClass {
   // TODO const - for non-writable properties.
   // TODO memoize
 
-  static addSERMAT(Class, fields) {
+  static defineSERMAT(fields) {
+    if (Object.hasOwnProperty.call(this, '__SERMAT__')) {
+      throw new TypeError(`Class ${this.name} already has __SERMAT__ defined!`);
+    }
     const fieldSpec = {};
     fields.replace(
       /([^\s=]+)(?:=(\S+))?/g,
       ($0, $1, $2) => { fieldSpec[$1] = $2 || $1; },
     );
-    const parentSpec = Object.getPrototypeOf(Class).__SERMAT__;
-    Object.defineProperty(Class, '__SERMAT__', {
+    const parentSpec = Object.getPrototypeOf(this).__SERMAT__;
+    Object.defineProperty(this, '__SERMAT__', {
       value: {
-        identifier: `ludorum.${Class.name}`,
+        identifier: `ludorum.${this.name}`,
         serializer(obj) {
           const result = parentSpec?.serializer(obj) ?? [{}];
           const [args] = result;
@@ -176,7 +179,7 @@ class BaseClass {
           return result;
         },
         materializer(_obj, args) {
-          return args && (new Class(...args));
+          return args && (new this(...args));
         },
       },
     });
