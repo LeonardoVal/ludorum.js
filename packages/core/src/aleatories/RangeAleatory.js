@@ -3,6 +3,11 @@ import Aleatory from './Aleatory';
 const rangeProbability = (min, max) => 1 / (max - min + 1);
 
 class RangeAleatory extends Aleatory {
+  /** @inheritdoc */
+  static get name() {
+    return 'RangeAleatory';
+  }
+
   constructor(args) {
     const { min, max } = args || {};
     super();

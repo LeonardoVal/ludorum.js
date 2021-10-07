@@ -6,6 +6,11 @@ import Player from './Player';
  * @extends Player
  */
 class RandomPlayer extends Player {
+  /** @inheritdoc */
+  static get name() {
+    return 'RandomPlayer';
+  }
+
   /** The `decision` is made completely at random.
    *
    * @param {Game} [game] - Game state on which to choose an action.

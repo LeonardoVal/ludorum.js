@@ -7,6 +7,11 @@ import BaseClass from '../utils/BaseClass';
  * @class
 */
 class Aleatory extends BaseClass {
+  /** @inheritdoc */
+  static get name() {
+    return 'Aleatory';
+  }
+
   /** The aleatory iterates over the distribution of its random variable, which
    * is a sequence of `[value, probability]` pairs.
    *

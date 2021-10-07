@@ -6,6 +6,11 @@ import Tournament from './Tournament';
  * times.
 */
 class RoundRobin extends Tournament {
+  /** @inheritdoc */
+  static get name() {
+    return 'RoundRobin';
+  }
+
   /** The constructor takes the `game` to be played, the `players` and the
    * amount of matches each player should play (`matchCount`).
   */

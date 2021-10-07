@@ -7,6 +7,11 @@ import Tournament from './Tournament';
  * rotating their roles in the matches.
 */
 class Measurement extends Tournament {
+  /** @inheritdoc */
+  static get name() {
+    return 'Measurement';
+  }
+
   /** The constructor takes the `game` used in the contest, the `players` being
    * evaluated, the `opponents` used to evaluate them, and the amount of matches
    * each player will play (`matchCount`).

@@ -28,6 +28,17 @@ const toString = (value) => {
  * @class
 */
 class BaseClass {
+  /** The static name property is defined to workaround source minifiers
+   * renaming the classes. It should always be equal to the original name of the
+   * class.
+   *
+   * @property {string}
+   * @static
+   */
+  static get name() {
+    return 'BaseClass';
+  }
+
   toString() {
     const { constructor: { name, __SERMAT__: sermatSpec } } = this;
     if (typeof sermatSpec?.serializer === 'function') {

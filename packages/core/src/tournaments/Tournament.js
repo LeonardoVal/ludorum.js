@@ -9,6 +9,11 @@ import Match from '../Match';
  * is an abstract base class for many different types of contests.
 */
 class Tournament extends BaseClass {
+  /** @inheritdoc */
+  static get name() {
+    return 'Tournament';
+  }
+
   /** The tournament always has one [`game`](Game.html) state from which all
    * matches start. All the `players` involved in the tournament must be
    * provided to the constructor in an array.

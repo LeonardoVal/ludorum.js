@@ -11,10 +11,20 @@ const ACTIONS = { WIN: 'win', LOSE: 'lose', PASS: 'pass' };
  * @extends Game
 */
 class Choose2Win extends Game {
+  /** @inheritdoc */
+  static get name() {
+    return 'Choose2Win';
+  }
+
   /** The constructor takes a number of turns for the game to last (`Infinity`
    * by default), the active player and the winner if the game has ended.
+   *
+   * @param {object} [args]
+   * @param {string} [args.activeRole=0]
+   * @param {number} [args.turns=+Infinity]
+   * @param {string} [args.winner=null]
   */
-  constructor(args) {
+  constructor(args = null) {
     const { activeRole = 0, turns, winner = null } = args || {};
     super({ activeRoles: [activeRole] });
     this
@@ -23,12 +33,16 @@ class Choose2Win extends Game {
   }
 
   /** Players of this dummy game are labeled This and That.
+   *
+   * @property {string[]}
   */
   get roles() {
     return [...ROLES];
   }
 
   /** Every turn the active player's moves are: `'win'`, `'lose'` and `'pass'`.
+   *
+   * @property {object}
   */
   get actions() {
     if (!this.winner && this.turns > 0) {
@@ -39,6 +53,8 @@ class Choose2Win extends Game {
 
   /** Victory is for whom chooses to win first. Defeat is for whom chooses to
    * lose first. A draw only results when the limit of turns (if any) is met.
+   *
+   * @property {object}
   */
   get result() {
     if (this.winner) {
@@ -52,6 +68,8 @@ class Choose2Win extends Game {
 
   /** If a player moves to win or lose, a final game state is returned. Else the
    * game goes on.
+   *
+   * @param {object}
   */
   perform(actions) {
     const { activeRole } = this;

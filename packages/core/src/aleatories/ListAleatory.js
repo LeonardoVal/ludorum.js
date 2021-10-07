@@ -1,6 +1,11 @@
 import Aleatory from './Aleatory';
 
 class ListAleatory extends Aleatory {
+  /** @inheritdoc */
+  static get name() {
+    return 'ListAleatory';
+  }
+
   constructor(args) {
     const { values } = args || {};
     super();

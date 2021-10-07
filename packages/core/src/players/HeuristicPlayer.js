@@ -7,6 +7,11 @@ import Player from './Player';
  * @extends Player
 */
 class HeuristicPlayer extends Player {
+  /** @inheritdoc */
+  static get name() {
+    return 'HeuristicPlayer';
+  }
+
   /** The constructor takes the player's `name` and a `random` number generator
    * (`Randomness.DEFAULT` by default). Many heuristic can be based on
    * randomness, but this is also necessary to chose between moves with the same

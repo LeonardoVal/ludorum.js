@@ -12,11 +12,18 @@ const DEFAULT_RESULT = Object.fromEntries(DEFAULT_ROLES.map((p) => [p, 0]));
  * @extends Game
 */
 class Predefined extends Game {
+  /** @inheritdoc */
+  static get name() {
+    return 'Predefined';
+  }
+
   /** `Predefined` is a pseudogame used for testing purposes. It will give
    * `width` amount of  moves for each player until `height` moves pass. Then
    * the match is finished with the given `result`, or a tie as default.
+   *
+   * @param {object} [args]
   */
-  constructor(args) {
+  constructor(args = null) {
     const {
       activeRole = 0, result, height = DEFAULT_HEIGHT, width = DEFAULT_WIDTH,
     } = args || {};
@@ -29,12 +36,16 @@ class Predefined extends Game {
   }
 
   /** Default roles for `Predefined` are `First` and `Second`.
+   *
+   * @property {string[]}
   */
   get roles() {
     return Object.keys(this._result);
   }
 
   /** Actions for a `Predefined` game are numbers from 1 to this.width.
+   *
+   * @property {object}
   */
   get actions() {
     if (this.height > 0) {
@@ -47,14 +58,16 @@ class Predefined extends Game {
   }
 
   /** Returned the predefined results if height is zero or less.
+   *
+   * @property {object}
   */
   get result() {
     return this.height > 0 ? null : { ...this._result };
   }
 
-  /** Moves are completely irrelevant. They only advance in the match.
+  /** Actions are completely irrelevant. They only advance in the match.
   */
-  perform(_actions) {
+  perform() {
     this.height -= 1;
     this.activateRoles(this.opponent());
   }

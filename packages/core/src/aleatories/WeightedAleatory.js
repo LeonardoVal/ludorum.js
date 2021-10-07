@@ -1,6 +1,11 @@
 import Aleatory from './Aleatory';
 
 class WeightedAleatory extends Aleatory {
+  /** @inheritdoc */
+  static get name() {
+    return 'WeightedAleatory';
+  }
+
   static weightedValuesMap(weightedValues) {
     const result = new Map();
     let probSum = 0;

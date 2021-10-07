@@ -7,6 +7,11 @@ import RandomPlayer from './RandomPlayer';
  * @extends Player
 */
 class TracePlayer extends Player {
+  /** @inheritdoc */
+  static get name() {
+    return 'TracePlayer';
+  }
+
   /** The constructor takes the player's `name` and the `trace` as an sequence
    * of moves to make.
    *

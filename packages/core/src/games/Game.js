@@ -5,6 +5,11 @@ import BaseClass from '../utils/BaseClass';
  * @class
 */
 class Game extends BaseClass {
+  /** @inheritdoc */
+  static get name() {
+    return 'Game';
+  }
+
   /** `Game`'s constructor takes the active player/s. A player is active if and
    * only if it can move.
    *
@@ -470,6 +475,8 @@ class Game extends BaseClass {
    *
    * @param {object} actions
    * @param {object} aleatories
+   * @yields {object} - Shaped like `{actions, haps, probability}`.
+   * @static
   */
   static* possibilities(actions, aleatories) {
     const possibleActions = actions ? this.possibleActions(actions) : [null];
