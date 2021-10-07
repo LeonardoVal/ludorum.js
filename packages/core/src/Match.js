@@ -1,5 +1,5 @@
 /* eslint-disable no-param-reassign */
-import { Randomness } from '@creatartis/randomness';
+import Randomness from '@creatartis/randomness/Randomness';
 import BaseClass from './utils/BaseClass';
 import Game from './games/Game';
 
