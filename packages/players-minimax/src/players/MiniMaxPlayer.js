@@ -57,7 +57,8 @@ class MiniMaxPlayer extends HeuristicPlayer {
    * @returns {number}
   */
   quiescence(game, role, depth = 0) {
-    const { horizon, result } = this;
+    const { horizon } = this;
+    const { result } = game;
     if (result) {
       return result[role];
     }
@@ -77,18 +78,17 @@ class MiniMaxPlayer extends HeuristicPlayer {
    * @returns {number}
   */
   minimax(game, role, depth = 0) {
-    const {
-      activeRole, aleatories,
-    } = game;
+    console.log(`game: ${game}`); // FIXME
+    const { activeRole, aleatories } = game;
     if (aleatories) {
-      return this.expectiMinimax(game, role, depth);
+      return game.expectedEvaluation( // expectiMinimax
+        role,
+        (g, r) => this.minimax(g, r, depth + 1),
+      );
     }
     let value = this.quiescence(game, role, depth);
     if (Number.isNaN(value)) { // game is not quiescent.
       const actions = this.actionsFor(game, activeRole);
-      if (actions.length < 1) {
-        throw new Error(`No moves for unfinished game ${game}.`);
-      }
       value = activeRole === role ? -Infinity : +Infinity;
       const comparison = value < 0 ? Math.max : Math.min;
       actions.forEach((action) => {
@@ -97,22 +97,6 @@ class MiniMaxPlayer extends HeuristicPlayer {
       });
     }
     return value;
-  }
-
-  /** The `expectiMinimax` method is used when calculating the minimax value of
-   * a contingent game state. Basically returns the sum of all the minimax
-   * values weighted by the probability of each possible next state.
-   *
-   * @param {Game} game
-   * @param {string} role
-   * @param {number} [depth=0]
-   * @returns {number}
-  */
-  expectiMinimax(game, role, depth = 0) {
-    if (!game.isContingent) { // FIXME
-      return this.minimax(game, role, depth);
-    }
-    return game.expectedEvaluation(role, (g, r) => this.minimax(g, r, depth + 1));
   }
 
   /** A `solution` calculates the minimax value for every game state derivable

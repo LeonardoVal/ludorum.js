@@ -31,7 +31,10 @@ class AlphaBetaPlayer extends MiniMaxPlayer {
       activeRole, aleatories,
     } = game;
     if (aleatories) {
-      return this.expectiMinimax(game, role, depth, alpha, beta);
+      return game.expectedEvaluation( // expectiMinimax
+        role,
+        (g, r) => this.minimax(g, r, depth + 1, alpha, beta),
+      );
     }
     let value = this.quiescence(game, role, depth);
     if (!Number.isNaN(value)) { // game is quiescent.
@@ -39,9 +42,6 @@ class AlphaBetaPlayer extends MiniMaxPlayer {
     }
     const isActive = activeRole === role;
     const actions = this.actionsFor(game, activeRole);
-    if (actions.length < 1) {
-      throw new Error(`No moves for unfinished game ${game}.`);
-    }
     for (const action of actions) {
       const next = game.next({ [activeRole]: action });
       value = this.minimax(next, role, depth + 1, alpha, beta);
@@ -57,27 +57,6 @@ class AlphaBetaPlayer extends MiniMaxPlayer {
       }
     }
     return isActive ? alpha : beta;
-  }
-
-  /** The `expectiMinimax(game, player, depth)` method is used when calculating
-   * the minimax value of a contingent game state. Basically returns the sum of
-   * all the minimax values weighted by the probability of each possible next
-   * state.
-   *
-   * @param {Game} game
-   * @param {string} role
-   * @param {number} [depth=0]
-   * @param {number} [alpha=-Infinity]
-   * @param {number} [beta=+Infinity]
-   * @returns {number}
-  */
-  expectiMinimax(game, role, depth, alpha, beta) {
-    if (!game.isContingent) {
-      return this.minimax(game, role, depth);
-    }
-    return game.expectedEvaluation(role, (g, r) => (
-      this.minimax(g, r, depth + 1, alpha, beta)
-    ));
   }
 } // class AlphaBetaPlayer.
 
