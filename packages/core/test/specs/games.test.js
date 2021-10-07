@@ -1,6 +1,6 @@
 import { Randomness } from '@creatartis/randomness';
 import {
-  Choose2Win, Game, Predefined, tests,
+  Bet, Choose2Win, Game, Predefined, tests,
 } from '../../src/games';
 
 const RANDOM = Randomness.DEFAULT;
@@ -31,6 +31,18 @@ describe('games', () => {
     for (let i = 0; i < MATCH_COUNT; i += 1) {
       tests.checkGameFlow(expect, game, {
         deterministic: true,
+        oneActivePlayerPerTurn: true,
+        random: RANDOM,
+        zeroSum: true,
+      });
+    }
+  });
+
+  it('Bet works like a game', () => {
+    const game = new Bet();
+    for (let i = 0; i < MATCH_COUNT; i += 1) {
+      tests.checkGameFlow(expect, game, {
+        deterministic: false,
         oneActivePlayerPerTurn: true,
         random: RANDOM,
         zeroSum: true,

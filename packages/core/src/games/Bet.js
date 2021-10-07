@@ -10,31 +10,45 @@ const DEFAULT_GOAL = 10;
  *
 */
 class Bet extends Game {
-  /** TODO
-  */
-  constructor(args = {}) {
-    const { die, goal, points } = args;
-    super({ activeRoles: [ROLE] });
-    this
-      ._prop('die', die, Aleatory, dice.D2)
-      ._prop('goal', goal, +goal, !Number.isNaN(+goal), DEFAULT_GOAL)
-      ._prop('points', points, !Number.isNaN(+points), DEFAULT_POINTS);
+  /** @inheritdoc */
+  static get name() {
+    return 'Bet';
   }
 
   /** TODO
+  */
+  constructor(args = {}) {
+    const {
+      die, goal, points,
+    } = args;
+    super({ activeRoles: [ROLE] });
+    this
+      ._prop('die', die, Aleatory, dice.D2)
+      ._prop('goal', goal, 'number', DEFAULT_GOAL)
+      ._prop('points', points, 'number', DEFAULT_POINTS);
+  }
+
+  /** There is only one role: Gambler.
+   *
+   * @property {string[]}
   */
   get roles() {
     return [ROLE];
   }
 
-  /** TODO
+  /** The game is finished when the gambler has no points or has reached their
+   * goal.
+   *
+   * @property {boolean}
   */
   get isFinished() {
     const { points, goal } = this;
     return points < 1 || points >= goal;
   }
 
-  /** TODO
+  /** The gambler chooses a possible value of the die, betting one point.
+   *
+   * @property {object}
   */
   get actions() {
     const { die, isFinished, nature } = this;
@@ -45,11 +59,18 @@ class Bet extends Game {
     return null;
   }
 
+  /** The sole aleatory in the game is a `die`.
+   *
+   * @property {object}
+  */
   get aleatories() {
     return { die: this.die };
   }
 
-  /** TODO
+  /** The gambler wins the game when they reach the `goal`, and loses when they
+   * run out of points.
+   *
+   * @property {object}
   */
   get result() {
     const { points, goal } = this;
@@ -62,7 +83,11 @@ class Bet extends Game {
     return null;
   }
 
-  /** TODO
+  /** With the bet played, the die is rolled. If the rolled value matches the
+   * bet, the gambler earns a point. Otherwise the gambler loses a point.
+   *
+   * @param {object} actions
+   * @param {object} haps
   */
   perform(actions, haps) {
     const { [ROLE]: bet } = actions;
@@ -73,6 +98,6 @@ class Bet extends Game {
 
 /** Serialization and materialization using Sermat.
 */
-Game.addSERMAT(Bet, 'die goal points');
+Bet.defineSERMAT('die goal points');
 
 export default Bet;

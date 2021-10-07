@@ -1,9 +1,11 @@
 import Game from './Game';
-import Predefined from './Predefined';
+import Bet from './Bet';
 import Choose2Win from './Choose2Win';
+import Predefined from './Predefined';
 import tests from './tests';
 
 export {
+  Bet,
   Choose2Win,
   Game,
   Predefined,
@@ -11,6 +13,7 @@ export {
 };
 
 export default {
+  Bet,
   Choose2Win,
   Game,
   Predefined,
