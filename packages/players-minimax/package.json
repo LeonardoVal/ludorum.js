@@ -26,12 +26,11 @@
     "LICENSE.md"
   ],
   "dependencies": {
-    "@creatartis/randomness": "^0.1.2",
-    "@ludorum/core": "^0.3.0-alpha",
-    "sermat": "^0.1.1"
+    "@ludorum/core": "^0.3.0-alpha"
   },
   "devDependencies": {
-    "@creatartis/creatartis-build": "0.2.5"
+    "@creatartis/creatartis-build": "0.2.5",
+    "sermat": "^0.1.1"
   },
   "scripts": {
     "build": "npx creatartis-build lint build:esm build test doc",
