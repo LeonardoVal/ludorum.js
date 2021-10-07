@@ -11,6 +11,18 @@ const typeCheckers = {
   },
 };
 
+const toString = (value) => {
+  if (value?.constructor === Object) {
+    const props = Object.entries(value)
+      .map(([k, v]) => `${k}:${toString(v)}`).join(',');
+    return `{${props}}`;
+  }
+  if (typeof value === 'string') {
+    return JSON.stringify(value);
+  }
+  return `${value}`;
+};
+
 /** Base class for all classes in this package.
  *
  * @class
@@ -19,10 +31,10 @@ class BaseClass {
   toString() {
     const { constructor: { name, __SERMAT__: sermatSpec } } = this;
     if (typeof sermatSpec?.serializer === 'function') {
-      const args = sermatSpec.serializer(this);
+      const args = sermatSpec.serializer(this).map(toString);
       return `${name}(${args.join(',')})`;
     }
-    return `${name}(...)`;
+    return `${name}(..?)`;
   }
 
   /** Raises an error saying the definition is not implemented. Used to simulate
