@@ -507,8 +507,8 @@ class Game extends BaseClass {
   /** Some algorithms require a _hash code_ for each game state, in order to
    * store them in caches or hash tables. Not implemented by default.
    */
-  hashCode() {
-    this._unimplemented('hashCode');
+  get hashCode() {
+    return this._unimplemented('hashCode');
   }
 
   /** Based on the game's serialization, `clone()` creates a copy of this game
