@@ -62,6 +62,6 @@ class AlphaBetaPlayer extends MiniMaxPlayer {
 
 /** Serialization and materialization using Sermat.
 */
-MiniMaxPlayer.addSERMAT(AlphaBetaPlayer, '');
+AlphaBetaPlayer.defineSERMAT('');
 
 export default AlphaBetaPlayer;

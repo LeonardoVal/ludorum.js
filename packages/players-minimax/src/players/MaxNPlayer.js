@@ -104,6 +104,6 @@ class MaxNPlayer extends HeuristicPlayer {
 
 /** Serialization and materialization using Sermat.
 */
-HeuristicPlayer.addSERMAT(MaxNPlayer, 'horizon');
+MaxNPlayer.defineSERMAT('horizon');
 
 export default MaxNPlayer;

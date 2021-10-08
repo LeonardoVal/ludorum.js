@@ -20,16 +20,14 @@
     "type": "git",
     "url": "http://github.com/LeonardoVal/ludorum.js"
   },
-  "main": "build/ludorum.min.js",
-  "files": [
-    "build",
-    "LICENSE.md"
-  ],
+  "main": "player-minimax.js",
+  "module": "index.js",
   "dependencies": {
     "@ludorum/core": "^0.3.0-alpha"
   },
   "devDependencies": {
     "@creatartis/creatartis-build": "0.2.5",
+    "@creatartis/randomness": "^0.1.2",
     "sermat": "^0.1.1"
   },
   "scripts": {

@@ -78,7 +78,6 @@ class MiniMaxPlayer extends HeuristicPlayer {
    * @returns {number}
   */
   minimax(game, role, depth = 0) {
-    console.log(`game: ${game}`); // FIXME
     const { activeRole, aleatories } = game;
     if (aleatories) {
       return game.expectedEvaluation( // expectiMinimax
@@ -135,6 +134,6 @@ class MiniMaxPlayer extends HeuristicPlayer {
 
 /** Serialization and materialization using Sermat.
 */
-HeuristicPlayer.addSERMAT(MiniMaxPlayer, 'horizon');
+MiniMaxPlayer.defineSERMAT('horizon');
 
 export default MiniMaxPlayer;
