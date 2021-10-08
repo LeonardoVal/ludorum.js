@@ -1,4 +1,4 @@
-import { Randomness } from '@creatartis/randomness';
+import Randomness from '@creatartis/randomness/Randomness';
 import {
   Bet, Choose2Win, Game, Predefined, tests,
 } from '../../src/games';
@@ -45,7 +45,7 @@ describe('games', () => {
         deterministic: false,
         oneActivePlayerPerTurn: true,
         random: RANDOM,
-        zeroSum: true,
+        zeroSum: false,
       });
     }
   });
