@@ -421,7 +421,8 @@ class Game extends BaseClass {
    * @yields {object}
   */
   * possibleActions() {
-    yield* this.constructor.possibleActions(this.actions);
+    const { actions, constructor } = this;
+    yield* constructor.possibleActions(actions);
   }
 
   /** The method `aleatories` returns the available aleatory variables for a
@@ -468,7 +469,8 @@ class Game extends BaseClass {
    * @yields {object}
   */
   * possibleHaps() {
-    yield* this.constructor.possibleHaps(this.aleatories);
+    const { aleatories, constructor } = this;
+    yield* constructor.possibleHaps(aleatories);
   }
 
   /** TODO
@@ -498,11 +500,63 @@ class Game extends BaseClass {
    * @yields {object}
   */
   * possibilities() {
-    const { actions, aleatories } = this;
-    yield* this.constructor.possibilities(actions, aleatories);
+    const { actions, aleatories, constructor } = this;
+    yield* constructor.possibilities(actions, aleatories);
   }
 
-  // ## Conversions & presentations ############################################
+  /** Returns a random possibility.
+   *
+   * @param {object} actions
+   * @param {object} aleatories
+   * @param {Randomness} random
+   * @param {object} [options]
+   * @param {boolean} [options.ignoreProbabilities=false]
+   * @returns {object} - Shaped like `{ actions, haps, probability }`.
+   */
+  static randomPossibility(actions, aleatories, random, options) {
+    const { ignoreProbabilities } = options || {};
+    const randomActions = {};
+    const activeRoles = Object.keys(actions);
+    activeRoles.forEach((role) => {
+      randomActions[role] = random.choice(actions[role]);
+    });
+    const hapNames = Object.keys(aleatories);
+    const randomHaps = {};
+    hapNames.forEach((hapName) => {
+      const aleatory = aleatories[hapName];
+      if (ignoreProbabilities) {
+        randomHaps[hapName] = random.choice([...aleatory.distribution()]);
+      } else {
+        randomHaps[hapName] = aleatory.randomValue(random);
+      }
+    });
+  }
+
+  /** Returns one of this game's possibility chosen at random.
+   *
+   * @param {Randomness} random
+   * @param {object} [options]
+   * @param {boolean} [options.ignoreProbabilities=false]
+   * @returns {object} - Shaped like `{ actions, haps, probability }`.
+   */
+  randomPossibility(random, options = null) {
+    const { actions, aleatories, constructor } = this;
+    return constructor.randomPossibility(actions, aleatories, random, options);
+  }
+
+  /** Returns one of this game's possible next states chosen at random.
+   *
+   * @param {Randomness} random
+   * @param {object} [options]
+   * @param {boolean} [options.ignoreProbabilities=false]
+   * @returns {Game}
+   */
+  randomNext(random, options = null) {
+    const { actions, haps } = this.randomPossibility(random, options);
+    return this.next(actions, haps);
+  }
+
+  // Conversions & presentations.
 
   /** Some algorithms require a _hash code_ for each game state, in order to
    * store them in caches or hash tables. Not implemented by default.
@@ -519,7 +573,7 @@ class Game extends BaseClass {
     return new this.constructor(...args);
   }
 
-  // ## Game implementation ####################################################
+  // Game implementation.
 
   /** TODO `cacheProperties` modifies getter methods (like `moves()` or `result()`)
    * to cache its results. Warning! Caching the results of the `next()` method

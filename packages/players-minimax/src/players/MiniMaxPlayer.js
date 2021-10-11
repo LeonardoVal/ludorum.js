@@ -6,18 +6,13 @@ import HeuristicPlayer from '@ludorum/core/players/HeuristicPlayer';
  * @extends HeuristicPlayer
 */
 class MiniMaxPlayer extends HeuristicPlayer {
-  /** The constructor takes the player's `name` and the MiniMax search's
-   * `horizon` (`4` by default).
-   *
-   * A `hook` is a callback function to be called in every node with the game
-   * state and its value. A result other than NaN overrides the minimax
-   * evaluation.
+  /** Builds a new player that uses MiniMax search.
    *
    * @param {object} [args]
    * @param {number} [args.horizon=4]
   */
   constructor(args) {
-    const { horizon, hook } = args || {};
+    const { horizon } = args || {};
     super(args);
     this._prop('horizon', horizon, 'number', 4);
   }

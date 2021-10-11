@@ -1,11 +1,6 @@
-import aleatories from './aleatories';
-import games from './games';
-import Match from './Match';
+/* eslint-disable import/prefer-default-export */
 import players from './players';
 
 export {
-  aleatories,
-  games,
-  Match,
   players,
 };
