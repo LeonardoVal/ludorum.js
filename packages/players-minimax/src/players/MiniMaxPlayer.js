@@ -78,22 +78,25 @@ class MiniMaxPlayer extends HeuristicPlayer {
    * @returns {number}
   */
   minimax(game, role, depth = 0) {
-    const { activeRole, aleatories } = game;
-    if (aleatories) {
-      return game.expectedEvaluation( // expectiMinimax
-        role,
-        (g, r) => this.minimax(g, r, depth + 1),
-      );
-    }
+    const { activeRole } = game;
+    const possibleHaps = [...game.possibleHaps()];
     let value = this.quiescence(game, role, depth);
     if (Number.isNaN(value)) { // game is not quiescent.
-      const actions = this.actionsFor(game, activeRole);
       value = activeRole === role ? -Infinity : +Infinity;
       const comparison = value < 0 ? Math.max : Math.min;
-      actions.forEach((action) => {
-        const next = game.next({ [activeRole]: action });
-        value = comparison(value, this.minimax(next, role, depth + 1));
-      });
+      for (const actions of game.possibleActions()) {
+        if (possibleHaps.length < 1) {
+          const next = game.next(actions);
+          value = comparison(value, this.minimax(next, role, depth + 1));
+        } else { // expectiMinimax
+          let expectedValue = 0;
+          for (const [haps, probability] of possibleHaps) {
+            const next = game.next(actions, haps);
+            expectedValue += this.minimax(next, role, depth + 1) * probability;
+          }
+          value = comparison(value, expectedValue);
+        }
+      }
     }
     return value;
   }

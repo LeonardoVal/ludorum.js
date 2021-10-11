@@ -89,7 +89,7 @@ class MaxNPlayer extends HeuristicPlayer {
   */
   maxN(game, role, depth) {
     let values = this.quiescence(game, role, depth);
-    if (!values) { // game is not quiescent.
+    if (values === null) { // game is not quiescent.
       const { activeRole } = game;
       for (const next of this.nextsFor(game, activeRole)) {
         const otherValues = this.maxN(next, role, depth + 1);
