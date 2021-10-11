@@ -468,7 +468,7 @@ class Game extends BaseClass {
    * @yields {object}
   */
   * possibleHaps() {
-    yield* this.constructor.possibleAleatories(this.aleatories);
+    yield* this.constructor.possibleHaps(this.aleatories);
   }
 
   /** TODO
