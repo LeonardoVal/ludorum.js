@@ -24,7 +24,11 @@ export function* permutations(list, k) {
   yield* recursion(list, k);
 }
 
-/** TODO
+/** The sequence of all tuples that result from the cartesian product of the
+ * given lists.
+ *
+ * @param {...Iterable} lists
+ * @yield {Array}
  *
 */
 export function* cartesianProduct(...lists) {
@@ -44,13 +48,20 @@ export function* cartesianProduct(...lists) {
   }
 }
 
-/** TODO
+/** The sequence of all objects that result from the cartesian product of the
+ * properties of the give object.
  *
+ * @param {object} obj
+ * @yield {object}
 */
-export function* cartesianProductObject(obj) {
-  const keys = Object.keys(obj);
+export function* cartesianProductObject(obj, options) {
+  let { keys } = options || {};
+  keys ||= Object.keys(obj);
   const lists = keys.map((key) => obj[key]);
   for (const tuple of cartesianProduct(...lists)) {
-    yield Object.fromEntries(tuple.map(([v, i]) => [keys[i], v]));
+    yield tuple.reduce((r, v, i) => {
+      r[keys[i]] = v;
+      return r;
+    }, {});
   }
 }

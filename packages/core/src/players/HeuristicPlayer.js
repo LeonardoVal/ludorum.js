@@ -1,3 +1,4 @@
+import GameTree from '../utils/GameTree';
 import Player from './Player';
 
 /** This is the base type of automatic players based on heuristic evaluations of
@@ -30,13 +31,12 @@ class HeuristicPlayer extends Player {
    * is the most common thing to do.
   */
   async actionEvaluation(action, game, role) {
-    const { actions, aleatories, constructor: Game } = game;
-    const roleActions = { ...actions, [role]: [action] };
+    const transitions = GameTree
+      .possibleTransitions(game, { [role]: [action] });
     let sum = 0;
     let count = 0;
-    const possibilities = Game.possibilities(roleActions, aleatories);
-    for (const { actions: _actions, haps, probability } of possibilities) {
-      const nextGame = game.next(_actions, haps);
+    for (const { actions, haps, probability } of transitions) {
+      const nextGame = game.next(actions, haps);
       sum += (await this.stateEvaluation(nextGame, role)) * probability;
       count += 1;
     }
