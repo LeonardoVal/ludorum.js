@@ -1,4 +1,5 @@
 import HeuristicPlayer from '@ludorum/core/players/HeuristicPlayer';
+import GameTree from '@ludorum/core/utils/GameTree';
 
 /** Automatic players based on pure MiniMax.
  *
@@ -73,14 +74,15 @@ class MiniMaxPlayer extends HeuristicPlayer {
    * @returns {number}
   */
   minimax(game, role, depth = 0) {
-    const { activeRole } = game;
-    const possibleHaps = [...game.possibleHaps()];
+    const { activeRole, aleatories } = game;
     let value = this.quiescence(game, role, depth);
     if (Number.isNaN(value)) { // game is not quiescent.
       value = activeRole === role ? -Infinity : +Infinity;
       const comparison = value < 0 ? Math.max : Math.min;
-      for (const actions of game.possibleActions()) {
-        if (possibleHaps.length < 1) {
+      const possibleActions = GameTree.possibleActions(game);
+      const possibleHaps = aleatories && GameTree.possibleHaps(game);
+      for (const actions of possibleActions) {
+        if (!possibleHaps) {
           const next = game.next(actions);
           value = comparison(value, this.minimax(next, role, depth + 1));
         } else { // expectiMinimax
