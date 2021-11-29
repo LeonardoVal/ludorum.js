@@ -17,5 +17,7 @@
     "lerna": "^4.0.0",
     "sermat": "^0.1.1"
   },
-  "scripts": {}
+  "scripts": {
+    "bootstrap": "npx lerna bootstrap --hoist --nohoist=@creatartis/creatartis-build"
+  }
 }
