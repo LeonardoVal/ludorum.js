@@ -1,0 +1,9 @@
+{
+  "packages": [
+    "packages/core",
+    "packages/game-tictactoe",
+    "packages/players-minimax",
+    "packages/players-montecarlo"
+  ],
+  "version": "independent"
+}

@@ -19,6 +19,9 @@
   },
   "main": "game-tictactoe.js",
   "module": "index.js",
+  "publishConfig": {
+    "directory": "dist/"
+  },
   "dependencies": {
     "@ludorum/core": "^0.3.0-alpha"
   },

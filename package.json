@@ -8,5 +8,14 @@
     "url": "git+https://github.com/LeonardoVal/ludorum.js.git"
   },
   "version": "0.0.1",
-  "workspaces": ["packages/"]
+  "workspaces": [
+    "packages/"
+  ],
+  "devDependencies": {
+    "@creatartis/creatartis-build": "0.2.5",
+    "@creatartis/randomness": "^0.1.2",
+    "lerna": "^4.0.0",
+    "sermat": "^0.1.1"
+  },
+  "scripts": {}
 }

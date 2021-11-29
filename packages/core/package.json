@@ -21,6 +21,9 @@
   },
   "main": "core.js",
   "module": "index.js",
+  "publishConfig": {
+    "directory": "dist/"
+  },
   "dependencies": {
     "@creatartis/randomness": "^0.1.2"
   },

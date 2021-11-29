@@ -78,7 +78,11 @@ class BaseClass {
     const error = typeCheckers[typeof type](type, value);
     if (error && ErrorType) {
       // eslint-disable-next-line no-nested-ternary
-      throw new ErrorType(`Type mismatch for ${value}, ${error}!`);
+      throw new ErrorType(
+        `Type mismatch for ${value} (${typeof value}${
+          value?.constructor?.name ? ` ${value.constructor.name}` : ''}), ${
+          error}!`,
+      );
     }
     return !error;
   }
