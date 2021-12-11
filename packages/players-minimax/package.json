@@ -1,5 +1,5 @@
 {
-  "name": "@ludorum/player-minimax",
+  "name": "@ludorum/players-minimax",
   "description": "Artificial players based on MiniMax for Ludorum.",
   "keywords": [
     "board game",
@@ -20,7 +20,7 @@
     "type": "git",
     "url": "http://github.com/LeonardoVal/ludorum.js"
   },
-  "main": "player-minimax.js",
+  "main": "playerss-minimax.js",
   "module": "index.js",
   "publishConfig": {
     "directory": "dist/"
@@ -29,7 +29,7 @@
     "@ludorum/core": "^0.3.0-alpha"
   },
   "devDependencies": {
-    "@creatartis/creatartis-build": "0.2.5",
+    "@creatartis/creatartis-build": "0.2.6",
     "@creatartis/randomness": "^0.1.2",
     "sermat": "^0.1.1"
   },

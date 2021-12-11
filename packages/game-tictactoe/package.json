@@ -26,7 +26,7 @@
     "@ludorum/core": "^0.3.0-alpha"
   },
   "devDependencies": {
-    "@creatartis/creatartis-build": "0.2.5",
+    "@creatartis/creatartis-build": "0.2.6",
     "sermat": "^0.1.1"
   },
   "scripts": {
