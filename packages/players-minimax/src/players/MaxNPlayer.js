@@ -35,7 +35,7 @@ class MaxNPlayer extends HeuristicPlayer {
    * @param {string} role
    * @returns {number}
   */
-  stateEvaluation(game, role) {
+  async stateEvaluation(game, role) {
     return this.maxN(game, role, 0)[role];
   }
 

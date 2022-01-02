@@ -58,7 +58,7 @@ class HeuristicPlayer extends Player {
   }
 
   /** The `randomHeuristic` returns a random number in [-0.5, 0.5). This is only
-   * useful in testing. Any serious use should redefine this.
+   * useful in testing.
    *
    * @returns {number}
   */

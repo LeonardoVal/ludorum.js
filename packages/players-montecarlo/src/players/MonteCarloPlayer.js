@@ -1,4 +1,5 @@
 import Player from '@ludorum/core/players/Player';
+import GameTree from '@ludorum/core/utils/GameTree';
 import HeuristicPlayer from '@ludorum/core/players/HeuristicPlayer';
 
 /** Automatic player based on flat Monte Carlo tree search.
@@ -28,66 +29,66 @@ class MonteCarloPlayer extends HeuristicPlayer {
       ._prop('agent', agent, Player, undefined);
   }
 
+  // ___________________________________________________________________________
+
   /** @inheritdoc
   */
   async* evaluatedActions(game, role) {
-    const { random } = this;
-    const simOptions = { ignoreProbabilities: true };
-    const { actions, aleatories, constructor: Game } = game;
-    const { [role]: roleActions, ...otherActions } = actions;
     const startTime = Date.now();
-    const options = roleActions.map((roleAction) => ({
-      roleAction, sum: 0, count: 0,
-    }));
+    const { random } = this;
+    const { actions: { [role]: roleActions } } = game;
+    const options = roleActions.map((roleAction) => {
+      const transitions = [...GameTree.possibleNexts(game, { [role]: [roleAction] })];
+      return {
+        roleAction, transitions, simSum: 0, simCount: 0,
+      };
+    });
     for (let i = 0; !this.endActionEvaluation(i, startTime, options);) {
       for (const option of options) {
-        const { actions: otherRolesActions, haps } = game.randomPossibility(
-          otherActions, aleatories, random, simOptions,
-        );
-        const next = game.next(
-          { [role]: option.roleAction, ...otherRolesActions }, haps,
-        );
-        const sim = this.simulation(next, role);
-        option.sum += sim.result;
-        option.count += 1;
-        // TODO What happens if (sim.plies < 1)?
-        i += 1;
+        for (const transition of option.transitions) {
+          const { next, probability } = transition;
+          const result = await this.stateEvaluation(next, role);
+          option.simSum += result * probability;
+          option.simCount += 1;
+          i += 1;
+        }
       }
     }
-    for (const option of options) {
-      if (Number.isNaN(option.sum)) {
-        throw new Error(`State evaluation is NaN for action ${option.roleAction}!`);
+    for (const { roleAction, simCount, simSum } of options) {
+      if (Number.isNaN(simSum)) {
+        throw new Error(`State evaluation is NaN for action ${roleAction}!`);
       }
-      yield [option.roleAction, option.count > 0 ? option.sum / option.count : 0];
+      yield [roleAction, simCount > 0 ? simSum / simCount : 0];
     }
   }
 
   /** The move evaluation can be finished on many criteria. By default,
    * `simulationCount` and `timeCap` are considered.
+   *
+   * @param {number} simCount
+   * @param {number} startTime
+   * @param {object} data
+   * @returns {boolean}
   */
   endActionEvaluation(simCount, startTime, data) {
-    return simCount > this.simulationCount || startTime + this.timeCap < Date.now();
+    const { simulationCount, timeCap } = this;
+    return simCount > simulationCount || startTime + timeCap < Date.now();
   }
 
-  /** This player's `stateEvaluation(game, player)` runs `simulationCount`
-   * simulations and returns the average result. It is provided for
-   * compatibility, since `evaluatedActions` does not call it.
+  /** This player's `stateEvaluation(game, player)` runs only one simulation and
+   * returns the its result.
    *
    * @param {Game} game
    * @param {string} role
    * @returns {number}
   */
-  stateEvaluation(game, role) {
-    const { simulationCount } = this;
-    let resultSum = 0;
-    for (let i = 0; i < simulationCount; i += 1) {
-      const sim = this.simulation(game, role);
-      resultSum += sim.result[role];
-      if (sim.plies < 1) { // game is final.
-        break;
-      }
+  async stateEvaluation(game, role) {
+    const { result } = game;
+    if (result) {
+      return result[role];
     }
-    return simulationCount > 0 ? resultSum / simulationCount : 0;
+    const { result: simResult } = this.simulation(game, role);
+    return simResult;
   }
 
   /** The `quiescence` method is a stability test for the given game state. If
@@ -124,13 +125,12 @@ class MonteCarloPlayer extends HeuristicPlayer {
    * @param {string} role
   */
   simulation(game, role) {
-    const simOptions = { ignoreProbabilities: true };
-    const state = game.clone();
+    game = game.clone();
     let plies = 0;
     let value = this.quiescence(game, role, plies + 1);
     for (; Number.isNaN(value); plies += 1) {
-      const { actions, haps } = state.randomPossibility(this.random, simOptions);
-      state.perform(actions, haps);
+      const { actions, haps } = GameTree.randomTransition(this.random, game);
+      game.perform(actions, haps);
       value = this.quiescence(game, role, plies + 1);
     }
     return { game, plies, result: value };

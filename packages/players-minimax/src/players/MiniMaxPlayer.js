@@ -34,7 +34,7 @@ class MiniMaxPlayer extends HeuristicPlayer {
    * @param {string} role
    * @returns {number}
   */
-  stateEvaluation(game, role) {
+  async stateEvaluation(game, role) {
     return this.minimax(game, role, 1);
   }
 

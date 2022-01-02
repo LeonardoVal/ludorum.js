@@ -12,7 +12,7 @@ class AlphaBetaPlayer extends MiniMaxPlayer {
    * @param {string} role
    * @returns {number}
   */
-  stateEvaluation(game, role) {
+  async stateEvaluation(game, role) {
     return this.minimax(game, role, 1, -Infinity, Infinity);
   }
 

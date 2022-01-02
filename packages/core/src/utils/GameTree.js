@@ -20,6 +20,21 @@ class GameTree extends BaseClass {
       ._prop('transitions', transitions, Array, []);
   }
 
+  /**
+  */
+  expand() {
+    // eslint-disable-next-line no-shadow
+    const { state, transitions, constructor: GameTree } = this;
+    const possibleTransitions = GameTree.possibleTransitions(state);
+    for (const transition of possibleTransitions) {
+      const { actions, haps } = transition;
+      const nextState = state.next(actions, haps);
+      transition.next = new GameTree({ state: nextState });
+      transitions.push(transition);
+    }
+    return transitions;
+  }
+
   /** Calculates all possible `actions` objects that can be used with a `Game`'s
    * `perform` or `next` methods.
    *
@@ -78,12 +93,75 @@ class GameTree extends BaseClass {
     }
   }
 
+  /** Calculates all possible new game states from the given `game`, incluiding
+   * also the actions, haps and probability of the corresponding transition.
+   *
+   * @param {Game} game
+   * @param {object} [actionsOverride=null]
+   * @yields {object} - Object of the shape `{ actions, haps, probability, next }`.
+   */
+  static* possibleNexts(game, actionsOverride = null) {
+    for (const transition of this.possibleTransitions(game, actionsOverride)) {
+      const { actions, haps } = transition;
+      transition.next = game.next(actions, haps);
+      yield transition;
+    }
+  }
+
+  /** Calculates at random one of the possible `actions` objects that can be
+   * used with a `Game`'s `perform` or `next` methods.
+   *
+   * @param {Randomness} random
+   * @param {object} actions
+   * @param {object} [override=null]
+   * @return {object}
+  */
   static randomActions(random, actions, override = null) {
     const obj = { ...actions, ...override };
     return Object.keys(obj).reduce((r, k, vs) => {
       r[k] = random.choice(vs);
       return r;
     }, {});
+  }
+
+  /** Calculates at random one of the possible `haps` objects that can be used
+   * with a `Game`'s `perform` or `next` methods.
+   *
+   * @param {Randomness} random
+   * @param {object} aleatories
+   * @return {Array} - Array of the shape `[haps, probability]`.
+  */
+  static randomHaps(random, aleatories) {
+    let hapsProbability = 1;
+    const haps = Object.keys(aleatories).reduce((result, key, alea) => {
+      const distribution = [...alea.distribution()]
+        .map(([value, prob]) => [[value, prob], prob]);
+      const [value, prob] = random.weightedChoice(distribution);
+      result[key] = value;
+      hapsProbability *= prob;
+      return result;
+    }, {});
+    return [haps, hapsProbability];
+  }
+
+  /** Calculates at random one of the possible `actions` objects that can be
+   * used with a `Game`'s `perform` or `next` methods.
+   *
+   * @param {Randomness} random
+   * @param {object} actions
+   * @param {object} [override=null]
+   * @return {object}
+  */
+  static randomTransition(random, game, options = null) {
+    const { actions, aleatories } = game;
+    const { actionsOverride = null } = options || {};
+    const [haps, probability] = !aleatories ? [[null, 1]]
+      : this.randomHaps(random, aleatories);
+    return {
+      actions: this.randomActions(random, actions, actionsOverride),
+      haps,
+      probability,
+    };
   }
 } // class GameTree
 

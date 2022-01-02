@@ -260,7 +260,7 @@ class Game extends BaseClass {
    * @property {boolean}
    */
   get isDeterministic() {
-    return false;
+    return true;
   }
 
   /** A game `isSimultaneous` if in some or all turns more than one player is
