@@ -1,6 +1,7 @@
 {
   "packages": [
     "packages/core",
+    "packages/game-pig",
     "packages/game-tictactoe",
     "packages/players-minimax",
     "packages/players-montecarlo"
