@@ -22,7 +22,7 @@ class TicTacToe extends Game {
   /** Builds a new TicTacToe game state.
    *
    * @param {object} [args]
-   * @param {string} [board=EMPTY_BOARD]
+   * @param {string} [args.board=EMPTY_BOARD]
   */
   constructor(args = null) {
     const { activeRole = 0, board } = args || {}; // FIXME infer activeRole from board
@@ -66,9 +66,9 @@ class TicTacToe extends Game {
   get actions() {
     const { activeRole, board, result } = this;
     if (!result) {
-      return {
-        [activeRole]: [...board].filter((chr) => chr === '_').map((_, i) => i),
-      };
+      const roleActions = [...board]
+        .map((chr, i) => (chr === '_' ? i : -1)).filter((i) => i >= 0);
+      return { [activeRole]: roleActions };
     }
     return null;
   }
@@ -84,12 +84,13 @@ class TicTacToe extends Game {
     if (board.charAt(position) !== '_') {
       throw new Error(`Invalid move ${position} for board ${board}!`);
     }
-    this.board = board.substring(0, position)
-      + (activeRole === ROLE_X ? 'X' : 'O') + board.substring(position + 1);
+    const boardArray = [...board];
+    boardArray[position] = activeRole === ROLE_X ? 'X' : 'O';
+    this.board = boardArray.join('');
     this.activateRoles(this.opponent(activeRole));
   }
 
-  // Utility methods
+  // Utility methods ___________________________________________________________
 
   /** A TicTacToe board is hashed by converting it to a integer in base 3.
    *
@@ -123,7 +124,7 @@ class TicTacToe extends Game {
   boardASCII() {
     const { board } = this;
     return [0, 3, 6]
-      .map((i) => board.substr(0, 3).split('').join('|'))
+      .map((i) => board.substr(i, 3).split('').join('|'))
       .join('\n-+-+-\n');
   }
 
