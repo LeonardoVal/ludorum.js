@@ -92,7 +92,7 @@ export const checkGameFlow = (expect, game, options) => {
       break;
     }
     const { decisions, haps } = randomFlow(game, random);
-    if (options.update) {
+    if (update) {
       game.perform(decisions, haps);
     } else {
       game = game.next(decisions, haps);

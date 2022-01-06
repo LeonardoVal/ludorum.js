@@ -137,7 +137,7 @@ class Match extends BaseClass {
     current.actions = actions;
     const haps = this.haps(game);
     current.haps = haps;
-    const nextGame = game.next(actions);
+    const nextGame = game.next(actions, haps);
     const nextEntry = { game: nextGame };
     history.push(nextEntry);
     return nextEntry;

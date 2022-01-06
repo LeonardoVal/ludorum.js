@@ -1,5 +1,5 @@
 {
-  "name": "@ludorum/player-montecarlo",
+  "name": "@ludorum/players-montecarlo",
   "description": "Artificial players based on MCTS for Ludorum.",
   "keywords": [
     "board game",

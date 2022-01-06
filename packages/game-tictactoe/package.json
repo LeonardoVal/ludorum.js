@@ -28,6 +28,8 @@
   "devDependencies": {
     "@creatartis/creatartis-build": "0.2.6",
     "@creatartis/randomness": "^0.1.2",
+    "@ludorum/players-minimax": "0.1.0-alpha",
+    "@ludorum/players-montecarlo": "0.1.0-alpha",
     "sermat": "^0.1.1"
   },
   "scripts": {

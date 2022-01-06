@@ -4,3 +4,7 @@ import TicTacToe from './TicTacToe';
 export {
   TicTacToe,
 };
+
+export default {
+  TicTacToe,
+};

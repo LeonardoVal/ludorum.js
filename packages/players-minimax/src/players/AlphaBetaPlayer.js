@@ -28,22 +28,22 @@ class AlphaBetaPlayer extends MiniMaxPlayer {
    * @returns {number}
   */
   minimax(game, role, depth = 0, alpha = -Infinity, beta = Infinity) {
-    const { activeRole, aleatories } = game;
+    const { activeRole, actions, aleatories } = game;
     let value = this.quiescence(game, role, depth);
     if (!Number.isNaN(value)) { // game is quiescent.
       return value;
     }
     const isActive = activeRole === role;
-    const possibleActions = GameTree.possibleActions(game);
-    const possibleHaps = aleatories && GameTree.possibleHaps(game);
-    for (const actions of possibleActions) {
+    const actionOptions = GameTree.possibleActions(actions);
+    const possibleHaps = aleatories && GameTree.possibleHaps(aleatories);
+    for (const actionOption of actionOptions) {
       if (!possibleHaps) {
-        const next = game.next(actions);
+        const next = game.next(actionOption);
         value = this.minimax(next, role, depth + 1);
       } else { // expectiMinimax
         value = 0;
         for (const [haps, probability] of possibleHaps) {
-          const next = game.next(actions, haps);
+          const next = game.next(actionOption, haps);
           value += this.minimax(next, role, depth + 1) * probability;
         }
       }

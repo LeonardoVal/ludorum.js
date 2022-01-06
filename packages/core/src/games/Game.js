@@ -365,8 +365,12 @@ class Game extends BaseClass {
   /** Method `tied` returns the game result of a tied game with the given
    * roles (or all roles by default) all with the same score (zero by default).
    * A tied game must always have the same result for all players.
+   *
+   * @param {string|string[]} [roles]
+   * @param {number} [score = +1]
+   * @returns {object}
    */
-  tied(roles, score) {
+  tied(roles = null, score = 0) {
     roles = roles || this.roles;
     score = Number.isNaN(score) ? 0 : score;
     return Object.fromEntries(roles.map((p) => [p, score]));
@@ -376,6 +380,8 @@ class Game extends BaseClass {
 
   /** Some algorithms require a _hash code_ for each game state, in order to
    * store them in caches or hash tables. Not implemented by default.
+   *
+   * @property {number}
    */
   get hashCode() {
     return this._unimplemented('hashCode');
@@ -383,6 +389,8 @@ class Game extends BaseClass {
 
   /** Based on the game's serialization, `clone()` creates a copy of this game
    * state.
+   *
+   * @returns {Game}
    */
   clone() {
     const args = this.constructor.__SERMAT__.serializer(this);

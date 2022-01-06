@@ -4,7 +4,7 @@ import {
 } from '../../src/games';
 
 const RANDOM = Randomness.DEFAULT;
-const MATCH_COUNT = 5;
+const MATCH_COUNT = 6;
 
 describe('games', () => {
   it('expected definitions', () => {
@@ -22,6 +22,7 @@ describe('games', () => {
         oneActivePlayerPerTurn: true,
         random: RANDOM,
         zeroSum: true,
+        update: i % 2 === 0,
       });
     }
   });
@@ -34,6 +35,7 @@ describe('games', () => {
         oneActivePlayerPerTurn: true,
         random: RANDOM,
         zeroSum: true,
+        update: i % 2 === 0,
       });
     }
   });
@@ -46,6 +48,7 @@ describe('games', () => {
         oneActivePlayerPerTurn: true,
         random: RANDOM,
         zeroSum: false,
+        update: i % 2 === 0,
       });
     }
   });

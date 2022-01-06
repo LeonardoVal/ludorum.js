@@ -82,7 +82,7 @@ class TicTacToe extends Game {
     const { activeRole, board } = this;
     const { [activeRole]: position } = actions;
     if (board.charAt(position) !== '_') {
-      throw new Error(`Invalid move ${position} for board ${board}!`);
+      throw new Error(`Invalid actions ${JSON.stringify(actions)} for board ${board}!`);
     }
     const boardArray = [...board];
     boardArray[position] = activeRole === ROLE_X ? 'X' : 'O';
@@ -135,7 +135,7 @@ class TicTacToe extends Game {
    * @param {number[]} weights
    * @returns {function}
   */
-  heuristicFromWeights(weights = null) {
+  static heuristicFromWeights(weights = null) {
     weights = weights || [2, 1, 2, 1, 5, 1, 2, 1, 2];
     const weightSum = weights.reduce((s, w) => s + Math.abs(w), 0);
     const result = function heuristic(game, role) {
