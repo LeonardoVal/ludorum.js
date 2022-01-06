@@ -29,36 +29,27 @@ class MonteCarloPlayer extends HeuristicPlayer {
       ._prop('agent', agent, Player, undefined);
   }
 
-  // ___________________________________________________________________________
-
   /** @inheritdoc
   */
   async* evaluatedActions(game, role) {
     const startTime = Date.now();
-    const { random } = this;
-    const { actions: { [role]: roleActions } } = game;
-    const options = roleActions.map((roleAction) => {
-      const transitions = [...GameTree.possibleNexts(game, { [role]: [roleAction] })];
-      return {
-        roleAction, transitions, simSum: 0, simCount: 0,
-      };
-    });
+    const options = this.transitionsByRoleAction(game, role, { simSum: 0, simDiv: 0 });
     for (let i = 0; !this.endActionEvaluation(i, startTime, options);) {
       for (const option of options) {
         for (const transition of option.transitions) {
           const { next, probability } = transition;
           const result = await this.stateEvaluation(next, role);
           option.simSum += result * probability;
-          option.simCount += 1;
+          option.simDiv += probability;
           i += 1;
         }
       }
     }
-    for (const { roleAction, simCount, simSum } of options) {
+    for (const { roleAction, simDiv, simSum } of options) {
       if (Number.isNaN(simSum)) {
         throw new Error(`State evaluation is NaN for action ${roleAction}!`);
       }
-      yield [roleAction, simCount > 0 ? simSum / simCount : 0];
+      yield [roleAction, simDiv > 0 ? simSum / simDiv : 0];
     }
   }
 
@@ -67,10 +58,10 @@ class MonteCarloPlayer extends HeuristicPlayer {
    *
    * @param {number} simCount
    * @param {number} startTime
-   * @param {object} data
+   * @param {object} [data=null]
    * @returns {boolean}
   */
-  endActionEvaluation(simCount, startTime, data) {
+  endActionEvaluation(simCount, startTime, data = null) {
     const { simulationCount, timeCap } = this;
     return simCount > simulationCount || startTime + timeCap < Date.now();
   }

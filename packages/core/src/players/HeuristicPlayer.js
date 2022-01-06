@@ -25,22 +25,49 @@ class HeuristicPlayer extends Player {
       ._prop('heuristic', heuristic, 'function', this.randomHeuristic);
   }
 
-  /** An `HeuristicPlayer` choses the best moves at any given game state. For
-   * this purpose it evaluates every move with `actionEvaluation`. By default
-   * this function evaluates the states resulting from making each move, which
-   * is the most common thing to do.
+  /** Returns a the possible transitions from the given `game` state, grouped
+   * for each available action of the given `role`.
+   *
+   * @param {Game} game
+   * @param {string} role
+   * @param {object} [extraData=null]
+   * @yields {object} Objects of the shape `{ roleAction, transitions, ... }`.
   */
-  async actionEvaluation(action, game, role) {
-    const transitions = GameTree
-      .possibleTransitions(game, { [role]: [action] });
-    let sum = 0;
-    let count = 0;
-    for (const { actions, haps, probability } of transitions) {
-      const nextGame = game.next(actions, haps);
-      sum += (await this.stateEvaluation(nextGame, role)) * probability;
-      count += 1;
+  * transitionsByRoleAction(game, role, extraData = null) {
+    const { actions } = game;
+    if (actions) {
+      const { [role]: roleActions } = actions;
+      if (roleActions) {
+        for (const roleAction of roleActions) {
+          const transitions = [
+            ...GameTree.possibleNexts(game, { [role]: [roleAction] }),
+          ];
+          yield { roleAction, transitions, ...extraData };
+        }
+      }
     }
-    return count > 0 ? sum / count : 0; // Average all evaluations.
+  }
+
+  /** Heuristic players work by evaluating the moves of the `role` in the given
+   * `game` state. If the game state has aleatories, then all possible scenarios
+   * are evaluated and aggregated.
+   *
+   * @param {Game} - A game state
+   * @param {string} - A role in the given game.
+   * @yields {Array} - Pairs `[move, evaluation]`.
+  */
+  async* evaluatedActions(game, role) {
+    const options = this.transitionsByRoleAction(game, role);
+    for (const { roleAction, transitions } of options) {
+      let sum = 0;
+      let div = 0;
+      for (const { next, probability } of transitions) {
+        sum += (await this.stateEvaluation(next, role)) * probability;
+        div += probability;
+      }
+      const actionEvaluation = div > 0 ? sum / div : 0; // Average all evaluations.
+      yield [roleAction, actionEvaluation];
+    }
   }
 
   /** The `stateEvaluation` calculates a number as the assessment of the given
@@ -74,22 +101,6 @@ class HeuristicPlayer extends Player {
   */
   async heuristic(_game, _role) {
     return this._unimplemented('heuristic');
-  }
-
-  /** Heuristic players work by evaluating the moves of the `role` in the given
-   * `game` state. If the game state has aleatories, then all possible scenarios
-   * are evaluated and aggregated.
-   *
-   * @param {Game} - A game state
-   * @param {string} - A role in the given game.
-   * @yields {Array} - Pairs `[move, evaluation]`.
-  */
-  async* evaluatedActions(game, role) {
-    const { actions } = game;
-    const roleActions = actions[role];
-    for (const roleAction of roleActions) {
-      yield [roleAction, await this.actionEvaluation(roleAction, game, role)];
-    }
   }
 
   /** The `bestActions` are all the best evaluated in the given `game` for the
