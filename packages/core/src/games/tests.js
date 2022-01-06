@@ -27,7 +27,7 @@ export const checkRunningGameState = (expect, game, options) => {
     if (game.activeRoles.length === 1) {
       expect(game.activeRole).toBe(game.activeRoles[0]);
     } else {
-      expect(game.activeRole.bind(game)).toThrow();
+      expect(() => game.activeRole).toThrow();
     }
     game.activeRoles.forEach((activeRole) => {
       expect(game.isActive(activeRole)).toBe(true);

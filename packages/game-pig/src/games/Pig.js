@@ -19,7 +19,7 @@ class Pig extends Game {
   /** Builds a new Pig game state:
    *
    * @param {object} [args]
-   * @param {string} [args.activePlayer='One'] - The active player.
+   * @param {string} [args.activeRole='One'] - The active player.
    * @param {number} [args.goal=100] - The amount of points a player has to
    *   reach to win the game.
    * @param {object} [args.scores={One:0,Two:0}] - The scores so far in the
