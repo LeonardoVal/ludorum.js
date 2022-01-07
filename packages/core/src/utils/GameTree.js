@@ -54,8 +54,8 @@ class GameTree extends BaseClass {
   */
   static* possibleHaps(aleatories) {
     const keys = Object.keys(aleatories);
-    const distros = keys.reduce((obj, key, alea) => {
-      obj[key] = [...alea.distribution()];
+    const distros = keys.reduce((obj, key) => {
+      obj[key] = [...aleatories[key].distribution()];
       return obj;
     }, {});
     for (const result of cartesianProductObject(distros)) {
@@ -118,7 +118,7 @@ class GameTree extends BaseClass {
   */
   static randomActions(random, actions, override = null) {
     const obj = { ...actions, ...override };
-    return Object.keys(obj).reduce((r, k, vs) => {
+    return Object.entries(obj).reduce((r, [k, vs]) => {
       r[k] = random.choice(vs);
       return r;
     }, {});
@@ -133,7 +133,7 @@ class GameTree extends BaseClass {
   */
   static randomHaps(random, aleatories) {
     let hapsProbability = 1;
-    const haps = Object.keys(aleatories).reduce((result, key, alea) => {
+    const haps = Object.entries(aleatories).reduce((result, [key, alea]) => {
       const distribution = [...alea.distribution()]
         .map(([value, prob]) => [[value, prob], prob]);
       const [value, prob] = random.weightedChoice(distribution);
@@ -155,7 +155,7 @@ class GameTree extends BaseClass {
   static randomTransition(random, game, options = null) {
     const { actions, aleatories } = game;
     const { actionsOverride = null } = options || {};
-    const [haps, probability] = !aleatories ? [[null, 1]]
+    const [haps, probability] = !aleatories ? [null, 1]
       : this.randomHaps(random, aleatories);
     return {
       actions: this.randomActions(random, actions, actionsOverride),

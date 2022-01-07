@@ -170,6 +170,6 @@ class Pig extends Game {
 
 /** Serialization and materialization using Sermat.
 */
-Pig.defineSERMAT('goal rolls scores rolling');
+Pig.defineSERMAT('activeRole goal rolls scores rolling');
 
 export default Pig;
