@@ -13,7 +13,7 @@ describe('players', () => {
     expect(MonteCarloPlayer).toBeOfType('function');
   });
 
-  xit('MonteCarloPlayer with Predefined', async () => {
+  it('MonteCarloPlayer with Predefined', async () => {
     for (let i = 0; i < MATCH_COUNT; i += 1) {
       await tests.checkPlayerWithPredefined({
         playerBuilder: () => new MonteCarloPlayer({ random: RANDOM }),

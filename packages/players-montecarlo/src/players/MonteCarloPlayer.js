@@ -33,7 +33,9 @@ class MonteCarloPlayer extends HeuristicPlayer {
   */
   async* evaluatedActions(game, role) {
     const startTime = Date.now();
-    const options = this.transitionsByRoleAction(game, role, { simSum: 0, simDiv: 0 });
+    const options = [
+      ...this.transitionsByRoleAction(game, role, { simSum: 0, simDiv: 0 }),
+    ];
     for (let i = 0; !this.endActionEvaluation(i, startTime, options);) {
       for (const option of options) {
         for (const transition of option.transitions) {
