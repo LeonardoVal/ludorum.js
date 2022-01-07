@@ -83,13 +83,8 @@ class MiniMaxPlayer extends HeuristicPlayer {
       const possibleHaps = aleatories && GameTree.possibleHaps(aleatories);
       for (const actionOption of actionOptions) {
         if (!possibleHaps) {
-          try {
-            const next = game.next(actionOption);
-            value = comparison(value, this.minimax(next, role, depth + 1));
-          } catch (excep) { // FIXME
-            console.log({ game, actions });
-            throw excep;
-          }
+          const next = game.next(actionOption);
+          value = comparison(value, this.minimax(next, role, depth + 1));
         } else { // expectiMinimax
           let expectedValue = 0;
           for (const [haps, probability] of possibleHaps) {
