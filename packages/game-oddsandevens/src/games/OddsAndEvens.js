@@ -28,7 +28,7 @@ class OddsAndEvens extends Game {
     const {
       turns, points, options,
     } = args || {};
-    super({ activeRoles: [ROLE_EVENS, ROLE_ODDS] });
+    super();
     this
       ._prop('turns', turns, 'number', 1)
       ._prop('points', points, 'object', { ...DEFAULT_POINTS })
@@ -59,6 +59,14 @@ class OddsAndEvens extends Game {
   get remainingTurns() {
     const { turns, points } = this;
     return turns - points[ROLE_EVENS] - points[ROLE_ODDS];
+  }
+
+  /** All roles are active in every turn.
+   *
+   * @property {string[]}
+  */
+  get activeRoles() {
+    return [...this.roles];
   }
 
   /** If the game has not finished, both players can play any of the available
@@ -114,7 +122,7 @@ class OddsAndEvens extends Game {
     const { points, options } = this;
     const { [ROLE_EVENS]: moveEvens, [ROLE_ODDS]: moveOdds } = actions;
     if (!options.includes(moveEvens) || !options.includes(moveOdds)) {
-      throw new Error(`Invalid actions ${JSON.stringify(actions)} (expecting: ${options.join(',')})!`);
+      throw new Error(`Invalid actions ${JSON.stringify(actions)} (expecting: ${options.join(', ')})!`);
     }
     if (haps) {
       throw new Error(`Haps are not required (given ${JSON.stringify(haps)})!`);

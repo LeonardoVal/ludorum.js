@@ -79,7 +79,7 @@ class Choose2Win extends Game {
       case ACTIONS.WIN: this.winner = activeRole; break;
       case ACTIONS.LOSE: this.winner = opponent; break;
       case ACTIONS.PASS: break; // do nothing
-      default: throw new Error(`Invalid action ${action} for role ${activeRole} at ${this}!`);
+      default: throw new Error(`Invalid actions ${JSON.stringify(actions)} at ${this}!`);
     }
     this.activateRoles(opponent);
     this.turns -= 1;
@@ -88,6 +88,6 @@ class Choose2Win extends Game {
 
 /** Serialization and materialization using Sermat.
 */
-Choose2Win.defineSERMAT('turns winner');
+Choose2Win.defineSERMAT('activeRole turns winner');
 
 export default Choose2Win;

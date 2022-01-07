@@ -25,8 +25,8 @@ class TicTacToe extends Game {
    * @param {string} [args.board=EMPTY_BOARD]
   */
   constructor(args = null) {
-    const { activeRole = 0, board } = args || {}; // FIXME infer activeRole from board
-    super({ activeRoles: [activeRole] });
+    const { board } = args || {}; // FIXME infer activeRole from board
+    super();
     this
       ._prop('board', board, 'string', EMPTY_BOARD);
   }
@@ -87,7 +87,14 @@ class TicTacToe extends Game {
     const boardArray = [...board];
     boardArray[position] = activeRole === ROLE_X ? 'X' : 'O';
     this.board = boardArray.join('');
-    this.activateRoles(this.opponent(activeRole));
+  }
+
+  /** @inheritdoc
+  */
+  get activeRoles() {
+    const markBalance = [...this.board]
+      .reduce((b, sq) => b + (({ X: 1, O: -1 })?.[sq] ?? 0));
+    return markBalance > 0 ? [ROLE_O] : [ROLE_X];
   }
 
   // Utility methods ___________________________________________________________

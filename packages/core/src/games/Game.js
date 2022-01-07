@@ -200,12 +200,18 @@ class Game extends BaseClass {
   /** Sets the `activeRoles` of this game state. Since this method changes the
    * current game state, use with care.
    *
-   * @param {...(string|number)} activeRoles
+   * @param {...(string|number)} roles
    * @return {string[]}
    */
-  activateRoles(...activeRoles) {
-    this.activeRoles = activeRoles.map((role) => this.role(role));
-    return this.activeRoles;
+  activateRoles(...roles) {
+    if (!this.activeRoles) {
+      this._prop('activeRoles', [], Array);
+    }
+    const { activeRoles } = this;
+    activeRoles.splice(
+      0, activeRoles.length, ...roles.map((role) => this.role(role)),
+    );
+    return activeRoles;
   }
 
   /** All players in a game are assumed to be opponents. The method `opponents`
@@ -411,9 +417,5 @@ class Game extends BaseClass {
    * games.
    */
 } // class Game.
-
-/** Serialization and materialization using Sermat.
-*/
-Game.defineSERMAT('activeRole');
 
 export default Game;
