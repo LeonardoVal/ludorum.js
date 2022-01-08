@@ -94,7 +94,7 @@ class ToadsAndFrogs extends Game {
     } else if (board.substr(move, 3) === '_TF') {
       this.board = `${board.substring(0, move)}FT_${board.substring(move + 3)}`;
     } else {
-      throw new Error(`Invalid move ${move} for board <${board}>!`);
+      throw new Error(`Invalid actions ${JSON.stringify(actions)} for ${this}!`);
     }
     this.activateRoles(this.opponent(activeRole));
   }
@@ -102,6 +102,6 @@ class ToadsAndFrogs extends Game {
 
 /** Serialization and materialization using Sermat.
 */
-ToadsAndFrogs.defineSERMAT('turns points options');
+ToadsAndFrogs.defineSERMAT('activeRole board');
 
 export default ToadsAndFrogs;
