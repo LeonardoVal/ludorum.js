@@ -31,7 +31,7 @@ class OddsAndEvens extends Game {
     super();
     this
       ._prop('turns', turns, 'number', 1)
-      ._prop('points', points, 'object', { ...DEFAULT_POINTS })
+      ._prop('points', points && { ...points }, 'object', { ...DEFAULT_POINTS })
       ._prop('options', options, Array, DEFAULT_OPTIONS);
   }
 

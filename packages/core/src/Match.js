@@ -89,15 +89,16 @@ class Match extends BaseClass {
       return null;
     }
     const activeRoles = Object.keys(actions);
-    const result = {};
-    await Promise.all(
-      activeRoles.map(async (role) => {
-        const player = players[role];
-        if (!player) {
-          throw new Error(`Player not found for role ${role}!`);
-        }
-        result[role] = await player.decision(game.view(role), role);
-      }),
+    const result = Object.fromEntries(
+      await Promise.all(
+        activeRoles.map(async (role) => {
+          const player = players[role];
+          if (!player) {
+            throw new Error(`Player not found for role ${role}!`);
+          }
+          return [role, await player.decision(game.view(role), role)];
+        }),
+      ),
     );
     return result;
   }
