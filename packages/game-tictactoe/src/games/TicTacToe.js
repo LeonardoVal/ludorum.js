@@ -25,7 +25,7 @@ class TicTacToe extends Game {
    * @param {string} [args.board=EMPTY_BOARD]
   */
   constructor(args = null) {
-    const { board } = args || {}; // FIXME infer activeRole from board
+    const { board } = args || {};
     super();
     this
       ._prop('board', board, 'string', EMPTY_BOARD);

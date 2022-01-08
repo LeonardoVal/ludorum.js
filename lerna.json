@@ -3,6 +3,7 @@
     "packages/core",
     "packages/game-oddsandevens",
     "packages/game-pig",
+    "packages/game-puzzle15",
     "packages/game-tictactoe",
     "packages/game-toadsandfrogs",
     "packages/players-minimax",
