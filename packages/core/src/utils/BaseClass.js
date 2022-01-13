@@ -158,9 +158,11 @@ class BaseClass {
     return BaseClass.prop(this, ...args);
   }
 
-  // TODO const - for non-writable properties.
-  // TODO memoize
-
+  /** Defines the specification for serialization and parsing (materialization)
+   * with Sermat.
+   *
+   * @param {string} fields
+  */
   static defineSERMAT(fields) {
     if (Object.hasOwnProperty.call(this, '__SERMAT__')) {
       throw new TypeError(`Class ${this.name} already has __SERMAT__ defined!`);
@@ -188,6 +190,9 @@ class BaseClass {
       },
     });
   }
+
+  // TODO const - for non-writable properties.
+  // TODO memoize
 } // class BaseClass
 
 export default BaseClass;

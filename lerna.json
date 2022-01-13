@@ -7,7 +7,8 @@
     "packages/game-tictactoe",
     "packages/game-toadsandfrogs",
     "packages/players-minimax",
-    "packages/players-montecarlo"
+    "packages/players-montecarlo",
+    "packages/utils-checkerboards"
   ],
   "version": "independent"
 }
