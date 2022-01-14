@@ -137,7 +137,7 @@ class Checkerboard extends BaseClass {
   * verticalLines() {
     const { dimensions: [sizeX, sizeY] } = this;
     const rangeY = Array(sizeY).fill().map((_, i) => i);
-    for (let x = 0; x < sizeY; x += 1) {
+    for (let x = 0; x < sizeX; x += 1) {
       yield rangeY.map((y) => makeCoord(x, y));
     }
   }
@@ -156,7 +156,7 @@ class Checkerboard extends BaseClass {
    *
    * @yields {number[][]}
   */
-  * positiveDiagonals() {
+  * positiveDiagonalLines() {
     const { dimensions: [sizeX, sizeY] } = this;
     const count = sizeX + sizeY - 1;
     for (let i = 0; i < count; i += 1) {
@@ -171,12 +171,12 @@ class Checkerboard extends BaseClass {
    *
    * @yields {number[][]}
   */
-  * negativeDiagonals() {
+  * negativeDiagonalLines() {
     const { dimensions: [sizeX, sizeY] } = this;
     const count = sizeX + sizeY - 1;
     for (let i = 0; i < count; i += 1) {
       const x = Math.max(0, i - sizeY + 1);
-      const y = Math.max(0, sizeY - 1);
+      const y = Math.min(i, sizeY - 1);
       yield Array(Math.min(i + 1, count - i)).fill()
         .map((_, j) => makeCoord(x + j, y - j));
     }
@@ -247,7 +247,7 @@ class Checkerboard extends BaseClass {
   */
   * walks(coord, deltas, until = null) {
     for (const delta of deltas) {
-      yield* this.walk(coord, delta, until);
+      yield [...this.walk(coord, delta, until)];
     }
   }
 
