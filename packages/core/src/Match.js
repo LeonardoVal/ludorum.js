@@ -137,7 +137,7 @@ class Match extends BaseClass {
     if (!isFinished) {
       let currentGame = isStarted ? history[history.length - 1] : game;
       const players = this.participate();
-      if (isStarted) {
+      if (!isStarted) {
         this.onBegin(currentGame);
       }
       yield { game: currentGame };
@@ -220,7 +220,7 @@ class Match extends BaseClass {
    * @returns {any[]}
   */
   async onNext(gameBefore, actions, haps, gameAfter) {
-    return this._emit('begin', gameBefore, actions, haps, gameAfter);
+    return this._emit('next', gameBefore, actions, haps, gameAfter);
   }
 
   /** The `end` event notifies when the match ends. The spectators listen to it
