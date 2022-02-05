@@ -3,40 +3,16 @@ import Randomness from '@creatartis/randomness/Randomness';
 import BaseClass from './utils/BaseClass';
 import Game from './games/Game';
 
+const checkPlayersForGame = (game, players) => {
+  const { roles } = game;
+  return Array.isArray(players) && players.length === roles.length
+    || typeof players === 'object' && roles.every((r) => players[r]);
+};
+
 /** A match is a controller for a game, managing player decisions, handling the
  * flow of the turns between the players by following the game's logic.
 */
 class Match extends BaseClass {
-  /** Participates all given `layers` to the given `match`.
-   *
-   * @param {Match} match
-   * @param {Player[]|object} players
-   * @returns {object}
-  */
-  static participate(match, players) {
-    const { roles } = match.game;
-    if (Array.isArray(players)) {
-      if (roles.length !== players.length) {
-        throw new Error(
-          `Expected ${roles.length} players, but got ${players.length}!`,
-        );
-      }
-      return Object.fromEntries(roles.map((r, i) => {
-        const p = players[i];
-        return [r, p.participate(match, r)];
-      }));
-    }
-    if (typeof players === 'object' && players) {
-      return Object.fromEntries(roles.map((r) => {
-        if (!players[r]) {
-          throw new Error(`Missing player for role ${r}!`);
-        }
-        return [r, players[r].participate(match, r)];
-      }));
-    }
-    throw new TypeError('Invalid players!');
-  }
-
   /** `Match` objects are build with a game's starting state and the players
    * that participate. The players argument must be either an array
    * of `Player`s or an object mapping each of the game's roles to `Player`s.
@@ -47,49 +23,77 @@ class Match extends BaseClass {
   */
   constructor(args) {
     const {
-      game, history, players, random,
+      game, history, players, random, spectators,
     } = args || {};
     super();
     this
       ._prop('game', game, Game)
-      ._prop('history', history, Array, [{ game }])
+      ._prop('history', history, Array, [])
       ._prop('random', random, Randomness, Randomness.DEFAULT)
-      ._prop('players', Match.participate(this, players), 'object');
+      ._prop('players', players, checkPlayersForGame(game, players))
+      ._prop('spectators', spectators, Array, []);
   }
 
-  /** The current state of the match, as the last state in the match's
-   * `history`.
+  /** Indicates if according to the history the match has started.
    *
-   * @return {object}
-   */
-  get current() {
-    const { history } = this;
-    return history[history.length - 1];
+   * @property {boolean}
+  */
+  get isStarted() {
+    return this.history.length > 0;
   }
 
-  /** Indicates if this match's game is finished.
+  /** Indicates if according to the history the match has finished.
    *
-   * @property {boolean} isFinished
-   */
+   * @property {boolean}
+  */
   get isFinished() {
-    return this.current.game.isFinished;
+    const { history } = this;
+    const current = history[history.length - 1];
+    return !!current && current.game.isFinished;
   }
 
-  /** This method asks the active players in the game to choose their actions.
+  /** Participates all given `players` to the match.
    *
-   * @param {Game} [game=null] - Game on which players will move. By default is
-   *   this match's current game state.
+   * @returns {object} - Participating players.
+  */
+  participate() {
+    const { game, players } = this;
+    const { roles } = game;
+    if (Array.isArray(players)) {
+      if (roles.length !== players.length) {
+        throw new Error(
+          `Expected ${roles.length} players, but got ${players.length}!`,
+        );
+      }
+      return Object.fromEntries(roles.map((r, i) => {
+        const p = players[i];
+        return [r, p.participate(this, r)];
+      }));
+    }
+    if (typeof players === 'object' && players) {
+      return Object.fromEntries(roles.map((r) => {
+        if (!players[r]) {
+          throw new Error(`Missing player for role ${r}!`);
+        }
+        return [r, players[r].participate(this, r)];
+      }));
+    }
+    throw new TypeError('Invalid players!');
+  }
+
+  /** Asks the active players in the game to choose their actions.
+   *
+   * @param {Game} game - Game on which players will move.
+   * @param {object} players - Players participating in the match.
    * @return {object}
-   */
-  async actions(game = null) {
-    const { players } = this;
-    game = game || this.current.game;
+  */
+  async actions(game, players) {
     const { actions } = game;
     if (!actions) {
       return null;
     }
     const activeRoles = Object.keys(actions);
-    const result = Object.fromEntries(
+    const decisions = Object.fromEntries(
       await Promise.all(
         activeRoles.map(async (role) => {
           const player = players[role];
@@ -100,16 +104,16 @@ class Match extends BaseClass {
         }),
       ),
     );
-    return result;
+    return decisions;
   }
 
-  /** TODO
+  /** Assigns random values to the `game`'s haps.
    *
    * @param {Game} game
+   * @returns {object}
    */
-  haps(game = null) {
+  haps(game) {
     const { random } = this;
-    game = game || this.current.game;
     const { aleatories } = game;
     if (!aleatories) {
       return null;
@@ -121,41 +125,32 @@ class Match extends BaseClass {
     return result;
   }
 
-  /** After players of all active roles have decided which action they're
-   * performing, the match can be advanced by applying these actions. The
-   * `advance` method asks the players for their decisions, applies the actions
-   * to get the next state, and adds it to the match's history.
-   *
-   * @return {object} - The new entry on the match's history.
-  */
-  async next() {
-    const { history, current } = this;
-    const { game } = current;
-    if (game.isFinished) {
-      return null;
-    }
-    const actions = await this.actions(game);
-    current.actions = actions;
-    const haps = this.haps(game);
-    current.haps = haps;
-    const nextGame = game.next(actions, haps);
-    const nextEntry = { game: nextGame };
-    history.push(nextEntry);
-    return nextEntry;
-  }
-
   /** Runs the match until the game finishes. The result is the last entry in
    * the match's history.
    *
    * @returns {object}
   */
   async* run() {
-    while (!this.isFinished) {
-      const { current } = this;
-      await this.next();
-      yield current;
+    const {
+      game, history, isFinished, isStarted,
+    } = this;
+    if (!isFinished) {
+      let currentGame = isStarted ? history[history.length - 1] : game;
+      const players = this.participate();
+      if (isStarted) {
+        this.onBegin(currentGame);
+      }
+      yield { game: currentGame };
+      while (!currentGame.isFinished) {
+        const actions = await this.actions(currentGame, players);
+        const haps = this.haps(currentGame);
+        const nextGame = currentGame.next(actions, haps);
+        this.onNext(currentGame, actions, haps, nextGame);
+        yield { actions, haps, game: nextGame };
+        currentGame = nextGame;
+      }
+      this.onEnd(currentGame, currentGame.result);
     }
-    yield this.current;
   }
 
   /** Analogous to `run`, but waits for the whole match to finish and returns
@@ -169,6 +164,74 @@ class Match extends BaseClass {
       result.push(entry);
     }
     return result;
+  }
+
+  // Spectator events //////////////////////////////////////////////////////////
+
+  /** Adds a spectator object to the match. This are objects that listen to
+   * events that happen as the match is played.
+   *
+   * @param {object} spectator
+   * @returns {Match}
+  */
+  spectate(spectator) {
+    this.spectators.push(spectator);
+    return this;
+  }
+
+  /** And event emitted calls a method called `eventName` in all spectators that
+   * support it, with the given `params` and the match itself. Async event
+   * handlers are supported. The results of the calls are returned as a result,
+   * with `null`s for failed spectators.
+   *
+   * @param {string} eventName
+   * @param {...any} params
+   * @returns {any[]}
+  */
+  async _emit(eventName, ...params) {
+    return Promise.all(
+      this.spectators.map((spectator) => {
+        if (typeof spectator?.[eventName] === 'function') {
+          return spectator[eventName](...params, this);
+        }
+        return null;
+      }),
+    );
+  }
+
+  /** The `begin` event fired when the match begins. The spectators listen to
+   * it with a `begin(game, match)` method.
+   *
+   * @param {Game} game
+   * @returns {any[]}
+  */
+  async onBegin(game) {
+    return this._emit('begin', game);
+  }
+
+  /** The `next` event signals when the match advances to the next game state.
+   * This may be due to actions or aleatory instantiation. The spectators listen
+   * to it with a `next(gameBefore, actions, haps, gameAfter, match)` method.
+   *
+   * @param {Game} gameBefore
+   * @param {object} actions
+   * @param {object} haps
+   * @param {Game} gameAfter
+   * @returns {any[]}
+  */
+  async onNext(gameBefore, actions, haps, gameAfter) {
+    return this._emit('begin', gameBefore, actions, haps, gameAfter);
+  }
+
+  /** The `end` event notifies when the match ends. The spectators listen to it
+   * with a `end(game, result, match)` method.
+   *
+   * @param {Game} game
+   * @param {object} result
+   * @returns {any[]}
+  */
+  async onEnd(game, result) {
+    return this._emit('end', game, result);
   }
 
   // Commands //////////////////////////////////////////////////////////////////

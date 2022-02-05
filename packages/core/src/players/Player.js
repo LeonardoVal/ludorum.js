@@ -11,8 +11,13 @@ let PLAYER_COUNT = -1; // Used by the Player's default naming.
  * This is an abstract class that is meant to be extended.
  *
  * @class
- */
+*/
 class Player extends BaseClass {
+  /** @inheritdoc */
+  static get name() {
+    return 'Player';
+  }
+
   /** The default constructor takes its `name` and a pseudo-`random` number
    * generator from the given `params`.
    *
@@ -30,8 +35,8 @@ class Player extends BaseClass {
 
   /** A player is asked to choose a move by calling `decision`.
    *
-   * @param {Game} [game] - Game state on which to choose an action.
-   * @param {string} [role] - Role this player is playing in the given game.
+   * @param {Game} game - Game state on which to choose an action.
+   * @param {string} role - Role this player is playing in the given game.
    * @returns {any} A promise that resolves to the selected move.
   */
   async decision(_game, _role) {

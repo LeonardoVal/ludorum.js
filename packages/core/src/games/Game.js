@@ -42,7 +42,7 @@ class Game extends BaseClass {
    *   ['Red', 'Blue']
    */
   get roles() {
-    return this.unimplemented('roles');
+    return this._unimplemented('roles');
   }
 
   // TODO Default abstract getter for `activeRoles`?
@@ -59,7 +59,7 @@ class Game extends BaseClass {
    *   }
    */
   get actions() {
-    return this.unimplemented('actions');
+    return this._unimplemented('actions');
   }
 
   /** The game's `aleatories` are the random variables that may affect the game,
@@ -84,7 +84,7 @@ class Game extends BaseClass {
    * @return {Game} - Same as `this`.
    */
   perform(_actions, _haps) {
-    return this.unimplemented('perform()');
+    return this._unimplemented('perform()');
   }
 
   /** The next method is similar to `perform`, but it doesn't update the current
@@ -113,7 +113,7 @@ class Game extends BaseClass {
    *   { Player1: -1, Player2: +1 }
    */
   get result() {
-    return this.unimplemented('result');
+    return this._unimplemented('result');
   }
 
   /** Some games may assign scores to the players in a finished game. This may

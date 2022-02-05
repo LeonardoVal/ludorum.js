@@ -7,10 +7,11 @@ export const checkPlayer = async ({
 }) => {
   const players = game.roles.map((n) => playerBuilder(n));
   const match = new Match({ game, players });
-  for await (const entry of match.run()) {
+  const history = await match.complete();
+  history.forEach((entry) => {
     expect(entry.game).toBeOfType(game.constructor);
-  }
-  return match;
+  });
+  return { match, history };
 }; // checkPlayer
 
 export const checkPlayerWithPredefined = async ({
@@ -30,7 +31,8 @@ export const checkPlayerWithPredefined = async ({
       width,
       result,
     });
-    const { current, history } = await checkPlayer({ game, playerBuilder });
+    const { history } = await checkPlayer({ game, playerBuilder });
+    const current = history[history.length - 1];
     expect(current.game.result).toEqual(result);
     expect(history.length).toBe(length + 1);
   }
