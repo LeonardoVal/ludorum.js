@@ -30,7 +30,7 @@ class RangeAleatory extends Aleatory {
   }
 
   randomValue(rng) {
-    return this.rng(rng).random(this.min, this.max);
+    return this.rng(rng).randomInt(this.min, this.max + 1);
   }
 } // class RangeAleatory
 

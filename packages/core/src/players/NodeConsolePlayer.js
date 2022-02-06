@@ -6,6 +6,11 @@ const bold = (x) => `\x1b[1m${x}\x1b[0m`;
 const boldBlue = (x) => `\x1b[1;94m${x}\x1b[0m`;
 const boldRed = (x) => `\x1b[1;91m${x}\x1b[0m`;
 
+const completer = (choices, line) => [
+  choices ? [...choices.keys()].filter((key) => key.startsWith(line)) : [],
+  line,
+];
+
 /** Player that uses the console in the NodeJS environment. Meant mostly for
  * testing.
  *
@@ -40,7 +45,7 @@ class NodeConsolePlayer extends Player {
     const readLineInterface = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
-      completer: (line) => [[], line],
+      completer: (line) => completer(this.choices, line),
     });
     const defaultStringFunction = (x) => `${x}`;
     this
@@ -99,16 +104,14 @@ class NodeConsolePlayer extends Player {
 
   /** @inheritdoc */
   async decision(game, role) {
-    const actions = new Map(
+    this.choices = new Map(
       this.actionsFor(game, role)
         .map((action) => [this.actionString(action), action]),
     );
     const { readLineInterface } = this;
     return new Promise((resolve, reject) => {
-      readLineInterface.write(`Actions for ${role}: ${
-        [...actions.keys()].join(', ')}.\n`);
-      readLineInterface.question('Your choice? > ', (answer) => {
-        const action = actions.get(answer);
+      readLineInterface.question(`${bold(role)}> `, (answer) => {
+        const action = this.choices.get(answer);
         if (!action) {
           reject(new Error(`Unknown action "${answer}"!`));
         } else {
