@@ -18,3 +18,4 @@ packages/**/test/specs/coverage/
 
 # Other
 packages/_dumper/
+.notes
