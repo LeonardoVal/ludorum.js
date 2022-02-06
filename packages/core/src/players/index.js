@@ -1,21 +1,24 @@
+import HeuristicPlayer from './HeuristicPlayer';
+import NodeConsolePlayer from './NodeConsolePlayer';
 import Player from './Player';
 import RandomPlayer from './RandomPlayer';
-import TracePlayer from './TracePlayer';
-import HeuristicPlayer from './HeuristicPlayer';
 import tests from './tests';
+import TracePlayer from './TracePlayer';
 
 export {
   HeuristicPlayer,
+  NodeConsolePlayer,
   Player,
   RandomPlayer,
-  TracePlayer,
   tests,
+  TracePlayer,
 };
 
 export default {
   HeuristicPlayer,
+  NodeConsolePlayer,
   Player,
   RandomPlayer,
-  TracePlayer,
   tests,
+  TracePlayer,
 };
