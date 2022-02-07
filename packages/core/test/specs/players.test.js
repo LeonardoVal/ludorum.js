@@ -1,4 +1,4 @@
-import Randomness from '@creatartis/randomness/Randomness';
+import { Randomness } from '@creatartis/randomness';
 import {
   Player, RandomPlayer, TracePlayer, HeuristicPlayer,
   tests,

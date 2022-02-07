@@ -1,4 +1,4 @@
-import Randomness from '@creatartis/randomness/Randomness';
+import { Randomness } from '@creatartis/randomness';
 import BaseClass from '../utils/BaseClass';
 
 /**  Aleatories are different means of non determinism that games can use, like:

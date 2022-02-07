@@ -1,4 +1,4 @@
-import Randomness from '@creatartis/randomness/Randomness';
+import { Randomness } from '@creatartis/randomness';
 import { Predefined } from '../../src/games';
 import { RandomPlayer } from '../../src/players';
 import Match from '../../src/Match';

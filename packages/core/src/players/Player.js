@@ -1,4 +1,4 @@
-import Randomness from '@creatartis/randomness/Randomness';
+import { Randomness } from '@creatartis/randomness';
 import Game from '../games/Game';
 import BaseClass from '../utils/BaseClass';
 

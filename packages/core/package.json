@@ -8,6 +8,10 @@
     "game ai"
   ],
   "version": "0.3.0-alpha",
+  "main": "dist/core.js",
+  "files": [
+    "dist/", "LICENSE.md", "README.md"
+  ],
   "author": {
     "name": "Leonardo Val",
     "email": "leonardo.val@creatartis.com"
@@ -19,20 +23,15 @@
     "type": "git",
     "url": "http://github.com/LeonardoVal/ludorum.js"
   },
-  "main": "core.js",
-  "module": "index.js",
-  "publishConfig": {
-    "directory": "dist/"
-  },
   "dependencies": {
-    "@creatartis/randomness": "^0.1.2"
+    "@creatartis/randomness": "0.2.0-alpha"
   },
   "devDependencies": {
-    "@creatartis/creatartis-build": "0.2.6",
+    "@creatartis/creatartis-build": "0.3.0-alpha",
     "sermat": "^0.1.1"
   },
   "scripts": {
-    "build": "npx creatartis-build lint build:esm build test doc",
+    "build": "npx creatartis-build lint build test doc",
     "doc": "npx creatartis-build doc",
     "lint": "npx creatartis-build lint",
     "release": "npm run build && npx creatartis-build release",
@@ -41,10 +40,10 @@
     "test": "npx creatartis-build lint test"
   },
   "babel": {
-    "extends": "./node_modules/@creatartis/creatartis-build/babel-config.js"
+    "extends": "./node_modules/@creatartis/creatartis-build/dist/babel-config.js"
   },
   "eslintConfig": {
-    "extends": "./node_modules/@creatartis/creatartis-build/eslint-config.js",
+    "extends": "./node_modules/@creatartis/creatartis-build/dist/eslint-config.js",
     "rules": {
       "import/no-dynamic-require": 0,
       "no-await-in-loop": 0,
@@ -62,7 +61,7 @@
   ],
   "jest": {
     "setupFilesAfterEnv": [
-      "./node_modules/@creatartis/creatartis-build/jest-setup.js"
+      "./node_modules/@creatartis/creatartis-build/dist/jest-setup.js"
     ],
     "testPathIgnorePatterns": [
       "node_modules/",

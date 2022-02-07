@@ -1,4 +1,4 @@
-import Randomness from '@creatartis/randomness/Randomness';
+import { Randomness } from '@creatartis/randomness';
 import {
   Bet, Choose2Win, Game, Predefined, tests,
 } from '../../src/games';
