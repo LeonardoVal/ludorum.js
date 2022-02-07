@@ -26,7 +26,7 @@
     "@ludorum/core": "^0.3.0-alpha"
   },
   "devDependencies": {
-    "@creatartis/creatartis-build": "0.2.6",
+    "@creatartis/creatartis-build": "0.3.0-alpha",
     "@creatartis/randomness": "^0.1.2",
     "@ludorum/players-minimax": "0.1.0-alpha",
     "@ludorum/players-montecarlo": "0.1.0-alpha",

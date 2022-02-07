@@ -10,7 +10,9 @@
   "version": "0.3.0-alpha",
   "main": "dist/core.js",
   "files": [
-    "dist/", "LICENSE.md", "README.md"
+    "dist/",
+    "LICENSE.md",
+    "README.md"
   ],
   "author": {
     "name": "Leonardo Val",
