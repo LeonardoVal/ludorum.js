@@ -62,7 +62,7 @@ class NodeConsolePlayer extends Player {
   */
   spectator(role) {
     const { readLineInterface } = this;
-    const write = (...args) => readLineInterface.write(...args);
+    const write = (text) => process.stdout.write(text);
     const showGame = (game) => {
       const gameString = this.gameString(game, role);
       readLineInterface.write(`${gameString}\n`);
