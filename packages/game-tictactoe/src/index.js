@@ -1,6 +1,6 @@
 /* eslint-disable import/prefer-default-export */
-import games from './games';
+import TicTacToe from './games/TicTacToe';
 
 export {
-  games,
+  TicTacToe,
 };

@@ -6,6 +6,10 @@
     "game"
   ],
   "version": "0.1.0-alpha",
+  "main": "dist/game-pig.js",
+  "files": [
+    "dist/", "LICENSE.md", "README.md"
+  ],
   "author": {
     "name": "Leonardo Val",
     "email": "leonardo.val@creatartis.com"
@@ -17,17 +21,12 @@
     "type": "git",
     "url": "http://github.com/LeonardoVal/ludorum.js"
   },
-  "main": "?.js",
-  "module": "index.js",
-  "publishConfig": {
-    "directory": "dist/"
-  },
   "dependencies": {
     "@ludorum/core": "^0.3.0-alpha"
   },
   "devDependencies": {
     "@creatartis/creatartis-build": "0.3.0-alpha",
-    "@creatartis/randomness": "^0.1.2",
+    "@creatartis/randomness": "0.2.0-alpha",
     "@ludorum/players-minimax": "0.1.0-alpha",
     "@ludorum/players-montecarlo": "0.1.0-alpha",
     "sermat": "^0.1.1"
@@ -41,35 +40,5 @@
     "release:verdaccio": "npm run build && npx creatartis-build release:verdaccio",
     "rerelease:verdaccio": "npm run build && npx creatartis-build rerelease:verdaccio",
     "test": "npx creatartis-build lint test"
-  },
-  "babel": {
-    "extends": "./node_modules/@creatartis/creatartis-build/babel-config.js"
-  },
-  "eslintConfig": {
-    "extends": "./node_modules/@creatartis/creatartis-build/eslint-config.js",
-    "rules": {
-      "no-await-in-loop": 0,
-      "no-console": 0,
-      "import/no-dynamic-require": 0,
-      "no-mixed-operators": 0,
-      "no-param-reassign": 0,
-      "no-restricted-syntax": 0,
-      "no-unused-vars": 0
-    }
-  },
-  "eslintIgnore": [
-    "dist/",
-    "node_modules/"
-  ],
-  "jest": {
-    "setupFilesAfterEnv": [
-      "./node_modules/@creatartis/creatartis-build/jest-setup.js"
-    ],
-    "testPathIgnorePatterns": [
-      "node_modules/",
-      "src/",
-      "dist/"
-    ],
-    "verbose": true
   }
 }

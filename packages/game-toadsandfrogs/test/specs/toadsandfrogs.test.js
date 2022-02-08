@@ -1,13 +1,10 @@
-import MersenneTwister from '@creatartis/randomness/generators/MersenneTwister';
-import { tests as gameTests } from '@ludorum/core/games';
-import { tests as playerTests } from '@ludorum/core/players';
+import { MersenneTwister } from '@creatartis/randomness';
+import { gameTests, playerTests } from '@ludorum/core';
 import {
   AlphaBetaPlayer, MaxNPlayer, MiniMaxPlayer,
-} from '@ludorum/players-minimax/players';
-import {
-  MonteCarloPlayer,
-} from '@ludorum/players-montecarlo/players';
-import { ToadsAndFrogs } from '../../src/games';
+} from '@ludorum/players-minimax';
+import { MonteCarloPlayer } from '@ludorum/players-montecarlo';
+import { ToadsAndFrogs } from '../../src/index';
 
 const RANDOM = new MersenneTwister(parseInt('Pig', 32) % 1e8);
 const MATCH_COUNT = 6;

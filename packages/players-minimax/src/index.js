@@ -1,6 +1,9 @@
-/* eslint-disable import/prefer-default-export */
-import players from './players';
+import AlphaBetaPlayer from './players/AlphaBetaPlayer';
+import MaxNPlayer from './players/MaxNPlayer';
+import MiniMaxPlayer from './players/MiniMaxPlayer';
 
 export {
-  players,
+  AlphaBetaPlayer,
+  MaxNPlayer,
+  MiniMaxPlayer,
 };

@@ -1,4 +1,4 @@
-import { Checkerboard } from '../../src/utils';
+import { Checkerboard } from '../../src/index';
 
 describe('Checkerboard', () => {
   it('is defined as expected', () => {

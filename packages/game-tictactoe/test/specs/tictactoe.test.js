@@ -1,13 +1,10 @@
-import MersenneTwister from '@creatartis/randomness/generators/MersenneTwister';
-import { tests as gameTests } from '@ludorum/core/games';
-import { HeuristicPlayer, tests as playerTests } from '@ludorum/core/players';
+import { MersenneTwister } from '@creatartis/randomness';
+import { gameTests, HeuristicPlayer, playerTests } from '@ludorum/core';
 import {
   AlphaBetaPlayer, MaxNPlayer, MiniMaxPlayer,
-} from '@ludorum/players-minimax/players';
-import {
-  MonteCarloPlayer,
-} from '@ludorum/players-montecarlo/players';
-import { TicTacToe } from '../../src/games';
+} from '@ludorum/players-minimax';
+import { MonteCarloPlayer } from '@ludorum/players-montecarlo';
+import { TicTacToe } from '../../src/index';
 
 const RANDOM = new MersenneTwister(parseInt('TicTacToe', 32) % 1e8);
 const MATCH_COUNT = 2;

@@ -1,4 +1,4 @@
-import Game from '@ludorum/core/games/Game';
+import { Game } from '@ludorum/core';
 
 const ROLE_X = 'Xs';
 const ROLE_O = 'Os';

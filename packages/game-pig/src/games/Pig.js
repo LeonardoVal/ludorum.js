@@ -1,5 +1,4 @@
-import Game from '@ludorum/core/games/Game';
-import { dice } from '@ludorum/core/aleatories';
+import { Game, dice } from '@ludorum/core';
 
 const ROLE_ONE = 'One';
 const ROLE_TWO = 'Two';

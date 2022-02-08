@@ -1,5 +1,4 @@
-import HeuristicPlayer from '@ludorum/core/players/HeuristicPlayer';
-import GameTree from '@ludorum/core/utils/GameTree';
+import { HeuristicPlayer, GameTree } from '@ludorum/core';
 
 /** Automatic players based on pure MiniMax.
  *

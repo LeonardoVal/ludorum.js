@@ -1,6 +1,6 @@
 /* eslint-disable import/prefer-default-export */
-import games from './games';
+import ToadsAndFrogs from './games/ToadsAndFrogs';
 
 export {
-  games,
+  ToadsAndFrogs,
 };

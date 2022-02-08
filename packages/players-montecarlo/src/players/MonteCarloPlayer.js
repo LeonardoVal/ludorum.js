@@ -1,6 +1,6 @@
-import Player from '@ludorum/core/players/Player';
-import GameTree from '@ludorum/core/utils/GameTree';
-import HeuristicPlayer from '@ludorum/core/players/HeuristicPlayer';
+import {
+  HeuristicPlayer, GameTree, Player,
+} from '@ludorum/core';
 
 /** Automatic player based on flat Monte Carlo tree search.
 */

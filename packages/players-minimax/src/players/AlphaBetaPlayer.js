@@ -1,4 +1,4 @@
-import GameTree from '@ludorum/core/utils/GameTree';
+import { GameTree } from '@ludorum/core';
 import MiniMaxPlayer from './MiniMaxPlayer';
 
 /** Automatic players based on MiniMax with alfa-beta pruning.

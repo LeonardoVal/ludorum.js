@@ -1,4 +1,4 @@
-import { games } from '@ludorum/core';
+import { Game } from '@ludorum/core';
 
 const ROLE_EVENS = 'Evens';
 const ROLE_ODDS = 'Odds';
@@ -9,7 +9,7 @@ const DEFAULT_OPTIONS = [1, 2];
  * child game, implemented as a simple example of a simultaneous game, i.e. a
  * game in which more than one player can move at any given turn.
 */
-class OddsAndEvens extends games.Game {
+class OddsAndEvens extends Game {
   /** @inheritdoc */
   static get name() {
     return 'OddsAndEvens';

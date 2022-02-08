@@ -1,10 +1,6 @@
 const readline = require('readline');
-const {
-  players: { NodeConsolePlayer },
-} = require('@ludorum/core');
-const {
-  games: { OddsAndEvens },
-} = require('../../dist/game-oddsandevens');
+const { NodeConsolePlayer } = require('@ludorum/core');
+const { OddsAndEvens } = require('../../dist/game-oddsandevens');
 
 const bold = (x) => `\x1b[1m${x}\x1b[0m`;
 

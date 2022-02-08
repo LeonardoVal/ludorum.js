@@ -1,6 +1,7 @@
-/* eslint-disable import/prefer-default-export */
-import utils from './utils';
+import Checkerboard from './utils/Checkerboard';
+import SparseCheckerboard from './utils/SparseCheckerboard';
 
 export {
-  utils,
+  Checkerboard,
+  SparseCheckerboard,
 };
