@@ -1,7 +1,6 @@
 const readline = require('readline');
 const {
-  games: { Choose2Win },
-  players: { NodeConsolePlayer },
+  Choose2Win, NodeConsolePlayer,
 } = require('../../dist/core');
 
 async function main() {

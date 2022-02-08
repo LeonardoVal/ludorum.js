@@ -31,3 +31,7 @@ export function addStatistic(stats, keys, datum) {
   }
   return stats;
 }
+
+export default {
+  addStatistic,
+};

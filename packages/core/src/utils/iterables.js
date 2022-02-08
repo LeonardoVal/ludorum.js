@@ -65,3 +65,9 @@ export function* cartesianProductObject(obj, options) {
     }, {});
   }
 }
+
+export default {
+  cartesianProduct,
+  cartesianProductObject,
+  permutations,
+};

@@ -1,7 +1,6 @@
 const readline = require('readline');
 const {
-  games: { Bet },
-  players: { NodeConsolePlayer },
+  Bet, NodeConsolePlayer,
 } = require('../../dist/core');
 
 const bold = (x) => `\x1b[1m${x}\x1b[0m`;
