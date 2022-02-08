@@ -40,39 +40,5 @@
     "release:verdaccio": "npm run build && npx creatartis-build release:verdaccio",
     "rerelease:verdaccio": "npm run build && npx creatartis-build rerelease:verdaccio",
     "test": "npx creatartis-build lint test"
-  },
-  "babel": {
-    "extends": "./node_modules/@creatartis/creatartis-build/dist/babel-config.js"
-  },
-  "eslintConfig": {
-    "extends": "./node_modules/@creatartis/creatartis-build/dist/eslint-config.js",
-    "rules": {
-      "import/no-dynamic-require": 0,
-      "no-await-in-loop": 0,
-      "no-console": 0,
-      "no-mixed-operators": 0,
-      "no-nested-ternary": 0,
-      "no-param-reassign": 0,
-      "no-restricted-syntax": 0,
-      "no-unused-vars": 0
-    }
-  },
-  "eslintIgnore": [
-    "dist/",
-    "node_modules/"
-  ],
-  "jest": {
-    "setupFilesAfterEnv": [
-      "./node_modules/@creatartis/creatartis-build/dist/jest-setup.js"
-    ],
-    "testPathIgnorePatterns": [
-      "node_modules/",
-      "src/",
-      "dist/"
-    ],
-    "transform": {
-      "\\.jsx?$": "babel-jest"
-    },
-    "verbose": true
   }
 }

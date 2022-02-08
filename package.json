@@ -12,10 +12,7 @@
     "packages/"
   ],
   "devDependencies": {
-    "@creatartis/creatartis-build": "0.2.6",
-    "@creatartis/randomness": "^0.1.2",
-    "lerna": "^4.0.0",
-    "sermat": "^0.1.1"
+    "lerna": "^4.0.0"
   },
   "scripts": {
     "bootstrap": "npx lerna bootstrap --hoist --nohoist=@creatartis/creatartis-build",
