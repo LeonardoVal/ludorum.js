@@ -32,7 +32,7 @@
     "sermat": "^0.1.1"
   },
   "scripts": {
-    "build": "npx creatartis-build lint build:esm build test doc",
+    "build": "npx creatartis-build lint build test doc",
     "deps:verdaccio": "rm -rf node_modules package-lock.json && npm i --registry http://localhost:4873",
     "doc": "npx creatartis-build doc",
     "lint": "npx creatartis-build lint",
