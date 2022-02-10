@@ -179,7 +179,7 @@ class Match extends BaseClass {
     return this;
   }
 
-  /** And event emitted calls a method called `eventName` in all spectators that
+  /** An event emitted calls a method called `eventName` in all spectators that
    * support it, with the given `params` and the match itself. Async event
    * handlers are supported. The results of the calls are returned as a result,
    * with `null`s for failed spectators.

@@ -10,13 +10,16 @@ import HeuristicPlayer from './players/HeuristicPlayer';
 import iterables from './utils/iterables';
 import ListAleatory from './aleatories/ListAleatory';
 import Match from './Match';
+import MeasurementTournament from './tournaments/MeasurementTournament';
 import NodeConsolePlayer from './players/NodeConsolePlayer';
 import Player from './players/Player';
 import playerTests from './players/playerTests';
 import Predefined from './games/Predefined';
 import RandomPlayer from './players/RandomPlayer';
 import RangeAleatory from './aleatories/RangeAleatory';
+import RoundRobinTournament from './tournaments/RoundRobinTournament';
 import stats from './utils/stats';
+import Tournament from './tournaments/Tournament';
 import TracePlayer from './players/TracePlayer';
 import WeightedAleatory from './aleatories/WeightedAleatory';
 
@@ -33,13 +36,16 @@ export {
   iterables,
   ListAleatory,
   Match,
+  MeasurementTournament,
   NodeConsolePlayer,
   Player,
   playerTests,
   Predefined,
   RandomPlayer,
   RangeAleatory,
+  RoundRobinTournament,
   stats,
+  Tournament,
   TracePlayer,
   WeightedAleatory,
 };

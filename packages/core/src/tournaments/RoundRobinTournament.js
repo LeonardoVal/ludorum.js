@@ -5,7 +5,7 @@ import Tournament from './Tournament';
  * tournaments where all players play against each other a certain number of
  * times.
 */
-class RoundRobin extends Tournament {
+class RoundRobinTournament extends Tournament {
   /** @inheritdoc */
   static get name() {
     return 'RoundRobin';
@@ -34,6 +34,6 @@ class RoundRobin extends Tournament {
   }
 } // class RoundRobin
 
-RoundRobin.defineSERMAT('matchCount');
+RoundRobinTournament.defineSERMAT('matchCount');
 
-export default RoundRobin;
+export default RoundRobinTournament;

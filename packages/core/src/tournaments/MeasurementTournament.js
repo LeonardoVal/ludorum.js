@@ -6,7 +6,7 @@ import Tournament from './Tournament';
  * evaluate how well the players play by confronting them with the opponents,
  * rotating their roles in the matches.
 */
-class Measurement extends Tournament {
+class MeasurementTournament extends Tournament {
   /** @inheritdoc */
   static get name() {
     return 'Measurement';
@@ -50,6 +50,6 @@ class Measurement extends Tournament {
 
 /** Serialization and materialization using Sermat.
 */
-Measurement.defineSERMAT('matchCount opponents');
+MeasurementTournament.defineSERMAT('matchCount opponents');
 
-export default Measurement;
+export default MeasurementTournament;
