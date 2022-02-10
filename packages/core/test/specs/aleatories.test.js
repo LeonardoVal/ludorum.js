@@ -49,20 +49,6 @@ describe('aleatories', () => {
     });
   });
 
-  /* TODO
-  xit('sumProbability', function () {
-    var sumProbability = ludorum.aleatories.sumProbability;
-    expect(typeof sumProbability).toBe('function');
-    expect(sumProbability(1,2,6)).toBe(0);
-    expect(1 / sumProbability(2,2,6)).toBe(36);
-    expect(1 / sumProbability(3,2,6)).toBe(18);
-    expect(1 / sumProbability(7,2,6)).toBe(6);
-    expect(1 / sumProbability(11,2,6)).toBe(18);
-    expect(1 / sumProbability(12,2,6)).toBe(36);
-    expect(sumProbability(13,2,6)).toBe(0);
-  });
-  */
-
   it('WeightedAleatory normalization', () => {
     const norm = (dist) => {
       const alea = new WeightedAleatory({ weightedValues: dist });
