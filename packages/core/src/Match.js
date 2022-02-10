@@ -138,7 +138,7 @@ class Match extends BaseClass {
       let currentGame = isStarted ? history[history.length - 1] : game;
       const players = this.participate();
       if (!isStarted) {
-        this.onBegin(currentGame);
+        this.onBegin(currentGame, players);
       }
       yield { game: currentGame };
       while (!currentGame.isFinished) {
@@ -203,10 +203,11 @@ class Match extends BaseClass {
    * it with a `begin(game, match)` method.
    *
    * @param {Game} game
+   * @param {object} players
    * @returns {any[]}
   */
-  async onBegin(game) {
-    return this._emit('begin', game);
+  async onBegin(game, players) {
+    return this._emit('begin', game, players);
   }
 
   /** The `next` event signals when the match advances to the next game state.

@@ -93,7 +93,7 @@ class TicTacToe extends Game {
   */
   get activeRoles() {
     const markBalance = [...this.board]
-      .reduce((b, sq) => b + (({ X: 1, O: -1 })?.[sq] ?? 0));
+      .reduce((b, sq) => b + (({ X: 1, O: -1 })?.[sq] ?? 0), 0);
     return markBalance > 0 ? [ROLE_O] : [ROLE_X];
   }
 
@@ -122,17 +122,6 @@ class TicTacToe extends Game {
       const newBoard = mapping.map((i) => board.charAt(i)).join('');
       yield newBoard;
     }
-  }
-
-  /** Creates a text (ASCII) version of the board.
-   *
-   * @returns {string}
-  */
-  boardASCII() {
-    const { board } = this;
-    return [0, 3, 6]
-      .map((i) => board.substr(i, 3).split('').join('|'))
-      .join('\n-+-+-\n');
   }
 
   /** Builds an heuristic evaluation function from weights for each square in

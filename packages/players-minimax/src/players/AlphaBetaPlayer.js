@@ -4,6 +4,11 @@ import MiniMaxPlayer from './MiniMaxPlayer';
 /** Automatic players based on MiniMax with alfa-beta pruning.
 */
 class AlphaBetaPlayer extends MiniMaxPlayer {
+  /** @inheritdoc */
+  static get name() {
+    return 'AlphaBetaPlayer';
+  }
+
   /** Every state's evaluation is the minimax value for the given game and
    * player. The alfa and beta arguments are initialized with `-Infinity` and
    * `Infinity`.

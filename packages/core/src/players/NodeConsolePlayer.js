@@ -70,8 +70,12 @@ class NodeConsolePlayer extends Player {
     const actionString = (...args) => this.actionString(...args);
     const hapString = (...args) => this.hapString(...args);
     return {
-      begin(game) {
-        write(`You are playing a match of ${bold(game.name)} as ${bold(role)}.\n`);
+      begin(game, players) {
+        const opponents = Object.entries(players)
+          .filter(([r]) => r !== role)
+          .map(([r, p]) => `${bold(p.name)} (${p.constructor.name}) as ${bold(r)}`);
+        write(`You are playing a match of ${bold(game.name)} as ${
+          bold(role)} against ${opponents.join(', ')}.\n`);
         showGame(game);
       },
       next(_gameBefore, _actions, _haps, gameAfter) {
@@ -112,7 +116,7 @@ class NodeConsolePlayer extends Player {
     return new Promise((resolve, reject) => {
       readLineInterface.question(`${bold(role)}> `, (answer) => {
         const action = this.choices.get(answer);
-        if (!action) {
+        if (action === undefined) {
           reject(new Error(`Unknown action "${answer}"!`));
         } else {
           resolve(action);
@@ -123,12 +127,31 @@ class NodeConsolePlayer extends Player {
 
   // Utility functions /////////////////////////////////////////////////////////
 
-  async playAgainstRandoms(game, role) {
+  /** Shortcut for creating a match for a game with this player in the given
+   * role.
+   *
+   * @param {Game} game - The game to play.
+   * @param {string} role - The role for this player.
+   * @param {function} playerBuilder - Builds an opponent `Player`.
+   * @returns {object[]} - The complete result of the match.
+  */
+  async playAgainst(game, role, playerBuilder) {
     const players = game.roles.map(
-      (r) => (r === role ? this : new RandomPlayer()),
+      (r) => (r === role ? this : playerBuilder(r)),
     );
     const match = new Match({ game, players });
     return match.complete();
+  }
+
+  /** Shortcut for creating a match for a game with this player in the given
+   * role, against random players.
+   *
+   * @param {Game} game - The game to play.
+   * @param {string} role - The role for this player.
+   * @returns {object[]} - The complete result of the match.
+  */
+  async playAgainstRandoms(game, role) {
+    return this.playAgainst(game, role, () => new RandomPlayer());
   }
 } // class NodeConsolePlayer
 

@@ -6,6 +6,11 @@ import { HeuristicPlayer, GameTree } from '@ludorum/core';
  * @extends HeuristicPlayer
 */
 class MiniMaxPlayer extends HeuristicPlayer {
+  /** @inheritdoc */
+  static get name() {
+    return 'MiniMaxPlayer';
+  }
+
   /** Builds a new player that uses MiniMax search.
    *
    * @param {object} [args]

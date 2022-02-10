@@ -7,6 +7,11 @@ import { HeuristicPlayer } from '@ludorum/core';
  * @extends HeuristicPlayer
 */
 class MaxNPlayer extends HeuristicPlayer {
+  /** @inheritdoc */
+  static get name() {
+    return 'MaxNPlayer';
+  }
+
   /** Besides the parameters of every `HeuristicPlayer`, an `horizon` for the
    * search may be specified (3 plies by default).
    *

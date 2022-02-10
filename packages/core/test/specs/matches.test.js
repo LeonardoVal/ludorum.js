@@ -56,7 +56,7 @@ describe('Match', () => {
       const { game: currentGame } = current;
       expect(currentGame).toBeOfType(Predefined);
       if (!previousGame) {
-        expect(spectator.begin).toHaveBeenCalledWith(game, match);
+        expect(spectator.begin).toHaveBeenCalledWith(game, players, match);
         expect(spectator.next).not.toHaveBeenCalled();
         expect(current.actions).not.toBeDefined();
         expect(current.haps).not.toBeDefined();
