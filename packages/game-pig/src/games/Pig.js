@@ -54,14 +54,13 @@ class Pig extends Game {
     return [ROLE_ONE, ROLE_TWO];
   }
 
-  /** The tentative score for the active role is the sum of their score plus
-   * the current rolls.
+  /** The sum of the current rolls.
    *
-   * @returns {number}
+   * @property {number}
   */
-  tentativeScore() {
-    const { activeRole, scores, rolls } = this;
-    return rolls.reduce((sum, n) => sum + n, scores[activeRole]);
+  get rollsSum() {
+    const { rolls } = this;
+    return rolls.reduce((sum, n) => sum + n, 0);
   }
 
   /** The active player can either hold and pass the turn, or roll.
@@ -70,11 +69,11 @@ class Pig extends Game {
   */
   get actions() {
     const {
-      activeRole, result, rolls, rolling, goal,
+      activeRole, goal, result, rolling, rolls, rollsSum, scores,
     } = this;
     if (!result && !rolling) {
       const moves = [];
-      if (this.tentativeScore() < goal) {
+      if (scores[activeRole] + rollsSum < goal) {
         moves.push(ACTIONS.ROLL);
       }
       if (rolls.length > 0) {
@@ -135,7 +134,7 @@ class Pig extends Game {
   */
   perform(actions, haps) {
     const {
-      activeRole, scores, rolls, rolling,
+      activeRole, scores, rolling, rolls, rollsSum,
     } = this;
     const opponent = this.opponent();
     if (rolling) {
@@ -151,8 +150,7 @@ class Pig extends Game {
       const action = actions?.[activeRole];
       switch (action) {
         case ACTIONS.HOLD: {
-          const newScore = scores[activeRole] + this.tentativeScore();
-          this.scores = { ...scores, [activeRole]: newScore };
+          scores[activeRole] += rollsSum;
           this.rolls = [];
           this.activateRoles(opponent);
           break;

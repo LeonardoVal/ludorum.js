@@ -5,6 +5,11 @@ import {
 /** Automatic player based on flat Monte Carlo tree search.
 */
 class MonteCarloPlayer extends HeuristicPlayer {
+  /** @inheritdoc */
+  static get name() {
+    return 'MonteCarloPlayer';
+  }
+
   /** The constructor builds a player that chooses its moves using the
    * [flat Monte Carlo game tree search method](http://en.wikipedia.org/wiki/Monte-Carlo_tree_search).
    *

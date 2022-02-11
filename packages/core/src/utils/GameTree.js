@@ -134,8 +134,10 @@ class GameTree extends BaseClass {
   static randomHaps(random, aleatories) {
     let hapsProbability = 1;
     const haps = Object.entries(aleatories).reduce((result, [key, alea]) => {
-      const distribution = [...alea.distribution()]
-        .map(([value, prob]) => [[value, prob], prob]);
+      const distribution = new Map(
+        [...alea.distribution()]
+          .map(([value, prob]) => [[value, prob], prob]),
+      );
       const [value, prob] = random.weightedChoice(distribution);
       result[key] = value;
       hapsProbability *= prob;
