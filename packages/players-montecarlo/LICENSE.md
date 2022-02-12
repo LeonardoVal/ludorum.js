@@ -1,7 +1,7 @@
 ﻿The MIT License
 ===============
 
-Source code for package `@ludorum/core` is Copyright (C) 2013-2022 [Leonardo Val](mailto:leonardo.val@creatartis.com).
+Source code for package `@ludorum/players-montecarlo` is Copyright (C) 2013-2022 [Leonardo Val](mailto:leonardo.val@creatartis.com).
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
