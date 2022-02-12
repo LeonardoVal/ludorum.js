@@ -1,6 +1,7 @@
-/* eslint-disable import/prefer-default-export */
-import games from './games';
+import Puzzle15 from './games/Puzzle15';
+import SlidingPuzzle from './games/SlidingPuzzle';
 
 export {
-  games,
+  Puzzle15,
+  SlidingPuzzle,
 };

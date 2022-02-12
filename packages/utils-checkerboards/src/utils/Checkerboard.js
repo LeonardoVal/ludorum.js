@@ -1,5 +1,5 @@
 /* eslint-disable max-classes-per-file */
-import BaseClass from '@ludorum/core/utils/BaseClass';
+import { BaseClass } from '@ludorum/core';
 
 const makeCoord = (x, y) => Uint16Array.of(x, y);
 
@@ -22,7 +22,7 @@ class Checkerboard extends BaseClass {
     super();
     this
       ._prop('dimensions', makeCoord(sizeX, sizeY))
-      ._prop('emptySquare', emptySquare);
+      ._prop('emptySquare', emptySquare, null);
   }
 
   /** The `size` is the amount of squares in the checkerboard.
@@ -237,8 +237,8 @@ class Checkerboard extends BaseClass {
     }
   }
 
-  /** Convenient method `walks(coord, deltas)` can be used to get many walks
-   * from the same origin.
+  /** Convenient method `walks` can be used to get many walks from the same
+   * origin.
    *
    * @param {number[]} coord
    * @param {number[][]} deltas
@@ -251,9 +251,25 @@ class Checkerboard extends BaseClass {
     }
   }
 
+  /** Returns the valid `moves` from the given `coord` and the given `deltas`.
+   *
+   * @param {number[]} coord
+   * @param {...number[]} deltas
+   * @yield {number[]}
+  */
+  * moves(coord, ...deltas) {
+    const [x, y] = coord;
+    for (const [dx, dy] of deltas) {
+      const m = Uint16Array.of(x + dx, y + dy);
+      if (this.isValidCoord(m)) {
+        yield m;
+      }
+    }
+  }
+
   /** Frequently used deltas for walks are available at `DIRECTIONS`.
   */
-  static DIRECTIONS = { // FIXME
+  static DIRECTIONS = {
     HORIZONTAL: [[-1, 0], [+1, 0]],
     VERTICAL: [[0, -1], [0, +1]],
     ORTHOGONAL: [[0, -1], [0, +1], [-1, 0], [+1, 0]],
@@ -291,6 +307,40 @@ class Checkerboard extends BaseClass {
   */
   isEmptySquare(repr, coord) {
     return this.square(repr, coord) === this.emptySquare;
+  }
+
+  /** */
+  findFirst(repr, squareValue) {
+    for (const coord of this.findAll(repr, squareValue)) {
+      return coord;
+    }
+    throw new Error(`Value ${squareValue} was not found in board ${repr}!`);
+  }
+
+  /** */
+  * findAll(repr, squareValue) {
+    for (let i = 0; i < repr.length; i += 1) {
+      const v = repr[i];
+      if (v === squareValue) {
+        yield this.coordFromIndex(i);
+      }
+    }
+  }
+
+  /** */
+  findOne(repr, squareValue) {
+    let result;
+    for (const coord of this.findAll(repr, squareValue)) {
+      if (result === undefined) {
+        result = coord;
+      } else {
+        throw new Error(`There is more than one square with ${squareValue} in board ${repr}!`);
+      }
+    }
+    if (result === undefined) {
+      throw new Error(`Value ${squareValue} was not found in board ${repr}!`);
+    }
+    return result;
   }
 
   /** Returns the list of square values corresponding to a list of board
@@ -533,10 +583,88 @@ class Checkerboard extends BaseClass {
     });
     return table;
   } /* */
+
+  /** Returns an object with a similar interface, except that the methods that
+   * have a `repr` arguments, use the given value. This is meant to simplify
+   * chains of modifications, e.g.:
+   *
+   * ```(new Checkerboard({ dimensions: [3, 3], emptySquare: '.' }))
+   * .with('X....XO..').place([2,2], 'O').repr.join('')
+   * ```
+   *
+   * @param {any[]} repr - Board representation. Warning! It may get updated.
+   * @returns {object}
+   */
+  with(repr) {
+    const result = Object.create(this);
+    result.repr = repr;
+    Object.getOwnPropertyNames(Object.getPrototypeOf(this)).forEach((n) => {
+      const { withMethod } = this[n];
+      if (withMethod) {
+        Object.defineProperty(result, n, { value: withMethod });
+      }
+    });
+    return result;
+  }
+
+  /** Shortcut for calling `with` with an empty board.
+   *
+   * @returns {object}
+  */
+  withEmptyBoard() {
+    return this.with(this.emptyBoard());
+  }
 } // class Checkerboard
 
 /** Serialization and materialization using Sermat.
 */
 Checkerboard.defineSERMAT('dimensions emptySquare');
+
+[ // Modification methods.
+  'clockwiseRotation',
+  'counterClockwiseRotation',
+  'horizontalSymmetry',
+  'move',
+  'place',
+  'swap',
+  'transform',
+  'verticalSymmetry',
+].forEach((methodName) => {
+  Checkerboard.prototype[methodName].withMethod = {
+    [methodName](...args) {
+      this.repr = Object.getPrototypeOf(this)[methodName](this.repr, ...args);
+      return this;
+    },
+  }[methodName];
+});
+
+[ // Information methods.
+  'findFirst',
+  'findOne',
+  'isEmptySquare',
+  'lineString',
+  'lineValues',
+  'renderAsText',
+  'square',
+  'weightedSum',
+].forEach((methodName) => {
+  Checkerboard.prototype[methodName].withMethod = {
+    [methodName](...args) {
+      return Object.getPrototypeOf(this)[methodName](this.repr, ...args);
+    },
+  }[methodName];
+});
+
+[ // Generator methods.
+  'findAll',
+  'linesStrings',
+  'linesValues',
+].forEach((methodName) => {
+  Checkerboard.prototype[methodName].withMethod = {
+    * [methodName](...args) {
+      yield* Object.getPrototypeOf(this)[methodName](this.repr, ...args);
+    },
+  }[methodName];
+});
 
 export default Checkerboard;
