@@ -22,7 +22,7 @@ class Checkerboard extends BaseClass {
     super();
     this
       ._prop('dimensions', makeCoord(sizeX, sizeY))
-      ._prop('emptySquare', emptySquare, null);
+      ._prop('emptySquare', emptySquare, true, null);
   }
 
   /** The `size` is the amount of squares in the checkerboard.
@@ -309,7 +309,12 @@ class Checkerboard extends BaseClass {
     return this.square(repr, coord) === this.emptySquare;
   }
 
-  /** */
+  /** Finds the coordinate of the first square with the given value.
+   *
+   * @param {any[]} repr
+   * @param {any} squareValue
+   * @returns {number[]}
+  */
   findFirst(repr, squareValue) {
     for (const coord of this.findAll(repr, squareValue)) {
       return coord;
@@ -317,7 +322,12 @@ class Checkerboard extends BaseClass {
     throw new Error(`Value ${squareValue} was not found in board ${repr}!`);
   }
 
-  /** */
+  /** Iterates over the coordinates of squares with the given value.
+   *
+   * @param {any[]} repr
+   * @param {any} squareValue
+   * @yield {number[]}
+  */
   * findAll(repr, squareValue) {
     for (let i = 0; i < repr.length; i += 1) {
       const v = repr[i];
@@ -327,15 +337,20 @@ class Checkerboard extends BaseClass {
     }
   }
 
-  /** */
+  /** Finds the coordinate of the first square with the given value, and checks
+   * that no other square has the same value.
+   *
+   * @param {any[]} repr
+   * @param {any} squareValue
+   * @returns {number[]}
+  */
   findOne(repr, squareValue) {
     let result;
     for (const coord of this.findAll(repr, squareValue)) {
-      if (result === undefined) {
-        result = coord;
-      } else {
+      if (result !== undefined) {
         throw new Error(`There is more than one square with ${squareValue} in board ${repr}!`);
       }
+      result = coord;
     }
     if (result === undefined) {
       throw new Error(`Value ${squareValue} was not found in board ${repr}!`);
@@ -537,13 +552,12 @@ class Checkerboard extends BaseClass {
    */
   renderAsText(repr, squareText = null) {
     const { dimensions: [sizeX], size } = this;
-    squareText ||= (value) => `${value}`;
     let text = '';
     for (let i = 0; i < size; i += 1) {
-      text += squareText(repr[i]);
       if (i > 0 && i % sizeX === 0) {
         text += '\n';
       }
+      text += squareText?.(repr[i]) ?? `${repr[i]}`;
     }
     return text;
   }
