@@ -33,7 +33,7 @@ describe('Match', () => {
     expect(match1.players).toEqual(players);
     const playersArray = Object.values(players);
     const match2 = new Match({ game, players: playersArray });
-    expect(match2.players).toEqual(playersArray);
+    expect(match2.players).toEqual(players);
   });
 
   it('with Predefined', async () => {

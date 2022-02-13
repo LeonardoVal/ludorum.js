@@ -1,5 +1,4 @@
 import Player from './Player';
-import RandomPlayer from './RandomPlayer';
 
 /** Scripted automatic player that uses a predefined list of actions.
  *
@@ -22,24 +21,27 @@ class TracePlayer extends Player {
    * @param {Player} [args.player] - A player to act when there is no trace.
   */
   constructor(args = null) {
-    const { player, trace } = args || {};
+    const {
+      player, trace, traceIndex = 0,
+    } = args || {};
     super(args);
     this
       ._prop('player', player, Player, undefined)
       ._prop('trace', trace, Array, []);
-    this.traceIndex = 0;
+    this.traceIndex = traceIndex;
   }
 
   /** @inheritdoc
   */
-  decision(_game, role) {
-    const { trace, traceIndex } = this;
+  async decision(game, role) {
+    const { player, trace, traceIndex } = this;
     if (traceIndex < trace.length) {
       const result = trace[traceIndex]?.[role];
       this.traceIndex += 1;
-      if (result) {
-        return result;
-      }
+      return result;
+    }
+    if (player) {
+      return player.decision(game, role);
     }
     throw new Error(`No action in trace for ${role}!`);
   }
@@ -58,6 +60,6 @@ class TracePlayer extends Player {
 
 /** Serialization and materialization using Sermat.
 */
-TracePlayer.defineSERMAT('trace player');
+TracePlayer.defineSERMAT('player trace traceIndex');
 
 export default TracePlayer;

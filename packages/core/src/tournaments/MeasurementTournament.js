@@ -20,7 +20,7 @@ class MeasurementTournament extends Tournament {
     const { game, opponents, matchCount } = args || {};
     super(args);
     this
-      ._prop('matchCount', matchCount, 'number', game.players.length)
+      ._prop('matchCount', matchCount, 'number', game.roles.length)
       ._prop('opponents', opponents, Array);
     if (opponents.length < game.roles.length - 1) {
       throw new Error(`${opponents.length} are not enough opponents!`);

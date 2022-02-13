@@ -18,7 +18,7 @@ class RoundRobinTournament extends Tournament {
     const { game, matchCount } = args || {};
     super(args);
     this
-      ._prop('matchCount', matchCount, 'number', game.players.length);
+      ._prop('matchCount', matchCount, 'number', game.roles.length);
   }
 
   /** Round-robin matches make every player plays `matchCount` matches for

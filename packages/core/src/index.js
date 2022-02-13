@@ -18,7 +18,7 @@ import Predefined from './games/Predefined';
 import RandomPlayer from './players/RandomPlayer';
 import RangeAleatory from './aleatories/RangeAleatory';
 import RoundRobinTournament from './tournaments/RoundRobinTournament';
-import stats from './utils/stats';
+import Statistics from './utils/Statistics';
 import Tournament from './tournaments/Tournament';
 import TracePlayer from './players/TracePlayer';
 import WeightedAleatory from './aleatories/WeightedAleatory';
@@ -44,7 +44,7 @@ export {
   RandomPlayer,
   RangeAleatory,
   RoundRobinTournament,
-  stats,
+  Statistics,
   Tournament,
   TracePlayer,
   WeightedAleatory,

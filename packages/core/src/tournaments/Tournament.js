@@ -1,6 +1,6 @@
 import { Randomness } from '@creatartis/randomness';
 import BaseClass from '../utils/BaseClass';
-import { addStatistic } from '../utils/stats';
+import Statistics from '../utils/Statistics';
 import Game from '../games/Game';
 import Match from '../Match';
 
@@ -69,14 +69,16 @@ class Tournament extends BaseClass {
   */
   async* run() {
     const { game, players } = this;
-    this.onBegin();
+    await this.onBegin();
+    let count = 0;
     for await (const match of this.matches()) {
-      this.onMatchCreated(match);
-      const matchResult = this.runMatch(match);
+      await this.onMatchCreated(match, count);
+      const matchResult = await this.runMatch(match);
       yield matchResult;
-      this.onMatchCompleted(match, matchResult);
+      await this.onMatchCompleted(match, count, matchResult);
+      count += 1;
     }
-    this.onEnd();
+    await this.onEnd(count);
   }
 
   /** Analogous to `run`, but waits for the whole tournament to finish and
@@ -92,44 +94,7 @@ class Tournament extends BaseClass {
     return results;
   }
 
-  /** Tournaments are usually done to gather information from the matches. The
-   * `stats` method runs all the matches and records data about them:
-   *
-   * + The match results are gathered in the `results` key.
-   * + The keys `victories`, `defeats` and `draws` count each result type.
-   * + The length of each game is recorded under `length`.
-   *
-   * All these numbers are open by game, role, player.
-   *
-   * @param {object} [args=null]
-   * @param {Array} [args.matches] - An array to put the matches (optional).
-   * @returns {object[]}
-  */
-  async stats(args = null) {
-    const { matches } = args || {};
-    const { game, players } = this;
-    const result = new Map();
-    for await (const match of this.run()) {
-      const { current: { game: { result: matchResult } } } = match;
-      Object.entries(match.players).forEach(([role, player]) => {
-        const baseKeys = { role, game: game.name, player: player.name };
-        const playerResult = matchResult[role];
-        addStatistic(result, { ...baseKeys, key: 'results' }, playerResult);
-        const playerStatus = playerResult > 0 ? 'victories'
-          : (playerResult < 0 ? 'defeats' : 'draws');
-        addStatistic(result, { ...baseKeys, key: playerStatus }, playerResult);
-        const matchLength = match.history.length;
-        addStatistic(result, { ...baseKeys, key: 'length' }, matchLength);
-        // TODO Record matches' widths.
-      });
-      if (matches) {
-        matches.push(match);
-      }
-    }
-    return [...result.values()];
-  }
-
-  // Spectator events //////////////////////////////////////////////////////////
+  // Spectators ________________________________________________________________
 
   /** Adds a spectator object to the tournament. This are objects that listen to
    * events that happen as the tournament runs.
@@ -176,10 +141,11 @@ class Tournament extends BaseClass {
    * `matchCreated(match, tournament)` method.
    *
    * @param {Match} match
+   * @param {number} matchNumber
    * @returns {any[]}
   */
-  async onMatchCreated(match) {
-    return this._emit('matchCreated', match);
+  async onMatchCreated(match, matchNumber) {
+    return this._emit('matchCreated', match, matchNumber);
   }
 
   /** The `matchCompleted` event signals when a match of the tournament is
@@ -187,11 +153,12 @@ class Tournament extends BaseClass {
    * `matchCompleted(match, history, tournament)` method.
    *
    * @param {Match} match
+   * @param {number} matchNumber
    * @param {object[]} history
    * @returns {any[]}
   */
-  async onMatchCompleted(match, history) {
-    return this._emit('matchCompleted', match, history);
+  async onMatchCompleted(match, matchNumber, history) {
+    return this._emit('matchCompleted', match, matchNumber, history);
   }
 
   /** The `end` event notifies when the tournament ends. The spectators listen
@@ -199,8 +166,45 @@ class Tournament extends BaseClass {
    *
    * @returns {any[]}
   */
-  async onEnd() {
-    return this._emit('end');
+  async onEnd(matchCount) {
+    return this._emit('end', matchCount);
+  }
+
+  /** Tournaments are usually done to gather information from the matches. The
+   * statistics spectator observes all the matches and records data about them.
+   * The static method returns the spectator object.
+   *
+   * @returns {object}
+  */
+  static statisticalSpectator() {
+    return {
+      stats: new Statistics(),
+      matchCompleted(match, _matchNumber, history) {
+        const { stats } = this;
+        const { game, players } = match;
+        const { game: { result } } = history[history.length - 1];
+        Object.entries(players).forEach(([role, player]) => {
+          const baseKeys = { game: game.name, role, player: player.name };
+          const roleResult = result[role];
+          stats.account({ ...baseKeys, stat: 'result' }, roleResult);
+          const roleStatus = roleResult > 0 ? 'victories'
+            : (roleResult < 0 ? 'defeats' : 'draws');
+          stats.account({ ...baseKeys, stat: roleStatus }, roleResult);
+          stats.account({ ...baseKeys, stat: 'length' }, history.length);
+        });
+      },
+    };
+  }
+
+  /** The instance method adds the spectator object to this tournament, and also
+   * returns the object.
+   *
+   * @returns {object}
+  */
+  statisticalSpectator() {
+    const spectator = this.constructor.statisticalSpectator();
+    this.spectate(spectator);
+    return spectator;
   }
 } // class Tournament
 

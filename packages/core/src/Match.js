@@ -3,10 +3,15 @@ import { Randomness } from '@creatartis/randomness';
 import BaseClass from './utils/BaseClass';
 import Game from './games/Game';
 
-const checkPlayersForGame = (game, players) => {
+const playersForGame = (game, players) => {
   const { roles } = game;
-  return Array.isArray(players) && players.length === roles.length
-    || typeof players === 'object' && roles.every((r) => players[r]);
+  if (Array.isArray(players)) {
+    players = Object.fromEntries(players.map((p, i) => [roles[i], p]));
+  }
+  if (!roles.every((r) => players[r])) {
+    throw new TypeError(`Missing players for match of ${game.name}!`);
+  }
+  return players;
 };
 
 /** A match is a controller for a game, managing player decisions, handling the
@@ -30,7 +35,7 @@ class Match extends BaseClass {
       ._prop('game', game, Game)
       ._prop('history', history, Array, [])
       ._prop('random', random, Randomness, Randomness.DEFAULT)
-      ._prop('players', players, checkPlayersForGame(game, players))
+      ._prop('players', playersForGame(game, players), 'object')
       ._prop('spectators', spectators, Array, []);
   }
 
@@ -138,18 +143,18 @@ class Match extends BaseClass {
       let currentGame = isStarted ? history[history.length - 1] : game;
       const players = this.participate();
       if (!isStarted) {
-        this.onBegin(currentGame, players);
+        await this.onBegin(currentGame, players);
       }
       yield { game: currentGame };
       while (!currentGame.isFinished) {
         const actions = await this.actions(currentGame, players);
         const haps = this.haps(currentGame);
         const nextGame = currentGame.next(actions, haps);
-        this.onNext(currentGame, actions, haps, nextGame);
+        await this.onNext(currentGame, actions, haps, nextGame);
         yield { actions, haps, game: nextGame };
         currentGame = nextGame;
       }
-      this.onEnd(currentGame, currentGame.result);
+      await this.onEnd(currentGame, currentGame.result);
     }
   }
 
