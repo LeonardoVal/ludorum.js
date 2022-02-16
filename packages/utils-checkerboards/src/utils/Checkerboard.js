@@ -1,7 +1,6 @@
 /* eslint-disable max-classes-per-file */
 import { BaseClass } from '@ludorum/core';
-
-const makeCoord = (x, y) => Uint16Array.of(x, y);
+import { columnName, makeCoord } from './common';
 
 /** Base class for checkerboards representations based on several different data
  * structures.
@@ -71,6 +70,20 @@ class Checkerboard extends BaseClass {
     }
     const [x, y] = coord;
     return x + y * sizeX;
+  }
+
+  /** Returns a string for the given coordinate, first a letter for the column
+   * (`a` to `z`) and then a number for the row (starting by 1).
+   *
+   * @param {number[]} coord
+   * @return {string}
+  */
+  coordToString(coord) {
+    const { dimensions: [sizeX, sizeY] } = this;
+    if (!this.isValidCoord(coord)) {
+      throw new Error(`Invalid coord (${coord}) for checkerboard ${sizeX}x${sizeY}!`);
+    }
+    return `${columnName(coord[1])}${coord[0] + 1}`;
   }
 
   /** Returns the coordinate for the given index (i.e. possitive integer
@@ -297,6 +310,15 @@ class Checkerboard extends BaseClass {
   square(repr, coord) {
     const index = this.coordToIndex(coord);
     return repr[index];
+  }
+
+  /** @todo Document */
+  * squares(repr) {
+    let i = 0;
+    for (const value of repr) {
+      yield [value, this.coordFromIndex(i)];
+      i += 1;
+    }
   }
 
   /** A square is assumed to be empty when its value is equal to `emptySquare`.
@@ -673,6 +695,7 @@ Checkerboard.defineSERMAT('dimensions emptySquare');
   'findAll',
   'linesStrings',
   'linesValues',
+  'squares',
 ].forEach((methodName) => {
   Checkerboard.prototype[methodName].withMethod = {
     * [methodName](...args) {
