@@ -27,14 +27,14 @@ const PLAYER_ENDGAME_RE = {
 const pieceMoves = {
   [ROLES[0]](value, [x, y]) {
     return ({
-      A: [[x + 1, y - 1], [x - 1, y], [x + 1, y + 1]],
-      B: [[x + 1, y - 1], [x + 1, y + 1]],
+      A: [[x - 1, y + 1], [x, y - 1], [x + 1, y + 1]],
+      B: [[x - 1, y + 1], [x + 1, y + 1]],
     })[value] ?? [];
   },
   [ROLES[1]](value, [x, y]) {
     return ({
-      a: [[x - 1, y - 1], [x + 1, y], [x - 1, y + 1]],
-      b: [[x - 1, y - 1], [x - 1, y + 1]],
+      a: [[x - 1, y - 1], [x, y + 1], [x + 1, y - 1]],
+      b: [[x - 1, y - 1], [x + 1, y - 1]],
     })[value] ?? [];
   },
 };
@@ -92,13 +92,17 @@ class Bahab extends Game {
   get actions() {
     const { activeRole, checkerboard } = this;
     const result = [];
+    const activeRolePieces = activeRole === ROLES[0] ? 'AB' : 'ab';
     for (const [value, coordFrom] of checkerboard.squares()) {
       if (value !== '.') {
         const coordFromString = COORD_MAP.get(`${coordFrom}`);
         for (const coordTo of pieceMoves[activeRole](value, coordFrom)) {
           const coordToString = COORD_MAP.get(`${coordTo}`);
           if (coordToString) {
-            result.push(coordFromString + coordToString);
+            const squareTo = checkerboard.square(coordTo);
+            if (!activeRolePieces.includes(squareTo)) {
+              result.push(coordFromString + coordToString);
+            }
           }
         }
       }

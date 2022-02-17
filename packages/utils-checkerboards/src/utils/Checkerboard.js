@@ -83,7 +83,7 @@ class Checkerboard extends BaseClass {
     if (!this.isValidCoord(coord)) {
       throw new Error(`Invalid coord (${coord}) for checkerboard ${sizeX}x${sizeY}!`);
     }
-    return `${columnName(coord[1])}${coord[0] + 1}`;
+    return `${columnName(coord[0])}${coord[1] + 1}`;
   }
 
   /** Returns the coordinate for the given index (i.e. possitive integer
