@@ -91,7 +91,7 @@ class Bahab extends Game {
   */
   get actions() {
     const { activeRole, checkerboard } = this;
-    const result = [];
+    const moves = [];
     const activeRolePieces = activeRole === ROLES[0] ? 'AB' : 'ab';
     for (const [value, coordFrom] of checkerboard.squares()) {
       if (value !== '.') {
@@ -101,13 +101,13 @@ class Bahab extends Game {
           if (coordToString) {
             const squareTo = checkerboard.square(coordTo);
             if (!activeRolePieces.includes(squareTo)) {
-              result.push(coordFromString + coordToString);
+              moves.push(coordFromString + coordToString);
             }
           }
         }
       }
     }
-    return result.length > 0 ? { [activeRole]: result } : null;
+    return moves.length > 0 ? { [activeRole]: moves } : null;
   }
 
   /** A player wins when it moves its A piece to the opponent's first rank, and
@@ -150,6 +150,8 @@ class Bahab extends Game {
     return this;
   }
 } // class Bahab
+
+Game.cachedProperties(Bahab);
 
 /** Serialization and materialization using Sermat.
 */

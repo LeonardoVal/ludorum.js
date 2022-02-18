@@ -405,6 +405,54 @@ class Game extends BaseClass {
 
   // Game implementation.
 
+  /** Modify the given Game class to cache properties.
+   *
+   * @param {Class<Game>} gameClass
+   * @param {object} [config]
+   * @param {string[]} [config.properties] - By default ['actions', 'result'].
+   * @param {string[]} [config.invalidations] - By default ['perform'].
+   * @returns {Class<Game>} - The given game class.
+   */
+  static cachedProperties(gameClass, config) {
+    const {
+      properties = ['actions', 'result'],
+      invalidations = ['perform'],
+    } = config || {};
+    const { prototype } = gameClass;
+    properties.forEach((name) => {
+      const descriptor = Object.getOwnPropertyDescriptor(prototype, name);
+      const { get } = descriptor;
+      Object.defineProperty(prototype, name, {
+        ...descriptor,
+        get() {
+          const value = get.call(this);
+          Object.defineProperty(this, name, {
+            value,
+            configurable: true,
+            enumerable: false,
+          });
+          return value;
+        },
+      });
+    });
+    invalidations.forEach((name) => {
+      const method = prototype[name];
+      Object.defineProperty(prototype, name, {
+        value(...args) {
+          const r = method.call(this, ...args);
+          properties.forEach((n) => {
+            delete this[n];
+          });
+          return r;
+        },
+        writable: true,
+        configurable: true,
+        enumerable: false,
+      });
+    });
+    return gameClass;
+  }
+
   /** TODO `cacheProperties` modifies getter methods (like `moves()` or `result()`)
    * to cache its results. Warning! Caching the results of the `next()` method
    * may lead to memory leaks or overload.

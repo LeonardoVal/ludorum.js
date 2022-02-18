@@ -130,23 +130,24 @@ class BaseClass {
    * @param {any} value - Property value.
    * @param {any} type - Expected type for `value`, or undefined to disable the
    *   check.
-   * @param {any} defaultValue - Default value, to use when `value` is
+   * @param {any} [defaultValue] - Default value, to use when `value` is
    *   `undefined`. A default value of `undefined` indicates the property to be
    *   optional.
+   * @param {object} [other] - Further props for the property descriptor.
    * @returns {object} - The given `obj`.
    * @throws {TypeError} - If either `value` or `defaultValue` don't match the
    *   given `type`.
   */
-  static prop(obj, id, value, type, ...args) {
-    if (value === undefined && args.length > 0 && args[0] === undefined) {
+  static prop(obj, id, value, type, defaultValue = undefined, other = null) {
+    if (value === undefined && defaultValue === undefined) {
       return obj; // Property assumed to be optional and skipped.
     }
     try {
-      value = this.typedValue(value, type, ...args);
+      value = this.typedValue(value, type, defaultValue);
     } catch (error) {
       throw new TypeError(`Property ${id} failed: ${error}`);
     }
-    Object.defineProperty(obj, id, { value, writable: true });
+    Object.defineProperty(obj, id, { value, writable: true, ...other });
     return obj;
   }
 
@@ -190,9 +191,6 @@ class BaseClass {
       },
     });
   }
-
-  // TODO const - for non-writable properties.
-  // TODO memoize
 } // class BaseClass
 
 export default BaseClass;
