@@ -1,6 +1,7 @@
 const readline = require('readline');
 const {
   Bet, NodeConsolePlayer,
+// eslint-disable-next-line import/extensions, import/no-unresolved
 } = require('../../dist/core');
 
 const bold = (x) => `\x1b[1m${x}\x1b[0m`;

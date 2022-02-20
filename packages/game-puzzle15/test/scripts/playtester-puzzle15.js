@@ -1,21 +1,18 @@
 const readline = require('readline');
 const { NodeConsolePlayer } = require('@ludorum/core');
-const { OddsAndEvens } = require('../../dist/game-oddsandevens');
-
-const bold = (x) => `\x1b[1m${x}\x1b[0m`;
+// eslint-disable-next-line import/extensions, import/no-unresolved
+const { Puzzle15 } = require('../../dist/game-puzzle15');
 
 async function main() {
   const nodeConsolePlayer = new NodeConsolePlayer({
     readline,
     gameString(game) {
-      const { turns, points, roles } = game;
-      return `  ${turns} left. ${roles
-        .map((role) => `${role} has ${points[role]} points.`)
-        .join(' ')}`;
+      const { checkerboard } = game;
+      return checkerboard.renderAsText();
     },
   });
-  const game = new OddsAndEvens({ turns: 5 });
-  return nodeConsolePlayer.playAgainstRandoms(game, game.roles[0]);
+  const game = new Puzzle15();
+  return nodeConsolePlayer.playAgainst(game, game.roles[0]);
 }
 
 if (require.main === module) {

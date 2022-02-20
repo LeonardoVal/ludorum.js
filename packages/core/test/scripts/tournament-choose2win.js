@@ -1,6 +1,6 @@
 const {
   Choose2Win, Player, RandomPlayer, RoundRobinTournament,
-  iterables: { permutations },
+  // eslint-disable-next-line import/extensions, import/no-unresolved
 } = require('../../dist/core');
 
 class FixedPlayer extends Player {

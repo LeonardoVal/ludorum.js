@@ -4,23 +4,27 @@ const {
   NodeConsolePlayer, RandomPlayer,
 } = require('@ludorum/core');
 const { AlphaBetaPlayer } = require('@ludorum/players-minimax');
-const { ToadsAndFrogs } = require('../../dist/game-toadsandfrogs');
+// eslint-disable-next-line import/extensions, import/no-unresolved
+const { TicTacToe } = require('../../dist/game-tictactoe');
 
-const squareT = '\x1b[93mT\x1b[0m';
-const squareF = '\x1b[92mF\x1b[0m';
+const squareX = '\x1b[93mX\x1b[0m';
+const squareO = '\x1b[92mO\x1b[0m';
 const emptySquare = (pos) => `\x1b[90m${pos}\x1b[0m`;
 
 async function main(player) {
   const nodeConsolePlayer = new NodeConsolePlayer({
     readline,
     gameString(game) {
-      const { board } = game;
-      return [...board].map(
-        (chr, i) => ({ T: squareT, F: squareF, _: emptySquare(i) })[chr],
-      ).join('');
+      const { board, activeRole, activeRoles } = game;
+      const boardString = [...board].map(
+        (chr, i) => ({ X: squareX, O: squareO, _: emptySquare(i) })[chr],
+      );
+      return [0, 3, 6]
+        .map((i) => boardString.slice(i, i + 3).join('|'))
+        .join('\n-+-+-\n');
     },
   });
-  const game = new ToadsAndFrogs();
+  const game = new TicTacToe();
   const playerBuilder = (
     /^(?:|random)$/i.test(player) ? () => new RandomPlayer()
       : /^(?:minimax)$/i.test(player) ? () => new AlphaBetaPlayer({ horizon: 6 })

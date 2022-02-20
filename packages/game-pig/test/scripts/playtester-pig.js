@@ -1,26 +1,25 @@
 const readline = require('readline');
 const { NodeConsolePlayer } = require('@ludorum/core');
 // eslint-disable-next-line import/extensions, import/no-unresolved
-const { Bahab } = require('../../dist/game-bahab');
+const { Pig } = require('../../dist/game-pig');
 
-const square = {
-  '.': '\x1b[90m.\x1b[0m',
-  A: '\x1b[1;93mA\x1b[0m',
-  B: '\x1b[93mB\x1b[0m',
-  a: '\x1b[1;92ma\x1b[0m',
-  b: '\x1b[92mb\x1b[0m',
-  '\n': '\n',
-};
+const bold = (x) => `\x1b[1m${x}\x1b[0m`;
 
 async function main() {
   const nodeConsolePlayer = new NodeConsolePlayer({
     readline,
     gameString(game) {
-      const { checkerboard } = game;
-      return [...checkerboard.renderAsText()].map((chr) => square[chr]).join('');
+      const {
+        activeRole, goal, scores, rolls, rolling,
+      } = game;
+      const scoresString = Object.entries(scores)
+        .map(([role, score]) => `${bold(role)} has ${score} points`)
+        .join(' and ');
+      return `${scoresString}, aiming for ${goal}. ${bold(activeRole)} has rolled ${
+        rolls.join(', ')}`;
     },
   });
-  const game = new Bahab();
+  const game = new Pig();
   return nodeConsolePlayer.playAgainstRandoms(game, game.roles[0]);
 }
 

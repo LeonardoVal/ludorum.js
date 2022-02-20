@@ -1,6 +1,7 @@
 const readline = require('readline');
 const {
   Choose2Win, NodeConsolePlayer,
+// eslint-disable-next-line import/extensions, import/no-unresolved
 } = require('../../dist/core');
 
 async function main() {
