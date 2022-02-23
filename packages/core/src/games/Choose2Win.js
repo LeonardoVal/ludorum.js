@@ -84,6 +84,23 @@ class Choose2Win extends Game {
     this.activateRoles(opponent);
     this.turns -= 1;
   }
+
+  /** @inheritdoc */
+  get features() {
+    const {
+      activeRole, roles, turns, winner,
+    } = this;
+    return new Int16Array(
+      roles.indexOf(activeRole),
+      turns === Infinity ? -1 : turns,
+      roles.indexOf(winner),
+    );
+  }
+
+  /** @inheritdoc */
+  get identifier() {
+    return this.features.join(',');
+  }
 } // class Choose2Win.
 
 /** Serialization and materialization using Sermat.

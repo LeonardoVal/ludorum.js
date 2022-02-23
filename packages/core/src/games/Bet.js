@@ -6,8 +6,12 @@ const ROLE = 'Gambler';
 const DEFAULT_POINTS = 5;
 const DEFAULT_GOAL = 10;
 
-/** # Bet
+/** A simple betting game, where the players try to guess the next result of a
+ * die. If they do they earn one point, if they do not they lose one point. The
+ * game finishes when one player loses all their points, or earns a goal amount.
  *
+ * This is an example of both a single player game and a non-deterministic game,
+ * using a die as its sole aleatory.
 */
 class Bet extends Game {
   /** @inheritdoc */
@@ -15,7 +19,13 @@ class Bet extends Game {
     return 'Bet';
   }
 
-  /** TODO
+  /** The constructor takes a number of turns for the game to last (`Infinity`
+   * by default), the active player and the winner if the game has ended.
+   *
+   * @param {object} [args]
+   * @param {string} [args.die=dice.D2]
+   * @param {number} [args.goal=10]
+   * @param {string} [args.points=5]
   */
   constructor(args = {}) {
     const {
@@ -93,6 +103,19 @@ class Bet extends Game {
     const { [ROLE]: bet } = actions;
     const { die: roll } = haps;
     this.points += bet === roll ? +1 : -1;
+  }
+
+  /** @inheritdoc */
+  get features() {
+    const { die, goal, points } = this;
+    const dieSides = [...die.distribution()].length;
+    return Uint16Array.of(dieSides, goal, points);
+  }
+
+  /** @inheritdoc */
+  get identifier() {
+    const [die, goal, points] = this.features;
+    return `${points}/${goal}#${die}`;
   }
 } // class Bet
 

@@ -16,7 +16,7 @@ class Game extends BaseClass {
    * @param {object} args
    * @param {string|string[]} [args.activeRoles] - Role/s that are active are
    *  allowed to perform actions, and hence have actions available.
-   */
+  */
   constructor(args) {
     const { activeRoles } = args || {};
     super();
@@ -28,7 +28,7 @@ class Game extends BaseClass {
   /** The game's `name` is used mainly for displaying purposes.
    *
    * @property {string}
-   */
+  */
   get name() {
     return this.constructor.name;
   }
@@ -40,12 +40,18 @@ class Game extends BaseClass {
    * @property {string[]}
    * @example
    *   ['Red', 'Blue']
-   */
+  */
   get roles() {
     return this._unimplemented('roles');
   }
 
-  // TODO Default abstract getter for `activeRoles`?
+  /** Roles that are allowed to perform actions.
+   *
+   * @property {string[]}
+  */
+  get activeRoles() {
+    return null;
+  }
 
   /** The game's `actions` is an object with every active role related to the
    * actions each can make in this turn. If the game has finished then a _falsy_
@@ -57,7 +63,7 @@ class Game extends BaseClass {
    *     Player1: ['Rock', 'Paper', 'Scissors'],
    *     Player2: ['Rock', 'Paper', 'Scissors'],
    *   }
-   */
+  */
   get actions() {
     return this._unimplemented('actions');
   }
@@ -68,7 +74,7 @@ class Game extends BaseClass {
    * case.
    *
    * @property {object}
-   */
+  */
   get aleatories() {
     return null;
   }
@@ -81,8 +87,8 @@ class Game extends BaseClass {
    *   player. For example: `{ Player1: 'Rock', Player2: 'Paper' }`.
    * @param {object} haps - Should be an object with a value for each aleatory.
    *   For example: `{ die: 5, coin: 'Tails' }`.
-   * @return {Game} - Same as `this`.
-   */
+   * @returns {Game} - Same as `this`.
+  */
   perform(_actions, _haps) {
     return this._unimplemented('perform()');
   }
@@ -94,8 +100,8 @@ class Game extends BaseClass {
    *   player. For example: `{ Player1: 'Rock', Player2: 'Paper' }`.
    * @param {object} haps - Should be an object with a value for each aleatory.
    *   For example: `{ die: 5, coin: 'Tails' }`.
-   * @return {Game} - A new game instance.
-   */
+   * @returns {Game} - A new game instance.
+  */
   next(actions, haps) {
     const result = this.clone();
     result.perform(actions, haps);
@@ -106,12 +112,12 @@ class Game extends BaseClass {
    * `result()`. If the game is not finished, this function must return a
    * _falsy_ value (`null` is recommended).
    *
-   * @return {object} An object with every player in the game related to a
+   * @property {object} An object with every player in the game related to a
    *   number. This number must be positive if the player wins, negative if the
    *   player loses or zero if the game is a tie.
    * @example
    *   { Player1: -1, Player2: +1 }
-   */
+  */
   get result() {
     return this._unimplemented('result');
   }
@@ -128,8 +134,8 @@ class Game extends BaseClass {
    * score may be defined for unfinished games. By default, it return the same
    * that `result()` does.
    *
-   * @return {object}
-   */
+   * @property {object}
+  */
   get scores() {
     return this.result();
   }
@@ -145,19 +151,19 @@ class Game extends BaseClass {
    *
    * @param {string} role
    * @return {Game}
-   */
+  */
   view(_role) {
     return this;
   }
 
-  // Player information ////////////////////////////////////////////////////////
+  // Player information ________________________________________________________
 
   /** Gets a role by string or number.
    *
    * @param {string|number} id - Role name or index.
    * @returns {string}
    * @throws {Error} - If role is not valid.
-   */
+  */
   role(id) {
     const { roles } = this;
     if (roles.includes(id)) {
@@ -174,7 +180,7 @@ class Game extends BaseClass {
    *
    * @param {...(string|number)} roles
    * @return {boolean}
-   */
+  */
   isActive(...roles) {
     const { activeRoles } = this;
     return roles.every((role) => activeRoles.includes(this.role(role)));
@@ -185,7 +191,7 @@ class Game extends BaseClass {
    * one, else it raises an error.
    *
    * @return {string}
-   */
+  */
   get activeRole() {
     const len = this.activeRoles.length;
     if (len < 1) {
@@ -202,7 +208,7 @@ class Game extends BaseClass {
    *
    * @param {...(string|number)} roles
    * @return {string[]}
-   */
+  */
   activateRoles(...roles) {
     if (!this.activeRoles) {
       this._prop('activeRoles', [], Array);
@@ -221,7 +227,7 @@ class Game extends BaseClass {
    *
    * @param {...string} roles
    * @return {string[]}
-   */
+  */
   opponents(...roles) {
     const roleSet = new Set(roles.length < 1 ? this.activeRoles
       : roles.map((role) => this.role(role)));
@@ -233,7 +239,7 @@ class Game extends BaseClass {
    *
    * @param {string} [role=activeRole]
    * @return {string}
-   */
+  */
   opponent(role = null) {
     const { roles } = this;
     const roleCount = roles.length;
@@ -244,7 +250,7 @@ class Game extends BaseClass {
     return this.roles[(i + 1) % roleCount];
   }
 
-  /* Game information //////////////////////////////////////////////////////////
+  /* Game information __________________________________________________________
    *
    * Some AI algorithms have constraints on which games they can support. A game
    * can provide some information to assess its compatibility with an artificial
@@ -255,7 +261,7 @@ class Game extends BaseClass {
    * by default, since most games are.
    *
    * @property {boolean}
-   */
+  */
   get isZeroSum() {
     return true;
   }
@@ -264,7 +270,7 @@ class Game extends BaseClass {
    * variables. True by default.
    *
    * @property {boolean}
-   */
+  */
   get isDeterministic() {
     return true;
   }
@@ -273,12 +279,29 @@ class Game extends BaseClass {
    * active. False by default, since most games are not like this.
    *
    * @property {boolean}
-   */
+  */
   get isSimultaneous() {
     return false;
   }
 
-  // Result functions //////////////////////////////////////////////////////////
+  /** Returns an typed array with values representing aspects of the game state.
+   *
+   * @property {number[]}
+  */
+  get features() {
+    return this._unimplemented('features');
+  }
+
+  /** A string which can be used as an identifier for the game state in a data
+   * structure like a `Map`.
+   *
+   * @property {string}
+  */
+  get identifier() {
+    return `${this}`;
+  }
+
+  // Result functions __________________________________________________________
 
   /** A finished game must have a result, no active player and no actions.
    *
@@ -296,14 +319,17 @@ class Game extends BaseClass {
    * overriding it.
    *
    * @property {Array}
-   */
+  */
   get resultBounds() {
     return [-1, +1];
   }
 
   /** The `normalizedResult` is the `result()` expressed so the minimum defeat
    * is equal to -1 and the maximum victory is equal to +1.
-   */
+   *
+   * @param {number|object} [result=this.result]
+   * @returns {number|object}
+  */
   normalizedResult(result = null) {
     result = result || this.result;
     if (result && typeof result === 'object') {
@@ -330,7 +356,7 @@ class Game extends BaseClass {
    * @param {number} [score]
    * @param {...string} [roles]
    * @returns {object}
-   */
+  */
   zerosumResult(score, ...roles) {
     const roleSet = new Set(roles.length > 0 ? roles : this.activeRoles);
     score = (+score) / Math.max(roleSet.size, 1);
@@ -347,7 +373,7 @@ class Game extends BaseClass {
    * @param {string|string[]} [roles]
    * @param {number} [score = +1]
    * @returns {object}
-   */
+  */
   victory(roles, score = +1) {
     roles = Array.isArray(roles) ? roles : [roles];
     score = Number.isNaN(score) ? +1 : score;
@@ -361,7 +387,7 @@ class Game extends BaseClass {
    * @param {string|string[]} [roles]
    * @param {number} [score = +1]
    * @returns {object}
-   */
+  */
   defeat(roles, score = -1) {
     roles = Array.isArray(roles) ? roles : [roles];
     score = Number.isNaN(score) ? -1 : score;
@@ -375,35 +401,24 @@ class Game extends BaseClass {
    * @param {string|string[]} [roles]
    * @param {number} [score = +1]
    * @returns {object}
-   */
+  */
   tied(roles = null, score = 0) {
     roles = roles || this.roles;
     score = Number.isNaN(score) ? 0 : score;
     return Object.fromEntries(roles.map((p) => [p, score]));
   }
 
-  // Conversions & presentations.
-
-  /** Some algorithms require a _hash code_ for each game state, in order to
-   * store them in caches or hash tables. Not implemented by default.
-   *
-   * @property {number}
-   */
-  get hashCode() {
-    return this._unimplemented('hashCode');
-  }
+  // Other utilities ___________________________________________________________
 
   /** Based on the game's serialization, `clone()` creates a copy of this game
    * state.
    *
    * @returns {Game}
-   */
+  */
   clone() {
     const args = this.constructor.__SERMAT__.serializer(this);
     return new this.constructor(...args);
   }
-
-  // Game implementation.
 
   /** Modify the given Game class to cache properties.
    *
@@ -452,11 +467,6 @@ class Game extends BaseClass {
     });
     return gameClass;
   }
-
-  /** TODO `cacheProperties` modifies getter methods (like `moves()` or `result()`)
-   * to cache its results. Warning! Caching the results of the `next()` method
-   * may lead to memory leaks or overload.
-   */
 
   /** TODO `serialized(game)` builds a serialized version of a simultaneous game,
    * i.e. one in which two or more players may be active in the same turn. It

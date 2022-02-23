@@ -1,6 +1,6 @@
 /* eslint-disable max-classes-per-file */
 import { BaseClass } from '@ludorum/core';
-import { columnName, makeCoord } from './common';
+import { columnName } from './coordinates';
 
 /** Base class for checkerboards representations based on several different data
  * structures.
@@ -14,14 +14,26 @@ class Checkerboard extends BaseClass {
    *   used in functions walking and traversing the board.
   */
   constructor(args) {
-    const {
-      dimensions: [sizeX, sizeY],
-      emptySquare,
-    } = args || {};
+    const { dimensions } = args || {}; // TODO Allow override for arrayType.
     super();
     this
-      ._prop('dimensions', makeCoord(sizeX, sizeY))
-      ._prop('emptySquare', emptySquare, true, null);
+      ._prop('dimensions', this.arrayType.of(...dimensions));
+  }
+
+  /** The array type used for coordinates. By default is `Uint16Array`.
+   *
+   * @property {class<TypedArray>}
+  */
+  get arrayType() {
+    return Uint16Array;
+  }
+
+  /** The checkerboard dimensions are defined by an array of numbers.
+   *
+   * @property {number[]}
+  */
+  get dimensions() {
+    return this._unimplemented('dimensions');
   }
 
   /** The `size` is the amount of squares in the checkerboard.
@@ -49,7 +61,14 @@ class Checkerboard extends BaseClass {
     return this.dimensions[1];
   }
 
+  /** */
+  coord(value, type = 'array') {
+    if 
+  }
+
   // Coordinates & lines _______________________________________________________
+
+
 
   /** Returns an index (i.e. possitive integer identifier) for the given
    * coordinate. If the coordinate is not valid, returns `outside`.
@@ -126,7 +145,7 @@ class Checkerboard extends BaseClass {
     const { dimensions: [sizeX, sizeY] } = this;
     for (let x = 0; x < sizeX; x += 1) {
       for (let y = 0; y < sizeY; y += 1) {
-        yield makeCoord(x, y);
+        yield this.arrayType.of(x, y);
       }
     }
   }
@@ -294,10 +313,10 @@ class Checkerboard extends BaseClass {
 
   /** Creates the representation of an empty board.
    *
-   * @returns {any[]}
+   * @returns {any}
   */
   emptyBoard() {
-    return Array(this.size).fill(this.emptySquare);
+    return this._unimplemented('emptyBoard');
   }
 
   /** Method `square` gets the contents at a given coordinate `coord`. If the
@@ -307,54 +326,50 @@ class Checkerboard extends BaseClass {
    * @param {number[]} coord - Coordinate.
    * @returns {any}
   */
-  square(repr, coord) {
-    const index = this.coordToIndex(coord);
-    return repr[index];
+  square(_coord) {
+    return this._unimplemented('square');
   }
 
-  /** @todo Document */
-  * squares(repr) {
-    let i = 0;
-    for (const value of repr) {
-      yield [value, this.coordFromIndex(i)];
-      i += 1;
+  /** Sequence of tuples `[value, coord]` for all of the board's square.
+   *
+   * @yield {[any, number[]]}
+  */
+  * squares() {
+    for (const coord of this.coordinates()) {
+      yield [this.square(coord), coord];
     }
   }
 
   /** A square is assumed to be empty when its value is equal to `emptySquare`.
    *
-   * @param {any[]} repr - A list of square values.
    * @param {number[]} coord
    * @returns {boolean}
   */
-  isEmptySquare(repr, coord) {
-    return this.square(repr, coord) === this.emptySquare;
+  isEmptySquare(coord) {
+    return this.square(coord) === this.emptySquare;
   }
 
   /** Finds the coordinate of the first square with the given value.
    *
-   * @param {any[]} repr
    * @param {any} squareValue
    * @returns {number[]}
   */
-  findFirst(repr, squareValue) {
-    for (const coord of this.findAll(repr, squareValue)) {
+  findFirst(squareValue) {
+    for (const coord of this.findAll(squareValue)) {
       return coord;
     }
-    throw new Error(`Value ${squareValue} was not found in board ${repr}!`);
+    throw new Error(`Value ${squareValue} was not found in board!`);
   }
 
   /** Iterates over the coordinates of squares with the given value.
    *
-   * @param {any[]} repr
    * @param {any} squareValue
    * @yield {number[]}
   */
-  * findAll(repr, squareValue) {
-    for (let i = 0; i < repr.length; i += 1) {
-      const v = repr[i];
-      if (v === squareValue) {
-        yield this.coordFromIndex(i);
+  * findAll(squareValue) {
+    for (const [value, coord] of this.squares()) {
+      if (value === squareValue) {
+        yield coord;
       }
     }
   }
@@ -362,20 +377,19 @@ class Checkerboard extends BaseClass {
   /** Finds the coordinate of the first square with the given value, and checks
    * that no other square has the same value.
    *
-   * @param {any[]} repr
    * @param {any} squareValue
    * @returns {number[]}
   */
-  findOne(repr, squareValue) {
+  findOne(squareValue) {
     let result;
-    for (const coord of this.findAll(repr, squareValue)) {
+    for (const coord of this.findAll(squareValue)) {
       if (result !== undefined) {
-        throw new Error(`There is more than one square with ${squareValue} in board ${repr}!`);
+        throw new Error(`There is more than one square with ${squareValue}!`);
       }
       result = coord;
     }
     if (result === undefined) {
-      throw new Error(`Value ${squareValue} was not found in board ${repr}!`);
+      throw new Error(`Value ${squareValue} was not found!`);
     }
     return result;
   }
@@ -383,65 +397,58 @@ class Checkerboard extends BaseClass {
   /** Returns the list of square values corresponding to a list of board
    * coordinates.
    *
-   * @param {any[]} repr - A list of square values.
    * @param {number[][]} line - A list of board coordinates.
    * @returns {any[]}
   */
-  lineValues(repr, line) {
-    return (line.map ? line : [...line]).map((coord) => this.square(repr, coord));
+  lineValues(line) {
+    return (line.map ? line : [...line]).map((coord) => this.square(coord));
   }
 
   /** Takes a generator of lines (i.e. coordinate lists) and returns a generator
    * that yield lists of square values.
    *
-   * @param {any[]} repr - A list of square values.
    * @param {iterable<number[]>} lines - An iterable with coordinates.
    * @yields {any[]} - Lists of square values.
   */
-  * linesValues(repr, lines) {
+  * linesValues(lines) {
     for (const line of lines) {
-      yield this.lineValues(repr, line);
+      yield this.lineValues(line);
     }
   }
 
   /** Returns the concatenation of square values corresponding to a list of
    * board coordinates.
    *
-   * @param {any[]} repr - A list of square values.
    * @param {number[][]} line - A list of board coordinates.
    * @returns {string}
   */
-  lineString(repr, line) {
+  lineString(line) {
     const squareStrings = (line.map ? line : [...line])
-      .map((coord) => `${this.square(repr, coord)}`);
+      .map((coord) => `${this.square(coord)}`);
     return ''.concat(...squareStrings);
   }
 
   /** Takes a generator of lines (i.e. coordinate lists) and returns a generator
    * that yield strings of square values.
    *
-   * @param {any[]} repr - A list of square values.
    * @param {iterable<number[]>} lines - An iterable with coordinates.
    * @yields {string} - Strings with square values.
   */
-  * linesStrings(repr, lines) {
+  * linesStrings(lines) {
     for (const line of lines) {
-      yield this.lineString(repr, line);
+      yield this.lineString(line);
     }
   }
 
   /** The first function to change the board is `place`. It places the value
    * at the given coordinate, replacing whatever was there.
    *
-   * @param {any[]} repr - A list of square values.
    * @param {number[]} coord
    * @param {any} value
-   * @returns {any[]} - Same as repr, updated.
+   * @returns {Checkerboard} - This board.
   */
-  place(repr, coord, value) {
-    const index = this.coordToIndex(coord);
-    repr[index] = value;
-    return repr;
+  place(_coord, _value) {
+    return this._unimplemented('place');
   }
 
   /** Another usual operation is `move`. It moves the contents at
@@ -449,96 +456,75 @@ class Checkerboard extends BaseClass {
    * `valueLeft` is placed at `coordFrom`. If `valueLeft` is not defined,
    * `emptySquare` is used.
    *
-   * @param {any[]} repr - A list of square values.
    * @param {number[]} coordFrom
    * @param {number[]} coordTo
    * @param {any} valueLeft
-   * @returns {any[]} - Same as repr, updated.
+   * @returns {Checkerboard} - This board.
   */
-  move(repr, coordFrom, coordTo, valueLeft) {
-    const indexFrom = this.coordToIndex(coordFrom);
-    const indexTo = this.coordToIndex(coordTo);
-    repr[indexTo] = repr[indexFrom];
-    repr[indexFrom] = valueLeft ?? this.emptySquare;
-    return repr;
+  move(_coordFrom, _coordTo, _valueLeft) {
+    return this._unimplemented('move');
   }
 
   /** The next board operation is `swap`, which moves the contents at
    * `coordFrom` to `coordTo`, and viceversa.
    *
-   * @param {any[]} repr - A list of square values.
    * @param {number[]} coordFrom
    * @param {number[]} coordTo
-   * @returns {any[]} - Same as repr, updated.
+   * @returns {Checkerboard} - This board.
   */
-  swap(repr, coordFrom, coordTo) {
-    const indexFrom = this.coordToIndex(coordFrom);
-    const indexTo = this.coordToIndex(coordTo);
-    const valueTo = repr[indexTo];
-    repr[indexTo] = repr[indexFrom];
-    repr[indexFrom] = valueTo;
-    return repr;
+  swap(_coordFrom, _coordTo) {
+    return this._unimplemented('swap');
   }
 
   /** The `transform` builds a new board mapping coordinates of this board with
    * the given function.
    *
-   * @param {any[]} repr - A list of square values.
    * @param {function} coordinateMapping
-   * @returns {any[]} - Same as repr, updated.
+   * @returns {Checkerboard} - This board.
   */
-  transform(repr, coordinateMapping) {
-    const oldRepr = [...repr];
-    for (const position of this.coordinates()) {
-      const newPosition = coordinateMapping([...position]);
-      this.place(repr, newPosition, this.square(oldRepr, position));
-    }
-    return repr;
+  transform(_coordinateMapping) {
+    return this._unimplemented('transform');
   }
 
   /** Symmetries transform the whole board at once. The `horizontalSymmetry` of
    * the board flips it with a vertical axis at its center.
    *
-   * @param {any[]} repr - A list of square values.
-   * @returns {any[]} - Same as repr, updated.
+   * @returns {Checkerboard} - This board.
   */
-  horizontalSymmetry(repr) {
+  horizontalSymmetry() {
     const { dimensions: [sizeX] } = this;
-    return this.transform(repr, ([x, y]) => [sizeX - x - 1, y]);
+    return this.transform(([x, y]) => [sizeX - x - 1, y]);
   }
 
   /** Symmetries transform the whole board at once. The `verticalSymmetry` of
    * the board flips it with an horizontal axis at its center.
    *
-   * @param {any[]} repr - A list of square values.
-   * @returns {any[]} - Same as repr, updated.
+   * @returns {Checkerboard} - This board.
   */
-  verticalSymmetry(repr) {
+  verticalSymmetry() {
     const { dimensions: [, sizeY] } = this;
-    return this.transform(repr, ([x, y]) => [x, sizeY - y - 1]);
+    return this.transform(([x, y]) => [x, sizeY - y - 1]);
   }
 
   /** Rotations also transform the whole board at once. The `clockwiseRotation`
    * of the board rotates in the direction that the hands of a clock.
    *
-   * @param {any[]} repr - A list of square values.
-   * @returns {any[]} - Same as repr, updated.
+   * @returns {Checkerboard} - This board.
   */
-  clockwiseRotation(repr) {
+  clockwiseRotation() {
     const { dimensions: [, sizeY] } = this;
-    return this.transform(repr, ([x, y]) => [sizeY - y - 1, x]);
+    return this.transform(([x, y]) => [sizeY - y - 1, x]);
   }
 
   /** Rotations also transform the whole board at once. The
    * `counterClockwiseRotation` rotates it in the opposite direction that the
    * hands of a clock.
    *
-   * @param {any[]} repr - A list of square values.
-   * @returns {any[]} - Same as repr, updated.
+   * @returns {Checkerboard} - This board.
   */
-  counterClockwiseRotation(repr) {
+  counterClockwiseRotation() {
     const { dimensions: [sizeX] } = this;
-    return this.transform(repr, ([x, y]) => [y, sizeX - x - 1]);
+    return this.transform(([x, y]) => [y, sizeX - x - 1]);
   }
 
   /** A `weightedSum` is an simple way of defining an heuristic board evaluation
@@ -550,18 +536,15 @@ class Checkerboard extends BaseClass {
    * board's positions. This function assumes the weights are normalized and
    * sufficient to cover the whole board.
    *
-   * @param {any[]} repr - A list of square values.
-   * @param {number[]} weights
+   * @param {Map<number[], number>} weights
    * @param {function} [coefficient] - All ones, by default.
    * @returns {number}
   */
-  weightedSum(repr, weights, coefficient = null) {
-    const { size } = this;
+  weightedSum(weights, coefficient = null) {
     coefficient ||= () => 1;
     let sum = 0;
-    for (let i = 0; i < size; i += 1) {
-      const value = repr[i];
-      const weight = weights[i];
+    for (const [value, coord] of this.squares()) {
+      const weight = weights.get(JSON.stringify(coord));
       sum += coefficient(value, weight) * weight || 0;
     }
     return sum;
@@ -569,139 +552,37 @@ class Checkerboard extends BaseClass {
 
   /** Renders the checkerboard as text.
    *
-   * @param {any[]} repr
    * @param {function} [squareText]
    */
-  renderAsText(repr, squareText = null) {
-    const { dimensions: [sizeX], size } = this;
-    let text = '';
-    for (let i = 0; i < size; i += 1) {
-      if (i > 0 && i % sizeX === 0) {
-        text += '\n';
-      }
-      text += squareText?.(repr[i]) ?? `${repr[i]}`;
-    }
-    return text;
+  renderAsText(squareText = null) {
+    return [...this.horizontalLines()]
+      .map((row) => row.map((coord) => {
+        const value = this.square(coord);
+        return squareText?.(value) ?? `${value}`;
+      }).join(''))
+      .join('\n');
   }
 
-  /** Board games' user interfaces may be implemented using HTML & CSS. This is
-   * the case of Ludorum's playtesters.
-  * /
-  renderAsHTMLTable(document, container, callback) {
-    var board = this, // for closures.
-      table = document.createElement('table');
-    container.appendChild(table);
-    board.horizontals().reverse().forEach(function (line) {
-      var tr = document.createElement('tr');
-      table.appendChild(tr);
-      line.forEach(function (coord) {
-        var square = board.square(coord),
-          td = document.createElement('td'),
-          data = {
-            id: "ludorum-square-"+ coord.join('-'),
-            className: "ludorum-square",
-            square: square,
-            coord: coord,
-            innerHTML: base.Text.escapeXML(square)
-          };
-        if (callback) {
-          data = callback(data) || data;
-        }
-        td['ludorum-data'] = data;
-        td.id = data.id;
-        td.className = data.className;
-        td.innerHTML = data.innerHTML;
-        if (data.onclick) {
-          td.onclick = data.onclick;
-        }
-        tr.appendChild(td);
-      });
-    });
-    return table;
-  } /* */
-
-  /** Returns an object with a similar interface, except that the methods that
-   * have a `repr` arguments, use the given value. This is meant to simplify
-   * chains of modifications, e.g.:
+  /** Renders the checkerboard as an HTML table using an `html` function for tagged templates
+   * compatible [HTM's](https://github.com/developit/htm).
    *
-   * ```(new Checkerboard({ dimensions: [3, 3], emptySquare: '.' }))
-   * .with('X....XO..').place([2,2], 'O').repr.join('')
-   * ```
-   *
-   * @param {any[]} repr - Board representation. Warning! It may get updated.
-   * @returns {object}
-   */
-  with(repr) {
-    const result = Object.create(this);
-    result.repr = repr;
-    Object.getOwnPropertyNames(Object.getPrototypeOf(this)).forEach((n) => {
-      const { withMethod } = this[n];
-      if (withMethod) {
-        Object.defineProperty(result, n, { value: withMethod });
-      }
-    });
-    return result;
-  }
-
-  /** Shortcut for calling `with` with an empty board.
-   *
-   * @returns {object}
+   * @param {function} html
+   * @param {object} [options]
   */
-  withEmptyBoard() {
-    return this.with(this.emptyBoard());
+  renderAsHTMLTable(html, options = null) {
+    // TODO CSS? clicks? on-hovers?
+    return html`<table>${
+      [...this.horizontals()].map((row) => html`<tr>${
+        row.map((coord) => html`<td data-coord=${JSON.stringify(coord)}>${
+          this.square(coord)
+        }</td>`)
+      }</tr>`)
+    }</table>`;
   }
 } // class Checkerboard
 
 /** Serialization and materialization using Sermat.
 */
 Checkerboard.defineSERMAT('dimensions emptySquare');
-
-[ // Modification methods.
-  'clockwiseRotation',
-  'counterClockwiseRotation',
-  'horizontalSymmetry',
-  'move',
-  'place',
-  'swap',
-  'transform',
-  'verticalSymmetry',
-].forEach((methodName) => {
-  Checkerboard.prototype[methodName].withMethod = {
-    [methodName](...args) {
-      this.repr = Object.getPrototypeOf(this)[methodName](this.repr, ...args);
-      return this;
-    },
-  }[methodName];
-});
-
-[ // Information methods.
-  'findFirst',
-  'findOne',
-  'isEmptySquare',
-  'lineString',
-  'lineValues',
-  'renderAsText',
-  'square',
-  'weightedSum',
-].forEach((methodName) => {
-  Checkerboard.prototype[methodName].withMethod = {
-    [methodName](...args) {
-      return Object.getPrototypeOf(this)[methodName](this.repr, ...args);
-    },
-  }[methodName];
-});
-
-[ // Generator methods.
-  'findAll',
-  'linesStrings',
-  'linesValues',
-  'squares',
-].forEach((methodName) => {
-  Checkerboard.prototype[methodName].withMethod = {
-    * [methodName](...args) {
-      yield* Object.getPrototypeOf(this)[methodName](this.repr, ...args);
-    },
-  }[methodName];
-});
 
 export default Checkerboard;
