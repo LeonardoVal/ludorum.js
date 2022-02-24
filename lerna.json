@@ -2,6 +2,7 @@
   "packages": [
     "packages/core",
     "packages/game-bahab",
+    "packages/game-mutropas",
     "packages/game-oddsandevens",
     "packages/game-pig",
     "packages/game-puzzle15",

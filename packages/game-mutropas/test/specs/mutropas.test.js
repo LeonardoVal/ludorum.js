@@ -4,22 +4,22 @@ import {
   AlphaBetaPlayer, MaxNPlayer, MiniMaxPlayer,
 } from '@ludorum/players-minimax';
 import { MonteCarloPlayer } from '@ludorum/players-montecarlo';
-import { Pig } from '../../src/index';
+import { Mutropas } from '../../src/index';
 
-const RANDOM = new MersenneTwister(parseInt('Pig', 32) % 1e8);
+const RANDOM = new MersenneTwister(parseInt('Mutropas', 32) % 1e8);
 const MATCH_COUNT = 6;
 
-describe('Pig', () => {
+describe('Mutropas', () => {
   it('has the expected definitions', () => {
-    expect(Pig).toBeOfType('function');
+    expect(Mutropas).toBeOfType('function');
   });
 
   it('works like a game', () => {
-    const game = new Pig();
+    const game = new Mutropas();
     for (let i = 0; i < MATCH_COUNT; i += 1) {
       gameTests.checkGameFlow(expect, game, {
         deterministic: false,
-        oneActivePlayerPerTurn: true,
+        oneActivePlayerPerTurn: false,
         random: RANDOM,
         zeroSum: true,
         update: i % 2 === 0,
@@ -27,25 +27,21 @@ describe('Pig', () => {
     }
   });
 
-  it('can be played with minimax players', async () => {
-    const game = new Pig();
-    const maxNPlayer = new MaxNPlayer({ random: RANDOM });
-    expect(maxNPlayer.canPlay(game)).toBe(false);
+  it('cannot be played with minimax players', () => {
+    const game = new Mutropas();
     const playerBuilders = [
+      () => new MaxNPlayer({ random: RANDOM }),
       () => new MiniMaxPlayer({ random: RANDOM }),
       () => new AlphaBetaPlayer({ random: RANDOM }),
     ];
     for (const playerBuilder of playerBuilders) {
       const player = playerBuilder();
-      expect(player.canPlay(game)).toBe(true);
-      for (let i = 0; i < MATCH_COUNT; i += 1) {
-        await playerTests.checkPlayer({ game, playerBuilder });
-      }
+      expect(player.canPlay(game)).toBe(false);
     }
   });
 
   it('can be played with montecarlo players', async () => {
-    const game = new Pig();
+    const game = new Mutropas();
     const playerBuilders = [
       () => new MonteCarloPlayer({ random: RANDOM }),
     ];
