@@ -109,7 +109,7 @@ class Game extends BaseClass {
   }
 
   /** If the game is finished the result of the game is calculated with
-   * `result()`. If the game is not finished, this function must return a
+   * `result`. If the game is not finished, this function must return a
    * _falsy_ value (`null` is recommended).
    *
    * @property {object} An object with every player in the game related to a
@@ -132,12 +132,12 @@ class Game extends BaseClass {
    *
    * The method `scores()` returns the scores if such is the case. Also the
    * score may be defined for unfinished games. By default, it return the same
-   * that `result()` does.
+   * that `result` does.
    *
    * @property {object}
   */
   get scores() {
-    return this.result();
+    return this.result;
   }
 
   /** In incomplete or imperfect information games each role may have different
@@ -324,7 +324,7 @@ class Game extends BaseClass {
     return [-1, +1];
   }
 
-  /** The `normalizedResult` is the `result()` expressed so the minimum defeat
+  /** The `normalizedResult` is the `result` expressed so the minimum defeat
    * is equal to -1 and the maximum victory is equal to +1.
    *
    * @param {number|object} [result=this.result]
