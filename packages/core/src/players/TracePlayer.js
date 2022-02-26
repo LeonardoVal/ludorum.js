@@ -26,7 +26,7 @@ class TracePlayer extends Player {
     } = args || {};
     super(args);
     this
-      ._prop('player', player, Player, undefined)
+      ._prop('player', player, [null, Player], null)
       ._prop('trace', trace, Array, []);
     this.traceIndex = traceIndex;
   }

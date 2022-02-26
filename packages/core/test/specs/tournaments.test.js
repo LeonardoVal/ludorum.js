@@ -13,11 +13,11 @@ describe('tournaments', () => {
   });
 
   it('base class behaves as expected', async () => {
-    // expect(() => new Tournament()).toThrow();
+    expect(() => new Tournament()).toThrow();
     const game = new Predefined();
-    // expect(() => new Tournament({ game })).toThrow();
+    expect(() => new Tournament({ game })).toThrow();
     const players = [];
-    // expect(() => new Tournament({ players })).toThrow();
+    expect(() => new Tournament({ players })).toThrow();
     expect(() => new Tournament({ game, players })).not.toThrow();
     const tournament = new Tournament({ game, players });
     expect(tournament.game).toBe(game);

@@ -5,6 +5,19 @@ const typeCheckers = {
   function(type, value) {
     return !(value instanceof type) && `expected ${type.name}`;
   },
+  object(type, value) {
+    if (type === null) {
+      return value !== null && 'expected null';
+    }
+    if (Array.isArray(type)) {
+      return type.some((option) => !this[typeof option](option, value))
+        ? false : `expected (${type.map((t) => t?.name || t).join('|')})`;
+    }
+    return `Unsupported type ${type.constructor.name}!`;
+  },
+  undefined(type, value) {
+    return type !== value && 'expected undefined';
+  },
   string(type, value) {
     // eslint-disable-next-line valid-typeof
     return typeof value !== type && `expected ${type}`;
@@ -77,7 +90,6 @@ class BaseClass {
   static checkType(value, type, ErrorType = null) {
     const error = typeCheckers[typeof type](type, value);
     if (error && ErrorType) {
-      // eslint-disable-next-line no-nested-ternary
       throw new ErrorType(
         `Type mismatch for ${value} (${typeof value}${
           value?.constructor?.name ? ` ${value.constructor.name}` : ''}), ${
@@ -131,23 +143,21 @@ class BaseClass {
    * @param {any} type - Expected type for `value`, or undefined to disable the
    *   check.
    * @param {any} [defaultValue] - Default value, to use when `value` is
-   *   `undefined`. A default value of `undefined` indicates the property to be
-   *   optional.
-   * @param {object} [other] - Further props for the property descriptor.
+   *   `undefined`.
    * @returns {object} - The given `obj`.
    * @throws {TypeError} - If either `value` or `defaultValue` don't match the
    *   given `type`.
   */
   static prop(obj, id, value, type, defaultValue = undefined, other = null) {
-    if (value === undefined && defaultValue === undefined) {
-      return obj; // Property assumed to be optional and skipped.
-    }
     try {
       value = this.typedValue(value, type, defaultValue);
     } catch (error) {
       throw new TypeError(`Property ${id} failed: ${error}`);
     }
-    Object.defineProperty(obj, id, { value, writable: true, ...other });
+    Object.defineProperty(obj, id, {
+      value,
+      writable: true,
+    });
     return obj;
   }
 
