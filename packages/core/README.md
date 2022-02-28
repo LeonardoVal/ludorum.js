@@ -1,7 +1,7 @@
 ﻿Ludorum
 =======
 
-[![Built with Grunt](https://cdn.gruntjs.com/builtwith.png)](http://gruntjs.com/) [![NPM](https://nodei.co/npm/ludorum.png?mini=true)](https://www.npmjs.com/package/ludorum)
+[![NPM](https://nodei.co/npm/ludorum.png?mini=true)](https://www.npmjs.com/package/ludorum)
 
 Ludorum is a board game framework. It is not focused on graphics or user interfaces, but on artificial players design, implementation and testing.
 
