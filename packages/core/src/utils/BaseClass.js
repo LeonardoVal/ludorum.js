@@ -148,16 +148,18 @@ class BaseClass {
    * @throws {TypeError} - If either `value` or `defaultValue` don't match the
    *   given `type`.
   */
-  static prop(obj, id, value, type, defaultValue = undefined, other = null) {
+  static prop(obj, id, value, type, defaultValue = undefined) {
     try {
       value = this.typedValue(value, type, defaultValue);
     } catch (error) {
       throw new TypeError(`Property ${id} failed: ${error}`);
     }
-    Object.defineProperty(obj, id, {
-      value,
-      writable: true,
-    });
+    if (value !== undefined) {
+      Object.defineProperty(obj, id, {
+        value,
+        writable: true,
+      });
+    }
     return obj;
   }
 

@@ -31,7 +31,7 @@ class MonteCarloPlayer extends HeuristicPlayer {
       ._prop('horizon', horizon, 'number', 500)
       ._prop('simulationCount', simulationCount, 'number', 30)
       ._prop('timeCap', timeCap, 'number', 1000)
-      ._prop('agent', agent, Player, undefined);
+      ._prop('agent', agent, [Player, null], null);
   }
 
   /** @inheritdoc

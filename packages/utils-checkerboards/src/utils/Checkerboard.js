@@ -1,6 +1,6 @@
 /* eslint-disable max-classes-per-file */
 import { BaseClass } from '@ludorum/core';
-import { columnName } from './coordinates';
+import { coordinate } from './coordinates';
 
 /** Base class for checkerboards representations based on several different data
  * structures.
@@ -14,15 +14,18 @@ class Checkerboard extends BaseClass {
    *   used in functions walking and traversing the board.
   */
   constructor(args) {
-    const { dimensions } = args || {}; // TODO Allow override for arrayType.
+    const {
+      dimensions, emptySquare,
+    } = args || {}; // TODO Allow override for arrayType.
     super();
     this
-      ._prop('dimensions', this.arrayType.of(...dimensions));
+      ._prop('dimensions', this.arrayType.of(...dimensions))
+      ._prop('emptySquare', emptySquare, undefined, null);
   }
 
   /** The array type used for coordinates. By default is `Uint16Array`.
    *
-   * @property {class<TypedArray>}
+   * @property {Class<TypedArray>}
   */
   get arrayType() {
     return Uint16Array;
@@ -61,81 +64,21 @@ class Checkerboard extends BaseClass {
     return this.dimensions[1];
   }
 
-  /** */
+  /** Transforms a coordinate given by `value` to the given `type`. Types can
+   * be: `'int'` (number), `'string'` or `'array'` (`this.arrayType`). If the
+   * type if `'boolean'` the value is checked to be valid. Otherwise, an invalid
+   * value always raises en error.
+   *
+   * @param {number|string|TypedArray} value
+   * @param {string} [type='array']
+   * @returns {number|string|TypedArray|boolean}
+  */
   coord(value, type = 'array') {
-    if 
+    const { dimensions, arrayType } = this;
+    return coordinate(value, type, { dimensions, arrayType });
   }
 
   // Coordinates & lines _______________________________________________________
-
-
-
-  /** Returns an index (i.e. possitive integer identifier) for the given
-   * coordinate. If the coordinate is not valid, returns `outside`.
-   *
-   * @param {number[]} coord
-   * @param {number} [outside] - If not provided, an invalid coordinate will
-   *   raise an error. If provided this value will be returned in that case
-   *   instead.
-   * @returns {number}
-  */
-  coordToIndex(coord, outside) {
-    const { dimensions: [sizeX, sizeY] } = this;
-    if (!this.isValidCoord(coord)) {
-      if (arguments.length > 1) {
-        return outside;
-      }
-      throw new Error(`Invalid coord (${coord}) for checkerboard ${sizeX}x${sizeY}!`);
-    }
-    const [x, y] = coord;
-    return x + y * sizeX;
-  }
-
-  /** Returns a string for the given coordinate, first a letter for the column
-   * (`a` to `z`) and then a number for the row (starting by 1).
-   *
-   * @param {number[]} coord
-   * @return {string}
-  */
-  coordToString(coord) {
-    const { dimensions: [sizeX, sizeY] } = this;
-    if (!this.isValidCoord(coord)) {
-      throw new Error(`Invalid coord (${coord}) for checkerboard ${sizeX}x${sizeY}!`);
-    }
-    return `${columnName(coord[0])}${coord[1] + 1}`;
-  }
-
-  /** Returns the coordinate for the given index (i.e. possitive integer
-   * identifier). If the index is not valid, returns `outside`.
-   *
-   * @param {number} index
-   * @param {number[]} [outside] - If not provided, an invalid index will raise
-   *   an error. If provided this value will be returned in that case instead.
-   * @returns {number[]}
-  */
-  coordFromIndex(index, outside) {
-    const { dimensions: [sizeX, sizeY] } = this;
-    if (Number.isNaN(index) || index < 0 || index >= this.size) {
-      if (arguments.length > 1) {
-        return outside;
-      }
-      throw new Error(`Invalid index (${index}) for checkerboard ${sizeX}x${sizeY}!`);
-    }
-    return makeCoord(index % sizeX, index / sizeX);
-  }
-
-  /** All coordinates are represented by arrays. To check if a coordinate is
-   * inside the board, use `isValidCoord(coord)`.
-   *
-   * @param {number[]} coord
-   * @returns {boolean}
-  */
-  isValidCoord(coord) {
-    const { dimensions: [sizeX, sizeY] } = this;
-    const [x, y] = coord;
-    return !Number.isNaN(x) && x >= 0 && x < sizeX
-      && !Number.isNaN(y) && y >= 0 && y < sizeY;
-  }
 
   /** Method `coordinates` returns the sequence of the board's valid positions.
    *
@@ -158,7 +101,7 @@ class Checkerboard extends BaseClass {
     const { dimensions: [sizeX, sizeY] } = this;
     const rangeX = Array(sizeX).fill().map((_, i) => i);
     for (let y = 0; y < sizeY; y += 1) {
-      yield rangeX.map((x) => makeCoord(x, y));
+      yield rangeX.map((x) => this.arrayType.of(x, y));
     }
   }
 
@@ -170,7 +113,7 @@ class Checkerboard extends BaseClass {
     const { dimensions: [sizeX, sizeY] } = this;
     const rangeY = Array(sizeY).fill().map((_, i) => i);
     for (let x = 0; x < sizeX; x += 1) {
-      yield rangeY.map((y) => makeCoord(x, y));
+      yield rangeY.map((y) => this.arrayType.of(x, y));
     }
   }
 
@@ -195,7 +138,7 @@ class Checkerboard extends BaseClass {
       const x = Math.max(0, i - sizeY + 1);
       const y = Math.max(0, sizeY - i - 1);
       yield Array(Math.min(i + 1, count - i)).fill()
-        .map((_, j) => makeCoord(x + j, y + j));
+        .map((_, j) => this.arrayType.of(x + j, y + j));
     }
   }
 
@@ -210,7 +153,7 @@ class Checkerboard extends BaseClass {
       const x = Math.max(0, i - sizeY + 1);
       const y = Math.min(i, sizeY - 1);
       yield Array(Math.min(i + 1, count - i)).fill()
-        .map((_, j) => makeCoord(x + j, y - j));
+        .map((_, j) => this.arrayType.of(x + j, y - j));
     }
   }
 
@@ -263,7 +206,7 @@ class Checkerboard extends BaseClass {
   */
   * walk(coord, delta, until = null) {
     coord = Uint16Array.from(coord);
-    while (this.isValidCoord(coord) && (!until || until(coord))) {
+    while (this.coord(coord, 'boolean') && (!until || until(coord))) {
       yield coord;
       coord = coord.map((n, i) => n + delta[i]);
     }
@@ -293,7 +236,7 @@ class Checkerboard extends BaseClass {
     const [x, y] = coord;
     for (const [dx, dy] of deltas) {
       const m = Uint16Array.of(x + dx, y + dy);
-      if (this.isValidCoord(m)) {
+      if (this.coord(m, 'boolean')) {
         yield m;
       }
     }
@@ -322,7 +265,6 @@ class Checkerboard extends BaseClass {
   /** Method `square` gets the contents at a given coordinate `coord`. If the
    * coordinate is off the board, an exception is raised.
    *
-   * @param {any[]} repr - A list of square values.
    * @param {number[]} coord - Coordinate.
    * @returns {any}
   */
@@ -332,7 +274,7 @@ class Checkerboard extends BaseClass {
 
   /** Sequence of tuples `[value, coord]` for all of the board's square.
    *
-   * @yield {[any, number[]]}
+   * @yield {Array<any, number[]>}
   */
   * squares() {
     for (const coord of this.coordinates()) {

@@ -1,6 +1,6 @@
 /* eslint-disable max-classes-per-file */
 import { Game } from '@ludorum/core';
-import { Checkerboard } from '@ludorum/utils-checkerboards';
+import { ListCheckerboard } from '@ludorum/utils-checkerboards';
 
 const ROLE = 'Player';
 
@@ -37,7 +37,7 @@ class SlidingPuzzle extends Game {
       name = `${this.name}_${height}x${width}`,
       target = this.makeTarget(height, width),
     } = args || {};
-    const checkerboard = new Checkerboard({
+    const checkerboard = new ListCheckerboard({
       dimensions: [width, height],
       emptySquare: ' ',
     });
@@ -167,8 +167,11 @@ class SlidingPuzzle extends Game {
   */
   get checkerboard() {
     const { height, width, board } = this;
-    return (new Checkerboard({ dimensions: [width, height], emptySquare: ' ' }))
-      .with([...board]);
+    return new ListCheckerboard({
+      dimensions: [width, height],
+      emptySquare: ' ',
+      squareValues: [...board],
+    });
   }
 
   /** The player can move the empty square up, down, left or right. A move is
@@ -183,7 +186,9 @@ class SlidingPuzzle extends Game {
     }
     const { checkerboard } = this;
     const emptyCoord = checkerboard.findFirst(' ');
-    const moves = [...checkerboard.moves(emptyCoord, ...Checkerboard.DIRECTIONS.ORTHOGONAL)];
+    const moves = [
+      ...checkerboard.moves(emptyCoord, ...ListCheckerboard.DIRECTIONS.ORTHOGONAL),
+    ];
     return {
       [ROLE]: moves.map((coord) => checkerboard.square(coord)),
     };
@@ -203,7 +208,7 @@ class SlidingPuzzle extends Game {
     const action = actions[ROLE];
     const emptyCoord = checkerboard.findFirst(' ');
     const actionCoord = checkerboard.findFirst(action);
-    this.board = checkerboard.swap(emptyCoord, actionCoord).repr.join('');
+    this.board = checkerboard.swap(emptyCoord, actionCoord).squareValues.join('');
     this.moveNumber += 1;
   }
 
