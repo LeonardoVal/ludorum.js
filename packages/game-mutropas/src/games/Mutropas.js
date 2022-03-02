@@ -1,11 +1,8 @@
-import { Game, iterables, ListAleatory } from '@ludorum/core';
+import { Game, ListAleatory } from '@ludorum/core';
 import { Randomness } from '@creatartis/randomness';
 
 const ROLES = ['Left', 'Right'];
 const DEFAULT_SCORE = { [ROLES[0]]: 0, [ROLES[1]]: 0 };
-const ACTIONS = { HOLD: 'hold', ROLL: 'roll' };
-const { abs, floor, sign } = Math;
-const { permutations } = iterables;
 
 /** Mutropas is a game invented for Ludorum as a simple example of a game of
  * hidden (a.k.a. incomplete) information. It is also a simultaneous game.
@@ -30,9 +27,9 @@ class Mutropas extends Game {
     } = args || {};
     super(args);
     this
-      ._prop('pieces', pieces, 'object', this.dealPieces())
+      ._prop('pieces', pieces ?? this.dealPieces(), 'object')
       ._prop('playedPieces', playedPieces, Array, [])
-      ._prop('scores', scores, 'object', DEFAULT_SCORE);
+      ._prop('scores', scores, 'object', { ...DEFAULT_SCORE });
   }
 
   /** All the pieces to be used in Mutropas. By default are the numbers from 0
@@ -48,7 +45,7 @@ class Mutropas extends Game {
   dealPieces(random) {
     const { allPieces, roles: [role0, role1] } = this;
     random ||= Randomness.DEFAULT;
-    const piecesPerPlayer = floor(allPieces.length / 2);
+    const piecesPerPlayer = Math.floor(allPieces.length / 2);
     const [split0, rest] = random.split(piecesPerPlayer, allPieces);
     const [split1] = random.split(piecesPerPlayer, rest);
     return { [role0]: split0, [role1]: split1 };
@@ -84,7 +81,7 @@ class Mutropas extends Game {
    * @property {string[]}
   */
   get activeRoles() {
-    return [...this.roles];
+    return this.roles;
   }
 
   /** Mutropas is a simultaneous game. Hence every turn all players can move.
@@ -93,7 +90,15 @@ class Mutropas extends Game {
    * @property {object}
   */
   get actions() {
-    return this.result ? null : { ...this.pieces };
+    const {
+      pieces, playedPieces, roles: [role0, role1],
+    } = this;
+    const { [role0]: pieces0, [role1]: pieces1 } = pieces;
+    const notPlayed = (p) => !playedPieces.includes(p);
+    return this.result ? null : {
+      ...(pieces0 && { [role0]: pieces0.filter(notPlayed) }),
+      ...(pieces1 && { [role1]: pieces1.filter(notPlayed) }),
+    };
   }
 
   /** If the pieces for one of the players are missing from `this.pieces`, then
@@ -103,16 +108,18 @@ class Mutropas extends Game {
    * @property {object}
   */
   get aleatories() {
-    const [[, rolePieces]] = Object.entries(this.pieces);
+    const {
+      pieces, roles: [role0, role1],
+    } = this;
+    const { [role0]: pieces0, [role1]: pieces1 } = pieces;
+    if (pieces0 && pieces1) {
+      return null;
+    }
     const { allPieces, playedPieces } = this;
     const possiblePieces = allPieces.filter(
-      (p) => !rolePieces.includes(p) && !playedPieces.includes(p),
+      (p) => !(pieces0 || pieces1).includes(p) && !playedPieces.includes(p),
     );
-    return {
-      hiddenPieces: new ListAleatory({
-        values: permutations(possiblePieces, rolePieces),
-      }),
-    };
+    return { hiddenPieces: new ListAleatory({ values: possiblePieces }) };
   }
 
   /** If all pieces are put in a circle, each piece beats half the pieces next
@@ -139,8 +146,8 @@ class Mutropas extends Game {
     if (index2 < 0) {
       throw new Error(`Unknown piece ${piece2}!`);
     }
-    return sign(index1 - index2)
-      * (abs(index1 - index2) <= floor(allPieces.length / 2) ? -1 : +1);
+    return Math.sign(index1 - index2)
+      * (Math.abs(index1 - index2) <= Math.floor(allPieces.length / 2) ? -1 : +1);
   }
 
   /** A game of Mutropas ends when the players have no more pieces to play. The
@@ -152,7 +159,7 @@ class Mutropas extends Game {
     const {
       allPieces, playedPieces, roles: [role0, role1], scores,
     } = this;
-    if (playedPieces.length >= allPieces.length) {
+    if (allPieces.length <= playedPieces.length + allPieces.length % 2) {
       return this.zerosumResult(scores[role0] - scores[role1], role0);
     }
     return null;
@@ -176,29 +183,37 @@ class Mutropas extends Game {
     const {
       pieces, playedPieces, roles: [role0, role1], scores,
     } = this;
-    const { [role0]: action0, [role1]: action1 } = actions;
-    if (!pieces[role0].includes(action0)) {
+    let { [role0]: action0, [role1]: action1 } = actions;
+    if (action0 === undefined || action1 === undefined) {
+      if (!haps) {
+        throw new Error('Missing pieces from game state!');
+      }
+      const { hiddenPieces } = haps;
+      if (action0 === undefined) {
+        action0 = hiddenPieces;
+      } else {
+        action1 = hiddenPieces;
+      }
+    }
+    if (pieces[role0] && !pieces[role0].includes(action0)) {
       throw new Error(`Invalid move ${action0} for ${role0}!`);
     }
-    if (!pieces[role1].includes(action1)) {
+    if (pieces[role1] && !pieces[role1].includes(action1)) {
       throw new Error(`Invalid move ${action1} for ${role1}!`);
     }
-    playedPieces.push(action0, action1);
-    pieces[role0] = pieces[role0].filter((p) => p !== action0);
-    pieces[role1] = pieces[role1].filter((p) => p !== action1);
+    this.playedPieces = [...playedPieces, action0, action1];
     const turnResult = this.pieceCompare(action0, action1);
-    if (turnResult > 0) {
-      scores[role0] += 1;
-    } else if (turnResult < 0) {
-      scores[role1] += 1;
-    }
+    this.scores = {
+      [role0]: scores[role0] + (turnResult > 0 ? 1 : 0),
+      [role1]: scores[role1] + (turnResult < 0 ? 1 : 0),
+    };
   }
 
   /** @inheritdoc */
   view(role) {
     const { pieces, playedPieces, scores } = this;
     return new this.constructor({
-      pieces: { [role]: pieces[role] },
+      pieces: { [role]: [...pieces[role]] },
       playedPieces: [...playedPieces],
       scores: { ...scores },
     });
@@ -210,56 +225,3 @@ class Mutropas extends Game {
 Mutropas.defineSERMAT('pieces playedPieces scores');
 
 export default Mutropas;
-
-/** # Mutropas
-* /
-games.Mutropas = declare(Game, {
-
-  __viewNext__: function __viewNext__(moves, haps, update) {
-    var player = this.pieces[this.players[0]] ? this.players[0] : this.players[1],
-      opponent = this.opponent(player);
-    if (!haps) {
-      return this.contingent(moves,
-        obj(player, aleatories.uniformAleatory(this.__possiblePieces__(opponent))),
-        update);
-    } else {
-      return (new this.constructor({
-        pieces: obj(player, this.pieces[player], opponent, haps[opponent]),
-        playedPieces: this.playedPieces,
-        scores: this.__scores__
-      })).next(moves, null, update);
-    }
-  },
-
-  // ## Game views ###############################################################################
-
-  /** The method `__possiblePieces__` calculates the pieces the `player` may have.
-  * /
-  __possiblePieces__: function __possiblePieces__(player) {
-    var playedPieces = this.playedPieces,
-      opponentPieces = this.pieces[this.opponent(player)],
-      possiblePieces = iterable(this.allPieces).filter(function (p) {
-        return playedPieces.indexOf(p) < 0 && // p has not been played yet ...
-          opponentPieces.indexOf(p) < 0; // ... and the opponent does not have it.
-      });
-    return possiblePieces.combinations(possiblePieces.count() - 1);
-  },
-
-  /** In this view of the game the hidden information is modelled as random variables. The
-  aleatory that is returned ranges over all possible piece sets that the opponent of the given
-  `player` may have. After each possibility the assumption is maintained for the rest of the
-  game.
-
-  This allows to model the uncertainty that each player has about its opponent's pieces. By doing
-  so an artificial player that searches the game space cannot infer the pieces the opponent has,
-  and hence it cannot cheat.
-  * /
-  view: function view(player) {
-    return new this.constructor({
-      pieces: obj(player, this.pieces[player]),
-      playedPieces: this.playedPieces,
-      scores: this.__scores__
-    });
-  },
-}); // declare Mutropas
-*/

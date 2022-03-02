@@ -3,21 +3,24 @@ const { NodeConsolePlayer } = require('@ludorum/core');
 // eslint-disable-next-line import/extensions, import/no-unresolved
 const { Mutropas } = require('../../dist/game-mutropas');
 
-const square = {
-  '.': '\x1b[90m.\x1b[0m',
-  A: '\x1b[1;93mA\x1b[0m',
-  B: '\x1b[93mB\x1b[0m',
-  a: '\x1b[1;92ma\x1b[0m',
-  b: '\x1b[92mb\x1b[0m',
-  '\n': '\n',
+const listString = (list) => {
+  if (!list || list.length < 1) {
+    return 'nothing';
+  }
+  return list.join(', ');
 };
 
 async function main() {
   const nodeConsolePlayer = new NodeConsolePlayer({
     readline,
     gameString(game) {
-      const { checkerboard } = game;
-      return [...checkerboard.renderAsText()].map((chr) => square[chr]).join('');
+      const {
+        actions, playedPieces, roles: [role0, role1], scores,
+      } = game;
+      return `Score is ${role0} ${scores[role0]} vs ${role1} ${
+        scores[role1]}, having played ${listString(playedPieces)}. ${
+        role0} has ${listString(actions?.[role0])}. ${
+        role1} has ${listString(actions?.[role1])}.`;
     },
   });
   const game = new Mutropas();
