@@ -34,14 +34,16 @@ describe('tournaments', () => {
       players: Array(3).fill().map(() => new RandomPlayer({ random: RANDOM })),
       random: RANDOM,
     });
+    const { game, matchCount, players } = tournament;
     const histories = await tournament.complete();
     expect(histories).toBeOfType(Array);
-    expect(histories.length).toBe(6);
+    expect(histories.length).toBe(players.length * (players.length - 1)
+      * matchCount);
     histories.forEach((history) => {
       expect(history).toBeOfType(Array);
       expect(history.length).toBe(tournament.game.height + 1);
-      history.forEach(({ game, actions, haps }, i) => {
-        expect(game).toBeOfType(Predefined);
+      history.forEach(({ game: gameState, actions, haps }, i) => {
+        expect(gameState).toBeOfType(Predefined);
         expect(haps).toBeFalsy();
         if (i === 0) {
           expect(actions).not.toBeDefined();

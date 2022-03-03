@@ -21,7 +21,8 @@ class Tournament extends BaseClass {
    * @param {object} args
    * @param {Game} args.game
    * @param {Player[]} args.players
-   * @param {object[]} args.spectators
+   * @param {Randomness} [args.random=Randomness.DEFAULT]
+   * @param {object[]} [args.spectators]
   */
   constructor(args) {
     const {

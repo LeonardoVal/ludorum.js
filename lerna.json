@@ -10,6 +10,7 @@
     "packages/game-toadsandfrogs",
     "packages/players-minimax",
     "packages/players-montecarlo",
+    "packages/tournaments-extra",
     "packages/utils-checkerboards"
   ],
   "version": "independent"

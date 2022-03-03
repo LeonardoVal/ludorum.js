@@ -10,7 +10,6 @@ import HeuristicPlayer from './players/HeuristicPlayer';
 import iterables from './utils/iterables';
 import ListAleatory from './aleatories/ListAleatory';
 import Match from './Match';
-import MeasurementTournament from './tournaments/MeasurementTournament';
 import NodeConsolePlayer from './players/NodeConsolePlayer';
 import Player from './players/Player';
 import playerTests from './players/playerTests';
@@ -36,7 +35,6 @@ export {
   iterables,
   ListAleatory,
   Match,
-  MeasurementTournament,
   NodeConsolePlayer,
   Player,
   playerTests,

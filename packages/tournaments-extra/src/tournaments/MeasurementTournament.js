@@ -1,5 +1,6 @@
-import { permutations } from '../utils/iterables';
-import Tournament from './Tournament';
+import { iterables, Tournament } from '@ludorum/core';
+
+const { permutations } = iterables;
 
 /** Measurement tournaments pit the player being measured against others in
  * order to assess that player's performance at a game. They are used to
@@ -9,12 +10,20 @@ import Tournament from './Tournament';
 class MeasurementTournament extends Tournament {
   /** @inheritdoc */
   static get name() {
-    return 'Measurement';
+    return 'MeasurementTournament';
   }
 
   /** The constructor takes the `game` used in the contest, the `players` being
    * evaluated, the `opponents` used to evaluate them, and the amount of matches
    * each player will play (`matchCount`).
+   *
+   * @param {object} [args]
+   * @param {Game} args.game
+   * @param {Player[]} args.players
+   * @param {Player[]} args.opponents
+   * @param {number} [args.matchCount=game.roles.length]
+   * @param {Randomness} [args.random=Randomness.DEFAULT]
+   * @param {object[]} [args.spectators]
   */
   constructor(args) {
     const { game, opponents, matchCount } = args || {};
@@ -29,6 +38,8 @@ class MeasurementTournament extends Tournament {
 
   /** A measurement tournament makes every player play `matchCount` matches for
    * each role in the game against all possible combinations of opponents.
+   *
+   * @yields {Match}
   */
   async* matches() {
     const {
@@ -46,7 +57,7 @@ class MeasurementTournament extends Tournament {
       }
     }
   }
-} // class Measurement
+} // class MeasurementTournament
 
 /** Serialization and materialization using Sermat.
 */

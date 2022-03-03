@@ -1,0 +1,43 @@
+{
+  "name": "@ludorum/tournaments-extra",
+  "description": "Extra tournament definitions for Ludorum",
+  "keywords": [
+    "board game",
+    "game"
+  ],
+  "version": "0.1.0-alpha",
+  "main": "dist/tournaments-extra.js",
+  "files": [
+    "dist/",
+    "LICENSE.md",
+    "README.md"
+  ],
+  "author": {
+    "name": "Leonardo Val",
+    "email": "leonardo.val@creatartis.com"
+  },
+  "homepage": "http://creatartis.com",
+  "contributors": [],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/LeonardoVal/ludorum.js"
+  },
+  "dependencies": {
+    "@creatartis/randomness": "0.2.0-alpha",
+    "@ludorum/core": "^0.3.0-alpha"
+  },
+  "devDependencies": {
+    "@creatartis/creatartis-build": "0.3.0-alpha"
+  },
+  "scripts": {
+    "build": "npx creatartis-build lint build test doc",
+    "deps:verdaccio": "rm -rf node_modules package-lock.json && npm i --registry http://localhost:4873",
+    "doc": "npx creatartis-build doc",
+    "lint": "npx creatartis-build lint",
+    "release": "npm run build && npx creatartis-build release",
+    "release:verdaccio": "npm run build && npx creatartis-build release:verdaccio",
+    "rerelease:verdaccio": "npm run build && npx creatartis-build rerelease:verdaccio",
+    "test": "npx creatartis-build lint test"
+  }
+}
