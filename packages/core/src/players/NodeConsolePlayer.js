@@ -50,7 +50,7 @@ class NodeConsolePlayer extends Player {
     const defaultStringFunction = (x) => `${x}`;
     this
       ._prop('actionString', actionString, 'function', defaultStringFunction)
-      ._prop('hapString', actionString, 'function', defaultStringFunction)
+      ._prop('hapString', hapString, 'function', defaultStringFunction)
       ._prop('gameString', gameString, 'function', defaultStringFunction)
       ._prop('readLineInterface', readLineInterface);
   }
@@ -115,7 +115,9 @@ class NodeConsolePlayer extends Player {
     const { readLineInterface } = this;
     return new Promise((resolve, reject) => {
       readLineInterface.question(`${bold(role)}> `, (answer) => {
-        const action = this.choices.get(answer);
+        const action = answer.trim().length === 0
+          ? this.random.choice([...this.choices.values()])
+          : this.choices.get(answer);
         if (action === undefined) {
           reject(new Error(`Unknown action "${answer}"!`));
         } else {
