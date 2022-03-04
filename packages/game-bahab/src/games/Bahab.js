@@ -1,5 +1,5 @@
 import { Game } from '@ludorum/core';
-import { Checkerboard } from '@ludorum/utils-checkerboards';
+import { ListCheckerboard } from '@ludorum/utils-checkerboards';
 
 const ROLES = ['Uppercase', 'Lowercase'];
 
@@ -7,10 +7,10 @@ const DEFAULT_SCORE = { [ROLES[0]]: 0, [ROLES[1]]: 0 };
 
 const INITIAL_BOARD = ['BBABB', 'BBBBB', '.....', 'bbbbb', 'bbabb'].join('');
 
-const CHECKERBOARD = new Checkerboard({ dimensions: [5, 5], emptySquare: '.' });
+const CHECKERBOARD = new ListCheckerboard({ dimensions: [5, 5], emptySquare: '.' });
 
 const COORD_MAP = [...CHECKERBOARD.coordinates()].reduce((map, coord) => {
-  const coordString = CHECKERBOARD.coordToString(coord);
+  const coordString = CHECKERBOARD.coord(coord, 'string');
   map.set(`${coord}`, coordString);
   map.set(coordString, coord);
   return map;
@@ -146,7 +146,7 @@ class Bahab extends Game {
       throw new Error(`Invalid actions ${JSON.stringify(actions)} for ${this}!`);
     }
     this.activateRoles(this.opponent(activeRole));
-    this.board = this.checkerboard.move(coordFrom, coordTo).repr.join('');
+    this.board = this.checkerboard.move(coordFrom, coordTo).squareValues.join('');
     return this;
   }
 } // class Bahab
