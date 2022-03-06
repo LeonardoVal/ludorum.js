@@ -78,15 +78,15 @@ class NodeConsolePlayer extends Player {
           bold(role)} against ${opponents.join(', ')}.\n`);
         showGame(game);
       },
-      next(_gameBefore, _actions, _haps, gameAfter) {
-        if (_actions) {
-          Object.entries(_actions).forEach(([r, a]) => write(
-            `- ${bold(r)} played ${actionString(a, _gameBefore, r)}.\n`,
+      next(gameBefore, actions, haps, gameAfter) {
+        if (actions) {
+          Object.entries(actions).forEach(([r, a]) => write(
+            `- ${bold(r)} played ${actionString(a, gameBefore, r)}.\n`,
           ));
         }
-        if (_haps) {
-          Object.entries(_haps).forEach(([a, v]) => write(
-            `- ${bold(a)} happened as ${hapString(v, a, _gameBefore, role)}.\n`,
+        if (haps) {
+          Object.entries(haps).forEach(([a, v]) => write(
+            `- ${bold(a)} happened as ${hapString(v, a, gameBefore, role)}.\n`,
           ));
         }
         showGame(gameAfter);
@@ -110,7 +110,7 @@ class NodeConsolePlayer extends Player {
   async decision(game, role) {
     this.choices = new Map(
       this.actionsFor(game, role)
-        .map((action) => [this.actionString(action), action]),
+        .map((action) => [this.actionString(action, game, role), action]),
     );
     const { readLineInterface } = this;
     return new Promise((resolve, reject) => {
