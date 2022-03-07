@@ -30,8 +30,8 @@ describe('utils', () => {
 
   test('iterables.cartesianProductObject', () => {
     expect(cartesianProductObject).toBeOfType('function');
-    expect([...cartesianProductObject()])
-      .toEqual({});
+    expect([...cartesianProductObject({})])
+      .toEqual([{}]);
     expect([...cartesianProductObject({ x: 'abc' })])
       .toEqual([{ x: 'a' }, { x: 'b' }, { x: 'c' }]);
     expect([...cartesianProductObject({ x: 'ab', y: '01' })])
@@ -39,12 +39,12 @@ describe('utils', () => {
         { x: 'a', y: '0' }, { x: 'a', y: '1' }, { x: 'b', y: '0' },
         { x: 'b', y: '1' },
       ]);
-    expect([...cartesianProduct({ p: [0, 1], q: [0, 1], r: [7] })])
+    expect([...cartesianProductObject({ p: [0, 1], q: [0, 1], r: [7] })])
       .toEqual([
         { p: 0, q: 0, r: 7 }, { p: 0, q: 1, r: 7 },
         { p: 1, q: 0, r: 7 }, { p: 1, q: 1, r: 7 },
       ]);
-    expect([...cartesianProduct({ a: 'xyz', b: '' })]).toEqual([]);
+    expect([...cartesianProductObject({ a: 'xyz', b: '' })]).toEqual([]);
   });
 
   test('iterables.permutations', () => {

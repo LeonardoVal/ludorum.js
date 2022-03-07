@@ -16,6 +16,35 @@ class SparseCheckerboard extends Checkerboard {
       ._prop('squareValues', squareValues, Map);
   }
 
+  /** The `squareValues` is a `Map` of coordinates (integer indices) to the
+   * values for each square in the checkerboard.
+   *
+   * @property {Map<integer, any>}
+  */
+  get squareValues() {
+    return this._unimplemented('squareValues');
+  }
+
+  /** Returns an object with the same interface, but with a new `squareValues`.
+   *
+   * @param {Map<integer, any>} squareValues
+   * @returns {ListCheckerboard}
+  */
+  with(squareValues) {
+    const result = Object.create(this);
+    result._prop('squareValues', squareValues, Map);
+    return result;
+  }
+
+  /** Returns an object with the same interface, but with `squareValues` set to
+   * the empty board.
+   *
+   * @returns {SparseCheckerboard}
+  */
+  withEmptyBoard() {
+    return this.with(this.emptyBoard());
+  }
+
   // Board management __________________________________________________________
 
   /** @inheritdoc */

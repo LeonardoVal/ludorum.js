@@ -250,12 +250,12 @@ class Game extends BaseClass {
     return this.roles[(i + 1) % roleCount];
   }
 
-  /* Game information __________________________________________________________
-   *
-   * Some AI algorithms have constraints on which games they can support. A game
+  // Game information __________________________________________________________
+
+  /* Some AI algorithms have constraints on which games they can support. A game
    * can provide some information to assess its compatibility with an artificial
    * player automaticaly.
-   */
+  */
 
   /** A game `isZeroSum` if the sum of all results in every match is zero. True
    * by default, since most games are.

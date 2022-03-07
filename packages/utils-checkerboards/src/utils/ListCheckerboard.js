@@ -18,6 +18,11 @@ class ListCheckerboard extends Checkerboard {
     this._prop('squareValues', squareValues, validSquareValues);
   }
 
+  /** The `squareValues` is a list of the values for each square in the
+   * checkerboard.
+   *
+   * @property {any[]}
+  */
   get squareValues() {
     return this._unimplemented('squareValues');
   }
