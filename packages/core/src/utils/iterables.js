@@ -92,6 +92,7 @@ export function bests(elements, evaluation, ε = 1e-15) {
 }
 
 export default {
+  bests,
   cartesianProduct,
   cartesianProductObject,
   permutations,

@@ -1,11 +1,18 @@
-/* eslint-disable */
-
-import GameTree from '@ludorum/core/utils/GameTree';
+import { GameTree, iterables } from '@ludorum/core';
 import MonteCarloPlayer from './MonteCarloPlayer';
+
+const { bests } = iterables;
+
+const UCT_INIT_DATA = { rewards: 0, visits: 1 };
 
 /** Automatic player based on Upper Confidence Bound Monte Carlo tree search.
 */
 class UCTPlayer extends MonteCarloPlayer {
+  /** @inheritdoc */
+  static get name() {
+    return 'UCTPlayer';
+  }
+
   /** The constructor builds a MonteCarlo Tree Search player that chooses its
    * moves using the Upper Confidence Bound method.
    *
@@ -22,59 +29,98 @@ class UCTPlayer extends MonteCarloPlayer {
       ._prop('explorationConstant', explorationConstant, 'number', Math.sqrt(2));
   }
 
-  /** Evaluate all child nodes of the given `node` according to the [Upper Confidence Bound
-  formula by L. Kocsis and Cs. Szepesvári](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.102.1296).
-  Returns one of the greatest evaluated, chosen at random.
+  // Search tree _______________________________________________________________
+
+  /** Build the root node for a search tree starting with the given `state` for
+   * the given `role`. The second level is also created with the role's actions,
+   * and the third level is created with the next game states.
+   *
+   * @param {Game} game
+   * @param {string} role
+   * @returns {object}
   */
-  selectNode(parent, totalSimulationCount, explorationConstant) {
-    explorationConstant = isNaN(explorationConstant) ? this.explorationConstant : +explorationConstant;
-    var EPSILON = 1e-10,
-      bestChildren = iterable(parent.children()).greater(function (node) {
-        if (!node.uct) { // Node has not been expanded.
-          node.uct = { visits: 0, wins: 0, rewards: 0 };
-        }
-        var visits = node.uct.visits,
-          result = node.uct.wins / (visits + EPSILON) + explorationConstant *
-            Math.sqrt(Math.log(parent.uct.visits + 1) / (visits + EPSILON));
-        return result;
-      });
-    return this.random.choice(bestChildren);
+  searchTreeRoot(game, role) {
+    const root = {
+      ...UCT_INIT_DATA,
+      state: game,
+      children: [...this.transitionsByRoleAction(game, role)]
+        .map(({ roleAction, transitions }) => ({
+          ...UCT_INIT_DATA,
+          state: game,
+          roleAction,
+          children: transitions.map(({ next, probability }) => ({
+            ...UCT_INIT_DATA,
+            state: next,
+            probability,
+          })),
+        })),
+    };
+    return root;
+  }
+
+  /** Builds a path from the root node to the next node from which to perform a
+   * simulation. Returns an array from the most deep node to the root. If a not
+   * fully expanded node is found, a new transition will be followed.
+   *
+   * @param {object} root
+   * @returns {object[]}
+  */
+  treePolicy(root) {
+    const { random } = this;
+    const spine = [root];
+    for (let node = root; !node.state.isFinished;) {
+      const notExpanded = node.children.filter((child) => !child.children);
+      if (notExpanded.length > 0) { // Expand a random node.
+        const child = random.choice(notExpanded);
+        child.children = [...GameTree.possibleNexts(node.state)]
+          .map(({ next, probability }) => ({
+            state: next,
+            probability,
+            ...UCT_INIT_DATA,
+          }));
+        spine.unshift(child);
+        break;
+      }
+      node = random.choice(
+        bests(node.children, (child) => this.nodeEval(child, node)),
+      );
+      spine.unshift(node);
+    }
+    return spine;
+  }
+
+  /** Evaluate a search tree `node` according to the [Upper Confidence Bound
+   * formula by L. Kocsis and Cs. Szepesvári](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.102.1296).
+   *
+   * @param {object} node
+   * @param {object} parent
+   * @returns {number}
+  */
+  nodeEval(node, parent) {
+    const { explorationConstant, random } = this;
+    const { visits: parentVisits } = parent;
+    const { visits, rewards } = node;
+    return rewards / visits + explorationConstant
+      * Math.sqrt(Math.log(parentVisits) / visits);
   }
 
   /** @inheritdoc
   */
   async* evaluatedActions(game, role) {
-    const root = new GameTree({
-      state: game,
-      data: { visits: 0, wins: 0, rewards: 0 },
-    });
     const startTime = Date.now();
-    for (var i = 0;  !this.__finishMoveEvaluation__(i, startTime, root); i++) {
-      node = root;
-      while (node.__children__ && node.__children__.length > 0) { // Selection
-        node = this.selectNode(node, i+1, this.explorationConstant);
-      }
-      if (!node.state) {
-        node.expand();
-      }
-      simulationResult = this.simulation(node.state, player); // Simulation
-      for (; node; node = node.parent) { // Backpropagation
-        node.uct.visits++;
-        if (simulationResult.result > 0) {
-          node.uct.wins++;
-        }
-        node.uct.rewards += game.normalizedResult(simulationResult.result);
-      }
+    const root = this.searchTreeRoot(game, role);
+    for (let i = 0; !this.endActionEvaluation(i, startTime, root); i += 1) {
+      // Selection
+      const spine = this.treePolicy(root);
+      const { result } = this.simulation(spine[0].state, role); // Simulation
+      spine.forEach((node) => {
+        node.visits += 1;
+        node.rewards += result;
+      });
     }
-    var result = iterable(root.children()).map(function (n) {
-      if (!n.uct) console.log(n);//FIXME
-      var visits = n.uct.visits;
-      return n.uct ?
-        [n.transition, n.uct.rewards / (visits + 1e-10), visits] :
-        [n.transition, 0, 0];
-    }).toArray();
-    //console.log(result);//FIXME
-    return result;
+    for (const child of root.children) {
+      yield [child.roleAction, this.nodeEval(child, root)];
+    }
   }
 } // class UCTPlayer
 
