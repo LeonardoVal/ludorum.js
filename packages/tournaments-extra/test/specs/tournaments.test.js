@@ -1,7 +1,7 @@
 import { Randomness } from '@creatartis/randomness';
 import { Predefined, RandomPlayer, Tournament } from '@ludorum/core';
 import MeasurementTournament from '../../src/tournaments/MeasurementTournament';
-import EliminationTournament from '../../src/tournaments/EliminationTournament';
+import SingleEliminationTournament from '../../src/tournaments/SingleEliminationTournament';
 
 const RANDOM = Randomness.DEFAULT;
 
@@ -11,7 +11,7 @@ const randomPlayers = (n) => Array(n).fill()
 describe('tournaments', () => {
   test('expected definitions', () => {
     expect(MeasurementTournament).toBeOfType('function');
-    expect(EliminationTournament).toBeOfType('function');
+    expect(SingleEliminationTournament).toBeOfType('function');
   });
 
   test('MeasurementTournament with Predefined & RandomPlayer', async () => {
@@ -60,7 +60,7 @@ describe('tournaments', () => {
   test('EliminationTournament with Predefined & RandomPlayer', async () => {
     const result = { First: 1, Second: -1 };
     const roles = Object.keys(result);
-    const tournament = new EliminationTournament({
+    const tournament = new SingleEliminationTournament({
       game: new Predefined({ result }),
       matchCount: 1,
       players: randomPlayers(8),

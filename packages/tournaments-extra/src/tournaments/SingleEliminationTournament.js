@@ -5,10 +5,10 @@ import { Tournament } from '@ludorum/core';
  * match's winner passing to the next round until the final match. Games are
  * assumed to have only one winner per match.
 */
-class EliminationTournament extends Tournament {
+class SingleEliminationTournament extends Tournament {
   /** @inheritdoc */
   static get name() {
-    return 'EliminationTournament';
+    return 'SingleEliminationTournament';
   }
 
   /** The constructor takes the `game` to be played, the `players` and the
@@ -45,9 +45,6 @@ class EliminationTournament extends Tournament {
   * round(players) {
     const { game, matchCount } = this;
     const roleCount = game.roles.length;
-    const getPlayer = (_, i) => (
-      players[i % players.length] // Fill by repeating players if necessary.
-    );
     if (players.length >= roleCount) {
       for (let i = 0; i < players.length; i += roleCount) {
         const matchupPlayers = players.slice(i, i + roleCount);
@@ -67,7 +64,11 @@ class EliminationTournament extends Tournament {
     }
   }
 
-  /** TODO
+  /** After waiting for all the given `matches` to finish, the results are
+   * aggregated, and a winner is returned.
+   *
+   * @param {Match[]} matches
+   * @returns {Player}
   */
   async playoff(matches) {
     const matchResults = await Promise.all(matches.map((match) => match.wait()));
@@ -93,6 +94,6 @@ class EliminationTournament extends Tournament {
 
 /** Serialization and materialization using Sermat.
 */
-EliminationTournament.defineSERMAT('matchCount');
+SingleEliminationTournament.defineSERMAT('matchCount');
 
-export default EliminationTournament;
+export default SingleEliminationTournament;
