@@ -171,7 +171,7 @@ class Match extends BaseClass {
     return result;
   }
 
-  // Spectator events //////////////////////////////////////////////////////////
+  // Spectator events __________________________________________________________
 
   /** Adds a spectator object to the match. This are objects that listen to
    * events that happen as the match is played.
@@ -240,24 +240,27 @@ class Match extends BaseClass {
     return this._emit('end', game, result);
   }
 
-  // Commands //////////////////////////////////////////////////////////////////
-
-  /* Commands are pseudo-moves, which can be returned by the players instead of
-   * valid moves for the game being played. Their intent is to control the match
-   * itself.
-   * The available commands are:
-   * /
-  static commands = {
-    /** + `Quit`: A quit command means the player that issued it is leaving the match. The match
-    is then aborted.
-    * /
-    Quit: declare({
-      __command__: function __command__(match, player) {
-        match.onQuit(match.state(), player);
-        return false;
+  /** Returns a promise that gets fulfilled when the match ends, resolving to
+   * the results.
+   *
+   * @param {number} [time=Infinity]
+   * @returns {Promise<object>}
+  */
+  wait(time = Infinity) {
+    return new Promise((resolve, reject) => {
+      this.spectate({
+        end(_game, result) {
+          resolve(result);
+        },
+      });
+      if (time < Infinity) {
+        setTimeout(
+          () => reject(new Error(`Match did not end after ${time} ms!`)),
+          time,
+        );
       }
-    })
-  } /* */
+    });
+  }
 } // class Match.
 
 /** Serialization and materialization using Sermat.

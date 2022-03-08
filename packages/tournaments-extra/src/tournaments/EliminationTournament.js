@@ -21,83 +21,74 @@ class EliminationTournament extends Tournament {
       ._prop('matchCount', matchCount, 'number', game.roles.length);
   }
 
-  /** .
-  */
+  /** @inheritdoc */
   async* matches() {
-    const { players } = this;
-    yield* this.brackets(players);
+    const { game, players } = this;
+    for (let roundPlayers = players; roundPlayers.length >= game.roles.length;) {
+      const winners = []; // TODO Event onRound
+      for (const { matches, winner } of this.round(roundPlayers)) {
+        winners.push(winner);
+        yield* matches;
+      }
+      roundPlayers = await Promise.all(winners);
+    }
   }
 
-  /** Each bracket is defined by partitioning the `players` in groups of the
+  /** Each round is defined by partitioning the `players` in groups of the
    * size required by the game (usually two). If there are not enough players,
    * some players get reassigned. The bracket includes `matchCount` matches
    * between these participants, rotating roles if possible.
    *
    * @param {Player[]} players
-   * @yields {Match}
+   * @return {object} - An object with a `matches` array and a `winner` promise.
   */
-  * brackets(players) {
+  * round(players) {
     const { game, matchCount } = this;
     const roleCount = game.roles.length;
     const getPlayer = (_, i) => (
       players[i % players.length] // Fill by repeating players if necessary.
     );
     if (players.length >= roleCount) {
-      for (let i = 0; i < players.length; i += 1) {
-        const bracketPlayers = Array(roleCount).fill().map(getPlayer);
+      for (let i = 0; i < players.length; i += roleCount) {
+        const matchupPlayers = players.slice(i, i + roleCount);
+        const matchupMatches = [];
         for (let m = 0; m < matchCount; m += 1) {
           // Rotate partipants roles.
-          const participants = [...bracketPlayers, ...bracketPlayers]
-            .slice(m, m + roleCount);
-          yield this.newMatch(game, participants);
+          const participants = [...matchupPlayers, ...matchupPlayers]
+            .slice(m, m + roleCount); // FIXME
+          const match = this.newMatch(game, participants);
+          matchupMatches.push(match);
         }
+        yield {
+          matches: matchupMatches,
+          winner: this.playoff(matchupMatches),
+        };
       }
     }
   }
 
-  /** A playoff is resolved by aggregating the results of all its matches. The
-   * winner of the playoff is the one with the greater result sum.
-  * /
-  playoff(matches) {
-    var playoffResult = {},
-      players = {};
-    matches.forEach(function (match) {
-      var matchResult = match.result();
-      if (!matchResult) {
-        throw new Error('Unfinished match in playoff!');
-      }
-      iterable(match.players).forEach(function (tuple) {
-        var role = tuple[0],
-          playerName = tuple[1].name;
-        playoffResult[playerName] = (+playoffResult[playerName] || 0) + matchResult[role];
-        players[playerName] = tuple[1];
+  /** TODO
+  */
+  async playoff(matches) {
+    const matchResults = await Promise.all(matches.map((match) => match.wait()));
+    const playerResults = new Map();
+    let maxResult = -Infinity;
+    matchResults.forEach((result, i) => {
+      const { players: matchPlayers } = matches[i];
+      Object.entries(matchPlayers).forEach(([role, player]) => {
+        if (!playerResults.has(player.name)) {
+          playerResults.set(player.name, { player, result: 0 });
+        }
+        const playerEntry = playerResults.get(player.name);
+        playerEntry.result += result[role];
+        maxResult = Math.max(maxResult, playerEntry.result);
       });
     });
-    var winnerName = iterable(playoffResult).greater(function (pair) {
-      return pair[1];
-    })[0][0];
-    return players[winnerName];
+    const winners = [...playerResults.values()]
+      .filter(({ result }) => result === maxResult)
+      .map(({ player }) => player);
+    return this.random.choice(winners);
   }
-
-  /** The elimination tournament runs until there is less players in the next
-  bracket than the amount required to play the game. Since this amount is
-  usually two, the contest ends with one player at the top.
-  * /
-  advance() {
-    if (!this.__matches__ || this.__matches__.length < 1) {
-      if (!this.__currentBracket__) { // First bracket.
-        this.__currentBracket__ = this.__bracket__(this.players);
-      } else if (this.__currentBracket__.length < 1) { // Tournament is finished.
-        return null;
-      } else { // Second and on brackets.
-        var players = this.__currentBracket__.map(this.__playoff__);
-        this.__currentBracket__ = this.__bracket__(players);
-      }
-      this.__matches__ = iterable(this.__currentBracket__).flatten().toArray();
-    }
-    return this.__matches__.shift();
-  }
-  /* */
 } // class EliminationTournament
 
 /** Serialization and materialization using Sermat.
