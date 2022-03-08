@@ -13,6 +13,10 @@ class RoundRobinTournament extends Tournament {
 
   /** The constructor takes the `game` to be played, the `players` and the
    * amount of matches each player should play (`matchCount`).
+   *
+   * @param {object} [args]
+   * @param {Game} [args.game]
+   * @param {number} [args.matchCount] - Equal to the number of roles by default.
   */
   constructor(args) {
     const { game, matchCount } = args || {};
@@ -21,8 +25,10 @@ class RoundRobinTournament extends Tournament {
       ._prop('matchCount', matchCount, 'number', game.roles.length);
   }
 
-  /** Round-robin matches make every player plays `matchCount` matches for
-  each role in the game against all the other opponents.
+  /** Round-robin matches make every player plays `matchCount` matches for each
+   * role in the game against all the other opponents.
+   *
+   * @yields {Match}
   */
   async* matches() {
     const { game, players, matchCount } = this;
