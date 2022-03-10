@@ -1,4 +1,4 @@
-import { GameTree, iterables } from '@ludorum/core';
+import { Game, iterables } from '@ludorum/core';
 import MonteCarloPlayer from './MonteCarloPlayer';
 
 const { bests } = iterables;
@@ -72,7 +72,7 @@ class UCTPlayer extends MonteCarloPlayer {
       const notExpanded = node.children.filter((child) => !child.children);
       if (notExpanded.length > 0) { // Expand a random node.
         const child = random.choice(notExpanded);
-        child.children = [...GameTree.possibleNexts(node.state)]
+        child.children = [...Game.possibleNexts(node.state)]
           .map(({ next, probability }) => ({
             state: next,
             probability,

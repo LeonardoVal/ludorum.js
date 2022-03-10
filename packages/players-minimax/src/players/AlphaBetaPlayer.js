@@ -1,4 +1,4 @@
-import { GameTree } from '@ludorum/core';
+import { Game } from '@ludorum/core';
 import MiniMaxPlayer from './MiniMaxPlayer';
 
 /** Automatic players based on MiniMax with alfa-beta pruning.
@@ -39,8 +39,8 @@ class AlphaBetaPlayer extends MiniMaxPlayer {
       return value;
     }
     const isActive = activeRole === role;
-    const actionOptions = GameTree.possibleActions(actions);
-    const possibleHaps = aleatories && GameTree.possibleHaps(aleatories);
+    const actionOptions = Game.possibleActions(actions);
+    const possibleHaps = aleatories && Game.possibleHaps(aleatories);
     for (const actionOption of actionOptions) {
       if (!possibleHaps) {
         const next = game.next(actionOption);

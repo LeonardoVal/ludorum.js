@@ -1,5 +1,5 @@
 import {
-  HeuristicPlayer, GameTree, Player,
+  HeuristicPlayer, Game, Player,
 } from '@ludorum/core';
 
 /** Automatic player based on flat Monte Carlo tree search.
@@ -127,7 +127,7 @@ class MonteCarloPlayer extends HeuristicPlayer {
     let plies = 0;
     let value = this.quiescence(game, role, plies + 1);
     for (; Number.isNaN(value); plies += 1) {
-      const { actions, haps } = GameTree.randomTransition(this.random, game);
+      const { actions, haps } = Game.randomTransition(this.random, game);
       game.perform(actions, haps);
       value = this.quiescence(game, role, plies + 1);
     }

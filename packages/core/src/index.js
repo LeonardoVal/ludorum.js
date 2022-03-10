@@ -5,7 +5,6 @@ import Choose2Win from './games/Choose2Win';
 import dice from './aleatories/dice';
 import Game from './games/Game';
 import gameTests from './games/gameTests';
-import GameTree from './utils/GameTree';
 import HeuristicPlayer from './players/HeuristicPlayer';
 import iterables from './utils/iterables';
 import ListAleatory from './aleatories/ListAleatory';
@@ -30,7 +29,6 @@ export {
   dice,
   Game,
   gameTests,
-  GameTree,
   HeuristicPlayer,
   iterables,
   ListAleatory,

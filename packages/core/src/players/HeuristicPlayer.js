@@ -1,4 +1,4 @@
-import GameTree from '../utils/GameTree';
+import Game from '../games/Game';
 import Player from './Player';
 
 /** This is the base type of automatic players based on heuristic evaluations of
@@ -40,7 +40,7 @@ class HeuristicPlayer extends Player {
       if (roleActions) {
         for (const roleAction of roleActions) {
           const transitions = [
-            ...GameTree.possibleNexts(game, { [role]: [roleAction] }),
+            ...Game.possibleNexts(game, { [role]: [roleAction] }),
           ];
           yield { roleAction, transitions, ...extraData };
         }
