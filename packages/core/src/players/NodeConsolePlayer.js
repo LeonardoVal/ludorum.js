@@ -1,4 +1,4 @@
-import Player from './Player';
+import UserInterfacePlayer from './UserInterfacePlayer';
 import Match from '../Match';
 import RandomPlayer from './RandomPlayer';
 
@@ -16,7 +16,7 @@ const completer = (choices, line) => [
  *
  * @class
 */
-class NodeConsolePlayer extends Player {
+class NodeConsolePlayer extends UserInterfacePlayer {
   /** @inheritdoc */
   static get name() {
     return 'NodeConsolePlayer';
@@ -55,105 +55,61 @@ class NodeConsolePlayer extends Player {
       ._prop('readLineInterface', readLineInterface);
   }
 
-  /** Builds an spectator object compatible with Match.
-   *
-   * @param {string} role
-   * @returns {object}
-  */
-  spectator(role) {
-    const { readLineInterface } = this;
-    const write = (text) => process.stdout.write(text);
-    const showGame = (game) => {
-      const gameString = this.gameString(game, role);
-      readLineInterface.write(`${gameString}\n`);
-    };
-    const actionString = (...args) => this.actionString(...args);
-    const hapString = (...args) => this.hapString(...args);
-    return {
-      begin(game, players) {
-        const opponents = Object.entries(players)
-          .filter(([r]) => r !== role)
-          .map(([r, p]) => `${bold(p.name)} (${p.constructor.name}) as ${bold(r)}`);
-        write(`You are playing a match of ${bold(game.name)} as ${
-          bold(role)} against ${opponents.join(', ')}.\n`);
-        showGame(game);
-      },
-      next(gameBefore, actions, haps, gameAfter) {
-        if (actions) {
-          Object.entries(actions).forEach(([r, a]) => write(
-            `- ${bold(r)} played ${actionString(a, gameBefore, r)}.\n`,
-          ));
-        }
-        if (haps) {
-          Object.entries(haps).forEach(([a, v]) => write(
-            `- ${bold(a)} happened as ${hapString(v, a, gameBefore, role)}.\n`,
-          ));
-        }
-        showGame(gameAfter);
-      },
-      end(_game, results) {
-        const roleResult = results[role];
-        const status = roleResult > 0 ? boldBlue('win')
-          : roleResult < 0 ? boldRed('lose') : bold('tied');
-        write(`Match ${bold('finished')}. You ${status} (${roleResult}).\n`);
-      },
-    };
+  /** @inheritdoc */
+  renderBeginning(game, players) {
+    const { readLineInterface, role } = this;
+    const opponents = Object.entries(players)
+      .filter(([r]) => r !== role)
+      .map(([r, p]) => `${bold(p.name)} (${p.constructor.name}) as ${bold(r)}`);
+    process.stdout.write(`You are playing a match of ${bold(game.name)} as ${
+      bold(role)} against ${opponents.join(', ')}.\n`);
+    readLineInterface.write(`${this.gameString(game, role)}\n`);
   }
 
   /** @inheritdoc */
-  participate(match, role) {
-    match.spectate(this.spectator(role));
-    return this;
-  }
-
-  /** @inheritdoc */
-  async decision(game, role) {
-    this.choices = new Map(
-      this.actionsFor(game, role)
-        .map((action) => [this.actionString(action, game, role), action]),
-    );
-    const { readLineInterface } = this;
-    return new Promise((resolve, reject) => {
-      readLineInterface.question(`${bold(role)}> `, (answer) => {
-        const action = answer.trim().length === 0
-          ? this.random.choice([...this.choices.values()])
-          : this.choices.get(answer);
-        if (action === undefined) {
-          reject(new Error(`Unknown action "${answer}"!`));
-        } else {
-          resolve(action);
-        }
-      });
+  renderChoices(game, chooseCallback) {
+    const { random, readLineInterface, role } = this;
+    const choices = new Map();
+    for (const action of this.actionsFor(game, role)) {
+      choices.set(this.actionString(action, game, role), action);
+    }
+    readLineInterface.question(`${bold(role)}> `, (answer) => {
+      const action = answer.trim().length === 0
+        ? random.choice([...choices.values()])
+        : choices.get(answer);
+      if (action === undefined) {
+        chooseCallback(new Error(`Unknown action "${answer}"!`));
+      } else {
+        chooseCallback(action);
+      }
     });
   }
 
-  // Utility functions /////////////////////////////////////////////////////////
-
-  /** Shortcut for creating a match for a game with this player in the given
-   * role.
-   *
-   * @param {Game} game - The game to play.
-   * @param {string} role - The role for this player.
-   * @param {function} playerBuilder - Builds an opponent `Player`.
-   * @returns {object[]} - The complete result of the match.
-  */
-  async playAgainst(game, role, playerBuilder) {
-    const players = game.roles.map(
-      (r) => (r === role ? this : playerBuilder(r)),
-    );
-    const match = new Match({ game, players });
-    return match.complete();
+  /** @inheritdoc */
+  renderMovePerformed(gameBefore, actions, haps, gameAfter) {
+    const write = (text) => process.stdout.write(text);
+    const { readLineInterface, role } = this;
+    if (actions) {
+      Object.entries(actions).forEach(([r, a]) => write(
+        `- ${bold(r)} played ${this.actionString(a, gameBefore, r)}.\n`,
+      ));
+    }
+    if (haps) {
+      Object.entries(haps).forEach(([a, v]) => write(
+        `- ${bold(a)} happened as ${this.hapString(v, a, gameBefore, role)}.\n`,
+      ));
+    }
+    readLineInterface.write(`${this.gameString(gameAfter, role)}\n`);
   }
 
-  /** Shortcut for creating a match for a game with this player in the given
-   * role, against random players.
-   *
-   * @param {Game} game - The game to play.
-   * @param {string} role - The role for this player.
-   * @returns {object[]} - The complete result of the match.
-  */
-  async playAgainstRandoms(game, role) {
-    return this.playAgainst(game, role, () => new RandomPlayer());
+  /** @inheritdoc */
+  renderEnd(_game, results) {
+    const { role } = this;
+    const roleResult = results[role];
+    const status = roleResult > 0 ? boldBlue('win')
+      : roleResult < 0 ? boldRed('lose') : bold('tied');
+    process.stdout.write(`Match ${bold('finished')}. You ${status} (${
+      roleResult}).\n`);
   }
 } // class NodeConsolePlayer
 
