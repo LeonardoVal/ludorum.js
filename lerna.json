@@ -11,6 +11,7 @@
     "packages/game-toadsandfrogs",
     "packages/players-minimax",
     "packages/players-montecarlo",
+    "packages/players-rulebased",
     "packages/tournaments-extra",
     "packages/utils-checkerboards"
   ],
