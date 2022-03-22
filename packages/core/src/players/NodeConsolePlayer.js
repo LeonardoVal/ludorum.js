@@ -111,6 +111,42 @@ class NodeConsolePlayer extends UserInterfacePlayer {
     process.stdout.write(`Match ${bold('finished')}. You ${status} (${
       roleResult}).\n`);
   }
+
+  /** Helper method for the _main_ function of playtesters that use this player.
+   *
+   * @param {object} args
+   * @param {function} args.game - Game builder.
+   * @param {Module} args.module - If null runs a match, else just exports a
+   *   function that runs a match.
+   * @param {function} args.player - Player builder function, taking game and
+   *   role.
+  */
+  static playtest(args) {
+    const {
+      game: gameBuilder,
+      module = null,
+      player: playerBuilder = () => null,
+    } = args;
+    const main = function main(...names) {
+      const game = gameBuilder();
+      const players = game.roles.map(
+        (role, i) => playerBuilder(game, role, names[i]) || new RandomPlayer(),
+      );
+      const match = new Match({ game, players });
+      return match.complete();
+    };
+    if (module) { // Behave as imported module.
+      module.exports = main;
+    } else { // Behave as main script.
+      main(...process.argv.slice(2)).then(
+        () => process.exit(0),
+        (err) => {
+          console.error(err);
+          process.exit(1);
+        },
+      );
+    }
+  }
 } // class NodeConsolePlayer
 
 export default NodeConsolePlayer;

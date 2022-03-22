@@ -1,5 +1,7 @@
 const readline = require('readline');
-const { NodeConsolePlayer } = require('@ludorum/core');
+const {
+  NodeConsolePlayer, RandomPlayer,
+} = require('@ludorum/core');
 // eslint-disable-next-line import/extensions, import/no-unresolved
 const { Bahab } = require('../../dist/game-bahab');
 
@@ -12,26 +14,33 @@ const square = {
   '\n': '\n',
 };
 
-async function main() {
-  const nodeConsolePlayer = new NodeConsolePlayer({
-    readline,
-    gameString(game) {
-      const { checkerboard } = game;
-      return [...checkerboard.renderAsText()].map((chr) => square[chr]).join('');
-    },
-  });
-  const game = new Bahab();
-  return nodeConsolePlayer.playAgainstRandoms(game, game.roles[0]);
-}
+const CONSOLE_PLAYER = new NodeConsolePlayer({
+  readline,
+  gameString({ checkerboard }) {
+    return [...checkerboard.renderAsText()]
+      .map((chr) => square[chr]).join('');
+  },
+});
 
-if (require.main === module) {
-  main().then(
-    () => process.exit(0),
-    (err) => {
-      console.error(err);
-      process.exit(1);
-    },
-  );
-} else {
-  module.exports = main;
-}
+NodeConsolePlayer.playtest({
+  game() {
+    return new Bahab();
+  },
+  module: require.main === module ? null : module,
+  player(_game, role, name) {
+    if (!name) {
+      if (CONSOLE_PLAYER.role) {
+        return new RandomPlayer();
+      }
+      CONSOLE_PLAYER.role = role;
+      return CONSOLE_PLAYER;
+    }
+    if (/^ran(dom)?$/i.test(name)) {
+      return new RandomPlayer();
+    }
+    if (/^con(sole)$/i.test(name)) {
+      return CONSOLE_PLAYER;
+    }
+    throw new Error(`Unknown player type ${name}!`);
+  },
+});
