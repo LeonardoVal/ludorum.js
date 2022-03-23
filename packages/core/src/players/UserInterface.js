@@ -1,15 +1,22 @@
+/* eslint-disable max-classes-per-file */
+import { Randomness } from '@creatartis/randomness';
 import Player from './Player';
 import Match from '../Match';
 import RandomPlayer from './RandomPlayer';
+import BaseClass from '../utils/BaseClass';
 
-/** Abstract base class for players that deal with a user interface.
- *
- * @class
-*/
-class UserInterfacePlayer extends Player {
+class UserInterface extends BaseClass {
   /** @inheritdoc */
   static get name() {
     return 'UserInterfacePlayer';
+  }
+
+  /** TODO */
+  constructor(args) {
+    const { random } = args || {};
+    super();
+    this
+      ._prop('random', random, Randomness, Randomness.DEFAULT);
   }
 
   /** Renders the UI at the beginning of a match.
@@ -25,7 +32,9 @@ class UserInterfacePlayer extends Player {
    * be call when the player selects an action.
    *
    * @param {Game} game
-   * @param {function} chooseCallback
+   * @param {string} role
+   * @param {function} choose
+   * @param {function} fail
    */
   renderChoices() {
     return this._unimplemented('renderChoices');
@@ -56,24 +65,63 @@ class UserInterfacePlayer extends Player {
    * @returns {object}
   */
   spectator() {
-    const uiPlayer = this;
+    const ui = this;
     return {
       begin(game, players) {
-        return uiPlayer.renderBeginning(game, players);
+        return ui.renderBeginning(game, players);
       },
       next(gameBefore, actions, haps, gameAfter) {
-        return uiPlayer.renderMovePerformed(gameBefore, actions, haps, gameAfter);
+        return ui.renderMovePerformed(gameBefore, actions, haps, gameAfter);
       },
       end(game, results) {
-        return uiPlayer.renderEnd(game, results);
+        return ui.renderEnd(game, results);
       },
     };
+  }
+
+  /** TODO */
+  bind(match) {
+    if (!this.match) {
+      this._prop('match', match, Match);
+      match.spectate(this.spectator());
+    } else if (this.match !== match) {
+      throw new Error('User interface is already bound!');
+    }
+  }
+
+  /** TODO */
+  static get Player() {
+    // eslint-disable-next-line no-use-before-define
+    return UserInterfacePlayer;
+  }
+
+  /** TODO */
+  player(args) {
+    return new this.constructor.Player({ ui: this, ...args });
+  }
+} // class UserInterface
+
+/** Abstract base class for players that deal with a user interface.
+ *
+ * @class
+*/
+class UserInterfacePlayer extends Player {
+  /** @inheritdoc */
+  static get name() {
+    return 'UserInterfacePlayer';
+  }
+
+  constructor(args) {
+    const { ui } = args || {};
+    super(args);
+    this
+      ._prop('ui', ui, UserInterface);
   }
 
   /** @inheritdoc */
   participate(match, role) {
     this.role = role;
-    match.spectate(this.spectator());
+    this.ui.bind(match);
     return this;
   }
 
@@ -84,42 +132,12 @@ class UserInterfacePlayer extends Player {
     }
     return new Promise((resolve, reject) => {
       try {
-        const callback = (action) => resolve(action);
-        this.renderChoices(game, callback);
+        this.ui.renderChoices(game, role, resolve, reject);
       } catch (error) {
         reject(error);
       }
     });
   }
-
-  // Utility functions _________________________________________________________
-
-  /** Shortcut for creating a match for a game with this player in the given
-   * role.
-   *
-   * @param {Game} game - The game to play.
-   * @param {string} role - The role for this player.
-   * @param {function} playerBuilder - Builds an opponent `Player`.
-   * @returns {object[]} - The complete result of the match.
-  */
-  async playAgainst(game, role, playerBuilder) {
-    const players = game.roles.map(
-      (r) => (r === role ? this : playerBuilder(r)),
-    );
-    const match = new Match({ game, players });
-    return match.complete();
-  }
-
-  /** Shortcut for creating a match for a game with this player in the given
-   * role, against random players.
-   *
-   * @param {Game} game - The game to play.
-   * @param {string} role - The role for this player.
-   * @returns {object[]} - The complete result of the match.
-  */
-  async playAgainstRandoms(game, role) {
-    return this.playAgainst(game, role, () => new RandomPlayer());
-  }
 } // class UserInterfacePlayer
 
-export default UserInterfacePlayer;
+export default UserInterface;

@@ -1,4 +1,4 @@
-import UserInterfacePlayer from './UserInterfacePlayer';
+import UserInterface from './UserInterface';
 import Match from '../Match';
 import RandomPlayer from './RandomPlayer';
 
@@ -11,15 +11,19 @@ const completer = (choices, line) => [
   line,
 ];
 
+const listText = (texts) => (
+  `${texts.slice(0, -1).join(', ')} and ${texts.slice(-1)[0]}`
+);
+
 /** Player that uses the console in the NodeJS environment. Meant mostly for
  * testing.
  *
  * @class
 */
-class NodeConsolePlayer extends UserInterfacePlayer {
+class NodeConsoleInterface extends UserInterface {
   /** @inheritdoc */
   static get name() {
-    return 'NodeConsolePlayer';
+    return 'NodeConsoleInterface';
   }
 
   /** The constructor takes the following arguments.
@@ -28,10 +32,9 @@ class NodeConsolePlayer extends UserInterfacePlayer {
    * @param {function} [actionString] - A callback that returns a string for a
    *   game's action, with the signature `(action, game, role)`.
    * @param {function} [hapString] - A callback that returns a string for a
-   *   game's hap (aleatory value), with the signature `(value, aleatory, game,
-   *   role)`.
+   *   game's hap (aleatory value), with the signature `(value, aleatory, game)`.
    * @param {function} [gameString] - A callback that returns a string for a
-   *   game, with the signature `(game, role)`.
+   *   game, with the signature `(game)`.
    * @param {object} readline - The NodeJS's standards `readline` module.
   */
   constructor(args) {
@@ -57,20 +60,19 @@ class NodeConsolePlayer extends UserInterfacePlayer {
 
   /** @inheritdoc */
   renderBeginning(game, players) {
-    const { readLineInterface, role } = this;
-    const opponents = Object.entries(players)
-      .filter(([r]) => r !== role)
+    const { readLineInterface } = this;
+    const playerStrings = Object.entries(players)
       .map(([r, p]) => `${bold(p.name)} (${p.constructor.name}) as ${bold(r)}`);
-    process.stdout.write(`You are playing a match of ${bold(game.name)} as ${
-      bold(role)} against ${opponents.join(', ')}.\n`);
-    readLineInterface.write(`${this.gameString(game, role)}\n`);
+    process.stdout.write(`Playing a match of ${bold(game.name)} between ${
+      listText(playerStrings)}.\n`);
+    readLineInterface.write(`${this.gameString(game)}\n`);
   }
 
   /** @inheritdoc */
-  renderChoices(game, chooseCallback) {
-    const { random, readLineInterface, role } = this;
+  renderChoices(game, role, choose, fail) {
+    const { random, readLineInterface } = this;
     const choices = new Map();
-    for (const action of this.actionsFor(game, role)) {
+    for (const action of game.actions[role]) {
       choices.set(this.actionString(action, game, role), action);
     }
     readLineInterface.question(`${bold(role)}> `, (answer) => {
@@ -78,9 +80,9 @@ class NodeConsolePlayer extends UserInterfacePlayer {
         ? random.choice([...choices.values()])
         : choices.get(answer);
       if (action === undefined) {
-        chooseCallback(new Error(`Unknown action "${answer}"!`));
+        fail(new Error(`Unknown action "${answer}"!`));
       } else {
-        chooseCallback(action);
+        choose(action);
       }
     });
   }
@@ -88,7 +90,7 @@ class NodeConsolePlayer extends UserInterfacePlayer {
   /** @inheritdoc */
   renderMovePerformed(gameBefore, actions, haps, gameAfter) {
     const write = (text) => process.stdout.write(text);
-    const { readLineInterface, role } = this;
+    const { readLineInterface } = this;
     if (actions) {
       Object.entries(actions).forEach(([r, a]) => write(
         `- ${bold(r)} played ${this.actionString(a, gameBefore, r)}.\n`,
@@ -96,20 +98,22 @@ class NodeConsolePlayer extends UserInterfacePlayer {
     }
     if (haps) {
       Object.entries(haps).forEach(([a, v]) => write(
-        `- ${bold(a)} happened as ${this.hapString(v, a, gameBefore, role)}.\n`,
+        `- ${bold(a)} happened as ${this.hapString(v, a, gameBefore)}.\n`,
       ));
     }
-    readLineInterface.write(`${this.gameString(gameAfter, role)}\n`);
+    readLineInterface.write(`${this.gameString(gameAfter)}\n`);
   }
 
   /** @inheritdoc */
   renderEnd(_game, results) {
-    const { role } = this;
-    const roleResult = results[role];
-    const status = roleResult > 0 ? boldBlue('win')
-      : roleResult < 0 ? boldRed('lose') : bold('tied');
-    process.stdout.write(`Match ${bold('finished')}. You ${status} (${
-      roleResult}).\n`);
+    const finishText = listText(
+      Object.entries(results).map(([role, result]) => {
+        const status = result > 0 ? boldBlue('wins')
+          : result < 0 ? boldRed('loses') : bold('tied');
+        return `${role} ${status}`;
+      }),
+    );
+    process.stdout.write(`Match ${bold('finished')}: ${finishText}.\n`);
   }
 
   /** Helper method for the _main_ function of playtesters that use this player.
@@ -121,22 +125,19 @@ class NodeConsolePlayer extends UserInterfacePlayer {
    * @param {function} args.player - Player builder function, taking game and
    *   role.
   */
-  static playtest(args) {
-    const {
-      game: gameBuilder,
-      module = null,
-      player: playerBuilder = () => null,
-    } = args;
-    const main = function main(...names) {
-      const game = gameBuilder();
-      const players = game.roles.map(
-        (role, i) => playerBuilder(game, role, names[i]) || new RandomPlayer(),
-      );
+  play(args) {
+    const ui = this;
+    const main = function main(...types) {
+      const game = args.game();
+      const players = game.roles.map((role, i) => (
+        args.player?.(types[i], game, role, ui) ?? this.RandomPlayer()
+      ));
       const match = new Match({ game, players });
+      ui.bind(match);
       return match.complete();
     };
-    if (module) { // Behave as imported module.
-      module.exports = main;
+    if (args.module) { // Behave as imported module.
+      args.module.exports = main;
     } else { // Behave as main script.
       main(...process.argv.slice(2)).then(
         () => process.exit(0),
@@ -147,6 +148,6 @@ class NodeConsolePlayer extends UserInterfacePlayer {
       );
     }
   }
-} // class NodeConsolePlayer
+} // class NodeConsoleInterface
 
-export default NodeConsolePlayer;
+export default NodeConsoleInterface;
