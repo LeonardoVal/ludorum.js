@@ -13,7 +13,8 @@
     "packages/players-montecarlo",
     "packages/players-rulebased",
     "packages/tournaments-extra",
-    "packages/utils-checkerboards"
+    "packages/utils-checkerboards",
+    "packages/utils-analysis"
   ],
   "version": "independent"
 }
