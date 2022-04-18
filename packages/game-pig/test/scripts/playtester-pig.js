@@ -1,36 +1,30 @@
 const readline = require('readline');
-const { NodeConsolePlayer } = require('@ludorum/core');
+const { NodeConsoleInterface, RandomPlayer } = require('@ludorum/core');
 // eslint-disable-next-line import/extensions, import/no-unresolved
 const { Pig } = require('../../dist/game-pig');
 
 const bold = (x) => `\x1b[1m${x}\x1b[0m`;
 
-async function main() {
-  const nodeConsolePlayer = new NodeConsolePlayer({
-    readline,
-    gameString(game) {
-      const {
-        activeRole, goal, scores, rolls, rolling,
-      } = game;
-      const scoresString = Object.entries(scores)
-        .map(([role, score]) => `${bold(role)} has ${score} points`)
-        .join(' and ');
-      return `${scoresString}, aiming for ${goal}. ${bold(activeRole)} has rolled ${
-        rolls.join(', ')}`;
-    },
-  });
-  const game = new Pig();
-  return nodeConsolePlayer.playAgainstRandoms(game, game.roles[0]);
-}
-
-if (require.main === module) {
-  main().then(
-    () => process.exit(0),
-    (err) => {
-      console.error(err);
-      process.exit(1);
-    },
-  );
-} else {
-  module.exports = main;
-}
+(new NodeConsoleInterface({
+  readline,
+  gameString(game) {
+    const { goal, scores } = game;
+    return game.roles.map(
+      (role) => `${bold(role)} has ${scores[role]} of ${bold(goal)} points.`,
+    ).join(' and ');
+  },
+})).play({
+  module: require.main === module ? null : module,
+  game() {
+    return new Pig();
+  },
+  player({ type, ui }) {
+    if (!type || /^ran(dom)?$/i.test(type)) {
+      return new RandomPlayer();
+    }
+    if (/^(ui|con(sole)?)$/i.test(type)) {
+      return ui.player();
+    }
+    throw new Error(`Unknown player type ${type}!`);
+  },
+});

@@ -6,7 +6,7 @@ const {
 
 (new NodeConsoleInterface({
   readline,
-  gameString(game, _role) {
+  gameString(game) {
     return `Turns left: ${game.winner ? `none. ${game.winner} won`
       : game.turns}.`;
   },

@@ -8,9 +8,11 @@ const bold = (x) => `\x1b[1m${x}\x1b[0m`;
 
 (new NodeConsoleInterface({
   readline,
-  gameString(game, role) {
+  gameString(game) {
     const { goal, points } = game;
-    return `${bold(role)} has ${points} of ${bold(goal)} points.`;
+    return game.roles.map(
+      (role) => `${bold(role)} has ${points} of ${bold(goal)} points.`,
+    ).join(' and ');
   },
 })).play({
   module: require.main === module ? null : module,
