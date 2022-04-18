@@ -1,5 +1,5 @@
 const readline = require('readline');
-const { NodeConsolePlayer } = require('@ludorum/core');
+const { NodeConsoleInterface, RandomPlayer } = require('@ludorum/core');
 // eslint-disable-next-line import/extensions, import/no-unresolved
 const { ConnectionGame } = require('../../dist/game-connection');
 
@@ -10,29 +10,27 @@ const square = {
   '\n': '\n',
 };
 
-async function main() {
-  const nodeConsolePlayer = new NodeConsolePlayer({
-    readline,
-    actionString(action, game) {
-      return game.checkerboard.coord(action, 'string');
-    },
-    gameString(game) {
-      const { checkerboard } = game;
-      return [...checkerboard.renderAsText()].map((chr) => square[chr]).join('');
-    },
-  });
-  const game = new ConnectionGame();
-  return nodeConsolePlayer.playAgainstRandoms(game, game.roles[0]);
-}
-
-if (require.main === module) {
-  main().then(
-    () => process.exit(0),
-    (err) => {
-      console.error(err);
-      process.exit(1);
-    },
-  );
-} else {
-  module.exports = main;
-}
+(new NodeConsoleInterface({
+  readline,
+  actionString(action, game) {
+    return game.checkerboard.coord(action, 'string');
+  },
+  gameString(game) {
+    const { checkerboard } = game;
+    return [...checkerboard.renderAsText()].map((chr) => square[chr]).join('');
+  },
+})).play({
+  module: require.main === module ? null : module,
+  game() {
+    return new ConnectionGame();
+  },
+  player({ type, ui }) {
+    if (!type || /^ran(dom)?$/i.test(type)) {
+      return new RandomPlayer();
+    }
+    if (/^(ui|con(sole)?)$/i.test(type)) {
+      return ui.player();
+    }
+    throw new Error(`Unknown player type ${type}!`);
+  },
+});

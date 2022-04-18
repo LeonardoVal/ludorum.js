@@ -36,7 +36,7 @@
     "deps:verdaccio": "rm -rf node_modules package-lock.json && npm i --registry http://localhost:4873",
     "doc": "npx creatartis-build doc",
     "lint": "npx creatartis-build lint",
-    "playtest": "node test/scripts/playtester-oddsandevens.js",
+    "playtest": "node test/scripts/playtester-oddsandevens.js ui random",
     "release": "npm run build && npx creatartis-build release",
     "release:verdaccio": "npm run build && npx creatartis-build release:verdaccio",
     "rerelease:verdaccio": "npm run build && npx creatartis-build rerelease:verdaccio",
