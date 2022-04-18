@@ -1,0 +1,12 @@
+body {
+  font-family: "Merriweather", "PT Serif", Georgia, "Times New Roman", serif;
+}
+
+h1 {
+  text-align: center;
+}
+
+a {
+  color: black;
+  text-decoration: none;
+}
