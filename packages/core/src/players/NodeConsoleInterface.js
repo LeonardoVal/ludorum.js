@@ -129,9 +129,9 @@ class NodeConsoleInterface extends UserInterface {
     const ui = this;
     const main = function main(...types) {
       const game = args.game();
-      const players = game.roles.map((role, i) => (
-        args.player?.(types[i], game, role, ui) ?? this.RandomPlayer()
-      ));
+      const players = game.roles.map((role, i) => args.player?.({
+        type: types[i], game, role, ui,
+      }) ?? this.RandomPlayer());
       const match = new Match({ game, players });
       ui.bind(match);
       return match.complete();

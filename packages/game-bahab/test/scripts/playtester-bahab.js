@@ -25,7 +25,7 @@ const square = {
   game() {
     return new Bahab();
   },
-  player(type, _game, _role, ui) {
+  player({ type, ui }) {
     if (!type || /^ran(dom)?$/i.test(type)) {
       return new RandomPlayer();
     }
