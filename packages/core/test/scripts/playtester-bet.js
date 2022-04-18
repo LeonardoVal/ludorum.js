@@ -1,31 +1,29 @@
 const readline = require('readline');
 const {
-  Bet, NodeConsolePlayer,
+  Bet, NodeConsoleInterface, RandomPlayer,
 // eslint-disable-next-line import/extensions, import/no-unresolved
 } = require('../../dist/core');
 
 const bold = (x) => `\x1b[1m${x}\x1b[0m`;
 
-async function main() {
-  const nodeConsolePlayer = new NodeConsolePlayer({
-    readline,
-    gameString(game, role) {
-      const { goal, points } = game;
-      return `${bold(role)} has ${points} of ${bold(goal)} points.`;
-    },
-  });
-  const game = new Bet();
-  return nodeConsolePlayer.playAgainstRandoms(game, game.roles[0]);
-}
-
-if (require.main === module) {
-  main().then(
-    () => process.exit(0),
-    (err) => {
-      console.error(err.message);
-      process.exit(1);
-    },
-  );
-} else {
-  module.exports = main;
-}
+(new NodeConsoleInterface({
+  readline,
+  gameString(game, role) {
+    const { goal, points } = game;
+    return `${bold(role)} has ${points} of ${bold(goal)} points.`;
+  },
+})).play({
+  module: require.main === module ? null : module,
+  game() {
+    return new Bet();
+  },
+  player({ type, ui }) {
+    if (!type || /^ran(dom)?$/i.test(type)) {
+      return new RandomPlayer();
+    }
+    if (/^(ui|con(sole)?)$/i.test(type)) {
+      return ui.player();
+    }
+    throw new Error(`Unknown player type ${type}!`);
+  },
+});
