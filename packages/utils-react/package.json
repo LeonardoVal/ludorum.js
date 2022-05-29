@@ -1,0 +1,47 @@
+{
+  "name": "@ludorum/utils-react",
+  "description": "React UIs for Ludorum",
+  "keywords": [
+    "board game",
+    "game",
+    "react"
+  ],
+  "version": "0.1.0-alpha",
+  "main": "dist/utils-react.js",
+  "files": [
+    "dist/",
+    "LICENSE.md",
+    "README.md"
+  ],
+  "author": {
+    "name": "Leonardo Val",
+    "email": "leonardo.val@creatartis.com"
+  },
+  "homepage": "http://creatartis.com",
+  "contributors": [],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/LeonardoVal/ludorum.js"
+  },
+  "dependencies": {
+    "@ludorum/core": "^0.3.0-alpha",
+    "react": "^18.1.0"
+  },
+  "devDependencies": {
+    "@babel/preset-react": "^7.17.12",
+    "@creatartis/creatartis-build": "0.3.0-alpha",
+    "react-dom": "^18.1.0"
+  },
+  "scripts": {
+    "build": "npx creatartis-build lint build test doc",
+    "deps:verdaccio": "rm -rf node_modules package-lock.json && npm i --registry http://localhost:4873",
+    "doc": "npx creatartis-build doc",
+    "lint": "npx creatartis-build lint",
+    "playtest:bet": "npx webpack serve --config test/playtester-bet/webpack.config.js",
+    "release": "npm run build && npx creatartis-build release",
+    "release:verdaccio": "npm run build && npx creatartis-build release:verdaccio",
+    "rerelease:verdaccio": "npm run build && npx creatartis-build rerelease:verdaccio",
+    "test": "npx creatartis-build lint test"
+  }
+}
