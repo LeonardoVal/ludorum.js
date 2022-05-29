@@ -1,6 +1,7 @@
-import UserInterface from './UserInterface';
+import { Randomness } from '@creatartis/randomness';
+import BaseClass from './BaseClass';
 import Match from '../Match';
-import RandomPlayer from './RandomPlayer';
+import UserInterfacePlayer from '../players/UserInterfacePlayer';
 
 const bold = (x) => `\x1b[1m${x}\x1b[0m`;
 const boldBlue = (x) => `\x1b[1;94m${x}\x1b[0m`;
@@ -20,7 +21,7 @@ const listText = (texts) => (
  *
  * @class
 */
-class NodeConsoleInterface extends UserInterface {
+class NodeConsoleInterface extends BaseClass {
   /** @inheritdoc */
   static get name() {
     return 'NodeConsoleInterface';
@@ -39,7 +40,7 @@ class NodeConsoleInterface extends UserInterface {
   */
   constructor(args) {
     const {
-      actionString, hapString, gameString, readline,
+      actionString, hapString, gameString, random, readline,
     } = args || {};
     super(args);
     if (typeof readline?.createInterface !== 'function') {
@@ -52,6 +53,7 @@ class NodeConsoleInterface extends UserInterface {
     });
     const defaultStringFunction = (x) => `${x}`;
     this
+      ._prop('random', random, Randomness, Randomness.DEFAULT)
       ._prop('actionString', actionString, 'function', defaultStringFunction)
       ._prop('hapString', hapString, 'function', defaultStringFunction)
       ._prop('gameString', gameString, 'function', defaultStringFunction)
@@ -80,7 +82,7 @@ class NodeConsoleInterface extends UserInterface {
         ? random.choice([...choices.values()])
         : choices.get(answer);
       if (action === undefined) {
-        fail(new Error(`Unknown action "${answer}"!`));
+        fail(`Unknown action "${answer}"!`);
       } else {
         choose(action);
       }
@@ -114,6 +116,44 @@ class NodeConsoleInterface extends UserInterface {
       }),
     );
     process.stdout.write(`Match ${bold('finished')}: ${finishText}.\n`);
+  }
+
+  /** Builds an spectator object compatible with Match.
+   *
+   * @returns {object}
+  */
+  spectator() {
+    const ui = this;
+    return {
+      begin(game, players) {
+        return ui.renderBeginning(game, players);
+      },
+      next(gameBefore, actions, haps, gameAfter) {
+        return ui.renderMovePerformed(gameBefore, actions, haps, gameAfter);
+      },
+      end(game, results) {
+        return ui.renderEnd(game, results);
+      },
+    };
+  }
+
+  /** TODO */
+  bind(match) {
+    if (!this.match) {
+      this._prop('match', match, Match);
+      match.spectate(this.spectator());
+    } else if (this.match !== match) {
+      throw new Error('User interface is already bound!');
+    }
+  }
+
+  /** TODO */
+  player(args) {
+    return new UserInterfacePlayer({
+      onDecision: (player, game, role) => {
+        this.renderChoices(game, role, player.choose, player.fail);
+      },
+    });
   }
 
   /** Helper method for the _main_ function of playtesters that use this player.

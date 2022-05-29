@@ -9,7 +9,7 @@ import HeuristicPlayer from './players/HeuristicPlayer';
 import iterables from './utils/iterables';
 import ListAleatory from './aleatories/ListAleatory';
 import Match from './Match';
-import NodeConsoleInterface from './players/NodeConsoleInterface';
+import NodeConsoleInterface from './utils/NodeConsoleInterface';
 import Player from './players/Player';
 import playerTests from './players/playerTests';
 import Predefined from './games/Predefined';
@@ -19,7 +19,7 @@ import RoundRobinTournament from './tournaments/RoundRobinTournament';
 import Statistics from './utils/Statistics';
 import Tournament from './tournaments/Tournament';
 import TracePlayer from './players/TracePlayer';
-import UserInterface from './players/UserInterface';
+import UserInterfacePlayer from './players/UserInterfacePlayer';
 import WeightedAleatory from './aleatories/WeightedAleatory';
 
 export {
@@ -44,6 +44,6 @@ export {
   Statistics,
   Tournament,
   TracePlayer,
-  UserInterface,
+  UserInterfacePlayer,
   WeightedAleatory,
 };
