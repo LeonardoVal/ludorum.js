@@ -20,9 +20,9 @@ module.exports = {
             '@babel/preset-env',
             '@babel/preset-react',
           ],
-        }
+        },
       },
-    }]
+    }],
   },
   resolve: {
     extensions: ['.js', '.jsx'],

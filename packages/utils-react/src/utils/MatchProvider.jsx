@@ -1,4 +1,7 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+/* eslint-disable react/jsx-props-no-spreading */
+import React, {
+  createContext, useContext, useEffect, useState,
+} from 'react';
 import PropTypes from 'prop-types';
 import { Match } from '@ludorum/core';
 
@@ -16,40 +19,40 @@ export const MatchProvider = ({
 
   useEffect(() => {
     const spectator = {
-      begin(game, _players) {
-        setGame(game);
+      begin(g, _ps) {
+        setGame(g);
       },
-      next(_gameBefore, actions, haps, gameAfter) {
-        setActions(actions);
-        setHaps(haps);
-        setGame(gameAfter);
+      next(_gb, as, hs, ga) {
+        setActions(as);
+        setHaps(hs);
+        setGame(ga);
       },
-      end(game, results) {
-        setGame(game);
-        setResults(results);
+      end(g, r) {
+        setGame(g);
+        setResults(r);
       },
     };
     match.spectate(spectator);
   }, [match]);
 
-  const ctx = { actions, game, haps, match, results };
+  const ctx = {
+    actions, game, haps, match, results,
+  };
   return (
     <MatchContext.Provider value={ctx}>
       {children}
     </MatchContext.Provider>
   );
-} // function MatchProvider
+}; // function MatchProvider
 
 MatchProvider.displayName = 'MatchContext';
 
 MatchProvider.propTypes = {
-  match: (props, propName, compName) => {
-    if (!(props[propName] instanceof Match)) {
-      return new Error(`Expected property '${propName}' of ${compName
-        } to be an instance of Match!`);
-    }
-  },
-  render: PropTypes.func,
+  children: PropTypes.oneOfType([
+    PropTypes.arrayOf(PropTypes.node),
+    PropTypes.node,
+  ]).isRequired,
+  match: PropTypes.instanceOf(Match).isRequired,
 };
 
 /** TODO */
