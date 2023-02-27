@@ -1,20 +1,5 @@
 {
-  "packages": [
-    "packages/core",
-    "packages/game-bahab",
-    "packages/game-connection",
-    "packages/game-mutropas",
-    "packages/game-oddsandevens",
-    "packages/game-pig",
-    "packages/game-puzzle15",
-    "packages/game-tictactoe",
-    "packages/game-toadsandfrogs",
-    "packages/players-minimax",
-    "packages/players-montecarlo",
-    "packages/players-rulebased",
-    "packages/tournaments-extra",
-    "packages/utils-checkerboards",
-    "packages/utils-analysis"
-  ],
-  "version": "independent"
+  "$schema": "node_modules/lerna/schemas/lerna-schema.json",
+  "useWorkspaces": true,
+  "version": "0.0.0"
 }

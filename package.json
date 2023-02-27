@@ -1,21 +1,21 @@
 {
   "author": "Leonardo Val",
   "description": "Ludorum monorepo",
-  "name": "@ludorum/root",
+  "name": "root",
   "private": true,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/LeonardoVal/ludorum.js.git"
   },
-  "version": "0.0.1",
   "workspaces": [
-    "packages/"
+    "packages/*"
   ],
   "devDependencies": {
-    "lerna": "^4.0.0"
+    "lerna": "^6.5.1"
   },
   "scripts": {
-    "bootstrap": "npx lerna bootstrap --hoist",
-    "build-all": "npx lerna run build"
+    "build": "lerna run build",
+    "test": "lerna run test",
+    "view": "npx nx graph"
   }
 }
