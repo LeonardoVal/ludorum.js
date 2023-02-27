@@ -7,7 +7,7 @@
     "artificial intelligence",
     "game ai"
   ],
-  "version": "0.3.0-alpha",
+  "version": "0.3.0",
   "main": "dist/core.js",
   "files": [
     "dist/",
@@ -26,23 +26,17 @@
     "url": "http://github.com/LeonardoVal/ludorum.js"
   },
   "dependencies": {
-    "@creatartis/randomness": "0.2.0-alpha"
   },
   "devDependencies": {
-    "@creatartis/creatartis-build": "0.3.0-alpha",
-    "htm": "^3.1.0",
-    "sermat": "^0.1.1",
-    "webpack-dev-server": "^4.8.1"
+    "@ludorum/common-dev": "*"
   },
   "scripts": {
     "build": "npx creatartis-build lint build test doc",
     "doc": "npx creatartis-build doc",
-    "lint": "npx creatartis-build lint",
+    "lint": "eslint .",
     "playtest:bet": "node test/scripts/playtester-bet.js ui random",
     "playtest:choose2win": "node test/scripts/playtester-choose2win.js ui random",
     "release": "npm run build && npx creatartis-build release",
-    "release:verdaccio": "npm run build && npx creatartis-build release:verdaccio",
-    "rerelease:verdaccio": "npm run build && npx creatartis-build rerelease:verdaccio",
-    "test": "npx creatartis-build lint test"
+    "test": "jest ./test/specs"
   }
 }

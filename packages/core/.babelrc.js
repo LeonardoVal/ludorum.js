@@ -1,8 +1,3 @@
-const path = require('path');
+const babelConfig = require('@ludorum/common-dev/config/babelrc');
 
-module.exports = {
-  extends: path.join(
-    path.dirname(require.resolve('@creatartis/creatartis-build')),
-    'babel-config.js',
-  ),
-};
+module.exports = babelConfig();
