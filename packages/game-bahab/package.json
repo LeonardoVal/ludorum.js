@@ -22,14 +22,14 @@
     "url": "http://github.com/LeonardoVal/ludorum.js"
   },
   "dependencies": {
-    "@ludorum/core": "0.3.0-alpha",
-    "@ludorum/utils-checkerboards": "0.1.0-alpha"
+    "@ludorum/core": "*",
+    "@ludorum/utils-checkerboards": "*"
   },
   "devDependencies": {
     "@creatartis/creatartis-build": "0.3.0-alpha",
     "@creatartis/randomness": "0.2.0-alpha",
-    "@ludorum/players-minimax": "0.1.0-alpha",
-    "@ludorum/players-montecarlo": "0.1.0-alpha",
+    "@ludorum/players-minimax": "*",
+    "@ludorum/players-montecarlo": "*",
     "sermat": "^0.1.1"
   },
   "scripts": {
