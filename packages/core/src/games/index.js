@@ -1,13 +1,21 @@
-import Game from './Game';
-import Bet from './Bet';
-import Choose2Win from './Choose2Win';
-import Predefined from './Predefined';
-import tests from './gameTests';
-
 export {
   Bet,
+} from './Bet';
+
+export {
   Choose2Win,
+} from './Choose2Win';
+
+export {
   Game,
+} from './Game';
+
+export {
   Predefined,
-  tests,
-};
+} from './Predefined';
+
+export {
+  actionsFor,
+  possibleShifts,
+  randomShift,
+} from './utils';

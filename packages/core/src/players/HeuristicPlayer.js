@@ -1,5 +1,6 @@
-import Game from '../games/Game';
-import Player from './Player';
+import { Game } from '../games/Game';
+import { randomChoice, randomNumber } from '../randomness';
+import { Player } from './Player';
 
 /** This is the base type of automatic players based on heuristic evaluations of
  * game states or moves.
@@ -7,22 +8,14 @@ import Player from './Player';
  * @class
  * @extends Player
 */
-class HeuristicPlayer extends Player {
-  /** @inheritdoc */
-  static get name() {
-    return 'HeuristicPlayer';
-  }
-
-  /** The constructor takes the player's `name` and a `random` number generator
-   * (`Randomness.DEFAULT` by default). Many heuristic can be based on
-   * randomness, but this is also necessary to chose between moves with the same
-   * evaluation without any bias.
+export class HeuristicPlayer extends Player {
+  /** The constructor takes an heuristic function with which to evaluate game
+   * states. By default its a random value between -0.5 and 0.5, mostly only
+   * useful for testing.
   */
   constructor(args = null) {
-    const { heuristic } = args || {};
     super(args);
-    this
-      ._prop('heuristic', heuristic, 'function', this.randomHeuristic);
+    this.heuristic = args?.heuristic ?? this.randomHeuristic;
   }
 
   /** Returns a the possible transitions from the given `game` state, grouped
@@ -84,13 +77,13 @@ class HeuristicPlayer extends Player {
     return result ? result[role] : this.heuristic(game, role);
   }
 
-  /** The `randomHeuristic` returns a random number in [-0.5, 0.5). This is only
-   * useful in testing.
+  /** The `randomHeuristic` returns a random number in [-0.5, +0.5). This is
+   * mostly only useful for testing.
    *
    * @returns {number}
   */
   randomHeuristic() {
-    return this.random.random(-0.5, 0.5);
+    return randomNumber(this.rng, -0.5, +0.5);
   }
 
   /** The heuristic is an evaluation used at states that are not finished games.
@@ -131,7 +124,7 @@ class HeuristicPlayer extends Player {
   */
   async decision(game, role) {
     const bestMoves = await this.bestActions(game, role);
-    return this.random.choice(bestMoves);
+    return randomChoice(this.rng, bestMoves);
   }
 
   // Utilities to build heuristics
@@ -162,9 +155,3 @@ class HeuristicPlayer extends Player {
     };
   } */
 } // class HeuristicPlayer.
-
-/** Serialization and materialization using Sermat.
-*/
-HeuristicPlayer.defineSERMAT('heuristic');
-
-export default HeuristicPlayer;

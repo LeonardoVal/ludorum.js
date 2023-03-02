@@ -1,16 +1,12 @@
-import Player from './Player';
+import { randomChoice } from '../randomness';
+import { Player } from './Player';
 
 /** A RandomPlayer is an automatic player that moves fully randomly.
  *
  * @class
  * @extends Player
  */
-class RandomPlayer extends Player {
-  /** @inheritdoc */
-  static get name() {
-    return 'RandomPlayer';
-  }
-
+export class RandomPlayer extends Player {
   /** The `decision` is made completely at random.
    *
    * @param {Game} [game] - Game state on which to choose an action.
@@ -19,12 +15,6 @@ class RandomPlayer extends Player {
    */
   async decision(game, role) {
     const actions = this.actionsFor(game, role);
-    return this.random.choice(actions);
+    return randomChoice(this.rng, actions);
   }
 } // class RandomPlayer.
-
-/** Serialization and materialization using Sermat.
-*/
-RandomPlayer.defineSERMAT('');
-
-export default RandomPlayer;

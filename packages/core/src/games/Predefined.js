@@ -1,9 +1,9 @@
-import Game from './Game';
+import { Game } from './Game';
+
+const ROLES = ['First', 'Second'];
 
 const DEFAULT_HEIGHT = 5;
 const DEFAULT_WIDTH = 5;
-const DEFAULT_ROLES = ['First', 'Second'];
-const DEFAULT_RESULT = Object.fromEntries(DEFAULT_ROLES.map((p) => [p, 0]));
 
 /** Simple reference games with a predefined outcome, mostly for testing
  * purposes.
@@ -11,70 +11,64 @@ const DEFAULT_RESULT = Object.fromEntries(DEFAULT_ROLES.map((p) => [p, 0]));
  * @class
  * @extends Game
 */
-class Predefined extends Game {
-  /** @inheritdoc */
-  static get name() {
-    return 'Predefined';
+export class Predefined extends Game.create({
+  description: `Predefined is a pseudogame used for testing purposes. It will
+    give _width_ amount of moves for each player until _height_ moves pass. Then
+    the match is finished with the given _result_, or a tie as default.`,
+  name: 'Predefined',
+  roles: ROLES,
+}) {
+  /** The game's state has the active role, a width and height, and a final
+   * result.
+   *
+   * @param {object} [state=null]
+   * @param {string} [state.activeRole=0]
+   * @param {number} [state.height=5]
+   * @param {number} [state.width=5]
+   * @param {number | null} [state.winner=null]
+  */
+  init(state = null) {
+    Object.assign(this, {
+      activeRole: +(state?.activeRole ?? 0),
+      height: state?.height ?? DEFAULT_HEIGHT,
+      width: state?.width ?? DEFAULT_WIDTH,
+      winner: state?.winner ?? null,
+    });
   }
 
-  /** `Predefined` is a pseudogame used for testing purposes. It will give
-   * `width` amount of  moves for each player until `height` moves pass. Then
-   * the match is finished with the given `result`, or a tie as default.
-   *
-   * @param {object} [args]
-  */
-  constructor(args = null) {
+  /** The game finishes when there is a winner or a predefined number of turns
+   * pass. Every turn the active player's moves are: `'win'`, `'lose'` and
+   * `'pass'`.
+   */
+  shift() {
     const {
-      activeRole = 0, result, height = DEFAULT_HEIGHT, width = DEFAULT_WIDTH,
-    } = args || {};
-    super();
-    this._prop('_result', result, 'object', DEFAULT_RESULT);
-    this.activateRoles(activeRole);
-    this
-      ._prop('height', height, !Number.isNaN(+height) && +height >= 0)
-      ._prop('width', width, !Number.isNaN(+width) && +width > 0);
+      activeRole, height, roles, width, winner,
+    } = this;
+    const isFinished = height < 1;
+    const actions = Object.fromEntries(roles.map((role, roleIndex) => [
+      role,
+      !isFinished && roleIndex === activeRole
+        ? Array(width + 1).fill(0).map((_, i) => `action${i}`)
+        : null,
+    ]));
+    const result = !isFinished ? null : Object.fromEntries(
+      roles.map((role, roleIndex) => [
+        role,
+        winner === null ? 0 : (winner === roleIndex) * 2 - 1,
+      ]),
+    );
+    return { actions, result };
   }
 
-  /** Default roles for `Predefined` are `First` and `Second`.
-   *
-   * @property {string[]}
+  /** If a player moves to win or lose, a final game state is returned. Else the
+   * game goes on.
   */
-  get roles() {
-    return Object.keys(this._result);
-  }
-
-  /** Actions for a `Predefined` game are numbers from 1 to this.width.
-   *
-   * @property {object}
-  */
-  get actions() {
-    if (this.height > 0) {
-      const { activeRole, width } = this;
-      return {
-        [activeRole]: [...`${Array(width + 1)}`].map((_, i) => i + 1),
-      };
-    }
-    return null;
-  }
-
-  /** Returned the predefined results if height is zero or less.
-   *
-   * @property {object}
-  */
-  get result() {
-    return this.height > 0 ? null : { ...this._result };
-  }
-
-  /** Actions are completely irrelevant. They only advance in the match.
-  */
-  perform() {
-    this.height -= 1;
-    this.activateRoles(this.opponent());
+  nextState(_actions) {
+    return {
+      activeRole: (this.activeRole + 1) % this.roles.length,
+      height: this.height - 1,
+      width: this.width,
+      winner: this.winner,
+    };
   }
 } // class Predefined.
-
-/** Serialization and materialization using Sermat.
-*/
-Predefined.defineSERMAT('activeRole height width result=_result');
-
-export default Predefined;
