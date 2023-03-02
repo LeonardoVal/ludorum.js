@@ -14,8 +14,8 @@
     "lerna": "^6.5.1"
   },
   "scripts": {
-    "build": "lerna run build",
-    "test": "lerna run test",
+    "build-all": "lerna run build",
+    "test-all": "lerna run test",
     "view": "npx nx graph"
   }
 }

@@ -31,12 +31,11 @@
     "@ludorum/common-dev": "*"
   },
   "scripts": {
-    "build": "npx creatartis-build lint build test doc",
-    "doc": "npx creatartis-build doc",
+    "build": "webpack --config webpack.config.js",
+    "doc": "jsdoc README.md src/ -c jsdoc.config.js",
     "lint": "eslint .",
     "playtest:bet": "node test/scripts/playtester-bet.js ui random",
     "playtest:choose2win": "node test/scripts/playtester-choose2win.js ui random",
-    "release": "npm run build && npx creatartis-build release",
     "test": "jest ./test/specs"
   }
 }
