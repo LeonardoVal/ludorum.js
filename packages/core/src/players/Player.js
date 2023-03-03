@@ -109,4 +109,28 @@ export class Player {
     }
     return roleActions;
   }
+
+  // Testing utilities /////////////////////////////////////////////////////////
+
+  async checkPlayer({ expect, game }) {
+    const { roles } = game;
+    let players = roles.map(() => this);
+    let currentGame = game;
+    for await (const step of game.match({ players })) {
+      if (step.players) {
+        players = step.players; // For returning at the end.
+      }
+      if (step.actions) {
+        // eslint-disable-next-line no-loop-func
+        roles.forEach((role) => {
+          const roleAction = step.actions[role];
+          if (roleAction) {
+            expect(currentGame.actions[role]).toContain(roleAction);
+          }
+        });
+        currentGame = step.next;
+      }
+    }
+    return players;
+  }
 } // class Player.

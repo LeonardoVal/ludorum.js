@@ -5,6 +5,8 @@ const ROLES = ['First', 'Second'];
 const DEFAULT_HEIGHT = 5;
 const DEFAULT_WIDTH = 5;
 
+const ACTIONS_REGEX = /^action(\d+)$/;
+
 /** Simple reference games with a predefined outcome, mostly for testing
  * purposes.
  *
@@ -48,7 +50,7 @@ export class Predefined extends Game.create({
     const actions = Object.fromEntries(roles.map((role, roleIndex) => [
       role,
       !isFinished && roleIndex === activeRole
-        ? Array(width + 1).fill(0).map((_, i) => `action${i}`)
+        ? Array(width).fill(0).map((_, i) => `action${i}`)
         : null,
     ]));
     const result = !isFinished ? null : Object.fromEntries(
@@ -60,10 +62,17 @@ export class Predefined extends Game.create({
     return { actions, result };
   }
 
+  /** @inheritdoc */
+  isValidAction(_role, action) {
+    // eslint-disable-next-line no-unsafe-optional-chaining
+    return +ACTIONS_REGEX.exec(action)?.[1] < this.width;
+  }
+
   /** If a player moves to win or lose, a final game state is returned. Else the
    * game goes on.
   */
-  nextState(_actions) {
+  nextState(actions) {
+    this.confirmActions(actions);
     return {
       activeRole: (this.activeRole + 1) % this.roles.length,
       height: this.height - 1,

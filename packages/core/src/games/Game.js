@@ -295,6 +295,32 @@ export class Game {
 
   // Utilities for matches and players /////////////////////////////////////////
 
+  /** Returns true if the given action is available to the given role in this
+   * game state.
+   *
+   * @param {string} role
+   * @param {unknown} action
+   * @returns {boolean}
+  */
+  isValidAction(role, action) {
+    return this.actions[role].includes(action);
+  }
+
+  /** Confirms the given actions are valid, and throws an exception if it any
+   * is not.
+   *
+   * @param {Record<string, unknown>} actions
+   * @throws {Error} If any actions is not valid.
+  */
+  confirmActions(actions) {
+    Object.entries(actions).forEach(([role, action]) => {
+      const isValid = this.isValidAction(role, action);
+      if (!isValid) {
+        throw new Error(`Invalid action ${action} for ${role}!`);
+      }
+    });
+  }
+
   /** Calculates at random one of the possible `haps` objects that can be used
    * with a `Game`'s `perform` or `next` methods.
    *
@@ -368,7 +394,7 @@ export class Game {
    * @param {function} args.expect - Jest's `expect` function or equivalent.
    * @returns {number} Count of active players.
   */
-  checkActions({ expect }) {
+  testActions({ expect }) {
     const { meta } = this.constructor;
     const { actions, roles } = this;
     expect(typeof actions).toBe('object');
@@ -396,7 +422,7 @@ export class Game {
    * @param {object} args
    * @param {function} args.expect - Jest's `expect` function or equivalent.
   */
-  checkHaps({ expect }) {
+  testHaps({ expect }) {
     const { meta } = this.constructor;
     const { haps } = this;
     if (haps) {
@@ -414,7 +440,7 @@ export class Game {
    * @param {function} args.expect - Jest's `expect` function or equivalent.
    * @returns {number} Sum of the game's result or NaN is game is not finished.
   */
-  checkResult({ expect }) {
+  testResult({ expect }) {
     const { meta } = this.constructor;
     const { result, roles } = this;
     expect(typeof result).toBe('object');
@@ -441,10 +467,10 @@ export class Game {
    * @param {function} args.expect - Jest's `expect` function or equivalent.
    * @param {boolean} [args.isFinished]
   */
-  checkGame({ expect, isFinished }) {
-    const activeCount = this.checkActions({ expect });
-    this.checkHaps({ expect });
-    const resultSum = this.checkResult({ expect });
+  testGame({ expect, isFinished }) {
+    const activeCount = this.testActions({ expect });
+    this.testHaps({ expect });
+    const resultSum = this.testResult({ expect });
     if (typeof isFinished === 'boolean') {
       expect(activeCount > 0).toBe(!isFinished);
       expect(Number.isNaN(resultSum)).toBe(!isFinished);
@@ -457,18 +483,18 @@ export class Game {
    * @param {function} args.expect - Jest's `expect` function or equivalent.
    * @returns {object[]} The match's history.
    */
-  async checkMatch({ expect, ...matchArgs }) {
+  async testMatch({ expect, ...matchArgs }) {
     const history = [];
     for await (const step of this.match(matchArgs)) {
       if (history.length < 1) {
         expect(step.start).toBeInstanceOf(this.constructor);
-        step.start.checkGame({ expect, isFinished: false });
+        step.start.testGame({ expect, isFinished: false });
       } else if (step.next) {
         expect(step.next).toBeInstanceOf(this.constructor);
-        step.next.checkGame({ expect, isFinished: !!step.next.result });
+        step.next.testGame({ expect, isFinished: !!step.next.result });
       } else if (step.final) {
         expect(step.final).toBeInstanceOf(this.constructor);
-        step.final.checkGame({ expect, isFinished: true });
+        step.final.testGame({ expect, isFinished: true });
       }
       history.push(step);
     }

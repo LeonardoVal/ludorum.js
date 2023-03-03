@@ -3,30 +3,34 @@ import {
 } from '../../src/games';
 import { RandomPlayer } from '../../src/players/RandomPlayer';
 
-async function checkGame(TestGame) {
+const MATCH_COUNT = 10;
+
+async function testGame(TestGame) {
   const game = new TestGame();
-  await game.checkMatch({
-    expect,
-    players: game.roles.map(() => new RandomPlayer()),
-  });
+  for (let i = 0; i < MATCH_COUNT; i += 1) {
+    await game.testMatch({
+      expect,
+      players: game.roles.map(() => new RandomPlayer()),
+    });
+  }
 }
 
 describe('games', () => {
-  it('expected definitions', () => {
+  test('expected definitions', () => {
     [Bet, Choose2Win, Game, Predefined].forEach((def) => {
       expect(typeof def).toBe('function');
     });
   });
 
-  it('Predefined works like a game', async () => {
-    await checkGame(Predefined);
+  test('Predefined works like a game', async () => {
+    await testGame(Predefined);
   });
 
-  it('Choose2Win works like a game', async () => {
-    await checkGame(Choose2Win);
+  test('Choose2Win works like a game', async () => {
+    await testGame(Choose2Win);
   });
 
-  it('Bet works like a game', async () => {
-    await checkGame(Bet);
+  test('Bet works like a game', async () => {
+    await testGame(Bet);
   });
 }); // describe 'games'

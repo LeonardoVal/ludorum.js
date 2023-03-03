@@ -13,9 +13,3 @@ export {
 export {
   Predefined,
 } from './Predefined';
-
-export {
-  actionsFor,
-  possibleShifts,
-  randomShift,
-} from './utils';

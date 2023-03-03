@@ -1,39 +1,50 @@
-import { Randomness } from '@creatartis/randomness';
+import { Predefined } from '../../src/games';
 import {
-  Player, RandomPlayer, TracePlayer, HeuristicPlayer,
-  tests,
+  Player, RandomPlayer, TracePlayer,
 } from '../../src/players';
 
-const RANDOM = Randomness.DEFAULT;
+async function checkPlayer({
+  matchCount = 10,
+  player,
+}) {
+  const result = [];
+  for (let i = 0; i < matchCount; i += 1) {
+    const game = new Predefined({
+      height: 5,
+      width: 6,
+      winner: i < 2 ? i : null,
+    });
+    result.push(
+      await player.checkPlayer({ expect, game }),
+    );
+  }
+  return result;
+}
 
 describe('players', () => {
-  it('expected definitions', () => {
-    expect(Player).toBeOfType('function');
-    expect(RandomPlayer).toBeOfType('function');
-  });
-
-  it('RandomPlayer with Predefined', async () => {
-    await tests.checkPlayerWithPredefined({
-      playerBuilder: () => new RandomPlayer({
-        random: RANDOM,
-      }),
+  test('expected definitions', () => {
+    [Player, RandomPlayer].forEach((def) => {
+      expect(def).toBeOfType('function');
     });
   });
 
-  it('TracePlayer with Predefined', async () => {
-    await tests.checkPlayerWithPredefined({
-      playerBuilder: () => new TracePlayer({
-        random: RANDOM,
-        trace: [1, 2, 3, 4, 5, 6].map((n) => ({ First: n, Second: n })),
-      }),
+  test('RandomPlayer with Predefined', async () => {
+    await checkPlayer({
+      player: new RandomPlayer(),
     });
   });
 
-  it('HeuristicPlayer with Predefined', async () => {
-    await tests.checkPlayerWithPredefined({
-      playerBuilder: () => new HeuristicPlayer({
-        random: RANDOM,
-      }),
+  test('TracePlayer with Predefined', async () => {
+    const player = new TracePlayer({
+      player: new RandomPlayer(),
     });
+    // await checkPlayer({ matchCount: 2, player });
+    expect(player.trace.length).toBe(0);
+    player.record = true;
+    (await checkPlayer({ matchCount: 2, player }))
+      .forEach(({ First: p1, Second: p2 }) => {
+        expect(p1.trace.length).toBe(3);
+        expect(p2.trace.length).toBe(2);
+      });
   });
 }); // describe 'players'
