@@ -1,10 +1,8 @@
-/** An aleatory function is one that has two behaviours. If number arguments
- * between 0 (inclusive) and 1 (exclusive) are given, random values are
- * returned. If no arguments are given, the random variable's distribution is
- * returned, in the form of a list of [value, probability] pairs.
+/** An aleatory is defined by a random variable's distribution in the form of a
+ * list of [value, probability] pairs.
  *
  * @typedef {function} Aleatory
- */
+*/
 
 /** Creates an aleatory for an uniform variable for the given value list.
  *
@@ -13,14 +11,8 @@
  *   the same probability.
  */
 export function uniformAleatory(...values) {
-  return (...ns) => {
-    const count = values.length;
-    if (ns.length > 0) {
-      return ns.map((n) => values[Math.trunc(n * count)]);
-    }
-    const prob = 1 / count;
-    return values.map((value) => [value, prob]);
-  };
+  const prob = 1 / values.length;
+  return values.map((value) => [value, prob]);
 }
 
 /** Create the distribution of an uniform variable ranging integers from `from`
@@ -31,14 +23,9 @@ export function uniformAleatory(...values) {
  * @returns {Aleatory}
  */
 export function uniformRangeAleatory(from, to) {
-  return (...ns) => {
-    if (ns.length > 0) {
-      return ns.map((n) => Math.trunc((1 - n) * from + n * to));
-    }
-    const n = to - from + 1;
-    const prob = 1 / n;
-    return Array(n).fill(0).map((_, i) => [from + i, prob]);
-  };
+  const n = to - from + 1;
+  const prob = 1 / n;
+  return Array(n).fill(0).map((_, i) => [from + i, prob]);
 }
 
 /** Predefined distributions for common dice.

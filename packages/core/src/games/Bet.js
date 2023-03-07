@@ -47,7 +47,7 @@ export class Bet extends Game.create({
     const { die, goal, points } = this;
     const isFinished = points < 1 || points >= goal;
     const actions = {
-      [ROLE]: isFinished ? null : die().map(([value]) => value),
+      [ROLE]: isFinished ? null : die.map(([value]) => value),
     };
     const haps = { die };
     const result = !isFinished ? null : {
