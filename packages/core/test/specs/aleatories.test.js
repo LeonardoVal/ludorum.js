@@ -1,7 +1,8 @@
 /* eslint-disable space-infix-ops */
 import {
-  Aleatory, RangeAleatory, ListAleatory, WeightedAleatory, dice,
-} from '../../src/aleatories';
+  randomChoice, randomNumber, randomWeightedChoice,
+  dice, uniformAleatory, uniformRangeAleatory,
+} from '../../src/randomness';
 
 const expectUniformDistribution = (dist, values) => {
   const distArray = [...dist];
@@ -15,52 +16,38 @@ const expectUniformDistribution = (dist, values) => {
 };
 
 describe('aleatories', () => {
-  it('expected definitions', () => {
-    expect(Aleatory).toBeOfType('function');
-    expect(RangeAleatory).toBeOfType('function');
-    expect(ListAleatory).toBeOfType('function');
-    expect(WeightedAleatory).toBeOfType('function');
+  test('expected definitions', () => {
+    expect(randomChoice).toBeOfType('function');
+    expect(randomNumber).toBeOfType('function');
+    expect(randomWeightedChoice).toBeOfType('function');
     expect(dice).toBeOfType('object');
+    expect(uniformAleatory).toBeOfType('function');
+    expect(uniformRangeAleatory).toBeOfType('function');
   });
 
-  it('RangeAleatory', () => {
-    const alea1 = new RangeAleatory({ min: 0, max: 1 });
-    expectUniformDistribution(alea1.distribution(), [0, 1]);
-    const alea2 = new RangeAleatory({ min: 0, max: 2 });
-    expectUniformDistribution(alea2.distribution(), [0, 1, 2]);
-    const alea3 = new RangeAleatory({ min: 1, max: 5 });
-    expectUniformDistribution(alea3.distribution(), [1, 2, 3, 4, 5]);
+  test('uniformAleatory', () => {
+    const alea1 = uniformAleatory(...'xyz');
+    expectUniformDistribution(alea1, [...'xyz']);
+    const alea2 = uniformAleatory(...[1, 2, 3, 4]);
+    expectUniformDistribution(alea2, [1, 2, 3, 4]);
   });
 
-  it('ListAleatory', () => {
-    const alea1 = new ListAleatory({ values: 'xyz' });
-    expectUniformDistribution(alea1.distribution(), [...'xyz']);
-    const alea2 = new ListAleatory({ values: [1, 2, 3, 4] });
-    expectUniformDistribution(alea2.distribution(), [1, 2, 3, 4]);
+  test('uniformRangeAleatory', () => {
+    const alea1 = uniformRangeAleatory(0, 1);
+    expectUniformDistribution(alea1, [0, 1]);
+    const alea2 = uniformRangeAleatory(0, 2);
+    expectUniformDistribution(alea2, [0, 1, 2]);
+    const alea3 = uniformRangeAleatory(1, 5);
+    expectUniformDistribution(alea3, [1, 2, 3, 4, 5]);
   });
 
-  it('dice', () => {
+  test('dice', () => {
     const values = [...`${new Array(22)}`].map((_, i) => i);
-    const faceCounts = [4, 6, 8, 10, 12, 20];
+    const faceCounts = [2, 4, 6, 8, 10, 12, 20];
     faceCounts.forEach((n) => {
       const die = dice[`D${n}`];
-      expect(die).toBeOfType(Aleatory);
-      expectUniformDistribution(die.distribution(), values.slice(1, n+1));
+      expect(Array.isArray(die)).toBe(true);
+      expectUniformDistribution(die, values.slice(1, n+1));
     });
-  });
-
-  it('WeightedAleatory normalization', () => {
-    const norm = (dist) => {
-      const alea = new WeightedAleatory({ weightedValues: dist });
-      return [...alea.distribution()];
-    };
-    expect(norm([[1, 1], [2, 1]]))
-      .toEqual([[1, 0.5], [2, 0.5]]);
-    expect(norm([[1, 0.1], [2, 0.1]]))
-      .toEqual([[1, 0.5], [2, 0.5]]);
-    expect(norm([[1, 2], [2, 3]]))
-      .toEqual([[1, 0.4], [2, 0.6]]);
-    expect(norm([[1, 1], [2, 2], [1, 1], [2, 1]]))
-      .toEqual([[1, 0.4], [2, 0.6]]);
   });
 }); // aleatories

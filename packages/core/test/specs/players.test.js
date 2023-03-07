@@ -1,6 +1,6 @@
 import { Predefined } from '../../src/games';
 import {
-  Player, RandomPlayer, TracePlayer,
+  Player, HeuristicPlayer, RandomPlayer, TracePlayer,
 } from '../../src/players';
 
 async function checkPlayer({
@@ -25,6 +25,12 @@ describe('players', () => {
   test('expected definitions', () => {
     [Player, RandomPlayer].forEach((def) => {
       expect(def).toBeOfType('function');
+    });
+  });
+
+  test('HeuristicPlayer with Predefined', async () => {
+    await checkPlayer({
+      player: new HeuristicPlayer(),
     });
   });
 
