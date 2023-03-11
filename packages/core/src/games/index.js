@@ -11,5 +11,9 @@ export {
 } from './Game';
 
 export {
+  GameTree,
+} from './GameTree';
+
+export {
   Predefined,
 } from './Predefined';

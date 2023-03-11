@@ -1,7 +1,18 @@
-import { Bet, Choose2Win, Predefined } from './games';
-import { HeuristicPlayer, RandomPlayer } from './players';
+import {
+  Bet,
+  Choose2Win,
+  Predefined,
+} from './games';
+import {
+  HeuristicPlayer,
+  RandomPlayer,
+  TracePlayer,
+} from './players';
 
-export { Game } from './games';
+export {
+  Game,
+  GameTree,
+} from './games';
 export const games = {
   Bet,
   Choose2Win,
@@ -12,4 +23,5 @@ export { Player } from './players';
 export const players = {
   HeuristicPlayer,
   RandomPlayer,
+  TracePlayer,
 };

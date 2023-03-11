@@ -1,4 +1,4 @@
-let PLAYER_COUNT = -1; // Used by the Player's default naming.
+let PLAYER_COUNT = 0; // Used by the Player's default naming.
 
 /** Player is the base type for all playing agents. Basically, playing a game
  * means choosing a move from all available ones, each time the game enables the

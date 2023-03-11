@@ -253,6 +253,14 @@ export class Game {
     };
   } // static create
 
+  /** The game's name should be accesible from both class and instance.
+   *
+   * @property {string}
+  */
+  get name() {
+    return this.constructor.name;
+  }
+
   /** A string which can be used as an identifier for the game state in a data
      * structure like a `Map`.
      *
@@ -490,16 +498,22 @@ export class Game {
    */
   async testMatch({ expect, ...matchArgs }) {
     const history = [];
+    let game;
     for await (const step of this.match(matchArgs)) {
       if (history.length < 1) {
         expect(step.start).toBeInstanceOf(this.constructor);
+        game = step.start;
+        // TODO Test players
         step.start.testGame({ expect, isFinished: false });
       } else if (step.next) {
         expect(step.next).toBeInstanceOf(this.constructor);
+        // TODO Test actions & haps.
         step.next.testGame({ expect, isFinished: !!step.next.result });
+        game = step.next;
       } else if (step.final) {
         expect(step.final).toBeInstanceOf(this.constructor);
         step.final.testGame({ expect, isFinished: true });
+        expect(step.result).toEqual(step.final.result);
       }
       history.push(step);
     }
