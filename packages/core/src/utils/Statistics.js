@@ -7,7 +7,9 @@ export class Statistics {
    * @param {Map} [args.map=null] - Optional map with preloaded entries.
   */
   constructor(args = null) {
-    this.map = new Map(args?.map);
+    Object.defineProperty(this, 'map', {
+      value: new Map(args?.map),
+    });
   }
 
   /** Returns an entry for a given key. If none is available, it creates one
@@ -20,14 +22,7 @@ export class Statistics {
     const { map } = this;
     let result = map.get(key);
     if (!result) {
-      result = {
-        key,
-        count: 0,
-        min: NaN,
-        max: NaN,
-        sum: 0,
-        sumSquares: 0,
-      };
+      result = { key, count: 0, min: NaN, max: NaN, sum: 0, sumSquares: 0 };
       map.set(key, result);
     }
     return result;
@@ -65,12 +60,7 @@ export class Statistics {
         key, count, sum, min, max, sumSquares,
       } = stat;
       yield [
-        key,
-        count,
-        sum,
-        sum / count,
-        min,
-        max,
+        key, count, sum, sum / count, min, max,
         count < 2 ? 0 : (sumSquares - sum * sum / count) / (count - 1),
       ];
     }
@@ -118,7 +108,7 @@ export class Statistics {
     let game;
     let players;
     let stepCount = 0;
-    for await (const step of match) {
+    for await (const step of match.steps()) {
       if (step.final) {
         const { result } = step;
         for (const [role, roleResult] of Object.entries(result)) {

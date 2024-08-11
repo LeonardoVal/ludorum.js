@@ -1,12 +1,18 @@
+import { describe, expect, test } from 'vitest';
 import { Predefined } from '../../src/games';
 import {
-  Player, HeuristicPlayer, RandomPlayer, TracePlayer,
+  Player, HeuristicPlayer, RandomPlayer, TracePlayer, UserInterfacePlayer,
 } from '../../src/players';
+import { TestUtils } from '../../src/utils/TestUtils';
+
+const testUtils = new TestUtils({ expect });
 
 async function checkPlayer({
   matchCount = 10,
   player,
 }) {
+  expect(player.name)
+    .toMatch(new RegExp(`^${player.constructor.name}`));
   const result = [];
   for (let i = 0; i < matchCount; i += 1) {
     const game = new Predefined({
@@ -15,7 +21,7 @@ async function checkPlayer({
       winner: i < 2 ? i : null,
     });
     result.push(
-      await player.checkPlayer({ expect, game }),
+      await testUtils.checkPlayer({ game, player }),
     );
   }
   return result;
@@ -23,34 +29,50 @@ async function checkPlayer({
 
 describe('players', () => {
   test('expected definitions', () => {
-    [Player, RandomPlayer].forEach((def) => {
-      expect(def).toBeOfType('function');
+    [
+      Player, HeuristicPlayer, RandomPlayer, TracePlayer, UserInterfacePlayer,
+    ].forEach((def) => {
+      expect(typeof def).toBe('function');
     });
   });
 
   test('HeuristicPlayer with Predefined', async () => {
-    await checkPlayer({
-      player: new HeuristicPlayer(),
-    });
+    const player = new HeuristicPlayer();
+    await checkPlayer({ player });
   });
 
   test('RandomPlayer with Predefined', async () => {
-    await checkPlayer({
-      player: new RandomPlayer(),
-    });
+    const player = new RandomPlayer();
+    await checkPlayer({ player });
   });
 
   test('TracePlayer with Predefined', async () => {
     const player = new TracePlayer({
       player: new RandomPlayer(),
+      record: true,
     });
-    // await checkPlayer({ matchCount: 2, player });
     expect(player.trace.length).toBe(0);
-    player.record = true;
     (await checkPlayer({ matchCount: 2, player }))
-      .forEach(({ First: p1, Second: p2 }) => {
+      .forEach((players) => {
+        const { First: p1, Second: p2 } = players;
         expect(p1.trace.length).toBe(3);
         expect(p2.trace.length).toBe(2);
       });
+  });
+
+  test('UserInterfacePlayer with Predefined', async () => {
+    const player = new UserInterfacePlayer();
+    const intervalId = setInterval(() => {
+      if (player.currentDecision) {
+        const { game, role } = player.currentDecision;
+        const decision = game.actions[role][0];
+        player.choose(decision);
+      }
+    }, 5);
+    try {
+      await checkPlayer({ player });
+    } finally {
+      clearInterval(intervalId);
+    }
   });
 }); // describe 'players'

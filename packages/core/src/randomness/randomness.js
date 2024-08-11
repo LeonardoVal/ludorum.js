@@ -17,28 +17,26 @@ export function randomNumber(rng, min = 0, max = 1) {
  * @returns {T} A randomly chose value from the given array, or undefined.
  */
 export function randomChoice(rng, values) {
-  // eslint-disable-next-line no-bitwise
   return values[randomNumber(rng, 0, values.length) | 0];
 }
 
 /** Choose a value from a list, where each value chance is proportional to its
- * weight. Weights that are not greater than zero are ignored.
+ * weight. Weights must be between 0 and 1.
  *
+ * @param {function} rng - A pseudo-random number generator between 0 and 1.
  * @param {[T,number][]} weightedValues - A list of pairs [value, weight].
+ * @param {function} [rng=Math.random] - A pseudorandom number generator.
  * @returns {T} The randomly selected value, or undefined.
- * @throws {Error} Raised when a weight is negative.
  */
 export function randomWeightedChoice(rng, weightedValues) {
-  let currentValue;
-  let weightSum = 0;
+  let result;
+  let chance = rng();
   for (const [value, weight] of weightedValues) {
-    if (weight > 0) {
-      const chance = rng();
-      if (chance <= weight / (weight + weightSum)) {
-        currentValue = value;
-      }
-      weightSum += weight;
+    result = value;
+    if (chance <= weight) {
+      break;
     }
+    chance -= weight;
   }
-  return currentValue;
+  return result;
 }

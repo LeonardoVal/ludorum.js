@@ -1,6 +1,8 @@
+import { mapObject } from '../utils';
 import { Game } from './Game';
 
 const ACTIONS = { WIN: 'win', LOSE: 'lose', PASS: 'pass' };
+const ACTION_VALUES = Object.values(ACTIONS);
 
 /** Choose2Win is a simple silly game. Each turn one of the players can decide
  * to win, to lose or to pass the turn. It is meant to be used only for testing
@@ -9,14 +11,20 @@ const ACTIONS = { WIN: 'win', LOSE: 'lose', PASS: 'pass' };
  * @class
  * @extends Game
 */
-export class Choose2Win extends Game.create({
-  description: `Choose2Win is a simple silly game. Each turn one of the players
-    can decide to win, to lose or to pass the turn.`,
-  name: 'Choose2Win',
-  roles: ['This', 'That'],
-}) {
+export class Choose2Win extends Game {
+  static meta = {
+    description: `Choose2Win is a simple silly game. Each turn one of the players
+      can decide to win, to lose or to pass the turn.`,
+    name: 'Choose2Win',
+    roles: ['This', 'That'],
+  }
+
   /** The game's state has a number of turns for the game to last (`Infinity`
    * by default), the active role and the winner if the game has ended.
+   * 
+   * The game finishes when there is a winner or a predefined number of turns
+   * pass. Every turn the active player's moves are: `'win'`, `'lose'` and
+   * `'pass'`.
    *
    * @param {object} [state=null]
    * @param {string} [state.activeRole=0]
@@ -24,33 +32,20 @@ export class Choose2Win extends Game.create({
    * @param {string} [state.winner=null]
   */
   init(state = null) {
-    Object.assign(this, {
-      activeRole: +(state?.activeRole ?? 0),
-      turns: state?.turns ?? Infinity,
-      winner: state?.winner ?? null,
-    });
-  }
+    const activeRole = +(state?.activeRole ?? 0);
+    const turns = state?.turns ?? Infinity;
+    const winner = state?.winner ?? null;
+    const { roles } = this;
 
-  /** The game finishes when there is a winner or a predefined number of turns
-   * pass. Every turn the active player's moves are: `'win'`, `'lose'` and
-   * `'pass'`.
-  */
-  shift() {
-    const {
-      activeRole, turns, roles, winner,
-    } = this;
     const isFinished = winner !== null || turns < 1;
-    const actions = Object.fromEntries(roles.map((role, roleIndex) => [
-      role,
-      !isFinished && roleIndex === activeRole ? Object.values(ACTIONS) : null,
-    ]));
-    const result = !isFinished ? null : Object.fromEntries(
-      roles.map((role, roleIndex) => [
-        role,
-        winner === null ? 0 : (winner === roleIndex) * 2 - 1,
-      ]),
-    );
-    return { actions, result };
+    const actions = mapObject(roles, (_role, roleIndex) => (
+      !isFinished && roleIndex === activeRole ? ACTION_VALUES : []
+    ));
+    const result = !isFinished ? null : mapObject(roles, (_role, roleIndex) => (
+      winner === null ? 0 : (winner === roleIndex) * 2 - 1
+    ));
+
+    super.init({ actions, activeRole, isFinished, result, turns, winner });
   }
 
   /** If a player moves to win or lose, a final game state is returned. Else the
@@ -91,6 +86,6 @@ export class Choose2Win extends Game.create({
       activeRole,
       turns === Infinity ? '∞' : Math.max(0, turns),
       winner === null ? '?' : winner,
-    ].join('');
+    ].join('/');
   }
 } // class Choose2Win.

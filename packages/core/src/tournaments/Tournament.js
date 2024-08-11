@@ -1,4 +1,3 @@
-/* eslint-disable require-yield */
 import { Statistics } from '../utils/Statistics';
 
 /** A tournament is a set of matches played between many players. This is an
@@ -12,8 +11,10 @@ export class Tournament {
    * @param {Statistics} [args.stats]
   */
   constructor(args) {
-    this.game = args.game;
-    this.stats = args?.stats ?? new Statistics();
+    defProps(this, {
+      game: args.game,
+      stats: args.stats ?? new Statistics(),
+    });
   }
 
   /** Generates arguments for each match of this tournament. It is not
@@ -31,8 +32,7 @@ export class Tournament {
   */
   async* matches() {
     for await (const args of this.matchArgs()) {
-      const match = this.game.match(args);
-      yield this.stats.accountMatch(match);
+      yield new Match(args);
     }
   }
 
@@ -41,9 +41,8 @@ export class Tournament {
    * @returns {Statistics}
   */
   async playTournament() {
-    // eslint-disable-next-line no-unused-vars
-    for await (const _match of this.matches()) {
-      // Do nothing.
+    for await (const match of this.matches()) {
+      this.stats.accountMatch(match);
     }
     return this.stats;
   }

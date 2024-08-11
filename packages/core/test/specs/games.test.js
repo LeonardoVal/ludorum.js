@@ -1,17 +1,20 @@
+import { describe, expect, test } from 'vitest';
 import {
   Bet, Choose2Win, Game, Predefined,
 } from '../../src/games';
 import { RandomPlayer } from '../../src/players/RandomPlayer';
+import makeGameTests from '../../src/tests/gameTests';
 
+const gameTests = makeGameTests({ expect });
 const MATCH_COUNT = 10;
 
 async function testGame(TestGame) {
   const game = new TestGame();
   for (let i = 0; i < MATCH_COUNT; i += 1) {
-    await game.testMatch({
-      expect,
-      players: game.roles.map(() => new RandomPlayer()),
-    });
+    await gameTests.testMatch(
+      game, 
+      game.roles.map(() => new RandomPlayer()),
+    );
   }
 }
 

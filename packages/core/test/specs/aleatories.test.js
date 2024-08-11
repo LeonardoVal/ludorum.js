@@ -1,4 +1,4 @@
-/* eslint-disable space-infix-ops */
+import { describe, expect, test } from 'vitest';
 import {
   randomChoice, randomNumber, randomWeightedChoice,
   dice, uniformAleatory, uniformRangeAleatory,
@@ -17,12 +17,12 @@ const expectUniformDistribution = (dist, values) => {
 
 describe('aleatories', () => {
   test('expected definitions', () => {
-    expect(randomChoice).toBeOfType('function');
-    expect(randomNumber).toBeOfType('function');
-    expect(randomWeightedChoice).toBeOfType('function');
-    expect(dice).toBeOfType('object');
-    expect(uniformAleatory).toBeOfType('function');
-    expect(uniformRangeAleatory).toBeOfType('function');
+    expect(typeof randomChoice).toBe('function');
+    expect(typeof randomNumber).toBe('function');
+    expect(typeof randomWeightedChoice).toBe('function');
+    expect(typeof dice).toBe('object');
+    expect(typeof uniformAleatory).toBe('function');
+    expect(typeof uniformRangeAleatory).toBe('function');
   });
 
   test('uniformAleatory', () => {

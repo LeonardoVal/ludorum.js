@@ -13,15 +13,21 @@ const ACTIONS_REGEX = /^action(\d+)$/;
  * @class
  * @extends Game
 */
-export class Predefined extends Game.create({
-  description: `Predefined is a pseudogame used for testing purposes. It will
-    give _width_ amount of moves for each player until _height_ moves pass. Then
-    the match is finished with the given _result_, or a tie as default.`,
-  name: 'Predefined',
-  roles: ROLES,
-}) {
+export class Predefined extends Game{
+  static meta = {
+    description: `Predefined is a pseudogame used for testing purposes. It will
+      give _width_ amount of moves for each player until _height_ moves pass. Then
+      the match is finished with the given _result_, or a tie as default.`,
+    name: 'Predefined',
+    roles: ROLES,
+  }
+
   /** The game's state has the active role, a width and height, and a final
    * result.
+   * 
+   * The game finishes when there is a winner or a predefined number of turns
+   * pass. Every turn the active player's moves are: `'win'`, `'lose'` and
+   * `'pass'`.
    *
    * @param {object} [state=null]
    * @param {string} [state.activeRole=0]
@@ -30,46 +36,33 @@ export class Predefined extends Game.create({
    * @param {number | null} [state.winner=null]
   */
   init(state = null) {
-    Object.assign(this, {
-      activeRole: +(state?.activeRole ?? 0),
-      height: state?.height ?? DEFAULT_HEIGHT,
-      width: state?.width ?? DEFAULT_WIDTH,
-      winner: state?.winner ?? null,
-    });
-  }
+    const activeRole = +(state?.activeRole ?? 0);
+    const height = state?.height ?? DEFAULT_HEIGHT;
+    const width = state?.width ?? DEFAULT_WIDTH;
+    const winner = state?.winner ?? null;
 
-  /** The game finishes when there is a winner or a predefined number of turns
-   * pass. Every turn the active player's moves are: `'win'`, `'lose'` and
-   * `'pass'`.
-   */
-  shift() {
-    const {
-      activeRole, height, roles, width, winner,
-    } = this;
     const isFinished = height < 1;
-    const actions = Object.fromEntries(roles.map((role, roleIndex) => [
-      role,
-      !isFinished && roleIndex === activeRole
+    const actions = this.roles.reduce((a, role, roleIndex) => {
+      a[role] = !isFinished && roleIndex === activeRole
         ? Array(width).fill(0).map((_, i) => `action${i}`)
-        : null,
-    ]));
-    const result = !isFinished ? null : Object.fromEntries(
-      roles.map((role, roleIndex) => [
-        role,
-        winner === null ? 0 : (winner === roleIndex) * 2 - 1,
-      ]),
-    );
-    return { actions, result };
+        : null;
+      return a;
+    }, {});
+    const result = !isFinished ? null
+      : this.roles.reduce((r, role, roleIndex) => {
+        r[role] = winner === null ? 0 : (winner === roleIndex) * 2 - 1;
+        return r;
+      }, {});
+
+    super.init({ actions, activeRole, height, result, width, winner });
   }
 
   /** @inheritdoc */
   isValidAction(_role, action) {
-    // eslint-disable-next-line no-unsafe-optional-chaining
-    return +ACTIONS_REGEX.exec(action)?.[1] < this.width;
+    return +(ACTIONS_REGEX.exec(action)?.[1]) < this.width;
   }
 
-  /** If a player moves to win or lose, a final game state is returned. Else the
-   * game goes on.
+  /** 
   */
   nextState(actions) {
     this.confirmActions(actions);

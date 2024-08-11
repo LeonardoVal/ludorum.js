@@ -1,4 +1,4 @@
-function jsdocConfig() {
+export default function jsdocConfig() {
   return {
     opts: {
       template: 'templates/default',
@@ -30,4 +30,3 @@ function jsdocConfig() {
   };
 }
 
-module.exports = jsdocConfig;

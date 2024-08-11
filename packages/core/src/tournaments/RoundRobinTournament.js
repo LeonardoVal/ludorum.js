@@ -16,8 +16,10 @@ export class RoundRobinTournament extends Tournament {
   */
   constructor(args) {
     super(args);
-    this.players = args.players;
-    this.matchCount = args.matchCount ?? this.game.roles.length;
+    defProps(this, {
+      players: args.players,
+      matchCount: args.matchCount ?? this.game.roles.length,
+    });
   }
 
   /** Round-robin matches make every player plays `matchCount` matches for each
@@ -27,9 +29,10 @@ export class RoundRobinTournament extends Tournament {
   */
   async* matchArgs() {
     const { game, players, matchCount } = this;
+    const roleCount = game.roles.length;
     for (let i = 0; i < matchCount; i += 1) {
-      for (const matchPlayers of permutations(players, game.roles.length)) {
-        yield { players: matchPlayers };
+      for (const matchPlayers of permutations(players, roleCount)) {
+        yield { game, players: matchPlayers };
       }
     }
   }

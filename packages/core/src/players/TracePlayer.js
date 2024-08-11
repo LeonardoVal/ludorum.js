@@ -1,3 +1,4 @@
+import { defProps } from '../utils';
 import { Player } from './Player';
 
 /** Scripted automatic player that uses a predefined list of actions.
@@ -14,18 +15,18 @@ export class TracePlayer extends Player {
   */
   constructor(args) {
     super(args);
-    this.player = args?.player;
-    this.record = args?.record ?? false;
-    this.trace = [...args?.trace ?? []];
+    defProps(this, {
+      player: args.player,
+      trace: [...args.trace ?? []],
+    });
+    this.record = args.record ?? false;
     this.traceIndex = 0;
   }
 
   /** @inheritdoc
   */
   async decision(game, role) {
-    const {
-      player, record, trace, traceIndex,
-    } = this;
+    const { player, record, trace, traceIndex } = this;
     if (traceIndex < trace.length) {
       const action = trace[traceIndex]?.[role];
       this.traceIndex += 1;
@@ -47,6 +48,4 @@ export class TracePlayer extends Player {
   participate() {
     return new TracePlayer({ ...this, traceIndex: 0 });
   }
-} // declare TracePlayer.
-
-export default TracePlayer;
+} // class TracePlayer.

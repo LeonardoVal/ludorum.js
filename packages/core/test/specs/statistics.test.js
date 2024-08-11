@@ -1,6 +1,6 @@
-/* eslint-disable space-infix-ops */
+import { describe, expect, test } from 'vitest';
 import { Statistics } from '../../src/utils/Statistics';
-import { Choose2Win } from '../../src/games';
+import { Choose2Win, Match } from '../../src/games';
 import { RandomPlayer } from '../../src/players/RandomPlayer';
 
 describe('Statistics', () => {
@@ -35,13 +35,13 @@ describe('Statistics', () => {
 
   test('accounts matches', async () => {
     const game = new Choose2Win();
-    const match = game.match({
+    const match = new Match({
+      game,
       players: game.roles.map(() => new RandomPlayer()),
     });
     const stats = new Statistics();
     for await (const step of stats.accountMatch(match)) {
       expect(step.start ?? step.next ?? step.final).toBeInstanceOf(Choose2Win);
     }
-    console.log(stats.toTSV());
-  });
+  }); // test 'accounts matches'
 }); // aleatories

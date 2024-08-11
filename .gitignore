@@ -8,12 +8,10 @@ bower_components/
 packages/**/bower_components/
 
 # Generated files
+packages/**/.vite/
 packages/**/dist/
-packages/**/build/
-packages/**/docs/docker/
 packages/**/docs/jsdoc/
 packages/**/docs/jsdoc-conf.json
-packages/**/test/specs/coverage/
 **/npm-debug.log
 
 # Other

@@ -12,18 +12,25 @@ const DEFAULT_GOAL = 10;
  * This is an example of both a single player game and a non-deterministic game,
  * using a die as its sole aleatory.
 */
-export class Bet extends Game.create({
-  description: `A simple betting game, where the player tries to guess the next result
-    of a die. If they do they earn one point, if they do not they lose one
-    point. The game finishes when the player loses all their points, or earns a
-    goal amount.`,
-  name: 'Bet',
-  isDeterministic: false,
-  isZeroSum: false,
-  roles: [ROLE],
-}) {
+export class Bet extends Game {
+  static meta = {
+    description: `A simple betting game, where the player tries to guess the next result
+      of a die. If they do they earn one point, if they do not they lose one
+      point. The game finishes when the player loses all their points, or earns a
+      goal amount.`,
+    name: 'Bet',
+    isDeterministic: false,
+    isZeroSum: false,
+    roles: [ROLE],
+  }
+  
   /** The game's state has the die to be rolled, the amount of points to be
    * earned to win (i.e. the goal), and the amount of points earned so far.
+   * 
+   * The game is finished when the gambler has no points or has reached their
+   * goal. The gambler chooses a possible value of the die, betting one point.
+   * The sole aleatory in the game is a `die`. The gambler wins the game when
+   * they reach the `goal`, and loses when they run out of points.
    *
    * @param {object} [args]
    * @param {string} [args.die=dice.D2]
@@ -31,20 +38,10 @@ export class Bet extends Game.create({
    * @param {string} [args.points=5]
   */
   init(state = null) {
-    Object.assign(this, {
-      die: state?.die ?? dice.D2,
-      goal: state?.goal ?? DEFAULT_GOAL,
-      points: state?.points ?? DEFAULT_POINTS,
-    });
-  }
+    const die = state?.die ?? dice.D2;
+    const goal = state?.goal ?? DEFAULT_GOAL;
+    const points = state?.points ?? DEFAULT_POINTS;
 
-  /** The game is finished when the gambler has no points or has reached their
-   * goal. The gambler chooses a possible value of the die, betting one point.
-   * The sole aleatory in the game is a `die`. The gambler wins the game when
-   * they reach the `goal`, and loses when they run out of points.
-  */
-  shift() {
-    const { die, goal, points } = this;
     const isFinished = points < 1 || points >= goal;
     const actions = {
       [ROLE]: isFinished ? null : die.map(([value]) => value),
@@ -53,7 +50,8 @@ export class Bet extends Game.create({
     const result = !isFinished ? null : {
       [ROLE]: (points > 0) * 2 - 1,
     };
-    return { actions, haps, result };
+    
+    super.init({ actions, die, goal, haps, isFinished, points, result  });
   }
 
   /** With the bet played, the die is rolled. If the rolled value matches the
@@ -81,6 +79,6 @@ export class Bet extends Game.create({
   /** @inheritdoc */
   get identifier() {
     const [die, goal, points] = this.features;
-    return `${points}/${goal}#${die}`;
+    return `${points}/${goal}/D${die}`;
   }
 } // class Bet

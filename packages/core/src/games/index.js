@@ -15,5 +15,9 @@ export {
 } from './GameTree';
 
 export {
+  Match,
+} from '../matches/Match';
+
+export {
   Predefined,
 } from './Predefined';

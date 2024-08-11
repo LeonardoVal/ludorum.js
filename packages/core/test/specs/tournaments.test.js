@@ -1,8 +1,9 @@
+import { describe, expect, test } from 'vitest';
 import { RoundRobinTournament, Tournament } from '../../src/tournaments';
 
 describe('tournaments', () => {
   test('expected definitions', () => {
-    expect(Tournament).toBeOfType('function');
-    expect(RoundRobinTournament).toBeOfType('function');
+    expect(typeof Tournament).toBe('function');
+    expect(typeof RoundRobinTournament).toBe('function');
   });
 }); // describe 'tournaments'

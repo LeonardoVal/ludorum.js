@@ -1,22 +1,10 @@
-import { Player } from '../players/Player';
-import { randomWeightedChoice } from '../randomness';
-
-function defineShiftProps(game) {
-  const { actions, haps, result } = game.shift();
-  Object.defineProperties(game, {
-    actions: { value: actions ?? null },
-    haps: { value: haps ?? null },
-    result: { value: result ?? null },
-  });
-} // function defineShiftProps
+import { defProps } from '../utils';
 
 /** The class `Game` is the base type for all games.
  *
  * @class
 */
 export class Game {
-  // Game model ////////////////////////////////////////////////////////////////
-
   /** Every game class constructor takes an object argument. All data relevant
    * to the game state must be included there. The object should be able to be
    * constructed in spite of some or all arguments missing.
@@ -34,8 +22,8 @@ export class Game {
    * @param {Record<string, unknown>}
    * @returns {Game} This object.
   */
-  init(_state) {
-    throw new Error(`${this.constructor.name}.init() is not defined!`);
+  init(state) {
+    defProps(this, state, { configurable: true });
   }
 
   /** The game `roles` are specified in an array of names (strings). Players can
@@ -47,19 +35,7 @@ export class Game {
    *   ['Red', 'Blue']
   */
   get roles() {
-    throw new Error(`${this.constructor.name}.roles is not defined!`);
-  }
-
-  /** Calculates the necessary data to determine how to shift the game forward,
-   * or to tell that it has finished.
-   *
-   * @returns {object}
-   * @see {@link Game#actions}
-   * @see {@link Game#haps}
-   * @see {@link Game#result}
-   */
-  shift() {
-    throw new Error(`${this.constructor.name}.shift() is not defined!`);
+    return this.constructor.roles;
   }
 
   /** The game's `actions` is an object with every role related to the actions
@@ -67,7 +43,6 @@ export class Game {
    * an empty array.
    *
    * @property {Record<string, unknown[]> | null}
-   * @see {@link Game#shift}
    * @example
    *   {
    *     Player1: ['Rock', 'Paper', 'Scissors'],
@@ -75,8 +50,7 @@ export class Game {
    *   }
   */
   get actions() {
-    defineShiftProps(this);
-    return this.actions;
+    throw new Error(`${this.constructor.name}.actions is not defined!`);
   }
 
   /** The game's `haps` are the random variables that may affect the game, e.g.
@@ -84,28 +58,24 @@ export class Game {
    * variable distribution, i.e. an array of tuples _[value, probability]_.
    *
    * @property {Record<string, [unknown, number][]> | null}
-   * @see {@link Game#shift}
    * @example
    *   { D6: [1,2,3,4,5,6].map((v) => [v, 1/6]) }
   */
   get haps() {
-    defineShiftProps(this);
-    return this.haps;
+    return null;
   }
 
   /** If the game is finished the result of the game is calculated with
    * `result`. If the game is not finished, this function must return `null`.
    *
-   * @property {Record<string, number>} An object with every player in the game
-   *   related to a number. This number must be positive if the player wins,
-   *   negative if the player loses or zero if the game is a tie.
-   * @see {@link Game#shift}
+   * @property {Record<string, number> | null} - An object with every player in
+   *   the game related to a number. This number must be positive if the player
+   *   wins, negative if the player loses or zero if the game is a tie.
    * @example
    *   { Player1: -1, Player2: +1 }
   */
   get result() {
-    defineShiftProps(this);
-    return this.result;
+    throw new Error(`${this.constructor.name}.result is not defined!`);
   }
 
   /** Calculates the state for the next game, when applying a set of actions and
@@ -117,7 +87,6 @@ export class Game {
    * @param {Record<string, [unknown, number][]>} haps - Should be an object
    *   with a value for each aleatory. For example: `{ die: 5, coin: 'Tails' }`.
    * @returns {Record<string, unknown>} Game state data.
-   * @see {@link Game#init}
   */
   nextState(_actions, _haps) {
     throw new Error(`${this.constructor.name}.nextState() is not defined!`);
@@ -136,9 +105,6 @@ export class Game {
   perform(actions, haps) {
     const newState = this.nextState(actions, haps);
     this.init(newState);
-    delete this.actions;
-    delete this.haps;
-    delete this.result;
   }
 
   /** The next method is similar to `perform`, but it doesn't update the current
@@ -155,25 +121,6 @@ export class Game {
   next(actions, haps) {
     const newState = this.nextState(actions, haps);
     return new this.constructor(newState);
-  }
-
-  /** Some games may assign scores to the players in a finished game. This may
-   * differ from the result, since the score sign doesn't have to indicate
-   * victory or defeat. For example:
-   *
-   * + result: `{ Player1: -1, Player2: +1 }`
-   *
-   * + scores: `{ Player1: 14, Player2: 15 }`
-   *
-   * The method `scores()` returns the scores if such is the case. Also the
-   * score may be defined for unfinished games. By default, it return the same
-   * that `result` does.
-   *
-   * @property {Record<string, number>}
-   * @see {@link Game#result}
-   */
-  get scores() {
-    return this.result;
   }
 
   /** In incomplete or imperfect information games each role may have different
@@ -200,109 +147,78 @@ export class Game {
     return new this.constructor(this);
   }
 
-  // Game information utilities ////////////////////////////////////////////////
+// Static information __________________________________________________________
 
   /** Metadata about the game this class represents.
    *
    * @property {object} meta
-   * @property {string} meta.description - A user readable game's description.
-   * @property {boolean} meta.isDeterministic - A game is deterministic if it
-   *   has perfect information without random variables. True by default.
-   * @property {boolean} meta.isSimultaneous - A game is simultaneous if in some
-   *   or all turns more than one player is active. False by default, since most
-   *   games are not like this.
-   * @property {boolean} meta.isZeroSum - A game is zerosum if the sum of all
-   *   results in every match is zero. True by default, since most games are.
+   * @property {boolean} meta.isSimultaneous - 
+   * @property {boolean} meta.isZeroSum - 
    * @property {string} meta.name - An identifier for the game.
-   * @property {string[]} meta.roles - The game roles.
+   * @property {string[]} meta.roles - 
   */
   static get meta() {
-    throw new Error(`${this.name}.meta() is not defined!`);
+    throw new Error(`${this.name}.meta is not defined!`);
   }
 
-  /** Helper static method for creating a Game subclass. It initializes the
-   * subclass's `name`, `meta` and `roles`.
-   *
-   * @param {object}
-   * @see {@link Game.meta}
+  /** A user readable game's description.
+   * 
+   * @static
+   * @property {string} 
   */
-  static create(args) {
-    if (!args?.name) {
-      throw new Error(`${this.name} must have a valid name (got ${args?.name})!`);
-    }
-    return class extends this {
-      static get name() {
-        return args.name;
-      }
+  static get description() {
+    return this.meta.description;
+  }
 
-      static get meta() {
-        return {
-          description: args.description ?? '',
-          isDeterministic: !!(args.isDeterministic ?? true),
-          isSimultaneous: !!(args.isSimultaneous ?? false),
-          isZeroSum: !!(args.isZeroSum ?? true),
-          minResult: args.minResult ?? -1,
-          maxResult: args.maxResult ?? +1,
-          name: args.name,
-        };
-      }
-
-      get roles() {
-        return args.roles ?? super.roles;
-      }
-    };
-  } // static create
-
-  /** The game's name should be accesible from both class and instance.
-   *
-   * @property {string}
+  /** A game is deterministic if it has perfect information without random
+   * variables. True by default.
+   * 
+   * @static
+   * @property {boolean=true}
   */
-  get name() {
-    return this.constructor.name;
+  static get isDeterministic() {
+    return this.meta.isDeterministic ?? true;
   }
 
-  /** A string which can be used as an identifier for the game state in a data
-     * structure like a `Map`.
-     *
-     * @property {string}
-    */
-  get identifier() {
-    throw new Error(`${this.constructor.name}.identifier is not defined!`);
-  }
-
-  /** Returns an typed array with values representing aspects of the game state.
-   *
-   * @property {number[]}
+  /** A game is simultaneous if in some or all turns more than one player is
+   * active. False by default, since most games are not like this.
+   * 
+   * @static
+   * @property {boolean=false}
   */
-  get features() {
-    throw new Error(`${this.constructor.name}.features is not defined!`);
+  static get isSimultaneous() {
+    return this.meta.isSimultaneous ?? false;
   }
 
-  /** A finished game must have a result, no role with actions and no haps.
-   *
-   * @property {boolean}
+  /** A game is zerosum if the sum of all results in every match is zero. True
+   * by default, since most games are.
+   * 
+   * @static
+   * @property {boolean=true}
   */
-  isFinished() {
-    return !!this.result;
+  static get isZeroSum() {
+    return this.meta.isZeroSum ?? true;
   }
 
-  /** The `normalizedResult` is the `result` expressed so the minimum defeat
-   * is equal to -1 and the maximum victory is equal to +1.
-   *
-   * @property {Record<string, number>}
-   * @see {@link Game#result}
+  /** The minimum and maximum values for the result method.
+   * 
+   * @static
+   * @property {[number, number]=[-1,+1]}
   */
-  get normalizedResult() {
-    const { minResult: minR, maxResult: maxR } = this.constructor.meta;
-    return Object.fromEntries(
-      Object.entries(this.result).map(([role, resultNumber]) => [
-        role,
-        (resultNumber - minR) / (maxR - minR) * 2 - 1,
-      ]),
-    );
+  static get resultRange() {
+    return this.meta.resultRange ?? [-1, +1];
   }
 
-  // Utilities for matches and players /////////////////////////////////////////
+  /** All of the game roles.
+   * 
+   * @static
+   * @property {string[]}
+  */
+  static get roles() {
+    return this.meta.roles ?? null;
+  }
+
+// Actions _____________________________________________________________________
 
   /** Returns true if the given action is available to the given role in this
    * game state.
@@ -330,194 +246,82 @@ export class Game {
     });
   }
 
-  /** Calculates at random one of the possible `haps` objects that can be used
-   * with a `Game`'s `perform` or `next` methods.
+// Results _____________________________________________________________________
+
+  /** Some games may assign scores to the players in a finished game. This may
+   * differ from the result, since the score sign doesn't have to indicate
+   * victory or defeat. For example:
    *
-   * @param {function} rng
-   * @return {Record<string, unknown>} - Random haps object.
+   * + result: `{ Player1: -1, Player2: +1 }`
+   *
+   * + scores: `{ Player1: 14, Player2: 15 }`
+   *
+   * The method `scores()` returns the scores if such is the case. Also the
+   * score may be defined for unfinished games. By default, it return the same
+   * that `result` does.
+   *
+   * @property {Record<string, number>}
+   * @see {@link Game#result}
   */
-  randomHaps(rng) {
-    const { haps } = this;
-    return haps && Object.fromEntries(
-      Object.entries(haps).map(([name, distribution]) => [
-        name,
-        randomWeightedChoice(rng, distribution),
-      ]),
-    );
+  get scores() {
+    return this.result;
   }
 
-  /** Conducts a match of this game played by the given players. Each step an
-   * object is yielded:
+  /** A finished game must have a result, no role with actions and no haps.
    *
-   * + First an object with the `start` game state and the participating
-   *   `players`.
-   *
-   * + After that objects with the `actions` taken by the players, random `haps`
-   *   and the resulting `next` game state.
-   *
-   * + In the end the `final` game state and its corresponding `result`.
-   *
-   * @param {object} args
-   * @param {Player[] | Record<string, Player>} args.players
-   * @param {function} [args.rng=Math.random]
-   * @yields {object}
+   * @property {boolean}
   */
-  async* match(args) {
-    const { rng = Math.random } = args;
-    const players = Player.participants(this, args.players);
-    yield { start: this, players };
-    let game = this;
-    let { result } = game;
-    while (!result) {
-      const actions = await Player.decisions(game, players);
-      const haps = this.randomHaps(rng);
-      game = game.next(actions, haps);
-      yield { actions, haps, next: game };
-      result = game.result;
-    }
-    yield { final: game, result };
+  get isFinished() {
+    return !!this.result;
   }
 
-  /** Plays a match until the end and returns the result.
+  /** The `normalizedResult` is the `result` expressed so the minimum defeat
+   * is equal to -1 and the maximum victory is equal to +1.
    *
-   * @param {object} args
-   * @param {Player[] | Record<string, Player>} args.players
-   * @param {function} args.rng
-   * @returns {Record<string, number>}
+   * @property {Record<string, number>}
   */
-  async playMatch(args) {
-    for (const { result } of this.match(args)) {
-      if (result) {
-        return result;
-      }
-    }
-    throw new Error(`Unexpected match ending without result for ${
-      this.constructor.name}!`);
+  get normalizedResult() {
+    const [minR, maxR] = this.constructor.resultRange;
+    return Object.entries(this.result)
+      .reduce((normResults, [role, resultNumber]) => {
+        normResults[role] = (resultNumber - minR) / (maxR - minR) * 2 - 1;
+        return normResults;
+      }, {});
   }
 
-  // Testing utilities /////////////////////////////////////////////////////////
+// Game information utilities __________________________________________________
 
-  /** Checks if this game state's actions comply with the Game's protocol.
+  /** The game's name should be accesible from both class and instance.
    *
-   * @param {object} args
-   * @param {function} args.expect - Jest's `expect` function or equivalent.
-   * @returns {number} Count of active players.
+   * @property {string}
   */
-  testActions({ expect }) {
-    const { meta } = this.constructor;
-    const { actions, roles } = this;
-    expect(typeof actions).toBe('object');
-    expect(Object.keys(actions)).toEqual(roles);
-    let activeCount = 0;
-    roles.forEach((role) => {
-      const roleActions = actions[role];
-      expect(roleActions === null || Array.isArray(roleActions)).toBe(true);
-      if (roleActions?.length > 0) {
-        activeCount += 1;
-        roleActions.forEach((action) => {
-          const actionJSON = JSON.stringify(action);
-          expect(JSON.parse(actionJSON)).toEqual(action);
-        });
-      }
-    });
-    if (activeCount > 1) {
-      expect(meta.isSimultaneous).toBe(true);
-    }
-    return activeCount;
+  get name() {
+    return this.constructor.meta.name ?? this.constructor.name;
   }
 
-  /** Checks if this game state's actions comply with the Game's protocol.
-   *
-   * @param {object} args
-   * @param {function} args.expect - Jest's `expect` function or equivalent.
-  */
-  testHaps({ expect }) {
-    const { meta } = this.constructor;
-    const { haps } = this;
-    if (haps) {
-      expect(meta.isDeterministic).toBe(false);
-      Object.entries(haps).forEach(([, distribution]) => {
-        expect(Array.isArray(distribution)).toBe(true);
-        for (const entry of distribution) {
-          expect(entry.length).toBe(2);
-          expect(typeof entry[1]).toBe('number');
-        }
-      });
-    }
-    return !!haps;
+  /** A string which can be used as an identifier for the game state in a data
+     * structure like a `Map`.
+     *
+     * @property {string}
+    */
+  get identifier() {
+    throw new Error(`${this.constructor.name}.identifier is not defined!`);
   }
 
-  /** Checks if this game state's actions comply with the Game's protocol.
+  /** Returns an typed array with values representing aspects of the game state.
    *
-   * @param {object} args
-   * @param {function} args.expect - Jest's `expect` function or equivalent.
-   * @returns {number} Sum of the game's result or NaN is game is not finished.
+   * @property {number[]}
   */
-  testResult({ expect }) {
-    const { meta } = this.constructor;
-    const { result, roles } = this;
-    expect(typeof result).toBe('object');
-    if (result) {
-      let resultSum = 0;
-      roles.forEach((role) => {
-        const roleResult = result[role];
-        expect(typeof roleResult).toBe('number');
-        expect(roleResult).not.toBeNaN();
-        resultSum += roleResult;
-      });
-      if (meta.isZeroSum) {
-        expect(resultSum).toBeCloseTo(0);
-      }
-      return resultSum;
-    }
-    return NaN;
+  get features() {
+    throw new Error(`${this.constructor.name}.features is not defined!`);
   }
 
-  /** Tests if this instance complies with the conditions for finished game
-   * states.
-   *
-   * @param {object} args
-   * @param {function} args.expect - Jest's `expect` function or equivalent.
-   * @param {boolean} [args.isFinished]
+  /** Returns a string representation of the game.
+   * 
+   * @returns {string}
   */
-  testGame({ expect, isFinished }) {
-    const activeCount = this.testActions({ expect });
-    this.testHaps({ expect });
-    const resultSum = this.testResult({ expect });
-    if (typeof isFinished === 'boolean') {
-      expect(activeCount > 0).toBe(!isFinished);
-      expect(Number.isNaN(resultSum)).toBe(!isFinished);
-    }
-  }
-
-  /** Tests if a match can be played from this game state onwards.
-   *
-   * @param {object} args
-   * @param {function} args.expect - Jest's `expect` function or equivalent.
-   * @returns {object[]} The match's history.
-   */
-  async testMatch({ expect, ...matchArgs }) {
-    const history = [];
-    let game;
-    for await (const step of this.match(matchArgs)) {
-      if (history.length < 1) {
-        expect(step.start).toBeInstanceOf(this.constructor);
-        game = step.start;
-        // TODO Test players
-        step.start.testGame({ expect, isFinished: false });
-      } else if (step.next) {
-        expect(step.next).toBeInstanceOf(this.constructor);
-        // TODO Test actions & haps.
-        step.next.testGame({ expect, isFinished: !!step.next.result });
-        game = step.next;
-      } else if (step.final) {
-        expect(step.final).toBeInstanceOf(this.constructor);
-        step.final.testGame({ expect, isFinished: true });
-        expect(step.result).toEqual(step.final.result);
-      }
-      history.push(step);
-    }
-    return history;
+  toString() {
+    throw new Error(`${this.constructor.name}.toString is not defined!`);
   }
 
   /** TODO `serialized(game)` builds a serialized version of a simultaneous game,

@@ -1,193 +1,152 @@
-import { Randomness } from '@creatartis/randomness';
-import BaseClass from './BaseClass';
-import Match from '../Match';
-import UserInterfacePlayer from '../players/UserInterfacePlayer';
+import { defProps } from './objects';
+import { randomChoice } from '../randomness';
+import { UserInterfacePlayer } from '../players/UserInterfacePlayer';
+import { Spectator } from '../matches/Spectator';
 
-const bold = (x) => `\x1b[1m${x}\x1b[0m`;
-const boldBlue = (x) => `\x1b[1;94m${x}\x1b[0m`;
-const boldRed = (x) => `\x1b[1;91m${x}\x1b[0m`;
+const ansiColors = {
+  blue: 94,
+  red: 91,
+}
 
-const completer = (choices, line) => [
-  choices ? [...choices.keys()].filter((key) => key.startsWith(line)) : [],
-  line,
-];
-
-const listText = (texts) => (
-  `${texts.slice(0, -1).join(', ')} and ${texts.slice(-1)[0]}`
-);
+export function ansiBold(x, color = null) {
+  if (color) {
+    const ansiColor = ansiColors[color] ?? +color;
+    return `\x1b[1;${ansiColor}m${x}\x1b[0m`
+  }
+  return `\x1b[1m${x}\x1b[0m`;
+}
 
 /** Player that uses the console in the NodeJS environment. Meant mostly for
  * testing.
  *
  * @class
 */
-class NodeConsoleInterface extends BaseClass {
-  /** @inheritdoc */
-  static get name() {
-    return 'NodeConsoleInterface';
-  }
-
+export class NodeConsoleInterface {
   /** The constructor takes the following arguments.
    *
-   * @param {object} args - Argument object.
-   * @param {function} [actionString] - A callback that returns a string for a
-   *   game's action, with the signature `(action, game, role)`.
-   * @param {function} [hapString] - A callback that returns a string for a
-   *   game's hap (aleatory value), with the signature `(value, aleatory, game)`.
-   * @param {function} [gameString] - A callback that returns a string for a
-   *   game, with the signature `(game)`.
-   * @param {object} readline - The NodeJS's standards `readline` module.
+   * @param {object} args
   */
   constructor(args) {
-    const {
-      actionString, hapString, gameString, random, readline,
-    } = args || {};
-    super(args);
-    if (typeof readline?.createInterface !== 'function') {
-      throw new TypeError('Cannot create interface from provided `readline` argument!');
-    }
+    defProps(this, {
+      choices: new Map(),
+      renderAction: args.renderAction,
+      renderHaps: args.renderHaps,
+      renderGame: args.renderGame,
+      rng: args.rng ?? Math.random,
+    })
+  }
+
+  /** TODO */
+  async init(readline) {
     const readLineInterface = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
-      completer: (line) => completer(this.choices, line),
+      completer: (line) => {
+        const choices = [...this.choices.keys()]
+          .filter((key) => key.startsWith(line));
+        return [choices, line];
+      },
     });
-    const defaultStringFunction = (x) => `${x}`;
-    this
-      ._prop('random', random, Randomness, Randomness.DEFAULT)
-      ._prop('actionString', actionString, 'function', defaultStringFunction)
-      ._prop('hapString', hapString, 'function', defaultStringFunction)
-      ._prop('gameString', gameString, 'function', defaultStringFunction)
-      ._prop('readLineInterface', readLineInterface);
+    defProps(this, { readLineInterface });
   }
 
-  /** @inheritdoc */
-  renderBeginning(game, players) {
-    const { readLineInterface } = this;
-    const playerStrings = Object.entries(players)
-      .map(([r, p]) => `${bold(p.name)} (${p.constructor.name}) as ${bold(r)}`);
-    process.stdout.write(`Playing a match of ${bold(game.name)} between ${
-      listText(playerStrings)}.\n`);
-    readLineInterface.write(`${this.gameString(game)}\n`);
+// Rendering ___________________________________________________________________
+
+  /** TODO */
+  renderAction(action, _game, _role) {
+    return JSON.stringify(action);
   }
 
-  /** @inheritdoc */
-  renderChoices(game, role, choose, fail) {
-    const { random, readLineInterface } = this;
-    const choices = new Map();
+  /** TODO */
+  renderHaps(haps, _game) {
+    return JSON.stringify(haps);
+  }
+
+  /** TODO */
+  renderGame(game, _role) {
+    return `${game}`;
+  }
+
+  /** TODO */
+  renderList(texts) {
+    return texts.length < 2 ? texts.join('')
+      : `${texts.slice(0, -1).join(', ')} and ${texts.at(-1)}`;
+  }
+
+  /** TODO */
+  renderBegin({ start: game, players }) {
+    const playerStrings = Object.entries(players).map(([r, p]) => (
+      `${ansiBold(p.name)} (${p.constructor.name}) as ${ansiBold(r)}`
+    ));
+    process.stdout.write(`Match of ${ansiBold(game.name)} is played by ${
+      this.renderList(playerStrings)}.\n`);
+    this.readLineInterface.write(`${this.renderGame(game)}\n`);
+  }
+
+  /** TODO */
+  renderChoices(game, role, player) {
+    const { choices } = this;
+    choices.clear();
     for (const action of game.actions[role]) {
-      choices.set(this.actionString(action, game, role), action);
+      choices.set(this.renderAction(action, game, role), action);
     }
-    readLineInterface.question(`${bold(role)}> `, (answer) => {
+    this.readLineInterface.question(`${ansiBold(role)}> `, (answer) => {
       const action = answer.trim().length === 0
-        ? random.choice([...choices.values()])
+        ? randomChoice(this.rng, [...choices.values()])
         : choices.get(answer);
       if (action === undefined) {
-        fail(`Unknown action "${answer}"!`);
+        player.fail(`Unknown action "${answer}"!`);
       } else {
-        choose(action);
+        player.choose(action);
       }
     });
   }
 
-  /** @inheritdoc */
-  renderMovePerformed(gameBefore, actions, haps, gameAfter) {
+  /** TODO */
+  renderStep({ actions, haps, next: game }) {
     const write = (text) => process.stdout.write(text);
-    const { readLineInterface } = this;
     if (actions) {
       Object.entries(actions).forEach(([r, a]) => write(
-        `- ${bold(r)} played ${this.actionString(a, gameBefore, r)}.\n`,
+        `- ${ansiBold(r)} played ${this.renderAction(a, game, r)}.\n`,
       ));
     }
-    if (haps) {
-      Object.entries(haps).forEach(([a, v]) => write(
-        `- ${bold(a)} happened as ${this.hapString(v, a, gameBefore)}.\n`,
-      ));
+    if (haps) { 
+      write(`- ${ansiBold('Nature')} happened as ${
+        this.renderHaps(haps, game)}.\n`);
     }
-    readLineInterface.write(`${this.gameString(gameAfter)}\n`);
+    this.readLineInterface.write(`${this.renderGame(game)}\n`);
   }
 
-  /** @inheritdoc */
-  renderEnd(_game, results) {
-    const finishText = listText(
-      Object.entries(results).map(([role, result]) => {
-        const status = result > 0 ? boldBlue('wins')
-          : result < 0 ? boldRed('loses') : bold('tied');
+  /** TODO */
+  renderEnd({ result }) {
+    const finishText = this.renderList(
+      Object.entries(result).map(([role, roleResult]) => {
+        const status = roleResult > 0 ? ansiBold('wins', 'blue')
+          : roleResult < 0 ? ansiBold('loses', 'red') : ansiBold('tied');
         return `${role} ${status}`;
       }),
     );
-    process.stdout.write(`Match ${bold('finished')}: ${finishText}.\n`);
+    process.stdout.write(`Match ${ansiBold('finished')}: ${finishText}.\n`);
   }
 
-  /** Builds an spectator object compatible with Match.
-   *
-   * @returns {object}
+  /** TODO 
+   * 
   */
-  spectator() {
-    const ui = this;
-    return {
-      begin(game, players) {
-        return ui.renderBeginning(game, players);
-      },
-      next(gameBefore, actions, haps, gameAfter) {
-        return ui.renderMovePerformed(gameBefore, actions, haps, gameAfter);
-      },
-      end(game, results) {
-        return ui.renderEnd(game, results);
-      },
-    };
-  }
-
-  /** TODO */
-  bind(match) {
-    if (!this.match) {
-      this._prop('match', match, Match);
-      match.spectate(this.spectator());
-    } else if (this.match !== match) {
-      throw new Error('User interface is already bound!');
-    }
-  }
-
-  /** TODO */
-  player(args) {
+  async player() {
     return new UserInterfacePlayer({
-      onDecision: (player, game, role) => {
-        this.renderChoices(game, role, player.choose, player.fail);
+      onDecision: ({ player, game, role }) => {
+        this.renderChoices(game, role, player);
       },
     });
   }
 
-  /** Helper method for the _main_ function of playtesters that use this player.
-   *
-   * @param {object} args
-   * @param {function} args.game - Game builder.
-   * @param {Module} args.module - If null runs a match, else just exports a
-   *   function that runs a match.
-   * @param {function} args.player - Player builder function, taking game and
-   *   role.
-  */
-  play(args) {
-    const ui = this;
-    const main = function main(...types) {
-      const game = args.game();
-      const players = game.roles.map((role, i) => args.player?.({
-        type: types[i], game, role, ui,
-      }) ?? this.RandomPlayer());
-      const match = new Match({ game, players });
-      ui.bind(match);
-      return match.complete();
-    };
-    if (args.module) { // Behave as imported module.
-      args.module.exports = main;
-    } else { // Behave as main script.
-      main(...process.argv.slice(2)).then(
-        () => process.exit(0),
-        (err) => {
-          console.error(err);
-          process.exit(1);
-        },
-      );
-    }
+  /** TODO */
+  spectator() {
+    return new Spectator({
+      matchBegin: (args) => this.renderBegin(args),
+      matchStep: (args) => this.renderStep(args),
+      matchEnd: (args) => this.renderEnd(args),
+    });
   }
-} // class NodeConsoleInterface
 
-export default NodeConsoleInterface;
+} // class NodeConsoleInterface

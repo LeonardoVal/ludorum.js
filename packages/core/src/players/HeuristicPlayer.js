@@ -15,7 +15,10 @@ export class HeuristicPlayer extends Player {
   */
   constructor(args = null) {
     super(args);
-    this.heuristic = args?.heuristic ?? this.randomHeuristic;
+    Object.defineProperty(this, 'heuristic', {
+      enumerable: true,
+      value: args?.heuristic ?? this.randomHeuristic,
+    });
   }
 
   /** Heuristic players work by evaluating the moves of the `role` in the given
@@ -56,7 +59,7 @@ export class HeuristicPlayer extends Player {
   */
   async stateEvaluation(game, role) {
     const { result } = game;
-    return result ? result[role] : this.heuristic(game, role);
+    return result ? result[role] : await this.heuristic(game, role);
   }
 
   /** The `randomHeuristic` returns a random number in [-0.5, +0.5). This is
@@ -108,32 +111,4 @@ export class HeuristicPlayer extends Player {
     const bestMoves = await this.bestActions(game, role);
     return randomChoice(this.rng, bestMoves);
   }
-
-  // Utilities to build heuristics
-
-  /** A `composite` heuristic function returns the weighted sum of other
-   * functions. The arguments must be a sequence of heuristic functions and a
-   * weight. All weights must be between 0 and 1 and add up to 1.
-  * /
-  static composite(...components) {
-    var components = Array.prototype.slice.call(arguments),
-      weightSum = 0;
-    raiseIf(components.length < 1,
-      "HeuristicPlayer.composite() cannot take an odd number of arguments!");
-    for (var i = 0; i < components.length; i += 2) {
-      raiseIf(typeof components[i] !== 'function',
-        "HeuristicPlayer.composite() argument ", i, " (", components[i], ") is not a function!");
-      components[i+1] = +components[i+1];
-      raiseIf(isNaN(components[i+1]) || components[i+1] < 0 || components[i+1] > 1,
-        "HeuristicPlayer.composite() argument ", i+1,
-        " (", components[i+1], ") is not a valid weight!");
-    }
-    return (game, role) => {
-      let sum = 0;
-      for (let i = 0; i + 1 < components.length; i += 2) {
-        sum += components[i](game, role) * components[i+1];
-      }
-      return sum;
-    };
-  } */
 } // class HeuristicPlayer.
