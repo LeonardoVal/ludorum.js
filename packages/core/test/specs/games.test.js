@@ -2,21 +2,7 @@ import { describe, expect, test } from 'vitest';
 import {
   Bet, Choose2Win, Game, Predefined,
 } from '../../src/games';
-import { RandomPlayer } from '../../src/players/RandomPlayer';
-import makeGameTests from '../../src/tests/gameTests';
-
-const gameTests = makeGameTests({ expect });
-const MATCH_COUNT = 10;
-
-async function testGame(TestGame) {
-  const game = new TestGame();
-  for (let i = 0; i < MATCH_COUNT; i += 1) {
-    await gameTests.testMatch(
-      game, 
-      game.roles.map(() => new RandomPlayer()),
-    );
-  }
-}
+import { TestSpectator } from '../../src/matches/TestSpectator';
 
 describe('games', () => {
   test('expected definitions', () => {
@@ -26,14 +12,14 @@ describe('games', () => {
   });
 
   test('Predefined works like a game', async () => {
-    await testGame(Predefined);
+    await TestSpectator.testGame({ expect, game: new Predefined() });
   });
 
   test('Choose2Win works like a game', async () => {
-    await testGame(Choose2Win);
+    await TestSpectator.testGame({ expect, game: new Choose2Win() });
   });
 
   test('Bet works like a game', async () => {
-    await testGame(Bet);
+    await TestSpectator.testGame({ expect, game: new Bet() });
   });
 }); // describe 'games'

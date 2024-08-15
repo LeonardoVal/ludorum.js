@@ -43,10 +43,10 @@ export class Bet extends Game {
     const points = state?.points ?? DEFAULT_POINTS;
 
     const isFinished = points < 1 || points >= goal;
-    const actions = {
-      [ROLE]: isFinished ? null : die.map(([value]) => value),
+    const actions = isFinished ? null : {
+      [ROLE]: die.map(([value]) => value),
     };
-    const haps = { die };
+    const haps = isFinished ? null : { die };
     const result = !isFinished ? null : {
       [ROLE]: (points > 0) * 2 - 1,
     };
@@ -61,6 +61,7 @@ export class Bet extends Game {
    * @param {object} haps
   */
   nextState(actions, haps) {
+    this.confirmTransition(actions, haps);
     const { [ROLE]: bet } = actions;
     const { die: roll } = haps;
     return {
@@ -73,12 +74,12 @@ export class Bet extends Game {
   /** @inheritdoc */
   get features() {
     const { die, goal, points } = this;
-    return Uint16Array.of(die.length, goal, points);
+    return Uint16Array.of(points, goal, die.length);
   }
 
   /** @inheritdoc */
   get identifier() {
-    const [die, goal, points] = this.features;
-    return `${points}/${goal}/D${die}`;
+    const [points, goal, dieSize] = this.features;
+    return `${points}/${goal}D${dieSize}`;
   }
 } // class Bet

@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import terser from '@rollup/plugin-terser';
 
 function getFileNamesByLibFormat(packageName) {
   const libName = /^@.*?\/(.*)$/.exec(packageName)?.[1] ?? packageName;
@@ -29,6 +30,15 @@ export function viteConfig(options) {
         formats: Object.keys(fileNamesByLibFormat),
         name: pkg.name,
       },
+      minify: 'terser',
+      rollupOptions: {
+        plugins: [
+          terser({
+            keep_classnames: true,
+            module: true,
+          }),
+        ],
+      },
       sourcemap: true,
     },
     cacheDir: './.vite',
@@ -41,7 +51,10 @@ export function viteConfig(options) {
           'src/**/*.{js,mjs}'
         ],
         provider: 'istanbul',
-        reporter: ['html'],
+        reporter: [
+          'html',
+          'text',
+        ],
         reportsDirectory: '.vite/vitest/coverage',
       },
       watch: false,

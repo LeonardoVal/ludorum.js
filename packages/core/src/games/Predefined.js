@@ -36,18 +36,16 @@ export class Predefined extends Game{
    * @param {number | null} [state.winner=null]
   */
   init(state = null) {
+    const { roles } = this;
     const activeRole = +(state?.activeRole ?? 0);
     const height = state?.height ?? DEFAULT_HEIGHT;
     const width = state?.width ?? DEFAULT_WIDTH;
     const winner = state?.winner ?? null;
 
     const isFinished = height < 1;
-    const actions = this.roles.reduce((a, role, roleIndex) => {
-      a[role] = !isFinished && roleIndex === activeRole
-        ? Array(width).fill(0).map((_, i) => `action${i}`)
-        : null;
-      return a;
-    }, {});
+    const actions = isFinished ? null : {
+      [roles[activeRole]]: Array(width).fill(0).map((_, i) => `action${i}`),
+    };
     const result = !isFinished ? null
       : this.roles.reduce((r, role, roleIndex) => {
         r[role] = winner === null ? 0 : (winner === roleIndex) * 2 - 1;
@@ -62,10 +60,9 @@ export class Predefined extends Game{
     return +(ACTIONS_REGEX.exec(action)?.[1]) < this.width;
   }
 
-  /** 
-  */
-  nextState(actions) {
-    this.confirmActions(actions);
+  /** @inheritdoc */
+  nextState(actions, haps) {
+    this.confirmTransition(actions, haps);
     return {
       activeRole: (this.activeRole + 1) % this.roles.length,
       height: this.height - 1,

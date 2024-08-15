@@ -38,9 +38,9 @@ export class Choose2Win extends Game {
     const { roles } = this;
 
     const isFinished = winner !== null || turns < 1;
-    const actions = mapObject(roles, (_role, roleIndex) => (
-      !isFinished && roleIndex === activeRole ? ACTION_VALUES : []
-    ));
+    const actions = isFinished ? null : {
+      [roles[activeRole]]: [...ACTION_VALUES],
+    };
     const result = !isFinished ? null : mapObject(roles, (_role, roleIndex) => (
       winner === null ? 0 : (winner === roleIndex) * 2 - 1
     ));
@@ -51,7 +51,8 @@ export class Choose2Win extends Game {
   /** If a player moves to win or lose, a final game state is returned. Else the
    * game goes on.
   */
-  nextState(actions) {
+  nextState(actions, haps) {
+    this.confirmTransition(actions, haps);
     const { roles } = this;
     let { activeRole, turns, winner } = this;
     const opponent = (activeRole + 1) % roles.length;
@@ -86,6 +87,6 @@ export class Choose2Win extends Game {
       activeRole,
       turns === Infinity ? '∞' : Math.max(0, turns),
       winner === null ? '?' : winner,
-    ].join('/');
+    ].join('');
   }
 } // class Choose2Win.

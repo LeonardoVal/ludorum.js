@@ -68,8 +68,13 @@ export class Match {
     while (!result) {
       const actions = await Player.decisions(game, this.players);
       const haps = this.randomHaps(game);
-      game = game.next(actions, haps);
-      step = { actions, haps, next: game };
+      step = {
+        actions,
+        haps,
+        next: game.next(actions, haps),
+        previous: game,
+      };
+      game = step.next;
       this.history.push(step);
       Spectator.broadcast(this, 'matchStep', step);
       yield step;
@@ -92,11 +97,7 @@ export class Match {
     for await (const step of this.steps()) {
       game = step.next ?? step.start;
     }
-    if (game?.isFinished) {
-      return game.result;
-    }
-    throw new Error(`Unexpected match ending without result for ${
-      this.constructor.name}!`);
+    return game.result;
   }
  
 } // class Match

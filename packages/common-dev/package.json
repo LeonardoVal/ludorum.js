@@ -6,6 +6,7 @@
     "eslint": "^9.9.0",
     "globals": "^15.9.0",
     "jsdoc": "^4.0.3",
+    "@rollup/plugin-terser": "^0.4.4",
     "vite": "^5.3.5",
     "vitest": "^2.0.4"
   },
