@@ -67,4 +67,5 @@ export class Spectator {
   matchEnd(_args) {
     throw new Error(`${this.constructor.name}.matchEnd is not defined!`);
   }
+
 } // class Spectator

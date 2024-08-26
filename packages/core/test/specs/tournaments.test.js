@@ -6,4 +6,6 @@ describe('tournaments', () => {
     expect(typeof Tournament).toBe('function');
     expect(typeof RoundRobinTournament).toBe('function');
   });
+
+  
 }); // describe 'tournaments'

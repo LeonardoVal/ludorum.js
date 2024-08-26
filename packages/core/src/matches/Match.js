@@ -64,23 +64,21 @@ export class Match {
     Spectator.broadcast(this, 'matchBegin', step);
     yield step;
     let game = step.start ?? step.next;
-    let { result } = game;
+    let result = game.result;
+    let ply = 0;
     while (!result) {
       const actions = await Player.decisions(game, this.players);
       const haps = this.randomHaps(game);
-      step = {
-        actions,
-        haps,
-        next: game.next(actions, haps),
-        previous: game,
-      };
-      game = step.next;
+      const previous = game;
+      game = game.next(actions, haps);
+      ply++;
+      step = { actions, haps, next: game, ply, previous };
       this.history.push(step);
       Spectator.broadcast(this, 'matchStep', step);
       yield step;
       result = game.result;
     }
-    Spectator.broadcast(this, 'matchEnd', { final: game, result });
+    Spectator.broadcast(this, 'matchEnd', { final: game, ply, result });
   }
 
   static async* steps(args) {

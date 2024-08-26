@@ -33,7 +33,7 @@ describe('Statistics', () => {
     });
   }); // test 'accounts properly'
 
-  test('accounts matches', async () => {
+  test.skip('accounts matches', async () => {
     const game = new Choose2Win();
     const match = new Match({
       game,

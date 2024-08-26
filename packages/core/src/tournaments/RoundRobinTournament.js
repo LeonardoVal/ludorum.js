@@ -1,3 +1,4 @@
+import { defProps } from '../utils';
 import { permutations } from '../utils/iterables';
 import { Tournament } from './Tournament';
 

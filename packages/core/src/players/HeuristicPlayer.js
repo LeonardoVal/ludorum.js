@@ -111,4 +111,25 @@ export class HeuristicPlayer extends Player {
     const bestMoves = await this.bestActions(game, role);
     return randomChoice(this.rng, bestMoves);
   }
+
+  // Utilities _________________________________________________________________
+
+  /** Builds an heuristic evaluation function from weights for each square in
+   * the board. The result of the function is the weighted sum, empty squares
+   * being ignored, opponent squares considered negative.
+   *
+   * @param {number[]} weights
+   * @returns {function}
+  */
+  static heuristicFromWeights(weights) {
+    const weightSum = weights.reduce((s, w) => s + Math.abs(w), 0);
+    return (game, role) => {
+      const features = game.features(role);
+      return weightSum && features.reduce(
+        (s, f, i) => s + (weights[i] ?? 0) * f,
+        0,
+      ) / weightSum;
+    };
+  }
+
 } // class HeuristicPlayer.

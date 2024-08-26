@@ -1,4 +1,6 @@
-import { Statistics } from '../utils/Statistics';
+/* eslint-disable require-yield */
+import { Match } from '../games';
+import { defProps } from '../utils';
 
 /** A tournament is a set of matches played between many players. This is an
  * abstract base class for many different types of contests.
@@ -13,7 +15,7 @@ export class Tournament {
   constructor(args) {
     defProps(this, {
       game: args.game,
-      stats: args.stats ?? new Statistics(),
+      spectators: args.spectators,
     });
   }
 
@@ -32,7 +34,10 @@ export class Tournament {
   */
   async* matches() {
     for await (const args of this.matchArgs()) {
-      yield new Match(args);
+      yield new Match({
+        ...args,
+        spectators: [...args.spectators, ...this.spectators],
+      });
     }
   }
 
@@ -41,9 +46,14 @@ export class Tournament {
    * @returns {Statistics}
   */
   async playTournament() {
+    let playersResults = {};
     for await (const match of this.matches()) {
-      this.stats.accountMatch(match);
+      const result = await match.playthrough();
+      for (const [role, player] of Object.entries(match.players)) {
+        playersResults[player.name] = (playersResults[player.name] ?? 0)
+          + result[role];
+      }
     }
-    return this.stats;
+    return playersResults;
   }
 } // class Tournament

@@ -48,96 +48,46 @@ export class Statistics {
     return entry;
   } // account
 
-  /** Exports all entries in table format.
-   *
-   * @yields {(string | number)[]}
-   */
-  * table() {
-    const { map } = this;
-    yield ['key', 'count', 'sum', 'avg', 'min', 'max', 'var'];
-    for (const stat of map.values()) {
-      const {
-        key, count, sum, min, max, sumSquares,
-      } = stat;
-      yield [
-        key, count, sum, sum / count, min, max,
-        count < 2 ? 0 : (sumSquares - sum * sum / count) / (count - 1),
-      ];
-    }
+  /** Get the current statistics for the given key.
+   * 
+   * @param {string} key
+   * @returns {object}
+  */
+  stat(key) {
+    const { count, sum, min, max, sumSquares } = this.entry(key);
+    const svar = count < 2 ? 0
+      : (sumSquares - sum * sum / count) / (count - 1);
+    return {
+      key, count, sum, min, max, svar,
+      avg: count && sum / count,
+      stdDev: Math.sqrt(svar),
+    };
   }
 
-  /** Exports all entries in TSV format.
-   *
-   * @returns {string}
+  /** Enumerates all statistics for each key. 
+   * 
+   * @yield {object}
   */
-  toTSV() {
-    const escape = (str) => `${str}`.replaceAll(/[\\\t\n\r]/g, (m) => `\\${({
-      '\\': '\\',
-      '\n': 'n',
-      '\r': 'r',
-      '\t': 't',
-    }?.[m] ?? m)}`);
-    let result = '';
-    for (const row of this.table()) {
-      result += `${row.map(escape).join('\t')}\n`;
+  * stats() {
+    for (const key of this.map.keys()) {
+      yield this.stat(key);
     }
-    return result;
   }
 
   /** Exports all entries as a string.
    *
-   * @param {string} - So far the only supported format is TSV.
    * @returns {string}
   */
-  toString(format = 'tsv') {
-    switch (format) {
-      case 'tsv': return this.toTSV();
-      default: throw new Error(`Unknown or unsupported format ${format}!`);
-    }
+  toString() {
+    const fields = ['key', 'count', 'sum', 'avg', 'min', 'max', 'svar'];
+    return [
+      fields.join('\t'),
+      ...((function* () {
+        for (const stat of this.stats()) {
+          yield fields.map((k) => stat[k]).join('\t');
+        }
+      })()),
+    ].join('\n');
   }
 
-  /** Wraps the `match` to gather statistics about the game.
-   *
-   * @param {Iterator<T>} match - A generator representing a match.
-   * @param {object} [options] - Options
-   * @param {function} [options.callback] - Function with signature (step,
-   *   stats), called on each step before yielding it.
-   * @yields {T}
-  */
-  async* accountMatch(match, options) {
-    let game;
-    let players;
-    let stepCount = 0;
-    for await (const step of match.steps()) {
-      if (step.final) {
-        const { result } = step;
-        for (const [role, roleResult] of Object.entries(result)) {
-          this.account(`${game.name}.result.${role}`, roleResult);
-          const roleStatus = roleResult > 0 ? 'victories'
-            : (roleResult < 0 ? 'defeats' : 'draws');
-          this.account(`${game.name}.${roleStatus}.${role}`, roleResult);
-          const player = players[role];
-          this.account(`${player.name}.result.${game.name}`, roleResult);
-          this.account(`${player.name}.${roleStatus}.${game.name}`, roleResult);
-        }
-        this.account(`${game.name}.length`, stepCount);
-        break;
-      }
-      if (step.start) {
-        game = step.start;
-        players = step.players;
-      }
-      for (const [role, roleActions] of Object.entries(game.actions)) {
-        if (roleActions && roleActions.length > 0) {
-          this.account(`${game.name}.width.${role}`, roleActions.length);
-        }
-      }
-      if (step.next) {
-        game = step.next;
-      }
-      options?.callback?.(step, this);
-      yield step;
-      stepCount += 1;
-    }
-  } // accountMatch
 } // class Statistics

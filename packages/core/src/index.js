@@ -5,7 +5,7 @@ import {
 import { RoundRobinTournament } from './tournaments';
 
 export {
-  DebugSpectator, Match, Spectator,
+  DebugSpectator, Match, Spectator, TestSpectator,
 } from './matches';
 
 export { Game, GameTree } from './games';

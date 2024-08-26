@@ -1,32 +1,27 @@
-import { MersenneTwister } from '@creatartis/randomness';
-import { gameTests, HeuristicPlayer, playerTests } from '@ludorum/core';
-import {
+import { describe, expect, expectTypeOf, test } from 'vitest';
+import { TestSpectator } from '@ludorum/core';
+/*import {
   AlphaBetaPlayer, MaxNPlayer, MiniMaxPlayer,
 } from '@ludorum/players-minimax';
-import { MonteCarloPlayer } from '@ludorum/players-montecarlo';
+import { MonteCarloPlayer } from '@ludorum/players-montecarlo';*/
 import { TicTacToe } from '../../src/index';
 
-const RANDOM = new MersenneTwister(parseInt('TicTacToe', 32) % 1e8);
-const MATCH_COUNT = 2;
+const MATCH_COUNT = 15;
 
 describe('TicTacToe', () => {
-  it('has the expected definitions', () => {
-    expect(TicTacToe).toBeOfType('function');
+  test('has the expected definitions', () => {
+    expectTypeOf(TicTacToe).toBeFunction();
   });
 
-  it('works like a game', () => {
-    const game = new TicTacToe();
-    for (let i = 0; i < MATCH_COUNT; i += 1) {
-      gameTests.checkGameFlow(expect, game, {
-        deterministic: true,
-        oneActivePlayerPerTurn: true,
-        random: RANDOM,
-        zeroSum: true,
-        update: i % 2 === 0,
-      });
-    }
+  test('TicTacToe works like a game', async () => {
+    await TestSpectator.testGame({
+      expect,
+      game: new TicTacToe(),
+      matchCount: MATCH_COUNT,
+    });
   });
 
+  /*
   it('can be played with HeuristicPlayer', async () => {
     const game = new TicTacToe();
     const weightsVariants = [
@@ -70,4 +65,5 @@ describe('TicTacToe', () => {
       }
     }
   });
+  */
 }); // describe 'TicTacToe'

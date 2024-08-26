@@ -7,8 +7,14 @@
     "type": "git",
     "url": "git+https://github.com/LeonardoVal/ludorum.js.git"
   },
+  "scripts": {
+    "build": "node ./scripts/package-scripts.mjs build",
+    "lint": "node ./scripts/package-scripts.mjs lint",
+    "test": "node ./scripts/package-scripts.mjs test"
+  },
   "workspaces": [
     "packages/common-dev",
-    "packages/core"
+    "packages/core",
+    "packages/game-tictactoe"
   ]
 }

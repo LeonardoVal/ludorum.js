@@ -218,54 +218,44 @@ export class Game {
     return this.meta.roles ?? null;
   }
 
-// Actions _____________________________________________________________________
+// Actions & haps ______________________________________________________________
 
-  /** Returns true if the given action is available to the given role in this
-   * game state.
-   *
-   * @param {string} role
-   * @param {unknown} action
-   * @returns {boolean}
-  */
-  isValidAction(role, action) {
-    return this.actions[role].includes(action);
-  }
-
-  /** Confirms the given actions are valid, and throws an exception if it any
+  /** Confirms the given actions and haps are valid, and throws an error if any
    * is not.
    *
    * @param {Record<string, unknown>} actions
+   * @param {Record<string, unknown>} haps
    * @throws {Error} If any actions is not valid.
   */
-  confirmActions(actions) {
-    Object.entries(actions).forEach(([role, action]) => {
-      const isValid = this.isValidAction(role, action);
-      if (!isValid) {
-        throw new Error(`Invalid action ${action} for ${role}!`);
+  confirmTransition(actions, haps) {
+    const { actions: allActions, haps: allHaps, roles } = this;
+    const fmt = JSON.stringify;
+    for (const role of roles) {
+      if (actions?.[role] !== undefined) {
+        if (!allActions?.[role]?.includes(actions[role])) {
+          throw new Error(`Invalid action ${fmt(actions[role])} for ${
+            fmt(role)} (from ${fmt(allActions)})!`)
+        }
+      } else if (allActions?.[role]?.length > 0) {
+        throw new Error(`Missing action for ${fmt(role)} (in ${
+          fmt(actions)}, from ${fmt(allActions)})!`);
       }
-    });
+    }
+    for (const hapName in allHaps) {
+      if (haps?.[hapName] === undefined) {
+        throw new Error(`Missing value for ${fmt(hapName)} (in ${
+          fmt(haps)}, from ${fmt(allHaps)})!`)
+      }
+    }
+    for (const hapName in haps) {
+      const hapValue = haps[hapName];
+      if (!allHaps?.[hapName]?.find(([value]) => value === hapValue)) {
+        throw new Error(`Invalid value ${fmt(hapValue)} for ${fmt(hapName)}!`)
+      }
+    }
   }
 
 // Results _____________________________________________________________________
-
-  /** Some games may assign scores to the players in a finished game. This may
-   * differ from the result, since the score sign doesn't have to indicate
-   * victory or defeat. For example:
-   *
-   * + result: `{ Player1: -1, Player2: +1 }`
-   *
-   * + scores: `{ Player1: 14, Player2: 15 }`
-   *
-   * The method `scores()` returns the scores if such is the case. Also the
-   * score may be defined for unfinished games. By default, it return the same
-   * that `result` does.
-   *
-   * @property {Record<string, number>}
-   * @see {@link Game#result}
-  */
-  get scores() {
-    return this.result;
-  }
 
   /** A finished game must have a result, no role with actions and no haps.
    *
@@ -289,6 +279,40 @@ export class Game {
       }, {});
   }
 
+  /** Some games may assign scores to the players in a finished game. This may
+   * differ from the result, since the score sign doesn't have to indicate
+   * victory or defeat. For example:
+   *
+   * + result: `{ Player1: -1, Player2: +1 }`
+   *
+   * + scores: `{ Player1: 14, Player2: 15 }`
+   *
+   * The method `scores()` returns the scores if such is the case. Also the
+   * score may be defined for unfinished games. By default, it return the same
+   * that `result` does.
+   *
+   * @property {Record<string, number>}
+   * @see {@link Game#result}
+  */
+  get scores() {
+    return this.result;
+  }
+
+  /** Builds a game result object where all values add up to zero.
+   * 
+   * @param {string} role
+   * @param {number} [value=0]
+   * @returns {Record<string, number>}
+  */
+  zeroSumResult(role, value = 0) {
+    const { roles } = this;
+    const roleCount = roles.length;
+    return roles.reduce((obj, r) => {
+      obj[r] = r === role ? value : -value / (roleCount - 1);
+      return obj;
+    }, {});
+  }
+
 // Game information utilities __________________________________________________
 
   /** The game's name should be accesible from both class and instance.
@@ -300,19 +324,20 @@ export class Game {
   }
 
   /** A string which can be used as an identifier for the game state in a data
-     * structure like a `Map`.
-     *
-     * @property {string}
-    */
+   * structure like a `Map`.
+   *
+   * @property {string}
+  */
   get identifier() {
     throw new Error(`${this.constructor.name}.identifier is not defined!`);
   }
 
-  /** Returns an typed array with values representing aspects of the game state.
+  /** Returns a number array with values representing aspects of the game state.
    *
-   * @property {number[]}
+   * @param {string} role
+   * @returns {number[]}
   */
-  get features() {
+  features(_role) {
     throw new Error(`${this.constructor.name}.features is not defined!`);
   }
 
