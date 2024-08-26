@@ -1,11 +1,11 @@
-import { HeuristicPlayer, Game } from '@ludorum/core';
+import { players, Game, GameTree } from '@ludorum/core';
 
 /** Automatic players based on pure MiniMax.
  *
  * @class
  * @extends HeuristicPlayer
 */
-class MiniMaxPlayer extends HeuristicPlayer {
+export class MiniMaxPlayer extends players.HeuristicPlayer {
   /** @inheritdoc */
   static get name() {
     return 'MiniMaxPlayer';
@@ -17,18 +17,11 @@ class MiniMaxPlayer extends HeuristicPlayer {
    * @param {number} [args.horizon=4]
   */
   constructor(args) {
-    const { horizon } = args || {};
     super(args);
-    this._prop('horizon', horizon, 'number', 4);
-  }
-
-  /** MiniMax players cannot be used with simultaneous games.
-   *
-   * @param {Game} game
-   * @returns {boolean}
-  */
-  canPlay(game) {
-    return !game.isSimultaneous;
+    Object.defineProperty(this, 'horizon', {
+      enumerable: true,
+      value: args?.horizon ?? 4,
+    });
   }
 
   /** Every state's evaluation is the minimax value for the given game and
@@ -78,11 +71,14 @@ class MiniMaxPlayer extends HeuristicPlayer {
    * @returns {number}
   */
   minimax(game, role, depth = 0) {
-    const { activeRole, actions, aleatories } = game;
+    const { actions, aleatories } = game;
     let value = this.quiescence(game, role, depth);
     if (Number.isNaN(value)) { // game is not quiescent.
-      value = activeRole === role ? -Infinity : +Infinity;
+      value = actions[role]?.length > 0 ? -Infinity : +Infinity;
       const comparison = value < 0 ? Math.max : Math.min;
+
+
+      
       const actionOptions = Game.possibleActions(actions);
       const possibleHaps = aleatories && Game.possibleHaps(aleatories);
       for (const actionOption of actionOptions) {
@@ -101,6 +97,8 @@ class MiniMaxPlayer extends HeuristicPlayer {
     }
     return value;
   }
+
+// Utilities ___________________________________________________________________
 
   /** A `solution` calculates the minimax value for every game state derivable
    * from the given `game`. The result is an object with a key for every game
@@ -135,9 +133,3 @@ class MiniMaxPlayer extends HeuristicPlayer {
     return evals;
   }
 } // class MiniMaxPlayer.
-
-/** Serialization and materialization using Sermat.
-*/
-MiniMaxPlayer.defineSERMAT('horizon');
-
-export default MiniMaxPlayer;

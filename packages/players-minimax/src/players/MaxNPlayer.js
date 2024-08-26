@@ -1,4 +1,4 @@
-import { HeuristicPlayer } from '@ludorum/core';
+import { players } from '@ludorum/core';
 
 /** Automatic players based on the [MaxN](http://dl.acm.org/citation.cfm?id=2887795)
  * algorithm, a MiniMax variant for games of more than two players.
@@ -6,12 +6,7 @@ import { HeuristicPlayer } from '@ludorum/core';
  * @class
  * @extends HeuristicPlayer
 */
-class MaxNPlayer extends HeuristicPlayer {
-  /** @inheritdoc */
-  static get name() {
-    return 'MaxNPlayer';
-  }
-
+export class MaxNPlayer extends players.HeuristicPlayer {
   /** Besides the parameters of every `HeuristicPlayer`, an `horizon` for the
    * search may be specified (3 plies by default).
    *
@@ -19,21 +14,14 @@ class MaxNPlayer extends HeuristicPlayer {
    * @param {int} [args.horizon=4]
   */
   constructor(args = null) {
-    const { horizon } = args || {};
     super(args);
-    this._prop('horizon', horizon, 'number', 4);
+    Object.defineProperty(this, 'horizon', {
+      enumerable: true,
+      value: args?.horizon ?? 4,
+    });
   }
 
-  /** MaxN players cannot be used with simultaneous or non-deterministic games.
-   *
-   * @param {Game} game
-   * @returns {boolean}
-  */
-  canPlay(game) {
-    return !game.isSimultaneous && game.isDeterministic;
-  }
-
-  /** This player evaluates each state using the `maxn` method, taking the
+  /** This player evaluates each state using the `maxN` method, taking the
    * evaluation for the given `player`.
    *
    * @param {Game} game
@@ -95,20 +83,15 @@ class MaxNPlayer extends HeuristicPlayer {
   maxN(game, role, depth) {
     let values = this.quiescence(game, role, depth);
     if (values === null) { // game is not quiescent.
-      const { activeRole } = game;
-      for (const next of this.nextsFor(game, activeRole)) {
-        const otherValues = this.maxN(next, role, depth + 1);
-        if (!values || otherValues[activeRole] > values[activeRole]) {
-          values = otherValues;
+      const { actions, activeRole } = game;
+      for (const action of actions[activeRole]) {
+        const next = game.next({ [activeRole]: action });
+        const nextValues = this.maxN(next, role, depth + 1);
+        if (!values || nextValues[activeRole] > values[activeRole]) {
+          values = nextValues;
         }
       }
     }
     return values;
   }
 } // class MaxNPlayer.
-
-/** Serialization and materialization using Sermat.
-*/
-MaxNPlayer.defineSERMAT('horizon');
-
-export default MaxNPlayer;

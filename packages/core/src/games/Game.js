@@ -220,6 +220,22 @@ export class Game {
 
 // Actions & haps ______________________________________________________________
 
+  /** TODO */
+  get activeRoles() {
+    const { actions } = this;
+    return Object.keys(actions ?? {})
+      .filter((role) => actions[role]?.length > 0);
+  }
+
+  /** TODO */
+  get activeRole() {
+    const { activeRoles } = this;
+    if (activeRoles.length !== 1) {
+      throw new Error(`There is no single active role in game ${this}!`);
+    }
+    return activeRoles[0];
+  }
+
   /** Confirms the given actions and haps are valid, and throws an error if any
    * is not.
    *

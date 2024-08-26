@@ -1,9 +1,9 @@
 import { Game } from '@ludorum/core';
-import MiniMaxPlayer from './MiniMaxPlayer';
+import { MiniMaxPlayer } from './MiniMaxPlayer';
 
 /** Automatic players based on MiniMax with alfa-beta pruning.
 */
-class AlphaBetaPlayer extends MiniMaxPlayer {
+export class AlphaBetaPlayer extends MiniMaxPlayer {
   /** @inheritdoc */
   static get name() {
     return 'AlphaBetaPlayer';
@@ -66,9 +66,3 @@ class AlphaBetaPlayer extends MiniMaxPlayer {
     return isActive ? alpha : beta;
   }
 } // class AlphaBetaPlayer.
-
-/** Serialization and materialization using Sermat.
-*/
-AlphaBetaPlayer.defineSERMAT('');
-
-export default AlphaBetaPlayer;

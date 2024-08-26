@@ -61,7 +61,7 @@ export class Match {
    */
   async* steps() {
     let step = this.history.at(-1);
-    Spectator.broadcast(this, 'matchBegin', step);
+    Spectator.broadcast(this, 'matchBegin', { ...step, match: this });
     yield step;
     let game = step.start ?? step.next;
     let result = game.result;
@@ -74,11 +74,12 @@ export class Match {
       ply++;
       step = { actions, haps, next: game, ply, previous };
       this.history.push(step);
-      Spectator.broadcast(this, 'matchStep', step);
+      Spectator.broadcast(this, 'matchStep', { ...step, match: this });
       yield step;
       result = game.result;
     }
-    Spectator.broadcast(this, 'matchEnd', { final: game, ply, result });
+    step = { final: game, ply, result }
+    Spectator.broadcast(this, 'matchEnd', { ...step, match: this });
   }
 
   static async* steps(args) {

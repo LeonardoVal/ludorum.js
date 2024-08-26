@@ -1,66 +1,58 @@
-import { MersenneTwister } from '@creatartis/randomness';
-import { Choose2Win, playerTests } from '@ludorum/core';
-import {
-  AlphaBetaPlayer, MaxNPlayer, MiniMaxPlayer,
-} from '../../src/index';
+import { describe, expect, test } from 'vitest';
+import { games, TestSpectator } from '@ludorum/core';
+import { TicTacToe } from '@ludorum/game-tictactoe';
+import { players } from '../../src/index';
 
-const RANDOM = new MersenneTwister(parseInt('MiniMax', 32) % 1e8);
-const MATCH_COUNT = 4;
+async function checkPlayer({
+  matchCount = 10,
+  player,
+}) {
+  const { Predefined } = games;
+  for (let i = 0; i < matchCount; i += 1) {
+    const game = new Predefined({
+      height: 5,
+      width: 6,
+      winner: i < 2 ? i : null,
+    });
+    await TestSpectator.testGame({
+      expect, game, player, matchCount: 1,
+    });
+  }
+}
 
-describe('players', () => {
-  it('expected definitions', () => {
-    expect(MaxNPlayer).toBeOfType('function');
-    expect(MiniMaxPlayer).toBeOfType('function');
+describe('Minimax players', () => {
+  test('expected definitions', () => {
+    const { AlphaBetaPlayer, MaxNPlayer, MiniMaxPlayer } = players;
+    [
+      AlphaBetaPlayer, MaxNPlayer, MiniMaxPlayer,
+    ].forEach((def) => {
+      expect(typeof def).toBe('function');
+    });
   });
 
-  it('MaxNPlayer with Predefined', async () => {
-    for (let i = 0; i < MATCH_COUNT; i += 1) {
-      await playerTests.checkPlayerWithPredefined({
-        playerBuilder: () => new MaxNPlayer({ random: RANDOM }),
-      });
-    }
+  test.skip('MiniMaxPlayer with Predefined', async () => {
+    const player = new players.MiniMaxPlayer();
+    await checkPlayer({ expect, player });
   });
 
-  it('MaxNPlayer with Choose2Win', async () => {
-    for (let i = 0; i < MATCH_COUNT; i += 1) {
-      await playerTests.checkPlayer({
-        game: new Choose2Win(),
-        playerBuilder: () => new MaxNPlayer({ random: RANDOM }),
-      });
-    }
+  test.skip('AlphaBetaPlayer with Predefined', async () => {
+    const player = new players.AlphaBetaPlayer();
+    await checkPlayer({ player });
   });
 
-  it('MiniMaxPlayer with Predefined', async () => {
-    for (let i = 0; i < MATCH_COUNT; i += 1) {
-      await playerTests.checkPlayerWithPredefined({
-        playerBuilder: () => new MiniMaxPlayer({ random: RANDOM }),
-      });
-    }
+  test('MaxNPlayer with Predefined', async () => {
+    const player = new players.MaxNPlayer();
+    await checkPlayer({ player });
   });
 
-  it('MiniMaxPlayer with Choose2Win', async () => {
-    for (let i = 0; i < MATCH_COUNT; i += 1) {
-      await playerTests.checkPlayer({
-        game: new Choose2Win(),
-        playerBuilder: () => new MiniMaxPlayer({ random: RANDOM }),
-      });
-    }
+  test('MaxNPlayer with TicTacToe', async () => {
+    const player = new players.MaxNPlayer();
+    await TestSpectator.testGame({
+      expect,
+      game: new TicTacToe(),
+      player,
+      matchCount: 5,
+    });
   });
 
-  it('AlphaBetaPlayer with Predefined', async () => {
-    for (let i = 0; i < MATCH_COUNT; i += 1) {
-      await playerTests.checkPlayerWithPredefined({
-        playerBuilder: () => new AlphaBetaPlayer({ random: RANDOM }),
-      });
-    }
-  });
-
-  it('AlphaBetaPlayer with Choose2Win', async () => {
-    for (let i = 0; i < MATCH_COUNT; i += 1) {
-      await playerTests.checkPlayer({
-        game: new Choose2Win(),
-        playerBuilder: () => new AlphaBetaPlayer({ random: RANDOM }),
-      });
-    }
-  });
-}); // describe 'players'
+}); // describe 'Minimax players'

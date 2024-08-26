@@ -1,8 +1,8 @@
-import AlphaBetaPlayer from './players/AlphaBetaPlayer';
-import MaxNPlayer from './players/MaxNPlayer';
-import MiniMaxPlayer from './players/MiniMaxPlayer';
+import { AlphaBetaPlayer } from './players/AlphaBetaPlayer';
+import { MaxNPlayer } from './players/MaxNPlayer';
+import { MiniMaxPlayer } from './players/MiniMaxPlayer';
 
-export {
+export const players = {
   AlphaBetaPlayer,
   MaxNPlayer,
   MiniMaxPlayer,

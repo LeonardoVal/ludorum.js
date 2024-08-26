@@ -13,7 +13,7 @@ const ACTIONS_REGEX = /^action(\d+)$/;
  * @class
  * @extends Game
 */
-export class Predefined extends Game{
+export class Predefined extends Game {
   static meta = {
     description: `Predefined is a pseudogame used for testing purposes. It will
       give _width_ amount of moves for each player until _height_ moves pass. Then
@@ -30,24 +30,24 @@ export class Predefined extends Game{
    * `'pass'`.
    *
    * @param {object} [state=null]
-   * @param {string} [state.activeRole=0]
+   * @param {string} [state.activeRole='First']
    * @param {number} [state.height=5]
    * @param {number} [state.width=5]
    * @param {number | null} [state.winner=null]
   */
   init(state = null) {
     const { roles } = this;
-    const activeRole = +(state?.activeRole ?? 0);
+    const activeRole = state?.activeRole ?? roles[0];
     const height = state?.height ?? DEFAULT_HEIGHT;
     const width = state?.width ?? DEFAULT_WIDTH;
     const winner = state?.winner ?? null;
 
     const isFinished = height < 1;
     const actions = isFinished ? null : {
-      [roles[activeRole]]: Array(width).fill(0).map((_, i) => `action${i}`),
+      [activeRole]: Array(width).fill(0).map((_, i) => `action${i}`),
     };
     const result = !isFinished ? null
-      : this.roles.reduce((r, role, roleIndex) => {
+      : roles.reduce((r, role, roleIndex) => {
         r[role] = winner === null ? 0 : (winner === roleIndex) * 2 - 1;
         return r;
       }, {});
@@ -62,12 +62,14 @@ export class Predefined extends Game{
 
   /** @inheritdoc */
   nextState(actions, haps) {
+    const { activeRole, roles } = this;
     this.confirmTransition(actions, haps);
     return {
-      activeRole: (this.activeRole + 1) % this.roles.length,
+      activeRole: roles[(roles.indexOf(activeRole) + 1) % roles.length],
       height: this.height - 1,
       width: this.width,
       winner: this.winner,
     };
   }
+
 } // class Predefined.

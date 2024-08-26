@@ -1,45 +1,45 @@
 {
-  "name": "@ludorum/players-minimax",
-  "description": "Artificial players based on MiniMax for Ludorum.",
+  "author": {
+    "email": "leonardo.val@creatartis.com",
+    "name": "Leonardo Val"
+  },
+  "contributors": [],
+  "dependencies": {
+    "@ludorum/core": "^0.3.0"
+  },
+  "description": "players-minimax for Ludorum.",
+  "devDependencies": {
+    "@ludorum/common-dev": "^1.0.0",
+    "@ludorum/game-tictactoe": "^0.1.0"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/players-minimax.es.mjs",
+      "require": "./dist/players-minimax.umd.js"
+    }
+  },
+  "files": [
+    "dist/",
+    "LICENSE.md",
+    "README.md"
+  ],
   "keywords": [
     "board game",
-    "game",
-    "artificial intelligence",
-    "game ai",
-    "minimax"
+    "game"
   ],
-  "version": "0.1.0-alpha",
-  "main": "dist/players-minimax.js",
-  "files": [
-    "dist/", "LICENSE.md", "README.md"
-  ],
-  "author": {
-    "name": "Leonardo Val",
-    "email": "leonardo.val@creatartis.com"
-  },
-  "homepage": "http://creatartis.com",
-  "contributors": [],
   "license": "MIT",
+  "main": "./dist/players-minimax.umd.js",
+  "module": "./dist/players-minimax.es.js",
+  "name": "@ludorum/players-minimax",
   "repository": {
     "type": "git",
     "url": "http://github.com/LeonardoVal/ludorum.js"
   },
-  "dependencies": {
-    "@ludorum/core": "*"
-  },
-  "devDependencies": {
-    "@creatartis/creatartis-build": "0.3.0-alpha",
-    "@creatartis/randomness": "0.2.0-alpha",
-    "sermat": "^0.1.1"
-  },
   "scripts": {
-    "build": "npx creatartis-build lint build test doc",
-    "deps:verdaccio": "rm -rf node_modules package-lock.json && npm i --registry http://localhost:4873",
-    "doc": "npx creatartis-build doc",
-    "lint": "npx creatartis-build lint",
-    "release": "npm run build && npx creatartis-build release",
-    "release:verdaccio": "npm run build && npx creatartis-build release:verdaccio",
-    "rerelease:verdaccio": "npm run build && npx creatartis-build rerelease:verdaccio",
-    "test": "npx creatartis-build lint test"
-  }
+    "build": "vite build",
+    "doc": "jsdoc README.md src/ -c jsdoc.config.js",
+    "lint": "eslint .",
+    "test": "vitest"
+  },
+  "version": "0.1.0"
 }

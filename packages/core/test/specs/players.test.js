@@ -3,28 +3,25 @@ import { Predefined } from '../../src/games';
 import {
   Player, HeuristicPlayer, RandomPlayer, TracePlayer, UserInterfacePlayer,
 } from '../../src/players';
-import { TestUtils } from '../../src/utils/TestUtils';
-
-const testUtils = new TestUtils({ expect });
+import { TestSpectator } from '../../src/matches/TestSpectator';
 
 async function checkPlayer({
   matchCount = 10,
   player,
+  onMatchPlayed,
 }) {
   expect(player.name)
     .toMatch(new RegExp(`^${player.constructor.name}`));
-  const result = [];
   for (let i = 0; i < matchCount; i += 1) {
     const game = new Predefined({
       height: 5,
       width: 6,
       winner: i < 2 ? i : null,
     });
-    result.push(
-      await testUtils.checkPlayer({ game, player }),
-    );
+    await TestSpectator.testGame({
+      expect, game, player, onMatchPlayed, matchCount: 1,
+    });
   }
-  return result;
 }
 
 describe('players', () => {
@@ -38,7 +35,7 @@ describe('players', () => {
 
   test('HeuristicPlayer with Predefined', async () => {
     const player = new HeuristicPlayer();
-    await checkPlayer({ player });
+    await checkPlayer({ expect, player });
   });
 
   test('RandomPlayer with Predefined', async () => {
@@ -52,12 +49,15 @@ describe('players', () => {
       record: true,
     });
     expect(player.trace.length).toBe(0);
-    (await checkPlayer({ matchCount: 2, player }))
-      .forEach((players) => {
-        const { First: p1, Second: p2 } = players;
+    await checkPlayer({
+      matchCount: 2,
+      player,
+      onMatchPlayed({ match }) {
+        const { First: p1, Second: p2 } = match.players;
         expect(p1.trace.length).toBe(3);
         expect(p2.trace.length).toBe(2);
-      });
+      },
+    });
   });
 
   test('UserInterfacePlayer with Predefined', async () => {

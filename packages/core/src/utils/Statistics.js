@@ -79,11 +79,12 @@ export class Statistics {
    * @returns {string}
   */
   toString() {
+    const stats = this.stats();
     const fields = ['key', 'count', 'sum', 'avg', 'min', 'max', 'svar'];
     return [
       fields.join('\t'),
       ...((function* () {
-        for (const stat of this.stats()) {
+        for (const stat of stats) {
           yield fields.map((k) => stat[k]).join('\t');
         }
       })()),

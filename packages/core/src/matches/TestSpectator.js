@@ -175,19 +175,26 @@ export class TestSpectator extends Spectator {
 
   /** TODO */
   async testGame(args) {
-    const { game, matchCount = 10 } = args;
-    const players = args.players ?? new Array(game.roles.length).fill(0)
-      .map(() => new RandomPlayer());
+    const { game, matchCount = 10, onMatchPlayed } = args;
+    this.expect(game).toBeInstanceOf(Game);
+    const players = game.roles.reduce((obj, role, i) => {
+      const player = args.players?.[role] ?? args.players?.[i] ?? args.player
+        ?? new RandomPlayer();
+      this.expect(player).toBeInstanceOf(Player);
+      obj[role] = player;
+      return obj;
+    }, {});
     for (let i = 0; i < matchCount; i += 1) {
       const match = new Match({ game, players, spectators: [this] });
-      await match.playthrough();
+      const result = await match.playthrough();
+      onMatchPlayed?.({ match, result });
     }
   }
 
   /** TODO */
   static async testGame(args) {
     const { expect, ...otherArgs } = args;
-    await new this({ expect }).testGame(otherArgs);
+    return new this({ expect }).testGame(otherArgs);
   }
 
 } // class TestSpectator

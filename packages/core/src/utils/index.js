@@ -16,7 +16,3 @@ export {
 export {
   Statistics,
 } from './Statistics';
-
-export {
-  TestUtils,
-} from './TestUtils';

@@ -1,4 +1,3 @@
-/* eslint-disable require-yield */
 import { Match } from '../games';
 import { defProps } from '../utils';
 
@@ -10,22 +9,29 @@ export class Tournament {
    *
    * @param {object} args
    * @param {Game} args.game
+   * @param {number=10} args.matchCount
+   * @param {Player[]} args.players
    * @param {Statistics} [args.stats]
   */
   constructor(args) {
     defProps(this, {
       game: args.game,
+      players: args.players,
+      matchCount: args.matchCount ?? 10,
       spectators: args.spectators,
     });
   }
 
-  /** Generates arguments for each match of this tournament. It is not
-   * implemented in this base class.
+  /** Generates arguments for each match of this tournament. In this base class
+   * its just a repetition of `matchCount` matches.
    *
    * @yields {object}
   */
   async* matchArgs() {
-    throw new Error(`${this.constructor.name}.matchArgs() is not defined!`);
+    const { game, matchCount, players } = this;
+    for (let i = 0; i < matchCount; i++) {
+      yield { game, players };
+    }
   }
 
   /** Generates the matches for this tournament.
@@ -34,10 +40,8 @@ export class Tournament {
   */
   async* matches() {
     for await (const args of this.matchArgs()) {
-      yield new Match({
-        ...args,
-        spectators: [...args.spectators, ...this.spectators],
-      });
+      const spectators = [...args.spectators ?? [], ...this.spectators ?? []];
+      yield new Match({ ...args, spectators });
     }
   }
 

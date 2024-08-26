@@ -88,7 +88,7 @@ export class Player {
   */
   actionsFor(game, role) {
     const { [role]: roleActions } = game.actions;
-    if (!Array.isArray(roleActions) || roleActions.length < 1) {
+    if (!(roleActions?.length > 0)) {
       throw new Error(`Role ${role} has no actions for game ${game}.`);
     }
     return roleActions;

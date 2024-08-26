@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import terser from '@rollup/plugin-terser';
+import { optimizeDeps } from 'vite';
 
 function getFileNamesByLibFormat(packageName) {
   const libName = /^@.*?\/(.*)$/.exec(packageName)?.[1] ?? packageName;
@@ -19,7 +20,7 @@ export function viteConfig(options) {
   const packageFilePath = options?.packageFilePath ?? 
     path.resolve(process.cwd(), 'package.json');
   const pkg = readPackageJSON(packageFilePath);
-  const { name } = pkg;
+  const { name, dependencies } = pkg;
   const fileNamesByLibFormat = getFileNamesByLibFormat(name);
 
   return {
@@ -32,6 +33,7 @@ export function viteConfig(options) {
       },
       minify: 'terser',
       rollupOptions: {
+        external: Object.keys(dependencies ?? {}),
         plugins: [
           terser({
             keep_classnames: true,
