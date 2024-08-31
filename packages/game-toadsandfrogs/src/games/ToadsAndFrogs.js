@@ -6,10 +6,12 @@ const ROLE_FROGS = 'Frogs';
 /** Implementation of the [Toads & Frogs](http://en.wikipedia.org/wiki/Toads_and_Frogs_%28game%29)
  * game.
 */
-class ToadsAndFrogs extends Game {
-  /** @inheritdoc */
-  static get name() {
-    return 'ToadsAndFrogs';
+export class ToadsAndFrogs extends Game {
+  /** TODO */
+  static meta = {
+    description: `Implementation of Toads & Frogs.`,
+    name: 'ToadsAndFrogs',
+    roles: [ROLE_TOADS, ROLE_FROGS],
   }
 
   /** A `board` builder for Toads & Frogs. These boards are single rows with a
@@ -25,83 +27,49 @@ class ToadsAndFrogs extends Game {
     return 'T'.repeat(chips) + '_'.repeat(separation) + 'F'.repeat(chips);
   }
 
-  /** Builds a new ToadsAndFrogs game state:
-   *
-   * @param {object} [args]
-   * @param {string} [args.board='TTT__FFF'] - The current board.
-  */
-  constructor(args = null) {
-    const {
-      activeRole = 0, board,
-    } = args || {};
-    super({ activeRoles: [activeRole] });
-    this
-      ._prop('board', board, 'string', 'TTT__FFF');
-  }
-
-  /** Players for Odds & Evens are named `Evens` and `Odds`.
-   *
-   * @property {string[]}
-  */
-  get roles() {
-    return [ROLE_TOADS, ROLE_FROGS];
-  }
-
   /** The active players `moves` is a list of square indexes (integers) in the
    * board, where chips can be moved in one of the two ways possible in this
    * game.
-   *
-   * @property {object}
+   * 
+   * The match finishes when one player cannot move, hence losing the game.
   */
-  get actions() {
-    const { activeRole, board, roles } = this;
-    const regExp = activeRole === roles[0] ? /TF?_/g : /_T?F/g;
+  init(state = null) {
+    const { roles } = this;
+    const activeRole = state?.activeRole ?? roles[0];
+    const board = state?.board ?? this.constructor.board();
+    
+    const movesRegExp = activeRole === roles[0] ? /TF?_/g : /_T?F/g;
     const moves = [];
-    board.replace(regExp, (m, i) => {
+    board.replace(movesRegExp, (m, i) => {
       moves.push(i);
       return m;
     });
-    return moves.length > 0 ? { [activeRole]: moves } : null;
+    const isFinished = moves.length < 1;
+    const actions = isFinished ? null : { [activeRole]: moves };
+    const result = isFinished ? this.zeroSumResult(activeRole, -1) : null;
+    super.init({
+      actions, activeRole, board, isFinished, result,
+    });
   }
 
-  /** The match finishes when one player cannot move, hence losing the game.
-   *
-   * @property {object}
-  */
-  get result() {
-    const { actions, activeRole } = this;
-    return actions ? null : this.defeat(activeRole);
-  }
-
-  /** TODO
-   *
-   * @param {object} actions
-   * @param {object} haps
-   * @return {Game}
-  */
-  perform(actions, haps) {
-    const { activeRole, board } = this;
-    if (haps) {
-      throw new Error(`Haps are not required (given ${JSON.stringify(haps)})!`);
-    }
+  /** TODO */
+  nextState(actions, haps) {
+    this.confirmTransition(actions, haps);
+    const { activeRole, board, roles } = this;
     const move = actions[activeRole];
+    let newBoard = null;
     if (board.substr(move, 2) === 'T_') {
-      this.board = `${board.substring(0, move)}_T${board.substring(move + 2)}`;
+      newBoard = `${board.substring(0, move)}_T${board.substring(move + 2)}`;
     } else if (board.substr(move, 2) === '_F') {
-      this.board = `${board.substring(0, move)}F_${board.substring(move + 2)}`;
+      newBoard = `${board.substring(0, move)}F_${board.substring(move + 2)}`;
     } else if (board.substr(move, 3) === 'TF_') {
-      this.board = `${board.substring(0, move)}_FT${board.substring(move + 3)}`;
+      newBoard = `${board.substring(0, move)}_FT${board.substring(move + 3)}`;
     } else if (board.substr(move, 3) === '_TF') {
-      this.board = `${board.substring(0, move)}FT_${board.substring(move + 3)}`;
+      newBoard = `${board.substring(0, move)}FT_${board.substring(move + 3)}`;
     } else {
       throw new Error(`Invalid actions ${JSON.stringify(actions)} for ${this}!`);
     }
-    this.activateRoles(this.opponent(activeRole));
+    const opponent = roles[(roles.indexOf(activeRole) + 1) % 2];
+    return { board: newBoard, activeRole: opponent };
   }
-} // class ToadsAndFrogs.
-
-/** Serialization and materialization using Sermat.
-*/
-ToadsAndFrogs.defineSERMAT('activeRole board');
-
-export default ToadsAndFrogs;
+} // class ToadsAndFrogs
