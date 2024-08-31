@@ -1,45 +1,45 @@
 {
-  "name": "@ludorum/game-oddsandevens",
-  "description": "Odds and Evens for Ludorum",
+  "author": {
+    "email": "leonardo.val@creatartis.com",
+    "name": "Leonardo Val"
+  },
+  "contributors": [],
+  "dependencies": {
+    "@ludorum/core": "^0.3.0"
+  },
+  "description": "Odds and Evens for Ludorum.",
+  "devDependencies": {
+    "@ludorum/common-dev": "^1.0.0"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/game-oddsandevens.es.mjs",
+      "require": "./dist/game-oddsandevens.umd.js"
+    }
+  },
+  "files": [
+    "dist/",
+    "LICENSE.md",
+    "README.md"
+  ],
   "keywords": [
     "board game",
     "game"
   ],
-  "version": "0.1.0-alpha",
-  "main": "dist/game-oddsandevens.js",
-  "files": [
-    "dist/", "LICENSE.md", "README.md"
-  ],
-  "author": {
-    "name": "Leonardo Val",
-    "email": "leonardo.val@creatartis.com"
-  },
-  "homepage": "http://creatartis.com",
-  "contributors": [],
   "license": "MIT",
+  "main": "./dist/game-oddsandevens.umd.js",
+  "module": "./dist/game-oddsandevens.es.js",
+  "name": "@ludorum/game-oddsandevens",
   "repository": {
     "type": "git",
     "url": "http://github.com/LeonardoVal/ludorum.js"
   },
-  "dependencies": {
-    "@ludorum/core": "*"
-  },
-  "devDependencies": {
-    "@creatartis/creatartis-build": "0.3.0-alpha",
-    "@creatartis/randomness": "0.2.0-alpha",
-    "@ludorum/players-minimax": "*",
-    "@ludorum/players-montecarlo": "*",
-    "sermat": "^0.1.1"
-  },
   "scripts": {
-    "build": "npx creatartis-build lint build test doc",
-    "deps:verdaccio": "rm -rf node_modules package-lock.json && npm i --registry http://localhost:4873",
-    "doc": "npx creatartis-build doc",
-    "lint": "npx creatartis-build lint",
-    "playtest": "node test/scripts/playtester-oddsandevens.js ui random",
-    "release": "npm run build && npx creatartis-build release",
-    "release:verdaccio": "npm run build && npx creatartis-build release:verdaccio",
-    "rerelease:verdaccio": "npm run build && npx creatartis-build rerelease:verdaccio",
-    "test": "npx creatartis-build lint test"
-  }
+    "build": "vite build",
+    "doc": "jsdoc README.md src/ -c jsdoc.config.js",
+    "lint": "eslint .",
+    "playtest": "node test/scripts/playtest-oddsandevens.mjs",
+    "test": "vitest"
+  },
+  "version": "0.1.0"
 }

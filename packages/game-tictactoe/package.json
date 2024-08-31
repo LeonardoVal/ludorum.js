@@ -38,7 +38,7 @@
     "build": "vite build",
     "doc": "jsdoc README.md src/ -c jsdoc.config.js",
     "lint": "eslint .",
-    "playtest": "node test/scripts/playtester-tictactoe.js ui minimax",
+    "playtest": "node test/scripts/playtest-tictactoe.mjs",
     "test": "vitest"
   },
   "version": "0.1.0"

@@ -1,9 +1,9 @@
 import readline from 'node:readline';
-import { games, Match, players, utils } from '../../dist/core.es.mjs';
+import { Match, players, utils } from '@ludorum/core';
+import { OddsAndEvens } from '../../dist/game-oddsandevens.es.mjs';
 
-const { Choose2Win } = games;
+const { NodeConsoleInterface } = utils;
 const { RandomPlayer } = players;
-const { ansiBold, NodeConsoleInterface } = utils;
 
 async function main() {
   const ui = new NodeConsoleInterface({
@@ -11,17 +11,20 @@ async function main() {
       return action;
     },
     renderGame(game) {
-      return `Turns left: ${game.isFinished ? `none` : game.turns}.`;
+      const { turns, points, roles } = game;
+      return `  ${turns} left. ${roles
+        .map((role) => `${role} has ${points[role]} points.`)
+        .join(' ')}`;
     },
   });
   await ui.init(readline);
   return (
     new Match({
-      game: new Choose2Win(),
+      game: new OddsAndEvens(),
       players: [await ui.player(), new RandomPlayer()],
       spectators: [ui.spectator()],
     })
   ).playthrough();
 } // function main
 
-main().then(() => process.exit(0));
+main();

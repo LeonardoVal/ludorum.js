@@ -7,7 +7,7 @@ const { ansiBold, NodeConsoleInterface } = utils;
 async function main() {
   const ui = new NodeConsoleInterface({
     renderHaps(haps) {
-      return `${String.fromCharCode(9855 + haps.die)}${haps.die}`;
+      return `${String.fromCharCode(9855 + haps.die)} ${haps.die}`;
     },
     renderGame(game) {
       const { goal, points } = game;

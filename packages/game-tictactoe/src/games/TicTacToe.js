@@ -8,17 +8,6 @@ const EMPTY_BOARD = '_________';
 const WIN_X = /^(?:XXX.{6}|...XXX...|.{6}XXX|(?:X..){3}|(?:.X.){3}|(?:..X){3}|X...X...X|..X.X.X..)$/;
 const WIN_O = /^(?:OOO.{6}|...OOO...|.{6}OOO|(?:O..){3}|(?:.O.){3}|(?:..O){3}|O...O...O|..O.O.O..)$/;
 
-const MAPPINGS = [
-  //'012345678'     original
-    '210543876', // horizontal symmetry
-    '678345012', // vertical symmetry
-    '630741852', // 90º clockwise
-    '258147036', // 90º counter-clockwise 
-    '876543210', // 180º
-    '852741630', // 90º counter-clockwise + horizontal symmetry
-    '036147258', // 90º clockwise + horizontal symmetry
-  ].map((str) => [...str].map((n) => +n));
-
 /** Implementation of the traditional [Tic-Tac-Toe game](http://en.wikipedia.org/wiki/Tictactoe).
 */
 export class TicTacToe extends Game {
@@ -104,10 +93,20 @@ export class TicTacToe extends Game {
    * both) boards. This method returns a sorted list of equivalent of boards
    * (_strings_). There can be 7 equivalent states for every game state.
    *
+   * @param {string} board
    * @yieds {string}
   */
-  * equivalent() {
-    const { board } = this;
+  static* equivalent(board) {
+    const MAPPINGS = [
+    //'012345678'     original
+      '210543876', // horizontal symmetry
+      '678345012', // vertical symmetry
+      '630741852', // 90º clockwise
+      '258147036', // 90º counter-clockwise 
+      '876543210', // 180º
+      '852741630', // 90º counter-clockwise + horizontal symmetry
+      '036147258', // 90º clockwise + horizontal symmetry
+    ].map((str) => [...str].map((n) => +n));
     for (const mapping of MAPPINGS) {
       const newBoard = mapping.map((i) => board.charAt(i)).join('');
       yield newBoard;

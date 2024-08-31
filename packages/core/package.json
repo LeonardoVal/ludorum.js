@@ -37,8 +37,8 @@
     "build": "vite build",
     "doc": "jsdoc README.md src/ -c jsdoc.config.js",
     "lint": "eslint .",
-    "playtest:bet": "node test/scripts/playtester-bet.mjs",
-    "playtest:choose2win": "node test/scripts/playtester-choose2win.mjs",
+    "playtest:bet": "node test/scripts/playtest-bet.mjs",
+    "playtest:choose2win": "node test/scripts/playtest-choose2win.mjs",
     "test": "vitest"
   },
   "version": "0.3.0"
