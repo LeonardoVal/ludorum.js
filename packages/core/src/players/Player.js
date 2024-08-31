@@ -104,13 +104,15 @@ export class Player {
   */
   static async decisions(game, players) {
     const { actions } = game;
-    return Object.fromEntries(await Promise.all(Object.entries(actions)
-      .filter(([, roleActions]) => roleActions && roleActions.length > 0)
-      .map(async ([role]) => {
-        const player = players[role];
-        return [role, await player.decision(game.view(role), role)];
-      }),
-    ));
+    return actions && Object.fromEntries(
+      await Promise.all(Object.entries(actions)
+        .filter(([, roleActions]) => roleActions && roleActions.length > 0)
+        .map(async ([role]) => {
+          const player = players[role];
+          return [role, await player.decision(game.view(role), role)];
+        }),
+      ),
+    );
   }
 
 } // class Player.

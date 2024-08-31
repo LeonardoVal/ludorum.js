@@ -3,7 +3,7 @@ import { exec } from './script-utils.mjs';
 
 const PACKAGES = [
   'core',
-  'game-tictactoe',
+  'game-oddsandevens', 'game-pig', 'game-tictactoe', 'game-toadsandfrogs',
   'players-minimax',
 ];
 

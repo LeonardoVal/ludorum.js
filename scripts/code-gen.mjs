@@ -135,10 +135,9 @@ export { ${gameName} } from './games/${gameName}';
 function gamePlaytester(gameName) {
   return `\
 import readline from 'node:readline';
-import { Match, utils } from '@ludorum/core';
-import { ${gameName} } from '../dist/${gamePackageName(gameName)}.es.mjs';
+import { Match, RandomPlayer, utils } from '@ludorum/core';
+import { ${gameName} } from '../../dist/${gamePackageName(gameName)}.es.mjs';
 
-const { ${gameName} } = games;
 const { ansiBold, NodeConsoleInterface } = utils;
 
 async function main() {
@@ -154,7 +153,7 @@ async function main() {
   return (
     new Match({
       game: new ${gameName}(),
-      players: [await ui.player()],
+      players: [await ui.player(), new RandomPlayer()],
       spectators: [ui.spectator()],
     })
   ).playthrough();
@@ -169,6 +168,8 @@ function gameSpecs(gameName) {
 import { describe, expect, expectTypeOf, test } from 'vitest';
 import { TestSpectator } from '@ludorum/core';
 import { ${gameName} } from '../../src/index';
+
+const MATCH_COUNT = 15;
 
 describe('${gameName}', () => {
   test('has the expected definitions', () => {

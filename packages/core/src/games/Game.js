@@ -362,7 +362,7 @@ export class Game {
    * @returns {string}
   */
   toString() {
-    throw new Error(`${this.constructor.name}.toString is not defined!`);
+    return `${this.name}${JSON.stringify(this)}`;
   }
 
   /** TODO `serialized(game)` builds a serialized version of a simultaneous game,

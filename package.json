@@ -15,6 +15,9 @@
   "workspaces": [
     "packages/common-dev",
     "packages/core",
-    "packages/game-tictactoe"
+    "packages/game-oddsandevens",
+    "packages/game-tictactoe",
+    "packages/game-toadsandfrogs",
+    "packages/players-minimax"
   ]
 }

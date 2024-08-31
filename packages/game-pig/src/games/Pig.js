@@ -1,4 +1,4 @@
-import { Game, dice } from '@ludorum/core';
+import { Game, randomness } from '@ludorum/core';
 
 const ROLE_ONE = 'One';
 const ROLE_TWO = 'Two';
@@ -9,164 +9,79 @@ const ACTIONS = { HOLD: 'hold', ROLL: 'roll' };
  * a simple dice betting game, used as an example of a game with random
  * variables.
 */
-class Pig extends Game {
-  /** @inheritdoc */
-  static get name() {
-    return 'Pig';
+export class Pig extends Game {
+  /** TODO */
+  static meta = {
+    description: `Implementation of Pig.`,
+    isDeterministic: false,
+    name: 'Pig',
+    roles: [ROLE_ONE, ROLE_TWO],
   }
 
-  /** Builds a new Pig game state:
-   *
-   * @param {object} [args]
-   * @param {string} [args.activeRole='One'] - The active player.
-   * @param {number} [args.goal=100] - The amount of points a player has to
-   *   reach to win the game.
-   * @param {object} [args.scores={One:0,Two:0}] - The scores so far in the
-   *   match.
-   * @param {number[]} [args.rolls=[]] - The rolls the active player has made in
-   *   his turn.
-   * @param {boolean} [args.rolling=false] - A die roll is pending.
+  /** The active player can either hold and pass the turn, or roll. A Pig match
+   * finishes when one player reaches or passes the goal score. The result for
+   * each player is the difference between its score and its opponent's score.
   */
-  constructor(args = null) {
-    const {
-      activeRole = 0, goal, scores, rolls, rolling,
-    } = args || {};
-    super({ activeRoles: [activeRole] });
-    this
-      ._prop('goal', goal, 'number', 100)
-      ._prop('scores', scores, 'object', { ...DEFAULT_SCORE })
-      ._prop('rolls', rolls, Array, [])
-      ._prop('rolling', rolling, 'boolean', false);
+  init(state = null) {
+    const { roles } = this;
+    const activeRole = state?.activeRole ?? roles[0];
+    const goal = state?.goal ?? 100;
+    const scores = state?.scores ?? { ...DEFAULT_SCORE };
+    const rolls = state?.rolls ?? [];
+    const rolling = state?.rolling ?? false;
+
+    const rollsSum = rolls.reduce((sum, n) => sum + n, 0);
+    const score1 = scores[ROLE_ONE];
+    const score2 = scores[ROLE_TWO];
+    const isFinished = score1 >= goal || score2 >= goal;
+    const result = !isFinished ? null
+      : this.zeroSumResult(ROLE_ONE, Math.sign(score1 - score2));
+    const actions = isFinished || rolling ? null
+      : { [activeRole]: [
+        ...(scores[activeRole] + rollsSum < goal ? [ACTIONS.ROLL] : []),
+        ...(rolls.length > 0 ? [ACTIONS.HOLD] : []),
+      ],
+    };
+    const haps = isFinished || !rolling ? null : { die: randomness.dice.D6 };
+    super.init({
+      actions, activeRole, goal, haps, isFinished, result, rolling, rolls, scores,
+    });
   }
 
-  /** Since it involves dice, Pig is not a deterministic game.
-   * @property {boolean}
-  */
-  get isDeterministic() {
-    return false;
-  }
-
-  /** Players for Pig are named `One`, `Two`.
-   *
-   * @property {string[]}
-  */
-  get roles() {
-    return [ROLE_ONE, ROLE_TWO];
-  }
-
-  /** The sum of the current rolls.
-   *
-   * @property {number}
-  */
-  get rollsSum() {
-    const { rolls } = this;
-    return rolls.reduce((sum, n) => sum + n, 0);
-  }
-
-  /** The active player can either hold and pass the turn, or roll.
-   *
-   * @property {object}
-  */
-  get actions() {
-    const {
-      activeRole, goal, result, rolling, rolls, rollsSum, scores,
-    } = this;
-    if (!result && !rolling) {
-      const moves = [];
-      if (scores[activeRole] + rollsSum < goal) {
-        moves.push(ACTIONS.ROLL);
-      }
-      if (rolls.length > 0) {
-        moves.push(ACTIONS.HOLD);
-      }
-      return { [activeRole]: moves };
-    }
-    return null;
-  }
-
-  /** If a roll is pending, a standard (six-sided) die is the aleatory.
-   *
-   * @property {object}
-  */
-  get aleatories() {
-    const { rolling } = this;
+  /** TODO */
+  nextState(actions, haps) {
+    const { activeRole, goal, roles, rolling, rolls, scores } = this;
+    const opponent = roles[(roles.indexOf(activeRole) + 1) % 2];
+    const state = {
+      activeRole, goal,
+      rolls: [...rolls],
+      scores: { ...scores },
+      rolling: false,
+    };
     if (rolling) {
-      return { die: dice.D6 };
-    }
-    return null;
-  }
-
-  /** A Pig match finishes when one player reaches or passes the goal score. The
-   * result for each player is the difference between its score and its
-   * opponent's score.
-   *
-   * @property {object}
-  */
-  get result() {
-    const { scores, goal, rolling } = this;
-    if (!rolling) {
-      const score1 = scores[ROLE_ONE];
-      const score2 = scores[ROLE_TWO];
-      if (score1 >= goal || score2 >= goal) {
-        const r = Math.min(goal, score1) - Math.min(goal, score2);
-        return { [ROLE_ONE]: r, [ROLE_TWO]: -r };
-      }
-    }
-    return null;
-  }
-
-  /** The `resultBounds` for a Pig game are between -goal and +goal.
-   *
-   * @property {Array}
-  */
-  get resultBounds() {
-    return [-this.goal, +this.goal];
-  }
-
-  /** If the active player holds, it earns the sum of the rolls made so in its
-   * turn. If the move is roll, a die is rolled. A roll of 1 stops the turn and
-   * the active player earns no points. A roll of 2 or up, makes the turn
-   * continue.
-   *
-   * @param {object} actions
-   * @param {object} haps
-   * @return {Game}
-  */
-  perform(actions, haps) {
-    const {
-      activeRole, scores, rolling, rolls, rollsSum,
-    } = this;
-    const opponent = this.opponent();
-    if (rolling) {
-      const rollValue = haps.die; // TODO Check value.
+      const rollValue = haps.die;
       if (rollValue === 1) {
-        this.rolls = [];
-        this.activateRoles(opponent);
+        state.rolls = [];
+        state.activeRole = opponent;
       } else {
-        rolls.push(rollValue);
+        state.rolls.push(rollValue);
       }
-      this.rolling = false;
     } else {
       const action = actions?.[activeRole];
       switch (action) {
         case ACTIONS.HOLD: {
-          scores[activeRole] += rollsSum;
-          this.rolls = [];
-          this.activateRoles(opponent);
+          state.scores[activeRole] += rolls.reduce((s, r) => s + r, 0);
+          state.rolls = [];
+          state.activeRole = opponent;
           break;
         }
         case ACTIONS.ROLL: {
-          this.rolling = true;
+          state.rolling = true;
           break;
         }
         default: throw new Error(`Invalid action ${action} for role ${activeRole} at ${this}!`);
       }
     }
+    return state;
   }
-} // class Pig.
-
-/** Serialization and materialization using Sermat.
-*/
-Pig.defineSERMAT('activeRole goal rolls scores rolling');
-
-export default Pig;
+} // class Pig

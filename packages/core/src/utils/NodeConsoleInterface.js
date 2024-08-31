@@ -1,3 +1,4 @@
+/* global process */
 import { defProps } from './objects';
 import { randomChoice } from '../randomness';
 import { UserInterfacePlayer } from '../players/UserInterfacePlayer';
@@ -59,7 +60,7 @@ export class NodeConsoleInterface {
 
   /** TODO */
   renderHaps(haps, _game) {
-    return JSON.stringify(haps);
+    return `${ansiBold('Nature')} happened as ${JSON.stringify(haps)}`;
   }
 
   /** TODO */
@@ -111,8 +112,7 @@ export class NodeConsoleInterface {
       ));
     }
     if (haps) { 
-      write(`- ${ansiBold('Nature')} happened as ${
-        this.renderHaps(haps, game)}.\n`);
+      write(`- ${this.renderHaps(haps, game)}.\n`);
     }
     this.readLineInterface.write(`${this.renderGame(game)}\n`);
   }

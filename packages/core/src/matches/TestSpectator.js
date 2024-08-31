@@ -86,18 +86,23 @@ export class TestSpectator extends Spectator {
   /** TODO */
   checkGameActions(game) {
     const { expect } = this;
-    const { actions, roles, constructor: gameClass } = game;
+    const { actions, haps, roles, constructor: gameClass } = game;
     let activeCount = 0;
-    this.checkObject(actions, null, (roleActions, role) => {
-      expect(roles).toContain(role);
-      if (roleActions) {
-        activeCount += 1;
-        this.checkArray(roleActions, (roleAction) => {
-          const roleActionJSON = JSON.stringify(roleAction);
-          expect(JSON.parse(roleActionJSON)).toEqual(roleAction);
-        });
-      }
-    });
+    if (actions) {
+      this.checkObject(actions, null, (roleActions, role) => {
+        expect(roles).toContain(role);
+        if (roleActions) {
+          activeCount += 1;
+          this.checkArray(roleActions, (roleAction) => {
+            const roleActionJSON = JSON.stringify(roleAction);
+            expect(JSON.parse(roleActionJSON)).toEqual(roleAction);
+          });
+        }
+      });
+    } else {
+      expect(actions).toBeNull();
+      expect(haps).toBeTruthy();
+    }
     if (activeCount > 1) {
       expect(gameClass.isSimultaneous).toBe(true);
     }
@@ -107,7 +112,7 @@ export class TestSpectator extends Spectator {
   /** TODO */
   checkGameHaps(game) {
     const { expect } = this;
-    const { haps, constructor: gameClass } = game;
+    const { actions, haps, constructor: gameClass } = game;
     if (haps) {
       expect(gameClass.isDeterministic).toBe(false);
       this.checkObject(haps, null, (hapDistribution) => {
@@ -123,6 +128,9 @@ export class TestSpectator extends Spectator {
         expect(probabilitySum).toBeCloseTo(1);
       });
       return Object.keys(haps).length;
+    } else {
+      expect(haps).toBeNull();
+      expect(actions).toBeTruthy();
     }
     return 0;
   }
@@ -149,25 +157,30 @@ export class TestSpectator extends Spectator {
   checkActions(game, actions) {
     const { expect } = this;
     const { actions: gameActions } = game;
-    this.checkObject(gameActions, null, (roleActions, role) => {
-      const roleChoice = actions[role];
-      expect(roleChoice).toBeDefined();
-      expect(roleActions).toContain(roleChoice);
-    });
+    if (actions) {
+      expect(gameActions).toBeTruthy();
+      this.checkObject(gameActions, null, (roleActions, role) => {
+        const roleChoice = actions[role];
+        expect(roleChoice).toBeDefined();
+        expect(roleActions).toContain(roleChoice);  
+      });
+    } else {
+      expect(gameActions).toBeNull();
+    }
   }
 
   /** TODO */
   checkHaps(game, haps) {
     const { expect } = this;
     const { haps: gameHaps } = game;
-    if (!haps) {
-      expect(gameHaps).toBeFalsy();
-    } else {
+    if (haps) {
       this.checkObject(gameHaps, null, (hapDistribution, hapName) => {
         const hapValue = haps[hapName];
         expect(hapValue).toBeDefined();
         expect(hapDistribution.map(([value,]) => value)).toContain(hapValue);
       });
+    } else {
+      expect(gameHaps).toBeNull();
     }
   }
 
