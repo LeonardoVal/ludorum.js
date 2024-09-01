@@ -61,11 +61,9 @@ export class Predefined extends Game {
   }
 
   /** @inheritdoc */
-  nextState(actions, haps) {
-    const { activeRole, roles } = this;
-    this.confirmTransition(actions, haps);
+  nextState(_actions, _haps) {
     return {
-      activeRole: roles[(roles.indexOf(activeRole) + 1) % roles.length],
+      activeRole: this.nextRole(this.activeRole),
       height: this.height - 1,
       width: this.width,
       winner: this.winner,

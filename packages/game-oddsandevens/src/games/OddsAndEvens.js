@@ -56,7 +56,6 @@ export class OddsAndEvens extends Game {
    * @return {Game}
   */
   nextState(actions, haps) {
-    this.confirmTransition(actions, haps);
     const { points, turns } = this;
     const { [ROLE_EVENS]: moveEvens, [ROLE_ODDS]: moveOdds } = actions;
     const newPoints = [...points];

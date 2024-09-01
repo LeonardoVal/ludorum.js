@@ -1,4 +1,4 @@
-import { players } from '@ludorum/core';
+import { HeuristicPlayer } from '@ludorum/core';
 
 /** Automatic players based on the [MaxN](http://dl.acm.org/citation.cfm?id=2887795)
  * algorithm, a MiniMax variant for games of more than two players.
@@ -6,7 +6,7 @@ import { players } from '@ludorum/core';
  * @class
  * @extends HeuristicPlayer
 */
-export class MaxNPlayer extends players.HeuristicPlayer {
+export class MaxNPlayer extends HeuristicPlayer {
   /** Besides the parameters of every `HeuristicPlayer`, an `horizon` for the
    * search may be specified (3 plies by default).
    *

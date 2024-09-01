@@ -3,7 +3,8 @@ import { Player, RandomPlayer } from "../players";
 import { defProps } from "../utils";
 import { Spectator } from "./Spectator";
 
-/** TODO
+/** An spectator that performs unit tests on a game implementation while it is
+ * played.
  * 
  * @class
  */
@@ -47,14 +48,26 @@ export class TestSpectator extends Spectator {
 
 // Checks ______________________________________________________________________
 
-  /** TODO */
+  /** Checks if `array` is really an `Array` and calls `eachValue` for each
+   * value.
+   * 
+   * @param {any} array
+   * @param {function} eachValue
+  */
   checkArray(array, eachValue) {
     const { expect } = this;
     expect(Array.isArray(array)).toBe(true);
     array.forEach(eachValue);
   }
 
-  /** TODO */
+  /** Checks if `obj` is an object (and not null), if `obj`'s keys are the
+   * same as `keys` (if given) and calls `eachValue` for each key-value pair
+   * (if given).
+   * 
+   * @param {any} obj
+   * @param {string[] | null} [key=null]
+   * @param {function | null} [eachValue=null]
+  */
   checkObject(obj, keys, eachValue = null) {
     const { expect } = this;
     expect(obj).toBeTypeOf('object');
@@ -103,8 +116,11 @@ export class TestSpectator extends Spectator {
       expect(actions).toBeNull();
       expect(haps).toBeTruthy();
     }
-    if (activeCount > 1) {
-      expect(gameClass.isSimultaneous).toBe(true);
+    expect(gameClass.isSimultaneous).toBe(activeCount > 1);
+    if (!gameClass.isSimultaneous) {
+      expect(game.activeRoles).toEqual([game.activeRole]);
+    } else if (activeCount > 1) {
+      expect(() => game.activeRole).toThrow();
     }
     return activeCount;
   }
@@ -149,7 +165,6 @@ export class TestSpectator extends Spectator {
     if (gameClass.isZeroSum) {
       expect(resultSum).toBeCloseTo(0);
     }
-    // TODO Check normalizedResult & scores
     return resultSum;
   }
 

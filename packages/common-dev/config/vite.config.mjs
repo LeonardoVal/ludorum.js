@@ -34,6 +34,14 @@ export function viteConfig(options) {
       minify: 'terser',
       rollupOptions: {
         external: Object.keys(dependencies ?? {}),
+        output: {
+          globals: Object.fromEntries(
+            Object.keys(dependencies ?? {}).map((depName) => {
+              const match = /^@(.*?)\/(.*)$/.exec(depName);
+              return [depName, match ? `${match[1]}_${match[2]}` : depName];
+            }),
+          ),
+        },
         plugins: [
           terser({
             keep_classnames: true,
@@ -53,10 +61,7 @@ export function viteConfig(options) {
           'src/**/*.{js,mjs}'
         ],
         provider: 'istanbul',
-        reporter: [
-          'html',
-          'text',
-        ],
+        reporter: ['html', 'text'],
         reportsDirectory: '.vite/vitest/coverage',
       },
       watch: false,

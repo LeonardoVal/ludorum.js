@@ -61,7 +61,6 @@ export class Bet extends Game {
    * @param {object} haps
   */
   nextState(actions, haps) {
-    this.confirmTransition(actions, haps);
     const { [ROLE]: bet } = actions;
     const { die: roll } = haps;
     return {

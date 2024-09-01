@@ -1,35 +1,38 @@
-import path from 'node:path';
-import { exec } from './script-utils.mjs';
+import nodePath from 'node:path';
+import { exec, readJSON, modulePaths } from './script-utils.mjs';
 
-const PACKAGES = [
-  'core',
-  'game-oddsandevens', 'game-pig', 'game-tictactoe', 'game-toadsandfrogs',
-  'players-minimax',
-];
+const { __dirname } = modulePaths(import.meta.url);
 
-async function runNpmScripts(filter, ...npmArgs) {
-  const cwd = process.cwd();
-  for (const pkg of PACKAGES) {
-    if (!filter || pkg.includes(filter)) {
-      await exec(path.resolve(cwd, `./packages/${pkg}/`), 'npm', ...npmArgs);
+async function workspaceMap(fn) {
+  const mainPkg = await readJSON(nodePath.resolve(__dirname, '../package.json'));
+  const result = [];
+  for (const workspace of mainPkg.workspaces) {
+    const workspacePath = nodePath.resolve(__dirname, '../', workspace);
+    const workspacePkg = await readJSON(
+      nodePath.resolve(workspacePath, './package.json')
+    );
+    const workspaceResult = await fn(workspacePkg, workspacePath);
+    if (workspaceResult !== undefined) {
+      result.push();
     }
   }
-} // function test
+  return result;
+} // function workspaceMap
 
 // Main ________________________________________________________________________
 
 async function main() {
   for (const arg of process.argv.slice(2)) {
-    const parse = /(\w+)(?::(\w+))?/.exec(arg);
-    switch (parse?.[1]) {
-      case 'build': await runNpmScripts(parse[2], 'run', 'build'); break;
-      case 'test': await runNpmScripts(parse[2], 'test'); break;
-      default: {
-        const errorMessage = `Unknown option ${arg}!`;
-        console.error(errorMessage);
-        throw new Error(errorMessage);
+    const [scriptName, pkgFilter] = arg.split(':');
+    await workspaceMap(async (pkg, path) => {
+      if (pkg.name.includes(pkgFilter ?? '')) {
+        if (pkg.scripts[scriptName]) {
+          await exec(path, 'npm', 'run', scriptName);
+          return pkg.name;
+        }
+        console.info(`Package ${pkg.name} has not a ${scriptName} script.`);
       }
-    }
+    });    
   }
 } // function main
 

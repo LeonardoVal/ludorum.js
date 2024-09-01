@@ -1,11 +1,11 @@
-import { players, Game, GameTree } from '@ludorum/core';
+import { HeuristicPlayer, Game, GameTree } from '@ludorum/core';
 
 /** Automatic players based on pure MiniMax.
  *
  * @class
  * @extends HeuristicPlayer
 */
-export class MiniMaxPlayer extends players.HeuristicPlayer {
+export class MiniMaxPlayer extends HeuristicPlayer {
   /** @inheritdoc */
   static get name() {
     return 'MiniMaxPlayer';

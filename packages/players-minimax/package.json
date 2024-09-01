@@ -37,7 +37,6 @@
   },
   "scripts": {
     "build": "vite build",
-    "doc": "jsdoc README.md src/ -c jsdoc.config.js",
     "lint": "eslint .",
     "test": "vitest"
   },

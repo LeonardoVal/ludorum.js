@@ -32,17 +32,17 @@ export class Choose2Win extends Game {
    * @param {string} [state.winner=null]
   */
   init(state = null) {
-    const activeRole = +(state?.activeRole ?? 0);
+    const { roles } = this;
+    const activeRole = state?.activeRole ?? roles[0];
     const turns = state?.turns ?? Infinity;
     const winner = state?.winner ?? null;
-    const { roles } = this;
 
     const isFinished = winner !== null || turns < 1;
     const actions = isFinished ? null : {
-      [roles[activeRole]]: [...ACTION_VALUES],
+      [activeRole]: [...ACTION_VALUES],
     };
-    const result = !isFinished ? null : mapObject(roles, (_role, roleIndex) => (
-      winner === null ? 0 : (winner === roleIndex) * 2 - 1
+    const result = !isFinished ? null : mapObject(roles, (role) => (
+      winner === null ? 0 : (winner === role) * 2 - 1
     ));
 
     super.init({ actions, activeRole, isFinished, result, turns, winner });
@@ -51,12 +51,10 @@ export class Choose2Win extends Game {
   /** If a player moves to win or lose, a final game state is returned. Else the
    * game goes on.
   */
-  nextState(actions, haps) {
-    this.confirmTransition(actions, haps);
-    const { roles } = this;
+  nextState(actions, _haps) {
     let { activeRole, turns, winner } = this;
-    const opponent = (activeRole + 1) % roles.length;
-    const action = actions[roles[activeRole]];
+    const opponent = this.nextRole(activeRole);
+    const action = actions[activeRole];
     switch (action) {
       case ACTIONS.WIN: winner = activeRole; break;
       case ACTIONS.LOSE: winner = opponent; break;

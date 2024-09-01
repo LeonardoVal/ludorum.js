@@ -1,9 +1,9 @@
-import { AlphaBetaPlayer } from './players/AlphaBetaPlayer';
-import { MaxNPlayer } from './players/MaxNPlayer';
-import { MiniMaxPlayer } from './players/MiniMaxPlayer';
-
-export const players = {
+export {
   AlphaBetaPlayer,
+} from './players/AlphaBetaPlayer';
+export {
   MaxNPlayer,
+} from './players/MaxNPlayer';
+export {
   MiniMaxPlayer,
-};
+} from './players/MiniMaxPlayer';

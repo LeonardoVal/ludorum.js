@@ -220,20 +220,42 @@ export class Game {
 
 // Actions & haps ______________________________________________________________
 
-  /** TODO */
+  /** Roles which currently have actions.
+   * 
+   * @property {string[]}
+  */
   get activeRoles() {
     const { actions } = this;
-    return Object.keys(actions ?? {})
+    return !actions ? [] : Object.keys(actions)
       .filter((role) => actions[role]?.length > 0);
   }
 
-  /** TODO */
+  /** Role which currently has actions. If there is more than one, an exception
+   * is raised.
+   * 
+   * @property {string}
+  */
   get activeRole() {
     const { activeRoles } = this;
     if (activeRoles.length !== 1) {
       throw new Error(`There is no single active role in game ${this}!`);
     }
     return activeRoles[0];
+  }
+
+  /** The role following the given one. By default assumes the order of the
+   * `roles` property.
+   * 
+   * @param {string} role
+   * @returns {string}
+  */
+  nextRole(role) {
+    const { roles } = this;
+    const roleIndex = roles.indexOf(role);
+    if (roleIndex < 0) {
+      throw new Error(`Invalid role ${role} for game ${this}!`);
+    }
+    return roles[(roleIndex + 1) % roles.length];
   }
 
   /** Confirms the given actions and haps are valid, and throws an error if any

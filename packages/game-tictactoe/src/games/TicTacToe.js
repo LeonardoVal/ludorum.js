@@ -63,7 +63,6 @@ export class TicTacToe extends Game {
    * @param {Record<string, number>} actions
   */
   nextState(actions, haps) {
-    this.confirmTransition(actions, haps);
     const { activeRole, board } = this;
     const { [activeRole]: position } = actions;
     const boardArray = [...board];

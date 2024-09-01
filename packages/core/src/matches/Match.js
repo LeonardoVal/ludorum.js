@@ -70,6 +70,7 @@ export class Match {
       const actions = await Player.decisions(game, this.players);
       const haps = this.randomHaps(game);
       const previous = game;
+      game.confirmTransition(actions, haps); // FIXME Put this behind a flag.
       game = game.next(actions, haps);
       ply++;
       step = { actions, haps, next: game, ply, previous };

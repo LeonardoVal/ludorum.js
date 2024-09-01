@@ -53,8 +53,7 @@ export class ToadsAndFrogs extends Game {
   }
 
   /** TODO */
-  nextState(actions, haps) {
-    this.confirmTransition(actions, haps);
+  nextState(actions, _haps) {
     const { activeRole, board, roles } = this;
     const move = actions[activeRole];
     let newBoard = null;

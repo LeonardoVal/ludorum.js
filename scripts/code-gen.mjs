@@ -30,8 +30,8 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.**
 `
 } // function license
 
-function packageJson(pkgName) {
-  return JSON.stringify({
+function packageJson(pkgName, gameName = null) {
+  const pkg = {
     author: {
       email: 'leonardo.val@creatartis.com',
       name: 'Leonardo Val'
@@ -62,12 +62,15 @@ function packageJson(pkgName) {
     },
     scripts: {
       build: 'vite build',
-      doc: 'jsdoc README.md src/ -c jsdoc.config.js',
       lint: 'eslint .',
       test: 'vitest'
     },
     version: '0.1.0'
-  }, null, '  ');
+  };
+  if (gameName) {
+    pkg.scripts.playtest = `node test/scripts/playtest-${gameName.toLowerCase()}.mjs`;
+  }
+  return JSON.stringify(pkg, null, '  ');
 } // function packageJson
 
 function readme(pkgName) {
@@ -76,6 +79,8 @@ function readme(pkgName) {
 
 Ludorum is a board game framework. It is not focused on graphics or user
 interfaces, but on artificial players design, implementation and testing.
+
+??
 
 ## License
 
@@ -93,6 +98,18 @@ export default defineConfig(
 ); // defineConfig
 `;
 } // function viteConfig
+
+function dummySpecs() {
+  return `\
+import { describe, expect, test } from 'vitest';
+
+describe(??, () => {
+  test(??, () => {
+    expect(true).toBe(false);
+  });
+}); // describe ?? 
+`;
+} // function dummySpecs
 
 // Games _______________________________________________________________________
 
@@ -142,6 +159,9 @@ const { ansiBold, NodeConsoleInterface } = utils;
 
 async function main() {
   const ui = new NodeConsoleInterface({
+    renderAction(haps) {
+      return ??;
+    },
     renderHaps(haps) {
       return ??;
     },
@@ -189,20 +209,26 @@ describe('${gameName}', () => {
 
 // Packages ____________________________________________________________________
 
-async function genPackage(pkgName) {
+async function genPackage(pkgName, gameName = null) {
   const pkgPath = path.resolve(
     path.dirname(url.fileURLToPath(import.meta.url)), `../packages/${pkgName}`,
   );
   const resPath = (relPath) => path.resolve(pkgPath, relPath);
   await fs.mkdir(pkgPath);
   await fs.writeFile(resPath('./LICENSE.md'), license(pkgName));
-  await fs.writeFile(resPath('./package.json'), packageJson(pkgName));
+  await fs.writeFile(resPath('./package.json'), packageJson(pkgName, gameName));
   await fs.writeFile(resPath('./README.md'), readme(pkgName));
   await fs.writeFile(resPath('./vite.config.mjs'), viteConfig());
 
   await fs.mkdir(resPath('./src'));
   await fs.mkdir(resPath('./test'));
   await fs.mkdir(resPath('./test/specs'));
+  if (!gameName) {
+    await fs.writeFile(resPath(`./src/index.js`), '//TODO index\n');
+    await fs.writeFile(
+      resPath(`./test/specs/${pkgName}.test.js`), dummySpecs(),
+    );
+  }
 } // function genGamePackage
 
 async function genGamePackage(gameName) {

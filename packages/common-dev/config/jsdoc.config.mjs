@@ -1,3 +1,5 @@
+// FIXME Resolve documentation generation for all packages.
+
 export default function jsdocConfig() {
   return {
     opts: {
