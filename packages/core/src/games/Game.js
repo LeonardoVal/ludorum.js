@@ -1,10 +1,10 @@
-import { defProps } from '../utils';
+import { BaseClass } from '../utils';
 
 /** The class `Game` is the base type for all games.
  *
  * @class
 */
-export class Game {
+export class Game extends BaseClass {
   /** Every game class constructor takes an object argument. All data relevant
    * to the game state must be included there. The object should be able to be
    * constructed in spite of some or all arguments missing.
@@ -12,6 +12,7 @@ export class Game {
    * @param {state} [args=null]
   */
   constructor(state = null) {
+    super();
     this.init(state);
   }
 
@@ -23,7 +24,7 @@ export class Game {
    * @returns {Game} This object.
   */
   init(state) {
-    defProps(this, state, { configurable: true });
+    this.__props(state, { configurable: true });
   }
 
   /** The game `roles` are specified in an array of names (strings). Players can
@@ -50,7 +51,7 @@ export class Game {
    *   }
   */
   get actions() {
-    throw new Error(`${this.constructor.name}.actions is not defined!`);
+    return this.__undefined(`${this.constructor.name}.actions`);
   }
 
   /** The game's `haps` are the random variables that may affect the game, e.g.
@@ -75,7 +76,7 @@ export class Game {
    *   { Player1: -1, Player2: +1 }
   */
   get result() {
-    throw new Error(`${this.constructor.name}.result is not defined!`);
+    return this.__undefined(`${this.constructor.name}.result`);
   }
 
   /** Calculates the state for the next game, when applying a set of actions and
@@ -89,7 +90,7 @@ export class Game {
    * @returns {Record<string, unknown>} Game state data.
   */
   nextState(_actions, _haps) {
-    throw new Error(`${this.constructor.name}.nextState() is not defined!`);
+    return this.__undefined(`${this.constructor.name}.nextState`);
   }
 
   /** Updates this game object state with the next state.
@@ -158,7 +159,7 @@ export class Game {
    * @property {string[]} meta.roles - 
   */
   static get meta() {
-    throw new Error(`${this.name}.meta is not defined!`);
+    return this.__undefined(`${this.name}.meta`);
   }
 
   /** A user readable game's description.
@@ -367,7 +368,7 @@ export class Game {
    * @property {string}
   */
   get identifier() {
-    throw new Error(`${this.constructor.name}.identifier is not defined!`);
+    return this.__undefined(`${this.constructor.name}.identifier`);
   }
 
   /** Returns a number array with values representing aspects of the game state.
@@ -376,7 +377,7 @@ export class Game {
    * @returns {number[]}
   */
   features(_role) {
-    throw new Error(`${this.constructor.name}.features is not defined!`);
+    return this.__undefined(`${this.constructor.name}.features`);
   }
 
   /** Returns a string representation of the game.

@@ -1,4 +1,4 @@
-import { defProps } from '../utils';
+import { BaseClass } from '../utils';
 import { randomWeightedChoice } from '../randomness';
 import { Player } from '../players/Player';
 import { Spectator } from './Spectator';
@@ -7,7 +7,7 @@ import { Spectator } from './Spectator';
  * 
  * @class
  */
-export class Match {
+export class Match extends BaseClass {
   /** TODO
    * 
    * @param {object} args
@@ -17,9 +17,10 @@ export class Match {
    * @param {Spectator[]} [args.spectators=[]]
   */
   constructor(args) {
+    super();
     const { game, rng } = args;
     const players = Player.participants(game, args.players);
-    defProps(this, {
+    this.__props({
       history: [{ start: game, players }],
       players,
       rng: rng ?? Math.random,

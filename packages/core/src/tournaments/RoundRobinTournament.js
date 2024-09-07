@@ -1,4 +1,3 @@
-import { defProps } from '../utils';
 import { permutations } from '../utils/iterables';
 import { Tournament } from './Tournament';
 
@@ -17,7 +16,7 @@ export class RoundRobinTournament extends Tournament {
   */
   constructor(args) {
     super(args);
-    defProps(this, {
+    this.__props({
       players: args.players,
       matchCount: args.matchCount ?? this.game.roles.length,
     });

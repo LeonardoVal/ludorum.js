@@ -1,3 +1,5 @@
+export { BaseClass } from './BaseClass';
+
 export {
   bests,
   permutations,
@@ -9,7 +11,6 @@ export {
 } from './NodeConsoleInterface';
 
 export {
-  defProps,
   mapObject,
 } from './objects';
 

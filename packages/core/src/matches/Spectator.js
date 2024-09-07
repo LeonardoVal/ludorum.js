@@ -1,16 +1,17 @@
-import { defProps } from "../utils";
+import { BaseClass } from "../utils";
 
 /** TODO
  * 
  * @class
  */
-export class Spectator {
+export class Spectator extends BaseClass {
   /** TODO
    * 
    * @param {object} args
    */
   constructor(args) {
-    defProps(this, {
+    super();
+    this.__props({
       matchBegin: args?.matchBegin,
       matchStep: args?.matchStep,
       matchEnd: args?.matchEnd,
@@ -40,7 +41,7 @@ export class Spectator {
    * @returns {void}
    */
   matchBegin(_args) {
-    throw new Error(`${this.constructor.name}.matchBegin is not defined!`);
+    return this.__undefined(`${this.constructor.name}.matchBegin`);
   }
 
   /** TODO
@@ -53,7 +54,7 @@ export class Spectator {
    * @returns {void}
    */
   matchStep(_args) {
-    throw new Error(`${this.constructor.name}.matchStep is not defined!`);
+    return this.__undefined(`${this.constructor.name}.matchStep`);
   }
 
   /** TODO
@@ -65,7 +66,7 @@ export class Spectator {
    * @returns {void}
    */
   matchEnd(_args) {
-    throw new Error(`${this.constructor.name}.matchEnd is not defined!`);
+    return this.__undefined(`${this.constructor.name}.matchEnd`);
   }
 
 } // class Spectator

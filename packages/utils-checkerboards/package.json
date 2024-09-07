@@ -1,42 +1,43 @@
 {
-  "name": "@ludorum/utils-checkerboards",
-  "description": "Board handling utilities for Ludorum",
-  "keywords": [
-    "board game",
-    "game"
-  ],
-  "version": "0.1.0-alpha",
-  "main": "dist/utils-checkerboards.js",
+  "author": {
+    "email": "leonardo.val@creatartis.com",
+    "name": "Leonardo Val"
+  },
+  "contributors": [],
+  "dependencies": {
+    "@ludorum/core": "^0.3.0"
+  },
+  "description": "utils-checkerboards for Ludorum.",
+  "devDependencies": {
+    "@ludorum/common-dev": "^1.0.0"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/utils-checkerboards.es.mjs",
+      "require": "./dist/utils-checkerboards.umd.js"
+    }
+  },
   "files": [
     "dist/",
     "LICENSE.md",
     "README.md"
   ],
-  "author": {
-    "name": "Leonardo Val",
-    "email": "leonardo.val@creatartis.com"
-  },
-  "homepage": "http://creatartis.com",
-  "contributors": [],
+  "keywords": [
+    "board game",
+    "game"
+  ],
   "license": "MIT",
+  "main": "./dist/utils-checkerboards.umd.js",
+  "module": "./dist/utils-checkerboards.es.js",
+  "name": "@ludorum/utils-checkerboards",
   "repository": {
     "type": "git",
     "url": "http://github.com/LeonardoVal/ludorum.js"
   },
-  "dependencies": {
-    "@ludorum/core": "*"
-  },
-  "devDependencies": {
-    "@creatartis/creatartis-build": "0.3.0-alpha"
-  },
   "scripts": {
-    "build": "npx creatartis-build lint build test doc",
-    "deps:verdaccio": "rm -rf node_modules package-lock.json && npm i --registry http://localhost:4873",
-    "doc": "npx creatartis-build doc",
-    "lint": "npx creatartis-build lint",
-    "release": "npm run build && npx creatartis-build release",
-    "release:verdaccio": "npm run build && npx creatartis-build release:verdaccio",
-    "rerelease:verdaccio": "npm run build && npx creatartis-build rerelease:verdaccio",
-    "test": "npx creatartis-build lint test"
-  }
+    "build": "vite build",
+    "lint": "eslint .",
+    "test": "vitest"
+  },
+  "version": "0.1.0"
 }

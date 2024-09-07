@@ -1,4 +1,4 @@
-import { defProps, Statistics } from "../utils";
+import { Statistics } from "../utils";
 import { Spectator } from "./Spectator";
 
 /** TODO
@@ -8,7 +8,7 @@ import { Spectator } from "./Spectator";
 export class StatsSpectator extends Spectator {
   constructor(args) {
     super(args);
-    defProps(this, {
+    this.__props({
       stats: args?.stats ?? new Statistics(),
     });
   }

@@ -78,7 +78,7 @@ export class HeuristicPlayer extends Player {
    * @returns {number}
   */
   async heuristic(_game, _role) {
-    throw new Error(`${this.constructor.name}.heuristic() is not defined!`);
+    return this.__undefined(`${this.constructor.name}.heuristic`);
   }
 
   /** The `bestActions` are all the best evaluated in the given `game` for the

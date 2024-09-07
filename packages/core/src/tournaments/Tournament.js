@@ -1,10 +1,10 @@
 import { Match } from '../games';
-import { defProps } from '../utils';
+import { BaseClass } from '../utils';
 
 /** A tournament is a set of matches played between many players. This is an
  * abstract base class for many different types of contests.
 */
-export class Tournament {
+export class Tournament extends BaseClass {
   /** The tournament always has one `game` state from which all matches start.
    *
    * @param {object} args
@@ -14,7 +14,8 @@ export class Tournament {
    * @param {Statistics} [args.stats]
   */
   constructor(args) {
-    defProps(this, {
+    super();
+    this.__props({
       game: args.game,
       players: args.players,
       matchCount: args.matchCount ?? 10,

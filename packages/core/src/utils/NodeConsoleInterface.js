@@ -1,5 +1,5 @@
 /* global process */
-import { defProps } from './objects';
+import { BaseClass } from './BaseClass';
 import { randomChoice } from '../randomness';
 import { UserInterfacePlayer } from '../players/UserInterfacePlayer';
 import { Spectator } from '../matches/Spectator';
@@ -22,13 +22,14 @@ export function ansiBold(x, color = null) {
  *
  * @class
 */
-export class NodeConsoleInterface {
+export class NodeConsoleInterface extends BaseClass {
   /** The constructor takes the following arguments.
    *
    * @param {object} args
   */
   constructor(args) {
-    defProps(this, {
+    super();
+    this.__props({
       choices: new Map(),
       renderAction: args.renderAction,
       renderHaps: args.renderHaps,
@@ -48,7 +49,7 @@ export class NodeConsoleInterface {
         return [choices, line];
       },
     });
-    defProps(this, { readLineInterface });
+    this.__props({ readLineInterface });
   }
 
 // Rendering ___________________________________________________________________

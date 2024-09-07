@@ -1,4 +1,4 @@
-import { defProps } from '../utils';
+import { BaseClass } from '../utils';
 
 let PLAYER_COUNT = 0; // Used by the Player's default naming.
 
@@ -10,7 +10,7 @@ let PLAYER_COUNT = 0; // Used by the Player's default naming.
  *
  * @class
 */
-export class Player {
+export class Player extends BaseClass {
   /** The default constructor takes its `name` and a pseudo-`random` number
    * generator from the given `params`.
    *
@@ -21,7 +21,8 @@ export class Player {
    *   with the signature `(game, role, actions, haps) => Promise<void>`.
   */
   constructor(args) {
-    defProps(this, {
+    super();
+    this.__props({
       name: `${args?.name ?? `${this.constructor.name}${PLAYER_COUNT++}`}`,
       rng: args?.rng ?? Math.random,
       update: args?.update ?? null,
@@ -72,7 +73,7 @@ export class Player {
    * @returns {unknown} A promise that resolves to the selected move.
   */
   async decision(_game, _role) {
-    throw new Error(`${this.constructor.name}.decision() is not defined!`);
+    return this.__undefined(`${this.constructor.name}.decision`);
   }
 
 // Utilities ___________________________________________________________________

@@ -1,6 +1,5 @@
 import { Game, Match } from "../games";
 import { Player, RandomPlayer } from "../players";
-import { defProps } from "../utils";
 import { Spectator } from "./Spectator";
 
 /** An spectator that performs unit tests on a game implementation while it is
@@ -11,7 +10,7 @@ import { Spectator } from "./Spectator";
 export class TestSpectator extends Spectator {
   constructor(args) {
     super(args);
-    defProps(this, {
+    this.__props({
       expect: args.expect,
       maxPlies: args.maxPlies ?? 200,
     });

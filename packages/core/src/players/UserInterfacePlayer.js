@@ -1,4 +1,3 @@
-import { defProps } from '../utils';
 import { Player } from './Player';
 
 /** Player that an user interface controls. When it is required to choose an
@@ -15,7 +14,7 @@ export class UserInterfacePlayer extends Player {
   */
   constructor(args) {
     super(args);
-    defProps(this, {
+    this.__props({
       onDecision: args?.onDecision,
       spectator: args?.spectator,
     });

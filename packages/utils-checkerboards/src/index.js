@@ -1,9 +1,7 @@
-import Checkerboard from './utils/Checkerboard';
-import ListCheckerboard from './utils/ListCheckerboard';
-import SparseCheckerboard from './utils/SparseCheckerboard';
+export {
+  CheckerBoard,
+} from './utils/Checkerboard';
 
 export {
-  Checkerboard,
-  ListCheckerboard,
-  SparseCheckerboard,
-};
+  CheckerboardFromSquareList,
+} from './utils/CheckerboardFromSquareList';

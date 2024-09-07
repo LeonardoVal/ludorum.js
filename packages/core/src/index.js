@@ -18,5 +18,9 @@ export {
   DebugSpectator, TestSpectator, StatsSpectator,
 } from './matches';
 
+export {
+  BaseClass, NodeConsoleInterface, Statistics,
+} from './utils';
+
 export * as randomness from './randomness';
-export * as utils from './utils';
+

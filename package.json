@@ -19,6 +19,7 @@
     "packages/game-pig",
     "packages/game-tictactoe",
     "packages/game-toadsandfrogs",
-    "packages/players-minimax"
+    "packages/players-minimax",
+    "packages/utils-checkerboards"
   ]
 }

@@ -1,4 +1,3 @@
-import { defProps } from '../utils';
 import { Player } from './Player';
 
 /** Scripted automatic player that uses a predefined list of actions.
@@ -15,7 +14,7 @@ export class TracePlayer extends Player {
   */
   constructor(args) {
     super(args);
-    defProps(this, {
+    this.__props({
       player: args.player,
       trace: [...args.trace ?? []],
     });
