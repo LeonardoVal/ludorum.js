@@ -191,14 +191,15 @@ export class Game extends BaseClass {
     return this.meta.isSimultaneous ?? false;
   }
 
-  /** A game is zerosum if the sum of all results in every match is zero. True
-   * by default, since most games are.
+  /** A game is zerosum if the sum of all results in every match is zero. By
+   * default is true for all game with more than one player, since most of these
+   * games are like so.
    * 
    * @static
    * @property {boolean=true}
   */
   static get isZeroSum() {
-    return this.meta.isZeroSum ?? true;
+    return this.meta.isZeroSum ?? this.meta.roles.length > 1;
   }
 
   /** The minimum and maximum values for the result method.

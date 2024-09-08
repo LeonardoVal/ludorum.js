@@ -152,14 +152,12 @@ export { ${gameName} } from './games/${gameName}';
 function gamePlaytester(gameName) {
   return `\
 import readline from 'node:readline';
-import { Match, RandomPlayer, utils } from '@ludorum/core';
+import { Match, RandomPlayer, NodeConsoleInterface } from '@ludorum/core';
 import { ${gameName} } from '../../dist/${gamePackageName(gameName)}.es.mjs';
-
-const { ansiBold, NodeConsoleInterface } = utils;
 
 async function main() {
   const ui = new NodeConsoleInterface({
-    renderAction(haps) {
+    renderAction(action) {
       return ??;
     },
     renderHaps(haps) {
@@ -233,7 +231,7 @@ async function genPackage(pkgName, gameName = null) {
 
 async function genGamePackage(gameName) {
   const pkgName = gamePackageName(gameName);
-  await genPackage(pkgName);
+  await genPackage(pkgName, gameName);
   const pkgPath = path.resolve(
     path.dirname(url.fileURLToPath(import.meta.url)), `../packages/${pkgName}`,
   );

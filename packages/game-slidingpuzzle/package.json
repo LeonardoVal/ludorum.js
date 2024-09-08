@@ -1,0 +1,45 @@
+{
+  "author": {
+    "email": "leonardo.val@creatartis.com",
+    "name": "Leonardo Val"
+  },
+  "contributors": [],
+  "dependencies": {
+    "@ludorum/core": "^0.3.0",
+    "@ludorum/utils-checkerboards": "^0.1.0"
+  },
+  "description": "game-slidingpuzzle for Ludorum.",
+  "devDependencies": {
+    "@ludorum/common-dev": "^1.0.0"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/game-slidingpuzzle.es.mjs",
+      "require": "./dist/game-slidingpuzzle.umd.js"
+    }
+  },
+  "files": [
+    "dist/",
+    "LICENSE.md",
+    "README.md"
+  ],
+  "keywords": [
+    "board game",
+    "game"
+  ],
+  "license": "MIT",
+  "main": "./dist/game-slidingpuzzle.umd.js",
+  "module": "./dist/game-slidingpuzzle.es.js",
+  "name": "@ludorum/game-slidingpuzzle",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/LeonardoVal/ludorum.js"
+  },
+  "scripts": {
+    "build": "vite build",
+    "lint": "eslint .",
+    "playtest": "node test/scripts/playtest-slidingpuzzle.mjs",
+    "test": "vitest"
+  },
+  "version": "0.1.0"
+}

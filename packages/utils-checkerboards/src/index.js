@@ -1,7 +1,7 @@
 export {
   CheckerBoard,
-} from './utils/Checkerboard';
+} from './boards/Checkerboard';
 
 export {
   CheckerboardFromSquareList,
-} from './utils/CheckerboardFromSquareList';
+} from './boards/CheckerboardFromSquareList';

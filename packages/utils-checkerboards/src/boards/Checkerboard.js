@@ -14,6 +14,12 @@ export class CheckerBoard extends BaseClass {
     });
   }
 
+// Static utilities ____________________________________________________________
+
+  /** TODO static columnName(n) */
+
+  /** TODO static columnIndex(s) */
+
 // Board information ___________________________________________________________
 
   /** The `size` is the amount of squares in the checkerboard.
@@ -43,6 +49,14 @@ export class CheckerBoard extends BaseClass {
     return 0 <= x && x < width && 0 <= y && y < height;
   }
 
+  /** TODO */
+  mustBeInside(coord) {
+    if (!this.isInside(coord)) {
+      throw new Error(`${coord} is not inside the board!`);
+    }
+    return coord;
+  }
+
   /** Square value for the given board at the given coordinate.
    *
    * @param {any} board
@@ -56,10 +70,27 @@ export class CheckerBoard extends BaseClass {
   /** Sequence of tuples `[value, coord]` for all of the board's square.
    *
    * @param {any} board
-   * @yield {[any, number[]]}
+   * @param {function} [callback=null]
+   * @yield {any}
   */
-  * squares(_board) {
-    this.__undefined(`${this.constructor.name}.squares`)
+  * squares(board, callback = null) {
+    for (const coord of this.coordinates()) {
+      const square = this.square(board, coord);
+      const value = callback ? callback(square, coord) : [square, coord];
+      if (value !== undefined) {
+        yield value;
+      }
+    }
+  }
+
+  /** TODO */
+  delta([x, y], [dx, dy], checkFn = null) {
+    const { coordArrayType } = this;
+    const newCoord = coordArrayType.of(x + dx, y + dy);
+    if (this.isInside(newCoord) && (!checkFn || checkFn(newCoord))) {
+      return newCoord;
+    }
+    return null;
   }
 
   /** TODO 

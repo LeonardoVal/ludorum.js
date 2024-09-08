@@ -1,12 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { CheckerBoard } from '../../src/index';
 
-function expectEqualCoords(coords1, coords2) {
-  const strs1 = coords1.map((c) => c.join(',')).sort();
-  const strs2 = coords2.map((c) => c.join(',')).sort();
-  expect(strs1).toEqual(strs2);
-} // function sameCoords
-
 describe('CheckerBoard', () => {
   test('is defined', () => {
     expect(CheckerBoard).toBeTypeOf('function');
