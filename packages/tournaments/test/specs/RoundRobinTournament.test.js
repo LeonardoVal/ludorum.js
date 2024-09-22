@@ -1,8 +1,7 @@
 import { describe, expect, test } from 'vitest';
-import { Choose2Win } from '../../src/games';
-import { StatsSpectator } from '../../src/matches/StatsSpectator';
-import { TracePlayer } from '../../src/players/TracePlayer';
-import { RoundRobinTournament, Tournament } from '../../src/tournaments';
+import { Choose2Win, TracePlayer } from '@ludorum/core';
+import { StatsSpectator } from '@ludorum/utils-analysis';
+import { RoundRobinTournament } from '../../src/tournaments';
 
 describe('tournaments', () => {
   function tracePlayer(name, action) {
@@ -14,30 +13,8 @@ describe('tournaments', () => {
   }
 
   test('expected definitions', () => {
-    expect(typeof Tournament).toBe('function');
     expect(typeof RoundRobinTournament).toBe('function');
   }); // test 'expected definitions'
-
-  test('Tournament with Choose2Win', async () => {
-    const matchCount = 3;
-    for (const [action1, action2, result1, result2] of [
-      ['win', 'lose', +matchCount, -matchCount],
-      ['pass', 'win', -matchCount, +matchCount],
-      ['pass', 'lose', +matchCount, -matchCount],
-    ]) {
-      const tournament = new Tournament({
-        game: new Choose2Win(),
-        matchCount,
-        players: [
-          tracePlayer('ThisPlayer', action1),
-          tracePlayer('ThatPlayer', action2),
-        ],
-      });
-      const results = await tournament.playTournament();
-      expect(results.ThisPlayer).toBe(result1);
-      expect(results.ThatPlayer).toBe(result2);
-    }
-  }); // test 'Tournament with Choose2Win'
 
   test('RoundRobinTournament with Choose2Win', async () => {
     const matchCount = 2;

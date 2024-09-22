@@ -5,16 +5,17 @@
   },
   "contributors": [],
   "dependencies": {
-    "@ludorum/core": "^0.3.0"
+    "@ludorum/core": "^0.3.0",
+    "@ludorum/utils-analysis": "^0.1.0"
   },
-  "description": "utils-analysis for Ludorum.",
+  "description": "tournaments for Ludorum.",
   "devDependencies": {
     "@ludorum/common-dev": "^1.0.0"
   },
   "exports": {
     ".": {
-      "import": "./dist/utils-analysis.es.mjs",
-      "require": "./dist/utils-analysis.umd.js"
+      "import": "./dist/tournaments.es.mjs",
+      "require": "./dist/tournaments.umd.js"
     }
   },
   "files": [
@@ -27,9 +28,9 @@
     "game"
   ],
   "license": "MIT",
-  "main": "./dist/utils-analysis.umd.js",
-  "module": "./dist/utils-analysis.es.js",
-  "name": "@ludorum/utils-analysis",
+  "main": "./dist/tournaments.umd.js",
+  "module": "./dist/tournaments.es.js",
+  "name": "@ludorum/tournaments",
   "repository": {
     "type": "git",
     "url": "http://github.com/LeonardoVal/ludorum.js"

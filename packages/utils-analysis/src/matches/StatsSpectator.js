@@ -1,5 +1,5 @@
-import { Statistics } from "../utils";
-import { Spectator } from "./Spectator";
+import { Spectator } from "@ludorum/core";
+import { Statistics } from "../utils/Statistics";
 
 /** TODO
  * 

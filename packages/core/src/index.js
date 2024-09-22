@@ -9,17 +9,12 @@ export {
 } from './players';
 
 export {
-  Tournament,
-  RoundRobinTournament,
-} from './tournaments';
-
-export {
   Match, Spectator, 
-  DebugSpectator, TestSpectator, StatsSpectator,
+  DebugSpectator, TestSpectator,
 } from './matches';
 
 export {
-  BaseClass, NodeConsoleInterface, Statistics,
+  BaseClass, NodeConsoleInterface,
 } from './utils';
 
 export * as randomness from './randomness';

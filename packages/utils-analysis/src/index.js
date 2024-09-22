@@ -1,6 +1,2 @@
-/* eslint-disable import/prefer-default-export */
-import { hypergeometricRule } from './utils/fisher-test';
-
-export {
-  hypergeometricRule,
-};
+export { StatsSpectator } from './matches/StatsSpectator';
+export { Statistics } from './utils/Statistics';

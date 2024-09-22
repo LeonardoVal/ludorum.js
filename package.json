@@ -22,6 +22,8 @@
     "packages/game-tictactoe",
     "packages/game-toadsandfrogs",
     "packages/players-minimax",
+    "packages/tournaments",
+    "packages/utils-analysis",
     "packages/utils-checkerboards"
   ]
 }

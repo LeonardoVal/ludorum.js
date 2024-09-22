@@ -1,6 +1,6 @@
 # The MIT License
 
-Source code for package `@ludorum/utils-analysis` is Copyright (C) 2013-2024
+Source code for package `@ludorum/tournaments` is Copyright (C) 2013-2024
 [Leonardo Val](mailto:leonardo.val@creatartis.com).
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of

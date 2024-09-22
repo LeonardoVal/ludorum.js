@@ -1,4 +1,4 @@
-import { permutations } from '../utils/iterables';
+import { permutations } from './utils';
 import { Tournament } from './Tournament';
 
 /** [Round-robins](http://en.wikipedia.org/wiki/Round-robin_tournament) are

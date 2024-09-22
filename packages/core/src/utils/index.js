@@ -13,7 +13,3 @@ export {
 export {
   mapObject,
 } from './objects';
-
-export {
-  Statistics,
-} from './Statistics';

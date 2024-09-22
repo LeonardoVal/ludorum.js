@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'vitest';
+import { Choose2Win, Match, RandomPlayer } from '@ludorum/core';
 import { Statistics } from '../../src/utils/Statistics';
-import { Choose2Win, Match } from '../../src/games';
-import { RandomPlayer } from '../../src/players/RandomPlayer';
 
 describe('Statistics', () => {
   test('accounts properly', () => {

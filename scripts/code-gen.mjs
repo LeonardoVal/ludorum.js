@@ -257,10 +257,26 @@ async function genGamePackage(gameName) {
 async function main() {
   const args = process.argv.slice(2);
   switch (args?.[0]) {
-    case 'game': return genGamePackage(...args.slice(1));
-    case 'pkg': return genPackage(...args.slice(1));
+    case 'game': {
+      await genGamePackage(...args.slice(1));
+      process.exit(0);
+    }
+    case 'pkg': {
+      await genPackage(...args.slice(1));
+      process.exit(0);
+    }
+    case 'help':
+    case undefined: {
+      console.info(`\
+Usage:
+> node ${process.argv[1]} game GameName
+> node ${process.argv[1]} pkg package-name
+`);
+      process.exit(0);
+    }
     default: {
-      console.error(`Unknown gen type ${args?.[0]}!`);
+      console.error(`Unknown arguments ${args.join(' ')}`);
+      process.exit(1);
     }
   }
 } // function main

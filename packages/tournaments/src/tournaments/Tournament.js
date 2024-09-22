@@ -1,5 +1,4 @@
-import { Match } from '../games';
-import { BaseClass } from '../utils';
+import { BaseClass, Match } from '@ludorum/core';
 
 /** A tournament is a set of matches played between many players. This is an
  * abstract base class for many different types of contests.
