@@ -1,9 +1,37 @@
 import { describe, expect, test } from 'vitest';
 import { CheckerBoard } from '../../src/index';
 
+const coordsCheck = (board) => (received, expected) => {
+  const { coordArrayType } = board;
+  const expectedArray = Array.isArray(expected) ? expected
+    : /^((\d+,\d+\s*)+)$/.exec(expected)?.[1]?.split(/\s+/)
+      ?.map((s) => s.split(',').map(Number)) ?? [];
+  const expectedTypedArrays = expectedArray
+    .map((c) => coordArrayType.of(...c));
+  expect([...received]).toEqual(expectedTypedArrays);
+};
+
 describe('CheckerBoard', () => {
   test('is defined', () => {
     expect(CheckerBoard).toBeTypeOf('function');
+  });
+
+  test('coordinates can be parsed and unparsed', () => {
+    Object.entries({
+      a1: [0,0], b1: [1,0], a2: [0,1],
+      c1: [2,0], c2: [2,1], c3: [2,2],
+      z22: [25, 21],
+    }).forEach(([k, v]) => {
+      expect(CheckerBoard.toAN(v)).toBe(k);
+      expect([...CheckerBoard.fromAN(k)]).toEqual(v);
+    });
+
+    ['', '  ', '1z', 'a1 ', ' b2'].forEach(
+      (c) => expect(() => CheckerBoard.fromAN(c)).toThrow()
+    );
+    [[-1,0], [0,-1], [7,26]].forEach(
+      (c) => expect(() => CheckerBoard.toAN(c)).toThrow()
+    );
   });
 
   test('constructor works as expected', () => {
@@ -49,32 +77,43 @@ describe('CheckerBoard', () => {
     ].forEach((c) => expect(board3x3.isInside(c)).toBe(false));
   });
 
+  test('delta is properly calculated', () => {
+    const board3x3 = new CheckerBoard({ height: 3, width: 3 });
+    expect(board3x3.delta([1, 1], [0, 0])).toEqual(board3x3.coordArrayType.of(1, 1));
+    expect(board3x3.delta([1, 1], [1, 0])).toEqual(board3x3.coordArrayType.of(2, 1));
+    expect(board3x3.delta([1, 1], [0,-1])).toEqual(board3x3.coordArrayType.of(1, 0));
+    expect(board3x3.delta([1, 1], [0,-2])).toBeNull();
+    expect(board3x3.delta([3, 3], [-1,-1])).toEqual(board3x3.coordArrayType.of(2, 2));
+    expect(board3x3.delta([1, 1], [0, 0], () => false)).toBeNull();
+    expect(board3x3.delta([2, 2], [1, 1], () => true)).toBeNull();
+  });
+
   test('deltas coordinates are properly calculated', () => {
     const board3x3 = new CheckerBoard({ height: 3, width: 3 });
+    const checkCoords = coordsCheck(board3x3);
     const orthoOffsets = [[-1, 0], [+1, 0], [0, -1], [0, +1]];
-    expect([...board3x3.deltas([1, 1], orthoOffsets)]).toEqual([
-      [0, 1], [2, 1], [1, 0], [1, 2],
-    ].map(([x, y]) => board3x3.coordArrayType.of(x, y)));
-    expect([...board3x3.deltas([0, 0], orthoOffsets)]).toEqual([
-      [1, 0], [0, 1],
-    ].map(([x, y]) => board3x3.coordArrayType.of(x, y)));
-    expect([...board3x3.deltas([2, 2], orthoOffsets)]).toEqual([
-      [1, 2], [2, 1],
-    ].map(([x, y]) => board3x3.coordArrayType.of(x, y)));
-    expect([...board3x3.deltas([0, 2], orthoOffsets)]).toEqual([
-      [1, 2], [0, 1],
-    ].map(([x, y]) => board3x3.coordArrayType.of(x, y)));
-    expect([...board3x3.deltas([2, 0], orthoOffsets)]).toEqual([
-      [1, 0], [2, 1],
-    ].map(([x, y]) => board3x3.coordArrayType.of(x, y)));
-    expect([...board3x3.deltas([1, 2], orthoOffsets)]).toEqual([
-      [0, 2], [2, 2], [1, 1],
-    ].map(([x, y]) => board3x3.coordArrayType.of(x, y)));
-    expect([...board3x3.deltas([2, 1], orthoOffsets)]).toEqual([
-      [1, 1], [2, 0], [2, 2],
-    ].map(([x, y]) => board3x3.coordArrayType.of(x, y)));
-    expect([...board3x3.deltas([3, 3], orthoOffsets)]).toEqual([]);
-    expect([...board3x3.deltas([1, 1], orthoOffsets, () => false)]).toEqual([]);
+    checkCoords(board3x3.deltas([1, 1], orthoOffsets), '0,1 2,1 1,0 1,2');
+    checkCoords(board3x3.deltas([0, 0], orthoOffsets), '1,0 0,1');
+    checkCoords(board3x3.deltas([2, 2], orthoOffsets), '1,2 2,1');
+    checkCoords(board3x3.deltas([0, 2], orthoOffsets), '1,2 0,1');
+    checkCoords(board3x3.deltas([2, 0], orthoOffsets), '1,0 2,1');
+    checkCoords(board3x3.deltas([1, 2], orthoOffsets), '0,2 2,2 1,1');
+    checkCoords(board3x3.deltas([2, 1], orthoOffsets), '1,1 2,0 2,2');
+    checkCoords(board3x3.deltas([3, 3], orthoOffsets), '');
+    checkCoords(board3x3.deltas([1, 1], orthoOffsets, () => false), '');
+  });
+
+  test('slide coordinates are properly calculated', () => {
+    const board3x3 = new CheckerBoard({ height: 3, width: 3 });
+    const checkCoords = coordsCheck(board3x3);
+    checkCoords(board3x3.slide([0, 0], [1, 1]), '1,1 2,2');
+    checkCoords(board3x3.slide([2, 2], [-1,0]), '1,2 0,2');
+    checkCoords(board3x3.slide([1, 1], [1, 0]), '2,1');
+    checkCoords(board3x3.slide([0, 0], [1, 1], ([x,]) => x < 2), '1,1');
+    checkCoords(board3x3.slide([0, 0], [0, 1], () => false), '');
+    checkCoords(board3x3.slide([0, 0], [0, 1], () => true), '0,1 0,2');
+    checkCoords(board3x3.slide([0, 0], [0,-1]), '');
+    checkCoords(board3x3.slide([0, 0], [0,-1], () => true), '');
   });
 
 }); // describe 'CheckerBoard'

@@ -1,5 +1,7 @@
 import { BaseClass } from '@ludorum/core';
 
+const DEFAULT_COORD_ARRAY_TYPE = Int16Array;
+
 /** */
 export class CheckerBoard extends BaseClass {
 
@@ -7,18 +9,45 @@ export class CheckerBoard extends BaseClass {
   constructor(args) {
     super();
     this.__props({
-      coordArrayType: args.coordArrayType ?? Int16Array,
+      coordArrayType: args.coordArrayType ?? DEFAULT_COORD_ARRAY_TYPE,
       emptySquare: args.emptySquare ?? null,
       height: args.height,
       width: args.width,
     });
   }
 
-// Static utilities ____________________________________________________________
+// Coordinates _________________________________________________________________
 
-  /** TODO static columnName(n) */
+  /** TODO */
+  static fromAN(coordString, coordArrayType = DEFAULT_COORD_ARRAY_TYPE) {
+    let match = /^([a-z])(\d+)$/i.exec(coordString);
+    if (match) {
+      return coordArrayType.of(match[1].charCodeAt(0) - 97, match[2] - 1);
+    }
+    throw new Error(`Unrecognized coordinate ${JSON.stringify(coordString)}!`);
+  }
 
-  /** TODO static columnIndex(s) */
+  /** TODO */
+  fromAN(coordString) {
+    return this.constructor.fromAN(coordString, this.coordArrayType);
+  }
+
+  /** Returns a string for a given coordinate in chess' Algebraic Notation.
+   *
+   * @param {[number, number]} coord
+   * @returns {string}
+  */
+  static toAN([x, y]) {
+    if (x < 0 || y < 0 || y >= 26) {
+      throw new Error(`Cannot stringify coordinate [${x}, ${y}]!`);
+    }
+    return `${String.fromCharCode(x + 97)}${y + 1}`;
+  }
+
+  /** TODO */
+  toAN(coord) {
+    return this.constructor.toAN(coord);
+  }
 
 // Board information ___________________________________________________________
 
@@ -162,6 +191,24 @@ export class CheckerBoard extends BaseClass {
   */
   swap(_board, _coordFrom, _coordTo) {
     return this.__undefined(`${this.constructor.name}.swap`);
+  }
+
+// Actions generation __________________________________________________________
+
+  /** TODO */
+  * moveActions(board, generator) {
+    const fn = typeof generator === 'function' ? generator
+      : generator instanceof Map ? (v) => generator.get(v)
+      : typeof generator === 'object' ? (v) => generator[v]
+      : null;
+    for (const [value, coordFrom] of this.squares(board)) {
+      const coordsTo = fn?.(value)?.(coordFrom, value);
+      if (coordsTo) {
+        for (const coordTo of coordsTo) {
+          yield [coordFrom, coordTo, value];
+        }
+      }
+    }
   }
 
 } // class CheckerBoard

@@ -44,7 +44,7 @@ export class Predefined extends Game {
 
     const isFinished = height < 1;
     const actions = isFinished ? null : {
-      [activeRole]: Array(width).fill(0).map((_, i) => `action${i}`),
+      [activeRole]: Array.from({ length: width }, (_, i) => `action${i}`),
     };
     const result = !isFinished ? null
       : roles.reduce((r, role, roleIndex) => {

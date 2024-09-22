@@ -33,9 +33,9 @@ export class SlidingPuzzle extends Game {
    * @returns {string}
   */
   static __target(width, height, symbols = null) {
-    return Array(width * height - 1).fill(0)
-      .map((_, i) => symbols?.charAt(i % symbols.length) ?? (i % 36).toString(36))
-      .join('') +' ';
+    return Array.from({ length: width * height - 1 }, (_, i) => (
+      symbols?.charAt(i % symbols.length) ?? (i % 36).toString(36)
+    )).join('') +' ';
   }
 
   /** TODO */

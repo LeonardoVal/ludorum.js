@@ -25,7 +25,7 @@ export function uniformAleatory(...values) {
 export function uniformRangeAleatory(from, to) {
   const n = to - from + 1;
   const prob = 1 / n;
-  return Array(n).fill(0).map((_, i) => [from + i, prob]);
+  return Array.from({ length: n }, (_, i) => [from + i, prob]);
 }
 
 /** Predefined distributions for common dice.

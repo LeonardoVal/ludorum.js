@@ -111,15 +111,15 @@ export class TestSpectator extends Spectator {
           });
         }
       });
+      expect(activeCount > 1).toBe(gameClass.isSimultaneous);
+      if (!gameClass.isSimultaneous) {
+        expect(game.activeRoles).toEqual([game.activeRole]);
+      } else if (activeCount > 1) {
+        expect(() => game.activeRole).toThrow();
+      }
     } else {
       expect(actions).toBeNull();
       expect(haps).toBeTruthy();
-    }
-    expect(gameClass.isSimultaneous).toBe(activeCount > 1);
-    if (!gameClass.isSimultaneous) {
-      expect(game.activeRoles).toEqual([game.activeRole]);
-    } else if (activeCount > 1) {
-      expect(() => game.activeRole).toThrow();
     }
     return activeCount;
   }
